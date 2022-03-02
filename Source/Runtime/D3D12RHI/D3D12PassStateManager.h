@@ -1,6 +1,6 @@
 #pragma once
 #include "D3D12View.h"
-#include "XTTTTTT.h"
+#include "D3D12PipelineCurrentDescArrayManager.h"
 class XD3D12PassStateManager
 {
 private:

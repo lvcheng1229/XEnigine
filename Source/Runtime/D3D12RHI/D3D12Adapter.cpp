@@ -1,6 +1,6 @@
-#include "DX12GIAdapter.h"
+#include "D3D12Adapter.h"
 
-void XDXGIAdapter::Create()
+void XD3D12Adapter::Create()
 {
 	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&dxgi_factory)));
 	

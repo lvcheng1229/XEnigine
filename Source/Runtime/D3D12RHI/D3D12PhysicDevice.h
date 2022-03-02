@@ -1,13 +1,14 @@
 #pragma once
-#include "DX12GIAdapter.h"
+#include "D3D12Adapter.h"
 
 class XD3D12PhysicDevice
 {
 private:
 	XDxRefCount<ID3D12Device> d3d12_device;
-
+	XD3D12Adapter* adapter;
 public:
-	void Create(XDXGIAdapter* adapter);
+	void Create(XD3D12Adapter* adapter_in);
+	inline XD3D12Adapter* GetAdapter() { return adapter; }
 	inline ID3D12Device* GetDXDevice() { return d3d12_device.Get(); }
 };
 

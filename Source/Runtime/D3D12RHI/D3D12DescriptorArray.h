@@ -1,35 +1,48 @@
 #pragma once
 #include "D3D12PhysicDevice.h"
 
-//TODO:FD3D12OfflineDescriptorManager In UE
-//no list now
-class XD3D12DescriptorArray :public XD3D12DeviceChild
+#include <vector>
+#include <unordered_set>
+
+class XD3D12DescArrayManager
 {
-public:
-	void Create(XD3D12PhysicDevice* device_in, const D3D12_DESCRIPTOR_HEAP_DESC& desc);
-	
-	inline D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescPtrByIndex(uint32 index) {
-		D3D12_CPU_DESCRIPTOR_HANDLE ret_ptr = { cpu_ptr_begin.ptr + +static_cast<UINT64>(index) * static_cast<UINT64>(elemt_size) };
-		return ret_ptr;
-	}
-	
-	inline D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescPtrByIndex(uint32 index) {
-		D3D12_GPU_DESCRIPTOR_HANDLE ret_ptr = { gpu_ptr_begin.ptr + +static_cast<UINT64>(index) * static_cast<UINT64>(elemt_size) };
-		return ret_ptr;
-	}
-
-	inline uint32 GetElemSize() { return elemt_size; }
-	inline bool IsGPUAcessable() { return gpu_acessable; };
-	inline uint32 GetDescArrayLength() { return array_length; }
-	inline D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescPtrBegin() { return cpu_ptr_begin; }
-	inline D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescPtrBegin() { return gpu_ptr_begin; }
-	inline ID3D12DescriptorHeap* GetDescHeapPtr() { return DescArray.Get(); }
 private:
-	uint32 array_length;
-	uint32 elemt_size;
-	bool gpu_acessable;
+	struct DescArray
+	{
+		XDxRefCount<ID3D12DescriptorHeap> d3d12_heap;
+		std::unordered_set<uint32>desc_index_free;
+		D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr_begin;
+		D3D12_GPU_DESCRIPTOR_HANDLE gpu_ptr_begin;
+	};
 
-	D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr_begin;
-	D3D12_GPU_DESCRIPTOR_HANDLE gpu_ptr_begin;
-	XDxRefCount<ID3D12DescriptorHeap>DescArray;
+	std::unordered_set<uint32>free_desc_array_index;;
+	std::vector<DescArray>all_desc_arrays;
+
+
+	XD3D12PhysicDevice* device;
+	D3D12_DESCRIPTOR_HEAP_DESC desc;
+	uint32 desc_per_heap;
+	uint32 element_size;
+public:
+	inline D3D12_CPU_DESCRIPTOR_HANDLE compute_cpu_ptr(const uint32 index_of_desc_in_heap,const  uint32 index_of_heap)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE ret_ptr = { 
+			all_desc_arrays[index_of_heap].cpu_ptr_begin.ptr + 
+			static_cast<UINT64>(index_of_desc_in_heap) * static_cast<UINT64>(element_size) };
+		return ret_ptr;
+	}
+	inline D3D12_GPU_DESCRIPTOR_HANDLE compute_gpu_ptr(const uint32 index_of_desc_in_heap, const  uint32 index_of_heap)
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE ret_ptr = {
+			all_desc_arrays[index_of_heap].gpu_ptr_begin.ptr +
+			static_cast<UINT64>(index_of_desc_in_heap) * static_cast<UINT64>(element_size) };
+		return ret_ptr;
+	}
+
+	void Create(XD3D12PhysicDevice* device_in, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32 num);
+	void AllocateDesc(uint32& index_of_desc_in_heap, uint32& index_of_heap);
+	void FreeDesc(uint32 index_of_desc_in_heap, uint32 index_of_heap);
+private:
+	void AllocHeap();
+
 };

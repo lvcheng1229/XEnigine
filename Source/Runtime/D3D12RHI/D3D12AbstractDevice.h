@@ -23,10 +23,16 @@ public:
 
 	//void CreateBuffer();
 
+	inline XD3D12PhysicDevice* GetPhysicalDevice() { return physic_device; }
 	inline XD3DDirectContex* GetDirectContex() { return &direct_ctx_default; }
-	inline XD3D12DescriptorArray* GetRenderTargetDescArray() { return &RenderTargetDescArray; };
-	inline XD3D12DescriptorArray* GetDepthStencilDescArray() { return &DepthStencilDescArray; };
-	inline XD3D12DescriptorArray* GetShaderRresourceDescArray() { return &ShaderResourceDescArray; };
+	
+	inline XD3D12DescArrayManager* GetRenderTargetDescArrayManager() { return &RenderTargetDescArrayManager; }
+	inline XD3D12DescArrayManager* GetDepthStencilDescArrayManager() { return &DepthStencilDescArrayManager; }
+	inline XD3D12DescArrayManager* GetShaderResourceDescArrayManager() { return &ShaderResourceDescArrayManager; }
+
+	//inline XD3D12DescriptorArray* GetRenderTargetDescArray() { return &RenderTargetDescArray; };
+	//inline XD3D12DescriptorArray* GetDepthStencilDescArray() { return &DepthStencilDescArray; };
+	//inline XD3D12DescriptorArray* GetShaderRresourceDescArray() { return &ShaderResourceDescArray; };
 private:
 	XDxRefCount<ID3D12Resource> m_texture;//for test
 
@@ -40,10 +46,16 @@ private:
 
 	XD3DBuddyAllocator constant_upload_heap_alloc;
 
-	XD3D12DescriptorArray RenderTargetDescArray;
-	XD3D12DescriptorArray DepthStencilDescArray;
-	XD3D12DescriptorArray ShaderResourceDescArray;
-	XD3D12DescriptorArray ConstantBufferDescArray;
+	//XD3D12DescriptorArray RenderTargetDescArray;
+	//XD3D12DescriptorArray DepthStencilDescArray;
+	//XD3D12DescriptorArray ShaderResourceDescArray;
+	//XD3D12DescriptorArray ConstantBufferDescArray;
+	
 	//XD3D12DescriptorArray ShaderResourceDescArray;
 	//XD3D12DescriptorArray SamplerDescArray;
+
+	XD3D12DescArrayManager RenderTargetDescArrayManager;
+	XD3D12DescArrayManager DepthStencilDescArrayManager;
+	XD3D12DescArrayManager ShaderResourceDescArrayManager;
+	XD3D12DescArrayManager ConstantBufferDescArrayManager;
 };

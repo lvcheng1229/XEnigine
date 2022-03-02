@@ -13,7 +13,7 @@
 
 #include "Runtime/RenderCore/Shader.h"
 #include "Runtime/D3D12RHI/D3D12DescArrayShaderAcesss.h"
-#include "Runtime/D3D12RHI/XTTTTTT.h"
+#include "Runtime/D3D12RHI/D3D12PipelineCurrentDescArrayManager.h"
 #include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
 
 using Microsoft::WRL::ComPtr;
@@ -24,7 +24,7 @@ using namespace DirectX::PackedVector;
 #pragma comment(lib, "D3D12.lib")
 
 //const int gNumFrameResources = 3;
-const int gNumFrameResources = 3;
+//const int gNumFrameResources = 3;
 
 // Lightweight structure stores parameters to draw a shape.  This will
 // vary from app-to-app.
@@ -33,7 +33,7 @@ struct RenderItem
 	RenderItem() = default; 
     XMFLOAT4X4 World = MathHelper::Identity4x4();
 	XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
-	int NumFramesDirty = gNumFrameResources;
+	//int NumFramesDirty = gNumFrameResources;
 
 	UINT ObjCBIndex = -1;
 
@@ -82,25 +82,18 @@ private:
     void BuildShadersAndInputLayout();
     void BuildShapeGeometry();
     void BuildPSOs();
-    void BuildFrameResources();
     void BuildMaterials();
     void BuildRenderItems();
     void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
 
 	
 private:
-	XD3D12DescriptorArray* sr_desc_array;
+	//XD3D12DescriptorArray* sr_desc_array;
+	XD3D12DescArrayManager* ShaderResourceDescArrayManager;
 	XD3D12PipelineCurrentDescArrayManager pipeline_current_desc_manager;
 	XD3D12RootSignature d3d12_root_signature;
 private:
-
-    std::vector<std::unique_ptr<FrameResource>> mFrameResources;
-    FrameResource* mCurrFrameResource = nullptr;
-    int mCurrFrameResourceIndex = 0;
-
-
-    //ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-
+	std::unique_ptr<FrameResource>mFrameResource;
 	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
 	std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
 	std::unordered_map<std::string, XShader> mShaders;
@@ -145,7 +138,8 @@ bool CrateApp::Initialize()
     if(!D3DApp::Initialize())
         return false;
 	direct_ctx->OpenCmdList();
-	sr_desc_array = abstrtact_device.GetShaderRresourceDescArray();
+	//sr_desc_array = abstrtact_device.GetShaderRresourceDescArray();
+	ShaderResourceDescArrayManager = abstrtact_device.GetShaderResourceDescArrayManager();
 
 	LoadTextures();
     BuildShadersAndInputLayout();
@@ -153,7 +147,8 @@ bool CrateApp::Initialize()
     BuildShapeGeometry();
 	BuildMaterials();
     BuildRenderItems();
-    BuildFrameResources();
+	mFrameResource = std::make_unique<FrameResource>(md3dDevice.Get(),
+		1, (UINT)mAllRitems.size(), (UINT)mMaterials.size());
     BuildPSOs();
 	
 	pipeline_current_desc_manager.Create(&Device, direct_ctx);
@@ -182,13 +177,6 @@ void CrateApp::Update(const GameTimer& gt)
     OnKeyboardInput(gt);
 	UpdateCamera(gt);
 
-    // Cycle through the circular frame resource array.
-    mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
-    mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
-
-	// Has the GPU finished processing the commands of the current frame resource?
-	// If not, wait until the GPU has completed commands up to this fence point.
-	d3d12_fence->WaitCPU(mCurrFrameResource->Fence);
 	AnimateMaterials(gt);
 	UpdateObjectCBs(gt);
 	UpdateMaterialCBs(gt);
@@ -200,40 +188,34 @@ void CrateApp::Draw(const GameTimer& gt)
 	direct_ctx->ResetCmdAlloc();
 	direct_ctx->OpenCmdList();
 	mCommandList->SetPipelineState(mOpaquePSO.Get());
-
 	direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
-  
-	pass_state_manager.SetRenderTarget(1, &rt_view_ptrs[mCurrBackBuffer], &ds_view);
-
+	
+	XD3D12RenderTargetView* rt_view_ptr_array = { viewport.GetCurrentBackRTView() };
+	pass_state_manager.SetRenderTarget(1, &rt_view_ptr_array, &ds_view);
+	
 	pass_state_manager.ApplyCurrentStateToPipeline();
+	mCommandList->ClearRenderTargetView(
+		viewport.GetCurrentBackRTView()->GetCPUPtr(),
+		Colors::LightSteelBlue, 0, nullptr);
+	
+	//TODOOOOOOOOOO
+    mCommandList->ClearDepthStencilView(
+		mApp->DepthStencilDescArrayManager->compute_cpu_ptr(0, 0), 
+		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
-	//mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-	//	D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-    mCommandList->ClearRenderTargetView(mApp->rt_desc_array->GetCPUDescPtrByIndex(mCurrBackBuffer), Colors::LightSteelBlue, 0, nullptr);
-    mCommandList->ClearDepthStencilView(mApp->ds_desc_array->GetCPUDescPtrByIndex(0), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-   
-
-	//mCommandList->OMSetRenderTargets(1, &mApp->rt_desc_array->GetCPUDescPtrByIndex(mCurrBackBuffer), true, &mApp->ds_desc_array->GetCPUDescPtrByIndex(0));
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline_current_desc_manager.GetCurrentDescArray()->GetDescHeapPtr() };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	
-	//mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 	mCommandList->SetGraphicsRootSignature(d3d12_root_signature.GetDXRootSignature());
 
-	auto passCB = mCurrFrameResource->PassCB->Resource();
+	auto passCB = mFrameResource.get()->PassCB->Resource();
 	mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
 	mCommandList->SetGraphicsRootConstantBufferView(4, passCB->GetGPUVirtualAddress());
 
     DrawRenderItems(mCommandList.Get(), mOpaqueRitems);
-
-    // Indicate a state transition on the resource usage.
-	//mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-	//	D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-	
 	XD3D12PlatformRHI::TransitionResource(
 		*direct_ctx->GetCmdList(),
-		rt_view_ptrs[mCurrBackBuffer],
+		viewport.GetCurrentBackRTView(),
 		D3D12_RESOURCE_STATE_PRESENT);
 	direct_ctx->GetCmdList()->CmdListFlush();
 
@@ -244,16 +226,8 @@ void CrateApp::Draw(const GameTimer& gt)
     // Add the command list to the queue for execution.
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
     mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	
-	//direct_cmd_queue->ExecuteCommandListInteral(direct_ctx->GetCmdList());
-    
-	// Swap the back and front buffers
-    ThrowIfFailed(mSwapChain->Present(0, 0));
-	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
-
-	uint64 fence_value=d3d12_fence->CurrentCPUFence();
-    mCurrFrameResource->Fence = ++fence_value;
-	direct_cmd_queue->Signal(fence_value);
+	viewport.Present();
+	direct_cmd_queue->CommandQueueWaitFlush();
 	
 }
 
@@ -329,51 +303,35 @@ void CrateApp::AnimateMaterials(const GameTimer& gt)
 
 void CrateApp::UpdateObjectCBs(const GameTimer& gt)
 {
-	auto currObjectCB = mCurrFrameResource->ObjectCB.get();
+	auto currObjectCB = mFrameResource.get()->ObjectCB.get();
 	for(auto& e : mAllRitems)
 	{
-		// Only update the cbuffer data if the constants have changed.  
-		// This needs to be tracked per frame resource.
-		if(e->NumFramesDirty > 0)
-		{
-			XMMATRIX world = XMLoadFloat4x4(&e->World);
-			XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
+		XMMATRIX world = XMLoadFloat4x4(&e->World);
+		XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
 
-			ObjectConstants objConstants;
-			XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
-			XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));
+		ObjectConstants objConstants;
+		XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
+		XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));
 
-			currObjectCB->CopyData(e->ObjCBIndex, objConstants);
-
-			// Next FrameResource need to be updated too.
-			e->NumFramesDirty--;
-		}
+		currObjectCB->CopyData(e->ObjCBIndex, objConstants);
 	}
 }
 
 void CrateApp::UpdateMaterialCBs(const GameTimer& gt)
 {
-	auto currMaterialCB = mCurrFrameResource->MaterialCB.get();
+	auto currMaterialCB = mFrameResource.get()->MaterialCB.get();
 	for(auto& e : mMaterials)
 	{
-		// Only update the cbuffer data if the constants have changed.  If the cbuffer
-		// data changes, it needs to be updated for each FrameResource.
 		Material* mat = e.second.get();
-		if(mat->NumFramesDirty > 0)
-		{
-			XMMATRIX matTransform = XMLoadFloat4x4(&mat->MatTransform);
+		XMMATRIX matTransform = XMLoadFloat4x4(&mat->MatTransform);
 
-			MaterialConstants matConstants;
-			matConstants.DiffuseAlbedo = mat->DiffuseAlbedo;
-			matConstants.FresnelR0 = mat->FresnelR0;
-			matConstants.Roughness = mat->Roughness;
-			XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
+		MaterialConstants matConstants;
+		matConstants.DiffuseAlbedo = mat->DiffuseAlbedo;
+		matConstants.FresnelR0 = mat->FresnelR0;
+		matConstants.Roughness = mat->Roughness;
+		XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
 
-			currMaterialCB->CopyData(mat->MatCBIndex, matConstants);
-
-			// Next FrameResource need to be updated too.
-			mat->NumFramesDirty--;
-		}
+		currMaterialCB->CopyData(mat->MatCBIndex, matConstants);
 	}
 }
 
@@ -408,7 +366,8 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
 	mMainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
 
-	auto currPassCB = mCurrFrameResource->PassCB.get();
+	auto currPassCB = mFrameResource.get()->PassCB.get();
+	//auto currPassCB = mCurrFrameResource->PassCB.get();
 	currPassCB->CopyData(0, mMainPassCB);
 }
 
@@ -466,8 +425,6 @@ void CrateApp::BuildRootSignature()
 		= mShaders["opaquePS"].GetCBVCount();
 	pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
 		= mShaders["opaquePS"].GetSRVCount();
-	//pipeline_register_count.register_count[EShaderType::SV_Pixel].SamplerCount
-	//	= mShaders["opaquePS"].GetSamplerCount();
 
 	d3d12_root_signature.Create(&Device, pipeline_register_count);
 }
@@ -562,20 +519,12 @@ void CrateApp::BuildPSOs()
 	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	opaquePsoDesc.NumRenderTargets = 1;
 	opaquePsoDesc.RTVFormats[0] = mBackBufferFormat;
-	opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
-	opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+	opaquePsoDesc.SampleDesc.Count = 1;
+	opaquePsoDesc.SampleDesc.Quality = 0;
 	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
     ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mOpaquePSO)));
 }
 
-void CrateApp::BuildFrameResources()
-{
-    for(int i = 0; i < gNumFrameResources; ++i)
-    {
-        mFrameResources.push_back(std::make_unique<FrameResource>(md3dDevice.Get(),
-            1, (UINT)mAllRitems.size(), (UINT)mMaterials.size()));
-    }
-}
 
 void CrateApp::BuildMaterials()
 {
@@ -612,8 +561,8 @@ void CrateApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::ve
     UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
     UINT matCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants));
  
-	auto objectCB = mCurrFrameResource->ObjectCB->Resource();
-	auto matCB = mCurrFrameResource->MaterialCB->Resource();
+	auto objectCB = mFrameResource.get()->ObjectCB->Resource();
+	auto matCB = mFrameResource.get()->MaterialCB->Resource();
 
     // For each render item...
     for(size_t i = 0; i < ritems.size(); ++i)
@@ -628,18 +577,13 @@ void CrateApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::ve
 		D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = matCB->GetGPUVirtualAddress() + ri->Mat->MatCBIndex*matCBByteSize;
 
 		uint32 slot_start = 0;
+
 		pipeline_current_desc_manager.SetDescTableSRVs<EShaderType::SV_Pixel>(
 			&d3d12_root_signature,
-			sr_desc_array->GetCPUDescPtrByIndex(0),
+			ShaderResourceDescArrayManager->compute_cpu_ptr(0,0),
 			slot_start,
 			1);
 
-		//pipeline_current_desc_manager.SetRootDescCBVs<EShaderType::SV_Pixel>()
-		//cmdList->SetGraphicsRootDescriptorTable(0, sr_desc_array->GetGPUDescPtrByIndex(ri->Mat->DiffuseSrvHeapIndex));
-		//cmdList->SetGraphicsRootDescriptorTable(0, online_desc_array.GetGPUDescPtrByIndex(ri->Mat->DiffuseSrvHeapIndex));
-        
-		//cmdList->SetGraphicsRootConstantBufferView(1, objCBAddress);
-        //cmdList->SetGraphicsRootConstantBufferView(3, matCBAddress);
 		cmdList->SetGraphicsRootConstantBufferView(1, objCBAddress);
 		cmdList->SetGraphicsRootConstantBufferView(3, matCBAddress);
 		cmdList->SetGraphicsRootConstantBufferView(5, matCBAddress);

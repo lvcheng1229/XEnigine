@@ -12,8 +12,6 @@ using namespace DirectX;
 LRESULT CALLBACK
 MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	// Forward hwnd on because we can get messages (e.g., WM_CREATE)
-	// before CreateWindow returns, and thus before mhMainWnd is valid.
     return D3DApp::GetApp()->MsgProc(hwnd, msg, wParam, lParam);
 }
 
@@ -27,8 +25,8 @@ D3DApp::D3DApp():
 	direct_cmd_queue(nullptr),
 	direct_ctx(nullptr),
 	d3d12_fence(nullptr),
-	rt_desc_array(nullptr),
-	ds_desc_array(nullptr)
+	RenderTargetDescArrayManager(nullptr),
+	DepthStencilDescArrayManager(nullptr)
 {
     assert(mApp == nullptr);
     mApp = this;
@@ -51,29 +49,13 @@ float D3DApp::AspectRatio()const
 	return static_cast<float>(mClientWidth) / mClientHeight;
 }
 
-bool D3DApp::Get4xMsaaState()const
-{
-    return m4xMsaaState;
-}
-
-void D3DApp::Set4xMsaaState(bool value)
-{
-    if(m4xMsaaState != value)
-    {
-        m4xMsaaState = value;
-
-        // Recreate the swapchain and buffers with new multisample settings.
-        CreateSwapChain();
-        OnResize();
-    }
-}
 
 int D3DApp::Run()
 {
 	MSG msg = {0};
  
 	mTimer.Reset();
-	static int num = 50;
+	static int num = 120;
 	//while(msg.message != WM_QUIT)
 	while(num--)
 	{
@@ -121,53 +103,15 @@ bool D3DApp::Initialize()
 
 void D3DApp::OnResize()
 {
+	
 	assert(md3dDevice);
-	assert(mSwapChain);
+	//assert(mSwapChain);
     assert(mDirectCmdListAlloc);
-
+	viewport.Resize(mClientWidth, mClientHeight);
+	
 	// Flush before changing any resources.
 	direct_cmd_queue->CommandQueueWaitFlush();
-
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
-
-	// Release the previous resources we will be recreating.
-	for (int i = 0; i < SwapChainBufferCount; ++i)
-		mSwapChainBuffer[i].Reset();
-    mDepthStencilBuffer.Reset();
-	
-	// Resize the swap chain.
-    ThrowIfFailed(mSwapChain->ResizeBuffers(
-		SwapChainBufferCount, 
-		mClientWidth, mClientHeight, 
-		mBackBufferFormat, 
-		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
-
-	mCurrBackBuffer = 0;
-
-	D3D12_RENDER_TARGET_VIEW_DESC rt_desc;
-	rt_desc.Format = mBackBufferFormat;
-	rt_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	rt_desc.Texture2D.MipSlice = 0;
-	rt_desc.Texture2D.PlaneSlice = 0;
-
-	for (UINT i = 0; i < SwapChainBufferCount; i++)
-	{
-		rt_views.push_back(XD3D12RenderTargetView());
-		swap_rt_buffers.push_back(XD3D12Resource());
-	}
-	for (UINT i = 0; i < SwapChainBufferCount; i++)
-	{
-		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
-		swap_rt_buffers[i].Create(mSwapChainBuffer[i].Get(), D3D12_RESOURCE_STATE_COMMON);
-		mSwapChainBuffer[i].Get()->SetName(L"mSwapChainBuffer");
-		rt_views[i].Create(&Device, &(swap_rt_buffers[i]), rt_desc,rt_desc_array->GetCPUDescPtrByIndex(i));
-		
-		//md3dDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr, rt_desc_array->GetCPUDescPtrByIndex(i));
-	}
-	for (uint32 i = 0; i < SwapChainBufferCount; ++i)
-	{
-		rt_view_ptrs.push_back(&rt_views[i]);
-	}
 
     // Create the depth/stencil buffer and view.
     D3D12_RESOURCE_DESC depthStencilDesc;
@@ -178,8 +122,8 @@ void D3DApp::OnResize()
     depthStencilDesc.DepthOrArraySize = 1;
     depthStencilDesc.MipLevels = 1;
     depthStencilDesc.Format = mDepthStencilFormat;
-    depthStencilDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
-    depthStencilDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+    depthStencilDesc.SampleDesc.Count = 1;
+    depthStencilDesc.SampleDesc.Quality = 0;
     depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
@@ -201,20 +145,18 @@ void D3DApp::OnResize()
 	ds_desc.Flags = D3D12_DSV_FLAG_NONE;
 	ds_desc.Texture2D.MipSlice = 0;
 	ds_resource.Create(mDepthStencilBuffer.Get(), D3D12_RESOURCE_STATE_COMMON);
-	ds_view.Create(&Device, &ds_resource, ds_desc, mApp->ds_desc_array->GetCPUDescPtrByIndex(0));
-    // Create descriptor to mip level 0 of entire resource using the format of the resource.
-    //md3dDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), nullptr, mApp->ds_desc_array->GetCPUDescPtrByIndex(0));
 
-    // Transition the resource from its initial state to be used as a depth buffer.
-	//mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDepthStencilBuffer.Get(),
-	//	D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+	uint32 index_of_desc_in_heap_ds;
+	uint32 index_of_heap_ds;
+	DepthStencilDescArrayManager->AllocateDesc(index_of_desc_in_heap_ds, index_of_heap_ds);
+	//ds_view.Create(&Device, &ds_resource, ds_desc, mApp->ds_desc_array->GetCPUDescPtrByIndex(0));
+	ds_view.Create(&Device, &ds_resource, ds_desc, 
+		DepthStencilDescArrayManager->compute_cpu_ptr(index_of_desc_in_heap_ds, index_of_heap_ds));
 	
 	direct_ctx->CloseCmdList();
 
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
     mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-	// Wait until resize is complete.
 	direct_cmd_queue->CommandQueueWaitFlush();
 }
  
@@ -346,8 +288,6 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             PostQuitMessage(0);
         }
-        else if((int)wParam == VK_F2)
-            Set4xMsaaState(!m4xMsaaState);
 
         return 0;
 	}
@@ -406,14 +346,11 @@ bool D3DApp::InitDirect3D()
 
 	mdxgiFactory = Adapter.GetDXFactory();
 	md3dDevice = Device.GetDXDevice();
-	
 	abstrtact_device.Create(&Device);
-
-	//ThrowIfFailed(md3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE,
-	//	IID_PPV_ARGS(&mFence)));
-
-	rt_desc_array = abstrtact_device.GetRenderTargetDescArray();
-	ds_desc_array = abstrtact_device.GetDepthStencilDescArray();
+	viewport.Create(&abstrtact_device, mClientWidth, mClientHeight, mBackBufferFormat, mhMainWnd);
+	
+	DepthStencilDescArrayManager = abstrtact_device.GetDepthStencilDescArrayManager();
+	RenderTargetDescArrayManager = abstrtact_device.GetRenderTargetDescArrayManager();
 
 	XAllocConfig default_cfg;
 	default_cfg.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
@@ -436,23 +373,6 @@ bool D3DApp::InitDirect3D()
 		AllocStrategy::ManualSubAllocation
 	);
 
-
-	mCbvSrvUavDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
-	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
-	msQualityLevels.Format = mBackBufferFormat;
-	msQualityLevels.SampleCount = 4;
-	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-	msQualityLevels.NumQualityLevels = 0;
-	ThrowIfFailed(md3dDevice->CheckFeatureSupport(
-		D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
-		&msQualityLevels,
-		sizeof(msQualityLevels)));
-
-    m4xMsaaQuality = msQualityLevels.NumQualityLevels;
-	assert(m4xMsaaQuality > 0 && "Unexpected MSAA quality level.");
-	
 	direct_cmd_queue = abstrtact_device.GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	mCommandQueue = direct_cmd_queue->GetDXCommandQueue();
 	d3d12_fence = direct_cmd_queue->GetFence();
@@ -469,46 +389,16 @@ bool D3DApp::InitDirect3D()
 	direct_ctx->CloseCmdList();
 
 
-    CreateSwapChain();
-
+    //CreateSwapChain();
 	return true;
 }
 
 
-void D3DApp::CreateSwapChain()
-{
-    // Release the previous swapchain we will be recreating.
-    mSwapChain.Reset();
 
-    DXGI_SWAP_CHAIN_DESC sd;
-    sd.BufferDesc.Width = mClientWidth;
-    sd.BufferDesc.Height = mClientHeight;
-    sd.BufferDesc.RefreshRate.Numerator = 60;
-    sd.BufferDesc.RefreshRate.Denominator = 1;
-    sd.BufferDesc.Format = mBackBufferFormat;
-    sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-    sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-    sd.SampleDesc.Count = m4xMsaaState ? 4 : 1;
-    sd.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
-    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.BufferCount = SwapChainBufferCount;
-    sd.OutputWindow = mhMainWnd;
-    sd.Windowed = true;
-	sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-
-	// Note: Swap chain uses queue to perform flush.
-    ThrowIfFailed(mdxgiFactory->CreateSwapChain(
-		mCommandQueue.Get(),
-		&sd, 
-		mSwapChain.GetAddressOf()));
-}
-
-
-ID3D12Resource* D3DApp::CurrentBackBuffer()const
-{
-	return mSwapChainBuffer[mCurrBackBuffer].Get();
-}
+//ID3D12Resource* D3DApp::CurrentBackBuffer()const
+//{
+//	return mSwapChainBuffer[mCurrBackBuffer].Get();
+//}
 
 
 void D3DApp::CalculateFrameStats()

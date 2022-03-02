@@ -19,12 +19,14 @@ public:
 	//	d3d12_resource->Map(0, ReadRange, &cpu_ptr);
 	//	return cpu_ptr;
 	//}
+	inline void SetResourceState(D3D12_RESOURCE_STATES state) { m_resourceState.SetResourceState(state); }
 	inline ID3D12Resource* GetResource() { return d3d12_resource.Get(); }
+	inline ID3D12Resource** GetPtrToResourceAdress() { return &d3d12_resource; }
 	inline ResourceState& GetResourceState() { return m_resourceState; }
 private:
 	//void* cpu_ptr;
-	XDxRefCount<ID3D12Resource> d3d12_resource = nullptr;
-	D3D12_GPU_VIRTUAL_ADDRESS gpu_ptr;
+	XDxRefCount<ID3D12Resource> d3d12_resource;
+	//D3D12_GPU_VIRTUAL_ADDRESS gpu_ptr;
 	ResourceState	m_resourceState;
 };
 

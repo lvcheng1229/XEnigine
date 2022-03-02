@@ -14,31 +14,37 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* device_in)
 	direct_cmd_queue->Create(device_in);
 	compute_cmd_queue->Create(device_in);
 
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-	rtvHeapDesc.NumDescriptors = 2;//swap chain buffer count
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	rtvHeapDesc.NodeMask = 0;
-	RenderTargetDescArray.Create(device_in, rtvHeapDesc);
+	//D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+	//rtvHeapDesc.NumDescriptors = 2;//swap chain buffer count
+	//rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	//rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//rtvHeapDesc.NodeMask = 0;
+	//RenderTargetDescArray.Create(device_in, rtvHeapDesc);
 
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-	dsvHeapDesc.NumDescriptors = 1;
-	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	dsvHeapDesc.NodeMask = 0;
-	DepthStencilDescArray.Create(device_in, dsvHeapDesc);
+	RenderTargetDescArrayManager.Create(device_in, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128);
 
-	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 16;
-	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	ShaderResourceDescArray.Create(device_in, srvHeapDesc);
+	//D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+	//dsvHeapDesc.NumDescriptors = 1;
+	//dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	//dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//dsvHeapDesc.NodeMask = 0;
+	//DepthStencilDescArray.Create(device_in, dsvHeapDesc);
 
-	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-	cbvHeapDesc.NumDescriptors = 16;
-	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	ConstantBufferDescArray.Create(device_in, cbvHeapDesc);
+	DepthStencilDescArrayManager.Create(device_in, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 128);
+
+	//D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+	//srvHeapDesc.NumDescriptors = 16;
+	//srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	//srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//ShaderResourceDescArray.Create(device_in, srvHeapDesc);
+
+	ShaderResourceDescArrayManager.Create(device_in, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128);
+
+	//D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
+	//cbvHeapDesc.NumDescriptors = 16;
+	//cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	//cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//ConstantBufferDescArray.Create(device_in, cbvHeapDesc);
 
 
 	XAllocConfig default_cfg;
@@ -118,8 +124,15 @@ void XD3D12AbstractDevice::CreateD3D12Texture2D(XDxRefCount<ID3D12GraphicsComman
 	srvDesc.Texture2D.MipLevels = m_texture->GetDesc().MipLevels;
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
+	uint32 index_of_desc_in_heap;
+	uint32 index_of_heap;
+	ShaderResourceDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
 	//TODO
-	physic_device->GetDXDevice()->CreateShaderResourceView(m_texture.Get(), &srvDesc, ShaderResourceDescArray.GetCPUDescPtrByIndex(0));
+	//physic_device->GetDXDevice()->CreateShaderResourceView(m_texture.Get(), &srvDesc, ShaderResourceDescArray.GetCPUDescPtrByIndex(0));
+	
+	physic_device->GetDXDevice()->CreateShaderResourceView(
+		m_texture.Get(), &srvDesc,
+		ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
 }
 
 XD3D12CommandQueue* XD3D12AbstractDevice::GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE cmd_type)

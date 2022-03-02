@@ -1,7 +1,7 @@
 #pragma once
 #include "Runtime/HAL/Mch.h"
 #include "Runtime/HAL/PlatformTypes.h"
-class XDXGIAdapter
+class XD3D12Adapter
 {
 public:
 	void Create();
