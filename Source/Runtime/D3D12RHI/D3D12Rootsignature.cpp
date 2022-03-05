@@ -80,6 +80,8 @@ void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegiste
 			slot_array[root_parameter_count].ShaderVisibility = visibility;
 			SetCBVDescTableBindSlot(EShaderType(i), root_parameter_count);
 			root_parameter_count++;
+
+			X_Assert(false);
 		}
 
 		if (Shader.UnorderedAccessCount > 0)

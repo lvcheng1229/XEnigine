@@ -1,10 +1,8 @@
 #include "Shader.h"
 
-
-
-void XShader::CreateShader(/*EShaderType shader_type_in*/)
+void XShader::CreateShader(EShaderType shader_type)
 {
-	//shader_type = shader_type_in;
+	RHIShader = std::make_shared<XRHIGraphicsShader>(shader_type);
 }
 
 void XShader::CompileShader(const std::wstring& filename, const D3D_SHADER_MACRO* defines, const std::string& entrypoint, const std::string& target)

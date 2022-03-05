@@ -3,7 +3,7 @@
 #include "UnitTest/d3dUtil.h"
 #include "UnitTest/MathHelper.h"
 #include "UnitTest/UploadBuffer.h"
-
+#include "Runtime/D3D12RHI/D3D12Resource.h"
 struct ObjectConstants
 {
     DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
@@ -43,18 +43,15 @@ struct Vertex
 	DirectX::XMFLOAT2 TexC;
 };
 
-// Stores the resources needed for the CPU to build the command lists
-// for a frame.  
 struct FrameResource
 {
 public:
-    
-    FrameResource(ID3D12Device* device, UINT passCount, UINT objectCount, UINT materialCount);
+    FrameResource() {};
     FrameResource(const FrameResource& rhs) = delete;
     FrameResource& operator=(const FrameResource& rhs) = delete;
-    ~FrameResource();
+    ~FrameResource() {};
 
-    std::unique_ptr<UploadBuffer<PassConstants>> PassCB = nullptr;
-    std::unique_ptr<UploadBuffer<MaterialConstants>> MaterialCB = nullptr;
-    std::unique_ptr<UploadBuffer<ObjectConstants>> ObjectCB = nullptr;
+    std::shared_ptr<XRHIConstantBuffer>PassConstantBuffer;
+    std::vector<std::shared_ptr<XRHIConstantBuffer>>MaterialConstantBuffer;
+    std::vector<std::shared_ptr<XRHIConstantBuffer>>ObjectConstantBuffer;
 };

@@ -49,8 +49,9 @@ void XD3DBuddyAllocator::Create(
 			&(CD3DX12_RESOURCE_DESC::Buffer(max_block_size)),
 			config.d3d12_resource_states,
 			nullptr,
-			IID_PPV_ARGS(&back_resource)));
-		back_resource->SetName(L"back_resource");
+			IID_PPV_ARGS(back_resource.GetPtrToResourceAdress())));
+		back_resource.Create(back_resource.GetResource(), config.d3d12_resource_states);
+		back_resource.GetResource()->SetName(L"Alloc back_resource");
 	}
 
 }
@@ -68,16 +69,37 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte, /*uint32 alignment,
 		}
 	}
 
+	if (allocate_size_byte > (max_block_size- TotalUsed))
+	{
+		can_allocate = false;
+	}
+
 	if (can_allocate)
 	{
-		uint32 offset_res = Allocate_Impl(order);
+		uint32 res_order = SizeToOrder(allocate_size_byte);
+		TotalUsed += min_block_size * (1 << res_order);
+		uint32 offset_res = Allocate_Impl(order - 1);
 		resource_location.SetBuddyAllocator(this);
 		BuddyAllocatorData& alloc_data = resource_location.GetBuddyAllocData();
 		alloc_data.offset = offset_res;
-		alloc_data.order = order;
+		alloc_data.order = res_order;
+
+		if (strategy == AllocStrategy::ManualSubAllocation)
+		{
+			resource_location.SetBackResource(&back_resource);
+			resource_location.SetMappedCPUResourcePtr((uint8*)back_resource.GetMappedResourceCPUPtr() + offset_res * min_block_size);
+			resource_location.SetGPUVirtualPtr(back_resource.GetGPUVirtaulAddress() + offset_res * min_block_size);
+		}
 	}
 
+	X_Assert(can_allocate != false);
+
 	return can_allocate;
+}
+
+void XD3DBuddyAllocator::Deallocate(XD3D12ResourceLocation& ResourceLocation)
+{
+
 }
 
 

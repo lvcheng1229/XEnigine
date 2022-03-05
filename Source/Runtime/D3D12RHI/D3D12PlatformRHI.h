@@ -30,7 +30,7 @@ public:
 
 	static inline void TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,
-		XD3D12DepthStenciltView* ds_view,
+		XD3D12DepthStencilView* ds_view,
 		D3D12_RESOURCE_STATES after)
 	{
 		XD3D12Resource* pResource = ds_view->GetResource();

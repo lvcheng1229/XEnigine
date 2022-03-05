@@ -24,7 +24,6 @@ D3DApp* D3DApp::GetApp()
 D3DApp::D3DApp():
 	direct_cmd_queue(nullptr),
 	direct_ctx(nullptr),
-	d3d12_fence(nullptr),
 	RenderTargetDescArrayManager(nullptr),
 	DepthStencilDescArrayManager(nullptr)
 {
@@ -39,10 +38,6 @@ D3DApp::~D3DApp()
 }
 
 
-HWND D3DApp::MainWnd()const
-{
-	return mhMainWnd;
-}
 
 float D3DApp::AspectRatio()const
 {
@@ -56,8 +51,8 @@ int D3DApp::Run()
  
 	mTimer.Reset();
 	static int num = 120;
-	//while(msg.message != WM_QUIT)
-	while(num--)
+	while(msg.message != WM_QUIT)
+	//while(num--)
 	{
 		// If there are Window messages then process them.
 		if(PeekMessage( &msg, 0, 0, 0, PM_REMOVE ))
@@ -74,7 +69,7 @@ int D3DApp::Run()
 			{
 				CalculateFrameStats();
 				Update(mTimer);	
-                Draw(mTimer);
+                Renderer(mTimer);
 			}
 			else
 			{
@@ -105,7 +100,6 @@ void D3DApp::OnResize()
 {
 	
 	assert(md3dDevice);
-	//assert(mSwapChain);
     assert(mDirectCmdListAlloc);
 	viewport.Resize(mClientWidth, mClientHeight);
 	
@@ -152,7 +146,8 @@ void D3DApp::OnResize()
 	//ds_view.Create(&Device, &ds_resource, ds_desc, mApp->ds_desc_array->GetCPUDescPtrByIndex(0));
 	ds_view.Create(&Device, &ds_resource, ds_desc, 
 		DepthStencilDescArrayManager->compute_cpu_ptr(index_of_desc_in_heap_ds, index_of_heap_ds));
-	
+	DsView = &ds_view;
+
 	direct_ctx->CloseCmdList();
 
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -344,7 +339,7 @@ bool D3DApp::InitDirect3D()
 	Adapter.Create();
 	Device.Create(&Adapter);
 
-	mdxgiFactory = Adapter.GetDXFactory();
+	//mdxgiFactory = Adapter.GetDXFactory();
 	md3dDevice = Device.GetDXDevice();
 	abstrtact_device.Create(&Device);
 	viewport.Create(&abstrtact_device, mClientWidth, mClientHeight, mBackBufferFormat, mhMainWnd);
@@ -352,53 +347,24 @@ bool D3DApp::InitDirect3D()
 	DepthStencilDescArrayManager = abstrtact_device.GetDepthStencilDescArrayManager();
 	RenderTargetDescArrayManager = abstrtact_device.GetRenderTargetDescArrayManager();
 
-	XAllocConfig default_cfg;
-	default_cfg.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
-	default_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
-	texture_default_heap_alloc.Create(
-		&Device,
-		default_cfg,
-		100 * (1 << 20),
-		(64 * 1024),
-		AllocStrategy::PlacedResource);
-
-	XAllocConfig upload_cfg;
-	upload_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_UPLOAD;
-	upload_cfg.d3d12_resource_states = D3D12_RESOURCE_STATE_GENERIC_READ;
-	texture_upload_heap_alloc.Create(
-		&Device,
-		upload_cfg,
-		100 * (1 << 20),
-		(64 * 1024),
-		AllocStrategy::ManualSubAllocation
-	);
-
 	direct_cmd_queue = abstrtact_device.GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	mCommandQueue = direct_cmd_queue->GetDXCommandQueue();
-	d3d12_fence = direct_cmd_queue->GetFence();
 
-	direct_ctx = abstrtact_device.GetDirectContex();
-	direct_ctx->Create(&Device);
+	direct_ctx = abstrtact_device.GetDirectContex(0);
 	direct_ctx->OpenCmdList();
 
-
-	pass_state_manager.Create(&Device, direct_ctx);
+	pass_state_manager = direct_ctx->GetPassStateManager();
+	//pass_state_manager.Create(&Device, direct_ctx);
 
 	mDirectCmdListAlloc = direct_ctx->GetCmdAlloc()->GetDXAlloc();
 	mCommandList = direct_ctx->GetCmdList()->GetDXCmdList();
 	direct_ctx->CloseCmdList();
-
-
-    //CreateSwapChain();
 	return true;
 }
 
 
 
-//ID3D12Resource* D3DApp::CurrentBackBuffer()const
-//{
-//	return mSwapChainBuffer[mCurrBackBuffer].Get();
-//}
+
 
 
 void D3DApp::CalculateFrameStats()

@@ -1,37 +1,50 @@
 #pragma once
 #include "Runtime/RHI/RHIContext.h"
 #include "D3D12CommandList.h"
-//#include "XD3D12CommandListManger.h"
+#include "D3D12PassStateManager.h"
 
-class XD3D12Context :public IRHIContext, public XD3D12DeviceChild
+//#include "D3D12AbstractDevice.h"
+
+class XD3D12Context :public IRHIContext
 {
 
 };
 
+
+class XD3D12AbstractDevice;
 class XD3DDirectContex :public XD3D12Context
 {
 public:
-	XD3DDirectContex(bool ctx_is_default_in) :ctx_is_default(ctx_is_default_in) {};
-	void Create(XD3D12PhysicDevice* device_in);
+	XD3DDirectContex(){};
+	void Create(XD3D12AbstractDevice* device_in);
 	
 	void OpenCmdList()override;
 	void CloseCmdList()override;
-
+	
+	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(uint32 width, uint32 height, DXGI_FORMAT format, uint8* tex_data);
+	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView* rt_array_ptr, XRHIDepthStencilView* ds_ptr);
+	void RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
+	void RHISetShaderConstantBuffer(XRHIGraphicsShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
 	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
+	void RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue);
 	//void RHISetScissorRect(uint32 MinX, uint32 MinY, uint32 MaxX, uint32 MaxY)override;
 
+	//TODO
+	//void RHIUpdateConstantBufferData(std::shared_ptr<XD3D12ConstantBuffer>CB, void* Data, uint32 size);
 	void ResetCmdAlloc();
 private:
 public:
+	inline XD3D12PassStateManager* GetPassStateManager() { return &PassStateManager; }
 	inline XD3D12DirectCommandList* GetCmdList() { return &cmd_dirrect_list; };
 	inline XD3D12CommandAllocator* GetCmdAlloc() { return &cmd_direct_alloc; };
 private:
-	//XD3D12CommandAllocManger* direct_cmd_allc_manager;
-	//XD3D12CommandDirectListManger* direct_cmd_lsit_manager;
-	const bool ctx_is_default;
+	XD3D12RenderTargetView* RTPtrArrayPtr[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+
+	XD3D12AbstractDevice* AbsDevice;
 	XD3D12CommandAllocator cmd_direct_alloc;
 	XD3D12DirectCommandList cmd_dirrect_list;
 
+	XD3D12PassStateManager PassStateManager;
 private://TODO
 	D3D12_VIEWPORT Viewport;
 	D3D12_RECT ScissorRect;

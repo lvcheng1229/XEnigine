@@ -8,13 +8,15 @@
 #include "UnitTest/UploadBuffer.h"
 #include "UnitTest/GeometryGenerator.h"
 #include "FrameResource.h"
-#include "File/LoadDDSTexture.h"
 #include <memory>
 
 #include "Runtime/RenderCore/Shader.h"
-#include "Runtime/D3D12RHI/D3D12DescArrayShaderAcesss.h"
+#include "Runtime/D3D12RHI/D3D12PipelineCurrentDescArray.h"
 #include "Runtime/D3D12RHI/D3D12PipelineCurrentDescArrayManager.h"
 #include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
+#include "Runtime/D3D12RHI/D3D12Texture.h"
+
+#include "File/LoadTGATexture.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -23,25 +25,18 @@ using namespace DirectX::PackedVector;
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 
-//const int gNumFrameResources = 3;
-//const int gNumFrameResources = 3;
+#define STB_IMAGE_IMPLEMENTATION
+#include "File/stb_image.h"
 
-// Lightweight structure stores parameters to draw a shape.  This will
-// vary from app-to-app.
 struct RenderItem
 {
 	RenderItem() = default; 
     XMFLOAT4X4 World = MathHelper::Identity4x4();
 	XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
-	//int NumFramesDirty = gNumFrameResources;
-
 	UINT ObjCBIndex = -1;
 
 	Material* Mat = nullptr;
 	MeshGeometry* Geo = nullptr;
-
-    // Primitive topology.
-    D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
     // DrawIndexedInstanced parameters.
     UINT IndexCount = 0;
@@ -62,7 +57,7 @@ public:
 private:
     virtual void OnResize()override;
     virtual void Update(const GameTimer& gt)override;
-    virtual void Draw(const GameTimer& gt)override;
+    virtual void Renderer(const GameTimer& gt)override;
 
     virtual void OnMouseDown(WPARAM btnState, int x, int y)override;
     virtual void OnMouseUp(WPARAM btnState, int x, int y)override;
@@ -75,8 +70,6 @@ private:
 	void UpdateMaterialCBs(const GameTimer& gt);
 	void UpdateMainPassCB(const GameTimer& gt);
 
-	
-
 	void LoadTextures();
     void BuildRootSignature();
     void BuildShadersAndInputLayout();
@@ -84,15 +77,13 @@ private:
     void BuildPSOs();
     void BuildMaterials();
     void BuildRenderItems();
-    void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
-
 	
 private:
-	//XD3D12DescriptorArray* sr_desc_array;
-	XD3D12DescArrayManager* ShaderResourceDescArrayManager;
-	XD3D12PipelineCurrentDescArrayManager pipeline_current_desc_manager;
 	XD3D12RootSignature d3d12_root_signature;
+	std::shared_ptr<XRHITexture2D>Texture2DTest;
+	XRHIRenderTargetView RTViews[8];
 private:
+	float clear_color[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
 	std::unique_ptr<FrameResource>mFrameResource;
 	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
 	std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
@@ -138,8 +129,7 @@ bool CrateApp::Initialize()
     if(!D3DApp::Initialize())
         return false;
 	direct_ctx->OpenCmdList();
-	//sr_desc_array = abstrtact_device.GetShaderRresourceDescArray();
-	ShaderResourceDescArrayManager = abstrtact_device.GetShaderResourceDescArrayManager();
+	
 
 	LoadTextures();
     BuildShadersAndInputLayout();
@@ -147,15 +137,27 @@ bool CrateApp::Initialize()
     BuildShapeGeometry();
 	BuildMaterials();
     BuildRenderItems();
-	mFrameResource = std::make_unique<FrameResource>(md3dDevice.Get(),
-		1, (UINT)mAllRitems.size(), (UINT)mMaterials.size());
-    BuildPSOs();
+	mFrameResource = std::make_unique<FrameResource>();
 	
-	pipeline_current_desc_manager.Create(&Device, direct_ctx);
+	mFrameResource.get()->PassConstantBuffer =
+		abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants)));
+	
+	for (int i = 0; i < mMaterials.size();i++)
+	{
+		mFrameResource.get()->MaterialConstantBuffer.push_back(
+			abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants))));
+	}
 
+	for (uint32 i = 0; i < mAllRitems.size();++i)
+	{
+		mFrameResource.get()->ObjectConstantBuffer.push_back(
+			abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants))));
+	}
+	
+    
+	BuildPSOs();
+	direct_ctx->CloseCmdList();
 
-    // Execute the initialization commands.
-    ThrowIfFailed(mCommandList->Close());
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
     mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
@@ -183,51 +185,67 @@ void CrateApp::Update(const GameTimer& gt)
 	UpdateMainPassCB(gt);
 }
 
-void CrateApp::Draw(const GameTimer& gt)
+void CrateApp::Renderer(const GameTimer& gt)
 {
 	direct_ctx->ResetCmdAlloc();
 	direct_ctx->OpenCmdList();
 	mCommandList->SetPipelineState(mOpaquePSO.Get());
+	pass_state_manager->SetRootSignature(&d3d12_root_signature);
+
 	direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
-	
-	XD3D12RenderTargetView* rt_view_ptr_array = { viewport.GetCurrentBackRTView() };
-	pass_state_manager.SetRenderTarget(1, &rt_view_ptr_array, &ds_view);
-	
-	pass_state_manager.ApplyCurrentStateToPipeline();
-	mCommandList->ClearRenderTargetView(
-		viewport.GetCurrentBackRTView()->GetCPUPtr(),
-		Colors::LightSteelBlue, 0, nullptr);
-	
-	//TODOOOOOOOOOO
-    mCommandList->ClearDepthStencilView(
-		mApp->DepthStencilDescArrayManager->compute_cpu_ptr(0, 0), 
-		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+	direct_ctx->RHISetRenderTargets(1, viewport.GetCurrentBackRTView(), DsView);//TODO
+	direct_ctx->RHISetShaderTexture(mShaders["opaquePS"].GetRHIGraphicsShader().get(), 0, Texture2DTest.get());
+	direct_ctx->RHISetShaderConstantBuffer(
+		mShaders["standardVS"].GetRHIGraphicsShader().get(),
+		1,
+		mFrameResource.get()->PassConstantBuffer.get());
+	direct_ctx->RHISetShaderConstantBuffer(
+		mShaders["opaquePS"].GetRHIGraphicsShader().get(),
+		0,
+		mFrameResource.get()->PassConstantBuffer.get());
 
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline_current_desc_manager.GetCurrentDescArray()->GetDescHeapPtr() };
-	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	mCommandList->SetGraphicsRootSignature(d3d12_root_signature.GetDXRootSignature());
+	for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
+	{
+		auto ri = mOpaqueRitems[i];
 
-	auto passCB = mFrameResource.get()->PassCB->Resource();
-	mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
-	mCommandList->SetGraphicsRootConstantBufferView(4, passCB->GetGPUVirtualAddress());
+		direct_ctx->RHISetShaderConstantBuffer(
+			mShaders["standardVS"].GetRHIGraphicsShader().get(),
+			0,
+			mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
+		direct_ctx->RHISetShaderConstantBuffer(
+			mShaders["standardVS"].GetRHIGraphicsShader().get(),
+			2,
+			mFrameResource.get()->MaterialConstantBuffer[ri->ObjCBIndex].get());
 
-    DrawRenderItems(mCommandList.Get(), mOpaqueRitems);
+		direct_ctx->RHISetShaderConstantBuffer(
+			mShaders["opaquePS"].GetRHIGraphicsShader().get(),
+			1,
+			mFrameResource.get()->MaterialConstantBuffer[ri->Mat->MatCBIndex].get());
+
+
+		mCommandList.Get()->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
+		mCommandList.Get()->IASetIndexBuffer(&ri->Geo->IndexBufferView());
+		pass_state_manager->ApplyCurrentStateToPipeline();
+
+		direct_ctx->RHIClearMRT(true, true, clear_color, 1.0f, 0);
+		mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+	}
+
+
 	XD3D12PlatformRHI::TransitionResource(
 		*direct_ctx->GetCmdList(),
 		viewport.GetCurrentBackRTView(),
 		D3D12_RESOURCE_STATE_PRESENT);
-	direct_ctx->GetCmdList()->CmdListFlush();
-
-
-    // Done recording commands.
-    ThrowIfFailed(mCommandList->Close());
+	direct_ctx->GetCmdList()->CmdListFlushBarrier();
+	direct_ctx->CloseCmdList();
 
     // Add the command list to the queue for execution.
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
     mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	viewport.Present();
 	direct_cmd_queue->CommandQueueWaitFlush();
+	pass_state_manager->ResetState();
 	
 }
 
@@ -303,7 +321,6 @@ void CrateApp::AnimateMaterials(const GameTimer& gt)
 
 void CrateApp::UpdateObjectCBs(const GameTimer& gt)
 {
-	auto currObjectCB = mFrameResource.get()->ObjectCB.get();
 	for(auto& e : mAllRitems)
 	{
 		XMMATRIX world = XMLoadFloat4x4(&e->World);
@@ -312,14 +329,14 @@ void CrateApp::UpdateObjectCBs(const GameTimer& gt)
 		ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
 		XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));
-
-		currObjectCB->CopyData(e->ObjCBIndex, objConstants);
+		mFrameResource.get()->ObjectConstantBuffer[e->ObjCBIndex].get()->
+			UpdateData(&objConstants, sizeof(ObjectConstants), 0);
 	}
+
 }
 
 void CrateApp::UpdateMaterialCBs(const GameTimer& gt)
 {
-	auto currMaterialCB = mFrameResource.get()->MaterialCB.get();
 	for(auto& e : mMaterials)
 	{
 		Material* mat = e.second.get();
@@ -330,8 +347,9 @@ void CrateApp::UpdateMaterialCBs(const GameTimer& gt)
 		matConstants.FresnelR0 = mat->FresnelR0;
 		matConstants.Roughness = mat->Roughness;
 		XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
-
-		currMaterialCB->CopyData(mat->MatCBIndex, matConstants);
+		
+		mFrameResource.get()->MaterialConstantBuffer[mat->MatCBIndex].get()->
+			UpdateData(&matConstants, sizeof(MaterialConstants), 0);
 	}
 }
 
@@ -366,14 +384,12 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
 	mMainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
 
-	auto currPassCB = mFrameResource.get()->PassCB.get();
-	//auto currPassCB = mCurrFrameResource->PassCB.get();
-	currPassCB->CopyData(0, mMainPassCB);
+	mFrameResource->PassConstantBuffer.get()->UpdateData(&mMainPassCB, sizeof(PassConstants), 0);
 }
 
 static std::vector<UINT8> GenerateTextureData()
 {
-	const UINT rowPitch = 256 * 4;
+	const UINT rowPitch = 512 * 4;
 	const UINT cellPitch = rowPitch >> 3;        // The width of a cell in the checkboard texture.
 	const UINT cellHeight = 256 >> 3;    // The height of a cell in the checkerboard texture.
 	const UINT textureSize = rowPitch * 256;
@@ -410,8 +426,11 @@ static std::vector<UINT8> GenerateTextureData()
 
 void CrateApp::LoadTextures()
 {
-	std::vector<UINT8> texture = GenerateTextureData();
-	abstrtact_device.CreateD3D12Texture2D(mCommandList, 256, 256, DXGI_FORMAT_R8G8B8A8_UNORM, &texture[0]);
+	int w, h, n;
+	unsigned char* data = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Metal_Gold_D.TGA", &w, &h, &n, 0);
+	Texture2DTest = direct_ctx->CreateD3D12Texture2D(w, h, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, data);
+	stbi_image_free(data);
+
 }
 
 void CrateApp::BuildRootSignature()
@@ -431,9 +450,11 @@ void CrateApp::BuildRootSignature()
 
 void CrateApp::BuildShadersAndInputLayout()
 {
+	mShaders["standardVS"].CreateShader(EShaderType::SV_Vertex);
 	mShaders["standardVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/Default.hlsl", nullptr, "VS", "vs_5_1");
 	mShaders["standardVS"].ShaderReflect();
 
+	mShaders["opaquePS"].CreateShader(EShaderType::SV_Pixel);
 	mShaders["opaquePS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/Default.hlsl", nullptr, "PS", "ps_5_1");
 	mShaders["opaquePS"].ShaderReflect();
 	
@@ -545,7 +566,6 @@ void CrateApp::BuildRenderItems()
 	boxRitem->ObjCBIndex = 0;
 	boxRitem->Mat = mMaterials["woodCrate"].get();
 	boxRitem->Geo = mGeometries["boxGeo"].get();
-	boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
 	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
 	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
@@ -554,42 +574,6 @@ void CrateApp::BuildRenderItems()
 	// All the render items are opaque.
 	for(auto& e : mAllRitems)
 		mOpaqueRitems.push_back(e.get());
-}
-
-void CrateApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
-{
-    UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-    UINT matCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants));
- 
-	auto objectCB = mFrameResource.get()->ObjectCB->Resource();
-	auto matCB = mFrameResource.get()->MaterialCB->Resource();
-
-    // For each render item...
-    for(size_t i = 0; i < ritems.size(); ++i)
-    {
-        auto ri = ritems[i];
-
-        cmdList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
-        cmdList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
-        cmdList->IASetPrimitiveTopology(ri->PrimitiveType);
-
-        D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex*objCBByteSize;
-		D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = matCB->GetGPUVirtualAddress() + ri->Mat->MatCBIndex*matCBByteSize;
-
-		uint32 slot_start = 0;
-
-		pipeline_current_desc_manager.SetDescTableSRVs<EShaderType::SV_Pixel>(
-			&d3d12_root_signature,
-			ShaderResourceDescArrayManager->compute_cpu_ptr(0,0),
-			slot_start,
-			1);
-
-		cmdList->SetGraphicsRootConstantBufferView(1, objCBAddress);
-		cmdList->SetGraphicsRootConstantBufferView(3, matCBAddress);
-		cmdList->SetGraphicsRootConstantBufferView(5, matCBAddress);
-
-        cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
-    }
 }
 
 

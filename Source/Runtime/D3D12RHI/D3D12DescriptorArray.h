@@ -44,5 +44,4 @@ public:
 	void FreeDesc(uint32 index_of_desc_in_heap, uint32 index_of_heap);
 private:
 	void AllocHeap();
-
 };

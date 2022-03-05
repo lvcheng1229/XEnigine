@@ -2,15 +2,16 @@
 #include "D3D12PhysicDevice.h"
 #include "D3D12Resource.h"
 #include <vector>
+
 class XD3D12CommandAllocator
 {
 public:
 	void Create(XD3D12PhysicDevice* device, D3D12_COMMAND_LIST_TYPE type);
 	void Reset();
 	
-	ID3D12CommandAllocator* GetDXAlloc() { return d3d12_cmd_alloc.Get(); };
+	ID3D12CommandAllocator* GetDXAlloc() { return DxCmdAlloc.Get(); };
 private:
-	XDxRefCount<ID3D12CommandAllocator>d3d12_cmd_alloc;
+	XDxRefCount<ID3D12CommandAllocator>DxCmdAlloc;
 };
 
 struct XD3D12PendingResourceBarrier
@@ -42,7 +43,7 @@ public:
 private:
 public:
 
-	inline void CmdListFlush() { resource_barrier_manager.Flush(d3d12_cmd_list.Get()); }
+	inline void CmdListFlushBarrier() { resource_barrier_manager.Flush(d3d12_cmd_list.Get()); }
 	inline ID3D12GraphicsCommandList* GetDXCmdList() { return d3d12_cmd_list.Get(); }
 	inline std::vector<XD3D12PendingResourceBarrier>& GetPendingResourceBarrier() { return pending_resource_state_array; }
 

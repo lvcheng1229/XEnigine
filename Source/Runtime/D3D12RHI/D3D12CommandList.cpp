@@ -5,13 +5,13 @@ void XD3D12CommandAllocator::Create(XD3D12PhysicDevice* device, D3D12_COMMAND_LI
 	ThrowIfFailed(
 		device->GetDXDevice()->CreateCommandAllocator(
 			type,
-			IID_PPV_ARGS(&d3d12_cmd_alloc)));
-	d3d12_cmd_alloc->SetName(L"cmd allocator");
+			IID_PPV_ARGS(&DxCmdAlloc)));
+	DxCmdAlloc->SetName(L"cmd allocator");
 }
 
 void XD3D12CommandAllocator::Reset()
 {
-	ThrowIfFailed(d3d12_cmd_alloc->Reset());
+	ThrowIfFailed(DxCmdAlloc->Reset());
 }
 
 void XD3D12ResourceBarrierManager::AddTransition(XD3D12Resource* pResource, D3D12_RESOURCE_STATES Before, D3D12_RESOURCE_STATES After)

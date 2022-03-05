@@ -38,7 +38,7 @@ struct XPipelineRegisterBoundCount
 
 
 #define MAX_ROOT_CONSTANT_NUM 16
-
+#define MAX_SHADER_RESOURCE_NUM 64
 
 #define PIPELINE_MAX_ROOT_PARAM_COUNT 32
 class XD3D12RootSignature

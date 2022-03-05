@@ -36,12 +36,12 @@ private:
 	XAllocConfig config;
 
 	XDxRefCount<ID3D12Heap>m_heap;
-	XDxRefCount<ID3D12Resource>back_resource;
-
+	//XDxRefCount<ID3D12Resource>back_resource;
+	XD3D12Resource back_resource;
 
 	AllocStrategy strategy;
 public:
-	XD3DBuddyAllocator() {};
+	XD3DBuddyAllocator():TotalUsed(0) {};
 	~XD3DBuddyAllocator() {};
 	//~XD3DBuddyAllocator() = default;
 	void Create(XD3D12PhysicDevice* device_in, 
@@ -51,8 +51,9 @@ public:
 		AllocStrategy strategy_in);
 
 	bool Allocate(uint32 allocate_size_byte, /*uint32 alignment,*/ XD3D12ResourceLocation& resource_location);
+	void Deallocate(XD3D12ResourceLocation& ResourceLocation);
 	inline ID3D12Heap* GetDXHeap() { return m_heap.Get(); };
-	inline ID3D12Resource* GetDXResource() { return back_resource.Get(); };
+	inline ID3D12Resource* GetDXResource() { return back_resource.GetResource(); };
 	//void deallocate();
 private:
 	uint32 Allocate_Impl(uint32 order);
@@ -61,19 +62,20 @@ private:
 		uint32 min_block_times = (size + (min_block_size - 1)) / min_block_size;
 		return ceil(log(min_block_times) / log(2.0));
 	}
+	uint32 TotalUsed;
 
 }; 
 
-class XD3DMultiBuddyAllocator
-{
-private:
-	std::vector<XD3DBuddyAllocator>alloc;
-public:
-};
-
-class TextureAllocator
-{
-private:
-	XD3DMultiBuddyAllocator multi_buddy_allocator;
-public:
-};
+//class XD3DMultiBuddyAllocator
+//{
+//private:
+//	std::vector<XD3DBuddyAllocator>alloc;
+//public:
+//};
+//
+//class TextureAllocator
+//{
+//private:
+//	XD3DMultiBuddyAllocator multi_buddy_allocator;
+//public:
+//};

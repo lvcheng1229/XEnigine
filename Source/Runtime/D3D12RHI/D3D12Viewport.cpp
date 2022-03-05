@@ -42,9 +42,9 @@ void XD3D12Viewport::Resize(
     size_x = size_x_in;
     size_y = size_y_in;
 
-    XD3D12PhysicDevice* physical_device = device->GetPhysicalDevice();
+    XD3D12PhysicDevice* PhysicalDevice = device->GetPhysicalDevice();
     XD3D12CommandQueue* direct_cmd_queue = device->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
-    XD3DDirectContex* directx_ctx = device->GetDirectContex();
+    XD3DDirectContex* directx_ctx = device->GetDirectContex(0);
     XD3D12DirectCommandList* cmd_list = directx_ctx->GetCmdList();
     XD3D12CommandAllocator* cmd_alloc = directx_ctx->GetCmdAlloc();
 
@@ -81,7 +81,7 @@ void XD3D12Viewport::Resize(
         back_buffer_resources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON);
         back_buffer_resources[i].GetResource()->SetName(L"BackBuffer");
         back_rt_views[i].Create(
-            physical_device,
+            PhysicalDevice,
             &back_buffer_resources[i], 
             rt_desc,
             device->GetRenderTargetDescArrayManager()->compute_cpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt));

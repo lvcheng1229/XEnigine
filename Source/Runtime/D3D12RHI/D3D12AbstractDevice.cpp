@@ -2,78 +2,78 @@
 #include "Runtime/D3D12RHI/d3dx12.h"
 XD3D12AbstractDevice::~XD3D12AbstractDevice()
 {
-	delete direct_cmd_queue;
-	delete compute_cmd_queue;
+	delete ComputeCmdQueue;
+	delete DirectxCmdQueue;
 }
 
-void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* device_in)
+void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 {
-	physic_device = device_in;
-	direct_cmd_queue = new XD3D12CommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
-	compute_cmd_queue = new XD3D12CommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COMPUTE);
-	direct_cmd_queue->Create(device_in);
-	compute_cmd_queue->Create(device_in);
+	PhysicalDevice = PhysicalDeviceIn;
+	DirectxCmdQueue = new XD3D12CommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+	ComputeCmdQueue = new XD3D12CommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	DirectxCmdQueue->Create(PhysicalDeviceIn);
+	ComputeCmdQueue->Create(PhysicalDeviceIn);
 
-	//D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-	//rtvHeapDesc.NumDescriptors = 2;//swap chain buffer count
-	//rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	//rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	//rtvHeapDesc.NodeMask = 0;
-	//RenderTargetDescArray.Create(device_in, rtvHeapDesc);
+	uint32 temp_thread_num = 2;
+	DirectCtxs.resize(temp_thread_num);
+	for (int i = 0; i < temp_thread_num; ++i)
+	{
+		DirectCtxs[i].Create(this);
+	}
 
-	RenderTargetDescArrayManager.Create(device_in, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128);
-
-	//D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-	//dsvHeapDesc.NumDescriptors = 1;
-	//dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	//dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	//dsvHeapDesc.NodeMask = 0;
-	//DepthStencilDescArray.Create(device_in, dsvHeapDesc);
-
-	DepthStencilDescArrayManager.Create(device_in, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 128);
-
-	//D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	//srvHeapDesc.NumDescriptors = 16;
-	//srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	//srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	//ShaderResourceDescArray.Create(device_in, srvHeapDesc);
-
-	ShaderResourceDescArrayManager.Create(device_in, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128);
-
-	//D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-	//cbvHeapDesc.NumDescriptors = 16;
-	//cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	//cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	//ConstantBufferDescArray.Create(device_in, cbvHeapDesc);
+	RenderTargetDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128);
+	DepthStencilDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 128);
+	ShaderResourceDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128);
 
 
 	XAllocConfig default_cfg;
 	default_cfg.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
 	default_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
-	texture_default_heap_alloc.Create(
-		physic_device,
+	DefaultNonRtDsTextureHeapAlloc.Create(
+		PhysicalDevice,
 		default_cfg,
-		100 * (1 << 20),
+		128 * (1 << 20),
 		(64 * 1024),
 		AllocStrategy::PlacedResource);
 
 	XAllocConfig upload_cfg;
 	upload_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_UPLOAD;
 	upload_cfg.d3d12_resource_states = D3D12_RESOURCE_STATE_GENERIC_READ;
-	texture_upload_heap_alloc.Create(
-		physic_device,
+	UploadHeapAlloc.Create(
+		PhysicalDevice,
 		upload_cfg,
-		100 * (1 << 20),
-		(64 * 1024),
+		8*2048*2048,
+		//100 * (1 << 20),
+		//(64 * 1024),
+		256,
+		AllocStrategy::ManualSubAllocation
+	);
+
+	ConstantBufferUploadHeapAlloc.Create(
+		PhysicalDevice,
+		upload_cfg,
+		128 * (1 << 20),
+		256,
 		AllocStrategy::ManualSubAllocation
 	);
 }
 
-void XD3D12AbstractDevice::CreateD3D12Texture2D(XDxRefCount<ID3D12GraphicsCommandList>& cmd_list, uint32 width, uint32 height, DXGI_FORMAT format, uint8* tex_data)
+std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(uint32 size)
 {
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//XDxRefCount<ID3D12Resource> m_texture;
+	std::shared_ptr<XD3D12ConstantBuffer> ContantBuffer= std::make_shared<XD3D12ConstantBuffer>();
+	XD3D12ResourceLocation& Location = ContantBuffer.get()->ResourceLocation;
+	ConstantBufferUploadHeapAlloc.Allocate(size, Location);
+	return ContantBuffer;
+}
 
+XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, DXGI_FORMAT format, uint8* tex_data)
+{
+
+	auto cmd_list = x_cmd_list->GetDXCmdList();
+	ResourceManagerTempVec.push_back(XD3D12Resource());
+	XD3D12Resource* TextureResource = &ResourceManagerTempVec[ResourceManagerTempVec.size() - 1];
+	//XD3D12Resource* TextureResource = new XD3D12Resource();
+	XLog("Memory Leak : CreateD3D12Texture2D");
 
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -82,57 +82,63 @@ void XD3D12AbstractDevice::CreateD3D12Texture2D(XDxRefCount<ID3D12GraphicsComman
 	textureDesc.Height = height;
 	textureDesc.DepthOrArraySize = 1;
 	textureDesc.MipLevels = 1;
-	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.Format = format;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
 	//textureDesc.Layout = ;
 	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	const D3D12_RESOURCE_ALLOCATION_INFO Info = physic_device->GetDXDevice()->GetResourceAllocationInfo(0, 1, &textureDesc);
+	const D3D12_RESOURCE_ALLOCATION_INFO Info = PhysicalDevice->GetDXDevice()->GetResourceAllocationInfo(0, 1, &textureDesc);
 	XD3D12ResourceLocation default_location;
-	bool res = texture_default_heap_alloc.Allocate(Info.SizeInBytes, default_location);
+	bool res = DefaultNonRtDsTextureHeapAlloc.Allocate(Info.SizeInBytes, default_location);
 	X_Assert(res == true);
 
-	ThrowIfFailed(physic_device->GetDXDevice()->CreatePlacedResource(
+	ThrowIfFailed(PhysicalDevice->GetDXDevice()->CreatePlacedResource(
 			default_location.GetBuddyAllocator()->GetDXHeap(), default_location.GetBuddyAllocData().offset, &textureDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_texture)));
+			D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(TextureResource->GetPtrToResourceAdress())));
 	
-	m_texture->SetName(L"texture test");
+	TextureResource->GetResource()->SetName(L"texture test");
+	
 
-	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_texture.Get(), 0, 1);
+	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(TextureResource->GetResource(), 0, 1);
 
 	XD3D12ResourceLocation upload_location;
-	texture_upload_heap_alloc.Allocate(uploadBufferSize, upload_location);
-
-
+	UploadHeapAlloc.Allocate(uploadBufferSize, upload_location);
 	
 	D3D12_SUBRESOURCE_DATA textureData = {};
 	textureData.pData = tex_data;
-	textureData.RowPitch = 256 * 4;
-	textureData.SlicePitch = textureData.RowPitch * 256;
+	textureData.RowPitch = width * 4;
+	textureData.SlicePitch = textureData.RowPitch * height;
 
 	CopyDataFromUploadToDefaulHeap
-	(cmd_list.Get(), m_texture.Get(),
-		texture_upload_heap_alloc.GetDXResource(), upload_location.GetBuddyAllocData().offset, 0, 1, &textureData);
-	cmd_list->ResourceBarrier(1, &(CD3DX12_RESOURCE_BARRIER::Transition(m_texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)));
+	(cmd_list, TextureResource->GetResource(),
+		UploadHeapAlloc.GetDXResource(), upload_location.GetBuddyAllocData().offset, 0, 1, &textureData);
+	cmd_list->ResourceBarrier(1, &(CD3DX12_RESOURCE_BARRIER::Transition(TextureResource->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)));
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = m_texture->GetDesc().Format;
+	srvDesc.Format = TextureResource->GetResource()->GetDesc().Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = m_texture->GetDesc().MipLevels;
+	srvDesc.Texture2D.MipLevels = TextureResource->GetResource()->GetDesc().MipLevels;
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 	uint32 index_of_desc_in_heap;
 	uint32 index_of_heap;
 	ShaderResourceDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
-	//TODO
-	//physic_device->GetDXDevice()->CreateShaderResourceView(m_texture.Get(), &srvDesc, ShaderResourceDescArray.GetCPUDescPtrByIndex(0));
 	
-	physic_device->GetDXDevice()->CreateShaderResourceView(
-		m_texture.Get(), &srvDesc,
-		ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+	
+	XD3D12ShaderResourceView ShaderResourceView;
+	ShaderResourceView.Create(
+		PhysicalDevice, TextureResource,
+		srvDesc, ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+
+
+
+	XD3D12Texture2D* TextureRet = new XD3D12Texture2D();
+	TextureRet->SetShaderResourceView(ShaderResourceView);
+	//return TextureRet;
+	return TextureRet;
 }
 
 XD3D12CommandQueue* XD3D12AbstractDevice::GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE cmd_type)
@@ -140,10 +146,10 @@ XD3D12CommandQueue* XD3D12AbstractDevice::GetCmdQueueByType(D3D12_COMMAND_LIST_T
 	switch (cmd_type)
 	{
 	case D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT:
-		return direct_cmd_queue;
+		return DirectxCmdQueue;
 		break;
 	case D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COMPUTE:
-		return compute_cmd_queue;
+		return ComputeCmdQueue;
 		break;
 	default:
 		X_Assert(false);
