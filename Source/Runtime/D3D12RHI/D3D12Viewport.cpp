@@ -78,6 +78,7 @@ void XD3D12Viewport::Resize(
         device->GetRenderTargetDescArrayManager()->AllocateDesc(index_of_desc_in_heap_rt, index_of_heap_rt);
 
         ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(back_buffer_resources[i].GetPtrToResourceAdress())));
+        //back_buffer_resources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON); 
         back_buffer_resources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON);
         back_buffer_resources[i].GetResource()->SetName(L"BackBuffer");
         back_rt_views[i].Create(

@@ -1,6 +1,7 @@
 #include "D3D12Context.h"
 #include "D3D12Texture.h"
 #include "D3D12AbstractDevice.h"
+#include "D3D12PlatformRHI.h"
 void XD3DDirectContex::Create(XD3D12AbstractDevice* device_in)
 {
 	AbsDevice = device_in;
@@ -28,23 +29,23 @@ void XD3DDirectContex::CloseCmdList()
 	cmd_dirrect_list.Close();
 }
 
-std::shared_ptr<XRHITexture2D> XD3DDirectContex::CreateD3D12Texture2D(uint32 width, uint32 height, DXGI_FORMAT format, uint8* tex_data)
+std::shared_ptr<XRHITexture2D> XD3DDirectContex::CreateD3D12Texture2D(uint32 width, uint32 height, ETextureCreateFlags flags, uint8* tex_data)
 {
 	return std::shared_ptr<XRHITexture2D>(
-		AbsDevice->CreateD3D12Texture2D(&cmd_dirrect_list, width, height, format, tex_data));
+		AbsDevice->CreateD3D12Texture2D(&cmd_dirrect_list, width, height, flags, tex_data));
 }
 
-void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView* rt_array_ptr, XRHIDepthStencilView* ds_ptr)
+void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr)
 {
-	XD3D12RenderTargetView* RTViews = static_cast<XD3D12RenderTargetView*>(rt_array_ptr);
-	XD3D12DepthStencilView* DSView = static_cast<XD3D12DepthStencilView*>(ds_ptr);
-	
+	DSVPtr = static_cast<XD3D12DepthStencilView*>(ds_ptr);
+	CurrentNumRT = num_rt;
+
 	for (uint32 i = 0; i < num_rt; i++)
 	{
-		RTPtrArrayPtr[i] = &RTViews[i];
+		RTPtrArrayPtr[i] = static_cast<XD3D12RenderTargetView*>(rt_array_ptr[i]);
 	}
 
-	PassStateManager.SetRenderTarget(num_rt, RTPtrArrayPtr, DSView);
+	PassStateManager.SetRenderTarget(num_rt, RTPtrArrayPtr, DSVPtr);
 }
 
 void XD3DDirectContex::RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
@@ -95,17 +96,39 @@ void XD3DDirectContex::RHISetViewport(float MinX, float MinY, float MinZ, float 
 
 void XD3DDirectContex::RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue)
 {
-	uint32 numRT;
-	XD3D12RenderTargetView* RrPtrArrayPtr[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] ;
-	XD3D12DepthStencilView* DsPtr=nullptr;
-	PassStateManager.GetRenderTargets(numRT, RrPtrArrayPtr, &DsPtr);
+	uint32 numRT = CurrentNumRT;
+	//XD3D12RenderTargetView* RrPtrArrayPtr[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] ;
+	//XD3D12DepthStencilView* DsPtr=nullptr;
+	//PassStateManager.GetRenderTargets(numRT, &RrPtrArrayPtr, &DsPtr);
+
+	if (ClearRT)
+	{
+		for (uint32 i = 0; i < numRT; i++) {
+			XD3D12PlatformRHI::TransitionResource(
+				cmd_dirrect_list,
+				RTPtrArrayPtr[i],
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+		}
+	}
+	
+	if (ClearDS)
+	{
+		XD3D12PlatformRHI::TransitionResource(
+			cmd_dirrect_list,
+			DSVPtr,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	}
+
+	cmd_dirrect_list.CmdListFlushBarrier();
 
 	if (ClearRT)
 	{
 		for (uint32 i = 0; i < numRT; i++)
+		{
 			cmd_dirrect_list->ClearRenderTargetView(
-				RrPtrArrayPtr[i]->GetCPUPtr(),
+				RTPtrArrayPtr[i]->GetCPUPtr(),
 				ColorArray, 0, nullptr);
+		}
 	}
 
 
@@ -113,13 +136,21 @@ void XD3DDirectContex::RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray
 	if (ClearDS)
 	{
 		cmd_dirrect_list->ClearDepthStencilView(
-			DsPtr->GetCPUPtr(),
+			DSVPtr->GetCPUPtr(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
 			DepthValue,
 			StencilValue,
 			0,
 			nullptr);
 	}
+}
+
+void XD3DDirectContex::RHIDrawFullScreenQuad()
+{
+	///mCommandList.Get()->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
+	///mCommandList.Get()->IASetIndexBuffer(&ri->Geo->IndexBufferView());
+	///cmd_dirrect_list->IASetVertexBuffers(0, 1, );
+	///cmd_dirrect_list->DrawInstanced(3, 1, 0, 0);
 }
 
 //void XD3DDirectContex::RHIUpdateConstantBufferData(std::shared_ptr<XD3D12ConstantBuffer> CB, void* Data, uint32 size)

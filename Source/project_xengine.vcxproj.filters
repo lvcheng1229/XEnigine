@@ -76,9 +76,6 @@
     <ClInclude Include="UnitTest\MathHelper.h">
       <Filter>UnitTest</Filter>
     </ClInclude>
-    <ClInclude Include="UnitTest\UploadBuffer.h">
-      <Filter>UnitTest</Filter>
-    </ClInclude>
     <ClInclude Include="UnitTest\d3dApp.h">
       <Filter>UnitTest</Filter>
     </ClInclude>
@@ -87,7 +84,6 @@
     </ClInclude>
     <ClInclude Include="xtrack_new.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Allocation.h" />
-    <ClInclude Include="File\LoadDDSTexture.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.h" />
     <ClInclude Include="Runtime\RenderCore\Shader.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.h" />
@@ -99,6 +95,8 @@
     <ClInclude Include="Runtime\RHI\RHIResource.h" />
     <ClInclude Include="File\stb_image.h" />
     <ClInclude Include="File\LoadTGATexture.h" />
+    <ClInclude Include="Runtime\RHI\RHIDefines.h" />
+    <ClInclude Include="Runtime\DataStruct\XRefCountPtr.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />

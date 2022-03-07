@@ -3,6 +3,7 @@
 #include "D3D12Allocation.h"
 
 #include "D3D12View.h"
+#include "Runtime/RHI/RHIDefines.h"
 class XD3D12TextureBase
 {
 public:
@@ -14,6 +15,8 @@ public:
 	
 	//XD3D12ResourceLocation ResourceLocation;
 private:
+	//std::shared_ptr<XD3D12ShaderResourceView>ShaderResourceView;
+	//std::shared_ptr<XD3D12RenderTargetView>RenderTargetView;
 	XD3D12ShaderResourceView ShaderResourceView;
 	XD3D12RenderTargetView RenderTargetView;
 };

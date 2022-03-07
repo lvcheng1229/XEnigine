@@ -8,7 +8,7 @@ class XD3D12CommandQueue;
 class XD3D12Fence
 {
 public:
-	XD3D12Fence() :curr_gpu_fence(0), curr_cpu_fence(0), eventHandle(nullptr) {}
+	XD3D12Fence() :curr_gpu_fence(0), curr_cpu_fence(0)/*, eventHandle(nullptr)*/ {}
 	void Create(XD3D12PhysicDevice* device);
 	void SignalGPU(XD3D12CommandQueue* cmd_queue);
 	void SignalGPU(XD3D12CommandQueue* cmd_queue, uint64 fence);
@@ -19,7 +19,7 @@ public:
 	inline uint64 CurrentGPUFence() { return curr_gpu_fence; }
 private:
 
-	HANDLE eventHandle;
+	//HANDLE eventHandle;
 	XDxRefCount<ID3D12Fence>d3d12_fence;
 	uint64 curr_gpu_fence;
 	uint64 curr_cpu_fence;

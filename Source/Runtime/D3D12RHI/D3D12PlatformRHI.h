@@ -18,6 +18,15 @@ public:
 		resource_state.SetResourceState(after);
 
 	}
+	static inline void TransitionResource(
+		XD3D12DirectCommandList& direct_cmd_list,
+		XD3D12ShaderResourceView* sr_view,
+		D3D12_RESOURCE_STATES after)
+	{
+		//TODO Some Resource Dont Need Resource State Tracking
+		XD3D12Resource* pResource = sr_view->GetResource();
+		Base_TransitionResource(direct_cmd_list, pResource, after);
+	}
 
 	static inline void TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,

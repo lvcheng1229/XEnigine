@@ -50,12 +50,15 @@ private:
 	D3D12_DESCRIPTOR_RANGE  desc_range_array[PIPELINE_MAX_ROOT_PARAM_COUNT];
 
 	D3D12_ROOT_SIGNATURE_DESC root_signature_info;
-	XDxRefCount<ID3D12RootSignature> root_signature;
+	XRefCountPtr<ID3D12RootSignature> root_signature;
 	XDxRefCount<ID3DBlob> serializedRootSig;
 
 	XD3D12PhysicDevice* device;//TODO
 public:
 	XD3D12RootSignature() :device(nullptr), serializedRootSig(nullptr), root_signature(nullptr) {}
+	~XD3D12RootSignature() {
+		std::cout << "XD3D12RootSignature destruct" << std::endl;
+	}
 	void Create(XD3D12PhysicDevice* device_in, XPipelineRegisterBoundCount& register_count);
 
 	uint32 GetSRVDescTableBindSlot(EShaderType shader_type)const;

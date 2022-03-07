@@ -1,4 +1,5 @@
 #pragma once
+#include "Runtime/DataStruct/XRefCountPtr.h"
 enum EShaderType
 {
 	SV_Vertex = 0,

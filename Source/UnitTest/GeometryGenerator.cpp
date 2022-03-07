@@ -655,3 +655,47 @@ GeometryGenerator::MeshData GeometryGenerator::CreateQuad(float x, float y, floa
 
     return meshData;
 }
+
+
+GeometryGenerator::MeshData GeometryGenerator::CreateFullScreenQuad()
+{
+	MeshData meshData;
+
+	meshData.Vertices.resize(4);
+	meshData.Indices32.resize(6);
+
+	// Position coordinates specified in NDC space.
+	meshData.Vertices[0] = Vertex(
+		-1, -1, 0,
+		0.0f, 0.0f, -1.0f,
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f);
+
+	meshData.Vertices[1] = Vertex(
+		-1, 1, 0,
+		0.0f, 0.0f, -1.0f,
+		1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f);
+
+	meshData.Vertices[2] = Vertex(
+		1, 1, 0,
+		0.0f, 0.0f, -1.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f);
+
+	meshData.Vertices[3] = Vertex(
+		1, -1, 0,
+		0.0f, 0.0f, -1.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f);
+
+	meshData.Indices32[0] = 0;
+	meshData.Indices32[1] = 1;
+	meshData.Indices32[2] = 2;
+
+	meshData.Indices32[3] = 0;
+	meshData.Indices32[4] = 2;
+	meshData.Indices32[5] = 3;
+
+	return meshData;
+}

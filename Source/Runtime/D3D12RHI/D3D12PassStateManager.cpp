@@ -12,9 +12,13 @@ void XD3D12PassStateManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectCon
 	bNeedSetSRV = false;
 	bNeedSetCBV = false;
 	bNeedSetRootSig = false;
-	memset(NumSRVs, 0, sizeof(uint32) * EShaderType::SV_ShaderCount);
-	memset(NumCBVs, 0, sizeof(uint32) * EShaderType::SV_ShaderCount);
-	memset(PipelineState.Common.SRVManager.Views, 0, sizeof(XD3D12PassShaderResourceManager)); 
+	bNeedClearMRT = false;
+
+	PipelineState.Graphics.depth_stencil = nullptr;
+
+	PipelineState.Common.RootSignature = nullptr;
+	PipelineState.Common.SRVManager.Clear();
+	PipelineState.Common.CBVRootDescManager.Clear();
 }
 
 void XD3D12PassStateManager::ResetState()
@@ -23,30 +27,40 @@ void XD3D12PassStateManager::ResetState()
 	bNeedSetSRV = false;
 	bNeedSetCBV = false;
 	bNeedSetRootSig = false;
-	memset(NumSRVs, 0, sizeof(uint32) * EShaderType::SV_ShaderCount);
-	memset(NumCBVs, 0, sizeof(uint32) * EShaderType::SV_ShaderCount);
-	memset(PipelineState.Common.SRVManager.Views, 0, sizeof(XD3D12PassShaderResourceManager));
+	bNeedClearMRT = false;
+
+	PipelineState.Graphics.depth_stencil = nullptr;
+
+	PipelineState.Common.RootSignature = nullptr;
+	PipelineState.Common.SRVManager.Clear();
+	PipelineState.Common.CBVRootDescManager.Clear();
 }
 
 
-void XD3D12PassStateManager::GetRenderTargets(uint32& num_rt, XD3D12RenderTargetView** ptr_to_rt_array_ptr, XD3D12DepthStencilView** ptr_to_ds_ptr)
-{
-	num_rt = PipelineState.Graphics.current_num_rendertarget;
-	*ptr_to_rt_array_ptr = *PipelineState.Graphics.render_target_array;
-	*ptr_to_ds_ptr = PipelineState.Graphics.depth_stencil;
-}
+//void XD3D12PassStateManager::GetRenderTargets(uint32& num_rt, XD3D12RenderTargetView** ptr_to_rt_array_ptr, XD3D12DepthStencilView** ptr_to_ds_ptr)
+//{
+//	num_rt = PipelineState.Graphics.current_num_rendertarget;
+//	*ptr_to_rt_array_ptr = *PipelineState.Graphics.render_target_array;
+//	*ptr_to_ds_ptr = PipelineState.Graphics.depth_stencil;
+//}
 
 void XD3D12PassStateManager::SetRenderTarget(uint32 num_rt, XD3D12RenderTargetView** rt_array_ptr, XD3D12DepthStencilView* ds_ptr)
 {
 	bool_need_set_rt = true;
 	PipelineState.Graphics.depth_stencil = ds_ptr;
-	memset(PipelineState.Graphics.render_target_array, 0, num_rt * sizeof(XD3D12RenderTargetView));
-	memcpy(PipelineState.Graphics.render_target_array, rt_array_ptr, num_rt * sizeof(XD3D12RenderTargetView));
+
+	//why error?because render_target_array is ptr array,not XD3D12RenderTargetView array !!!!!! :(
+	//memset(PipelineState.Graphics.render_target_array, 0, num_rt * sizeof(XD3D12RenderTargetView));
+	//memcpy(PipelineState.Graphics.render_target_array, rt_array_ptr, num_rt * sizeof(XD3D12RenderTargetView));
 
 	uint32 active_rt = 0;
 	for (uint32 i = 0; i < num_rt; ++i)
 	{
-		if (rt_array_ptr[i] != nullptr)++active_rt;
+		if (rt_array_ptr[i] != nullptr)
+		{
+			PipelineState.Graphics.render_target_array[i] = rt_array_ptr[i];
+			++active_rt;
+		}
 	}
 	PipelineState.Graphics.current_num_rendertarget = active_rt;
 }
@@ -63,10 +77,6 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 		{
 			if(PipelineState.Graphics.render_target_array[i] != NULL)
 			{
-				XD3D12PlatformRHI::TransitionResource(
-					*direct_cmd_list,
-					PipelineState.Graphics.render_target_array[i],
-					D3D12_RESOURCE_STATE_RENDER_TARGET);
 				RTVDescriptors[i] = PipelineState.Graphics.render_target_array[i]->GetCPUPtr();
 			}
 		}
@@ -74,13 +84,6 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 		
 		if (PipelineState.Graphics.depth_stencil != nullptr)
 		{
-			XD3D12PlatformRHI::TransitionResource(
-				*direct_cmd_list,
-				PipelineState.Graphics.depth_stencil,
-				D3D12_RESOURCE_STATE_DEPTH_WRITE);
-
-			direct_cmd_list->CmdListFlushBarrier();//TODO TODO
-
 			direct_cmd_list->GetDXCmdList()->OMSetRenderTargets(
 				PipelineState.Graphics.current_num_rendertarget,
 				RTVDescriptors,
@@ -89,8 +92,6 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 		}
 		else
 		{
-			direct_cmd_list->CmdListFlushBarrier();//TODO TODO
-
 			direct_cmd_list->GetDXCmdList()->OMSetRenderTargets(
 				PipelineState.Graphics.current_num_rendertarget,
 				RTVDescriptors,
@@ -117,7 +118,7 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 			PipelineState.Common.RootSignature, 
 			&PipelineState.Common.SRVManager,
 			desc_table_slot_start,
-			NumSRVs[EShaderType::SV_Pixel]);
+			PipelineState.Common.SRVManager.Mask[EShaderType::SV_Pixel]);
 
 		bNeedSetSRV = false;
 	}
@@ -127,12 +128,12 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 		pipe_curr_desc_array_manager.SetRootDescCBVs<EShaderType::SV_Vertex>(
 			PipelineState.Common.RootSignature,
 			&PipelineState.Common.CBVRootDescManager,
-			NumCBVs[EShaderType::SV_Vertex]);
+			PipelineState.Common.CBVRootDescManager.Mask[EShaderType::SV_Vertex]);
 
 		pipe_curr_desc_array_manager.SetRootDescCBVs<EShaderType::SV_Pixel>(
 			PipelineState.Common.RootSignature,
 			&PipelineState.Common.CBVRootDescManager,
-			NumCBVs[EShaderType::SV_Pixel]);
+			PipelineState.Common.CBVRootDescManager.Mask[EShaderType::SV_Pixel]);
 
 		bNeedSetCBV = false;
 	}

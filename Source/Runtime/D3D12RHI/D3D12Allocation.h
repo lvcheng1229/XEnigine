@@ -50,7 +50,7 @@ public:
 		uint32 min_block_size_in, 
 		AllocStrategy strategy_in);
 
-	bool Allocate(uint32 allocate_size_byte, /*uint32 alignment,*/ XD3D12ResourceLocation& resource_location);
+	bool Allocate(uint32 allocate_size_byte, uint32 alignment, XD3D12ResourceLocation& resource_location);
 	void Deallocate(XD3D12ResourceLocation& ResourceLocation);
 	inline ID3D12Heap* GetDXHeap() { return m_heap.Get(); };
 	inline ID3D12Resource* GetDXResource() { return back_resource.GetResource(); };

@@ -65,11 +65,18 @@ int D3DApp::Run()
         {	
 			mTimer.Tick();
 
+			CalculateFrameStats();
+			Update(mTimer);
+			Renderer(mTimer);
+
 			if( !mAppPaused )
 			{
-				CalculateFrameStats();
-				Update(mTimer);	
-                Renderer(mTimer);
+				//CalculateFrameStats();
+				//Update(mTimer);	
+				//
+				//
+				//
+                //Renderer(mTimer);
 			}
 			else
 			{
@@ -147,6 +154,10 @@ void D3DApp::OnResize()
 	ds_view.Create(&Device, &ds_resource, ds_desc, 
 		DepthStencilDescArrayManager->compute_cpu_ptr(index_of_desc_in_heap_ds, index_of_heap_ds));
 	DsView = &ds_view;
+
+	//// Transition the resource from its initial state to be used as a depth buffer.
+	//mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDepthStencilBuffer.Get(),
+	//	D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 
 	direct_ctx->CloseCmdList();
 
@@ -336,6 +347,12 @@ bool D3DApp::InitDirect3D()
 	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
 	debugController->EnableDebugLayer();
 	
+	//ComPtr<ID3D12Debug> spDebugController0;
+	//ComPtr<ID3D12Debug1> spDebugController1;
+	//ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&spDebugController0)));
+	//ThrowIfFailed(spDebugController0->QueryInterface(IID_PPV_ARGS(&spDebugController1)));
+	//spDebugController1->SetEnableGPUBasedValidation(true);
+
 	Adapter.Create();
 	Device.Create(&Adapter);
 

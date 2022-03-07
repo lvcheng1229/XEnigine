@@ -10,15 +10,51 @@ struct XD3D12SRVDescTableManager
 
 };
 
-struct XD3D12CBVRootDescManager
+template<typename MaskType>
+struct SlotManager
 {
+
+	static inline void DirtySlot(MaskType& SlotMask, uint32 SlotIndex)
+	{
+		SlotMask |= ((MaskType)1 << SlotIndex);
+	}
+	static inline bool IsSlotDirty(const MaskType& SlotMask, uint32 SlotIndex)
+	{
+		return (SlotMask & ((MaskType)1 << SlotIndex)) != 0;
+	}
+	static inline void CleanSlot(MaskType& SlotMask, uint32 SlotIndex)
+	{
+		SlotMask &= ~((MaskType)1 << SlotIndex);
+	}
+
+	//TODO
+	inline void ClearMask()
+	{
+		memset(Mask, 0, sizeof(Mask));
+	}
+
+	MaskType Mask[EShaderType::SV_ShaderCount];
+};
+
+struct XD3D12CBVRootDescManager : public SlotManager<uint16>
+{
+	inline void Clear()
+	{
+		ClearMask();
+		memset(CurrentGPUVirtualAddress, 0, sizeof(CurrentGPUVirtualAddress));
+	}
 	D3D12_GPU_VIRTUAL_ADDRESS CurrentGPUVirtualAddress[EShaderType::SV_ShaderCount][MAX_ROOT_CONSTANT_NUM];
 };
 
 
 
-struct XD3D12PassShaderResourceManager
+struct XD3D12PassShaderResourceManager : public SlotManager<uint64>
 {
+	inline void Clear()
+	{
+		ClearMask();
+		memset(Views, 0, sizeof(Views));
+	}
 	XD3D12ShaderResourceView* Views[EShaderType::SV_ShaderCount][MAX_SHADER_RESOURCE_NUM];
 };
 
@@ -36,13 +72,13 @@ public:
 	void SetDescTableSRVs(
 		const XD3D12RootSignature* root_signature, 
 		XD3D12PassShaderResourceManager* SRVManager,
-		uint32& slot_start, uint32 slot_num);
+		uint32& slot_start, uint64 slot_mask);
 
 	template<EShaderType shader_type>
 	void SetRootDescCBVs(
 		const XD3D12RootSignature* root_signature,
 		XD3D12CBVRootDescManager* gpu_virtual_ptr_array,
-		uint32 slot_num);
+		uint16 slot_mask);
 
 	inline XD3D12PipelineCurrentDescArray* GetCurrentDescArray() { return &pipeline_current_desc_array; }
 };

@@ -27,20 +27,24 @@ void XD3D12ResourceBarrierManager::AddTransition(XD3D12Resource* pResource, D3D1
 		}
 	}
 
-	D3D12_RESOURCE_BARRIER Barrier;
-	Barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	Barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	Barrier.Transition.StateBefore = Before;
-	Barrier.Transition.StateAfter = After;
-	Barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;//NOTE!!
-	Barrier.Transition.pResource = pResource->GetResource();
-	barriers.push_back(Barrier);
+	//D3D12_RESOURCE_BARRIER Barrier;
+
+	barriers.push_back(D3D12_RESOURCE_BARRIER());
+	D3D12_RESOURCE_BARRIER* barrier_ptr = &barriers[barriers.size() - 1];
+	barrier_ptr->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier_ptr->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier_ptr->Transition.StateBefore = Before;
+	barrier_ptr->Transition.StateAfter = After;
+	barrier_ptr->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;//NOTE!!
+	barrier_ptr->Transition.pResource = pResource->GetResource();
 }
 
 void XD3D12ResourceBarrierManager::Flush(ID3D12GraphicsCommandList* pCommandList)
 {
-	if(barriers.size()>0)
+	if (barriers.size() > 0)
+	{
 		pCommandList->ResourceBarrier(barriers.size(), barriers.data());
+	}
 	barriers.resize(0);
 }
 

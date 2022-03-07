@@ -12,8 +12,9 @@ private:
 	bool bNeedSetSRV;
 	bool bNeedSetCBV;
 	bool bNeedSetRootSig;
-	uint32 NumSRVs[EShaderType::SV_ShaderCount];
-	uint32 NumCBVs[EShaderType::SV_ShaderCount];
+	bool bNeedClearMRT;
+	//uint32 NumSRVs[EShaderType::SV_ShaderCount];
+	//uint32 NumCBVs[EShaderType::SV_ShaderCount];
 	struct
 	{
 		struct
@@ -38,8 +39,11 @@ private:
 	XD3D12PipelineCurrentDescArrayManager pipe_curr_desc_array_manager;
 public:
 	inline void SetRootSignature(XD3D12RootSignature* root_sig) { 
-		PipelineState.Common.RootSignature = root_sig;
-		bNeedSetRootSig = true;
+		if (PipelineState.Common.RootSignature != root_sig)
+		{
+			PipelineState.Common.RootSignature = root_sig;
+			bNeedSetRootSig = true;
+		}
 	};
 	void Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in);
 	void ResetState();
@@ -47,21 +51,31 @@ public:
 	template<EShaderType ShaderType>
 	inline void SetShaderResourceView(XD3D12ShaderResourceView* SRV, uint32 resource_index)
 	{
-		PipelineState.Common.SRVManager.Views[ShaderType][resource_index] = SRV;
-		bNeedSetSRV = true;
-		NumSRVs[ShaderType]++;
+		auto& View = PipelineState.Common.SRVManager.Views[ShaderType][resource_index];
+		if (View != SRV)
+		{
+			View = SRV;
+			bNeedSetSRV = true;
+			XD3D12PassShaderResourceManager::DirtySlot(PipelineState.Common.SRVManager.Mask[ShaderType], resource_index);
+			//NumSRVs[ShaderType]++;
+		}
+
 	}
 
 	template<EShaderType ShaderType>
 	inline void SetCBV(XD3D12ConstantBuffer* CBuffer, uint32 resource_index)
 	{
-		PipelineState.Common.CBVRootDescManager.CurrentGPUVirtualAddress[ShaderType][resource_index] =
-			CBuffer->ResourceLocation.GetGPUVirtualPtr();
-		bNeedSetCBV = true;
-		NumCBVs[ShaderType]++;
+		auto& GpuVirtualPtr = PipelineState.Common.CBVRootDescManager.CurrentGPUVirtualAddress[ShaderType][resource_index];
+		if (GpuVirtualPtr != CBuffer->ResourceLocation.GetGPUVirtualPtr())
+		{
+			GpuVirtualPtr = CBuffer->ResourceLocation.GetGPUVirtualPtr();
+			bNeedSetCBV = true;
+			XD3D12CBVRootDescManager::DirtySlot(PipelineState.Common.CBVRootDescManager.Mask[ShaderType], resource_index);
+			//NumCBVs[ShaderType]++;
+		}
 	}
 
-	void GetRenderTargets(uint32& num_rt, XD3D12RenderTargetView** rt_array_ptr, XD3D12DepthStencilView** ds_ptr);
+	//void GetRenderTargets(uint32& num_rt, XD3D12RenderTargetView** rt_array_ptr, XD3D12DepthStencilView** ds_ptr);
 	void SetRenderTarget(uint32 num_rt, XD3D12RenderTargetView** rt_array_ptr, XD3D12DepthStencilView* ds_ptr);
 	void ApplyCurrentStateToPipeline();
 };

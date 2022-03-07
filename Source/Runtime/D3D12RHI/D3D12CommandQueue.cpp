@@ -6,7 +6,7 @@ void XD3D12Fence::Create(XD3D12PhysicDevice* device)
 		device->GetDXDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE,
 			IID_PPV_ARGS(&d3d12_fence)));
 
-	eventHandle = CreateEventEx(nullptr, NULL, CREATE_EVENT_INITIAL_SET, EVENT_ALL_ACCESS);
+	//eventHandle = CreateEventEx(nullptr, NULL, CREATE_EVENT_INITIAL_SET, EVENT_ALL_ACCESS);
 }
 
 void XD3D12Fence::SignalGPU(XD3D12CommandQueue* cmd_queue)
@@ -25,10 +25,12 @@ void XD3D12Fence::WaitCPU()
 	curr_gpu_fence = d3d12_fence->GetCompletedValue();
 	if (curr_gpu_fence < curr_cpu_fence)
 	{
+		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 		ThrowIfFailed(d3d12_fence->SetEventOnCompletion(curr_cpu_fence, eventHandle));
 		if (eventHandle)
 		{
 			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
 		}
 	}
 }
@@ -37,10 +39,12 @@ void XD3D12Fence::WaitCPU(uint64 cpu_fence)
 	curr_gpu_fence = d3d12_fence->GetCompletedValue();
 	if (curr_gpu_fence < cpu_fence)
 	{
+		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 		ThrowIfFailed(d3d12_fence->SetEventOnCompletion(cpu_fence, eventHandle));
 		if (eventHandle)
 		{
 			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
 		}
 	}
 }

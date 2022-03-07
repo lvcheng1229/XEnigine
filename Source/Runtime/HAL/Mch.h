@@ -25,7 +25,7 @@
 #endif
     
 #include <iostream>
-#define XLog(x) {std::cout << x << std::endl; }
+#define XLog(x) {std::cout << (x) << std::endl; }
 
 
 

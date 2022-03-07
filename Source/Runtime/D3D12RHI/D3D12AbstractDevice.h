@@ -28,7 +28,7 @@ public:
 
 	XD3D12Texture2D* CreateD3D12Texture2D(
 		XD3D12DirectCommandList* x_cmd_list,
-		uint32 width, uint32 height, DXGI_FORMAT format, uint8* tex_data);
+		uint32 width, uint32 height, ETextureCreateFlags flag, uint8* tex_data);
 
 
 	XD3D12CommandQueue* GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE cmd_type);

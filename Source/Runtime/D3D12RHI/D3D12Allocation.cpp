@@ -56,9 +56,14 @@ void XD3DBuddyAllocator::Create(
 
 }
 
-bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte, /*uint32 alignment,*/ XD3D12ResourceLocation& resource_location)
+bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment, XD3D12ResourceLocation& resource_location)
 {
 	bool can_allocate = false;
+	uint32 allocate_size_byte = allocate_size_byte_in + alignment;
+	if (alignment != 0 && min_block_size % alignment != 0)
+	{
+		allocate_size_byte = allocate_size_byte_in + alignment;
+	}
 	uint32 order = SizeToOrder(allocate_size_byte);
 	for (; order <= max_order; ++order)
 	{
@@ -68,6 +73,8 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte, /*uint32 alignment,
 			break;
 		}
 	}
+
+	
 
 	if (allocate_size_byte > (max_block_size- TotalUsed))
 	{

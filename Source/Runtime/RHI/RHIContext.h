@@ -1,7 +1,7 @@
 #pragma once
 #include "Runtime/HAL/PlatformTypes.h"
 #include "RHIResource.h"
-
+#include "RHIDefines.h"
 class IRHIContext
 {
 public:

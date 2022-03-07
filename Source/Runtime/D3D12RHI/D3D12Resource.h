@@ -10,6 +10,69 @@ public:
 	inline void SetResourceState(const D3D12_RESOURCE_STATES state) { m_ResourceState = state; }
 };
 
+class XD3D12ResourceTypeHelper
+{
+public:
+	const uint32 bSRV : 1;
+	const uint32 bDSV : 1;
+	const uint32 bRTV : 1;
+	const uint32 bUAV : 1;
+	const uint32 bWritable : 1;
+	const uint32 bSRVOnly : 1;
+	const uint32 bBuffer : 1;
+	const uint32 bReadBackResource : 1;
+
+	XD3D12ResourceTypeHelper(D3D12_RESOURCE_DESC& Desc, D3D12_HEAP_TYPE HeapType) :
+		bSRV((Desc.Flags& D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE) == 0),
+		bDSV((Desc.Flags& D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) != 0),
+		bRTV((Desc.Flags& D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) != 0),
+		bUAV((Desc.Flags& D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0),
+		bWritable(bDSV || bRTV || bUAV),
+		bSRVOnly(bSRV && !bWritable),
+		bBuffer(Desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER),
+		bReadBackResource(HeapType == D3D12_HEAP_TYPE_READBACK)
+	{}
+
+	inline const D3D12_RESOURCE_STATES GetOptimalInitialState(bool bAccurateWriteableStates) const
+	{
+		if (bSRVOnly)
+		{
+			return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		}
+		else if (bBuffer && !bUAV)
+		{
+			return (bReadBackResource) ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_GENERIC_READ;
+		}
+		else if (bWritable)
+		{
+			if (bAccurateWriteableStates)
+			{
+				if (bDSV)
+				{
+					return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+				}
+				else if (bRTV)
+				{
+					return D3D12_RESOURCE_STATE_RENDER_TARGET;
+				}
+				else if (bUAV)
+				{
+					return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+				}
+			}
+			else
+			{
+				// This things require tracking anyway
+				return D3D12_RESOURCE_STATE_COMMON;
+			}
+		}
+
+		return D3D12_RESOURCE_STATE_COMMON;
+	}
+
+
+};
+
 class XD3D12Resource
 {
 public:

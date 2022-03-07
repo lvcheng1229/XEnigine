@@ -21,12 +21,13 @@ public:
 	void OpenCmdList()override;
 	void CloseCmdList()override;
 	
-	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(uint32 width, uint32 height, DXGI_FORMAT format, uint8* tex_data);
-	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView* rt_array_ptr, XRHIDepthStencilView* ds_ptr);
+	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(uint32 width, uint32 height, ETextureCreateFlags flags, uint8* tex_data);
+	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);
 	void RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
 	void RHISetShaderConstantBuffer(XRHIGraphicsShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
 	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
 	void RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue);
+	void RHIDrawFullScreenQuad();
 	//void RHISetScissorRect(uint32 MinX, uint32 MinY, uint32 MaxX, uint32 MaxY)override;
 
 	//TODO
@@ -39,6 +40,8 @@ public:
 	inline XD3D12CommandAllocator* GetCmdAlloc() { return &cmd_direct_alloc; };
 private:
 	XD3D12RenderTargetView* RTPtrArrayPtr[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+	XD3D12DepthStencilView* DSVPtr = nullptr;
+	uint32 CurrentNumRT = 0;
 
 	XD3D12AbstractDevice* AbsDevice;
 	XD3D12CommandAllocator cmd_direct_alloc;
