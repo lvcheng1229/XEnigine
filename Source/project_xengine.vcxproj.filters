@@ -97,6 +97,10 @@
     <ClInclude Include="File\LoadTGATexture.h" />
     <ClInclude Include="Runtime\RHI\RHIDefines.h" />
     <ClInclude Include="Runtime\DataStruct\XRefCountPtr.h" />
+    <ClInclude Include="Core\AlignmentTemplates.h" />
+    <ClInclude Include="Runtime\Engine\SceneView.h" />
+    <ClInclude Include="Runtime\Core\XMath.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Common.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
@@ -147,5 +151,8 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12PassStateManager.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp" />
+    <ClCompile Include="Runtime\Engine\SceneView.cpp" />
+    <ClCompile Include="Runtime\Core\XMathcpp.cpp" />
+    <ClCompile Include="Runtime\Core\XMath.cpp" />
   </ItemGroup>
 </Project>

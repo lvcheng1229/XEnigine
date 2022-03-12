@@ -58,6 +58,16 @@ struct XD3D12PassShaderResourceManager : public SlotManager<uint64>
 	XD3D12ShaderResourceView* Views[EShaderType::SV_ShaderCount][MAX_SHADER_RESOURCE_NUM];
 };
 
+struct XD3D12PassUnorderedAcessManager : public SlotManager<uint16>
+{
+	inline void Clear()
+	{
+		ClearMask();
+		memset(Views, 0, sizeof(Views));
+	}
+	XD3D12UnorderedAcessView* Views[EShaderType::SV_ShaderCount][MAX_UAV_NUM];
+};
+
 class XD3D12PipelineCurrentDescArrayManager
 {
 private:
@@ -68,6 +78,12 @@ public:
 	XD3D12PipelineCurrentDescArrayManager() :device(nullptr), direct_ctx(nullptr) {};
 	void Create(XD3D12PhysicDevice* device_in,XD3DDirectContex* direct_ctx_in);
 	
+	template<EShaderType shader_type>
+	void SetDescTableUAVs(
+		const XD3D12RootSignature* root_signature,
+		XD3D12PassUnorderedAcessManager* UAVManager,
+		uint32& slot_start, uint16 slot_mask);
+
 	template<EShaderType shader_type>
 	void SetDescTableSRVs(
 		const XD3D12RootSignature* root_signature, 

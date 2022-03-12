@@ -29,7 +29,7 @@
 #include "Runtime/D3D12RHI/d3dx12.h"
 //#include "DDSTextureLoader.h"
 #include "MathHelper.h"
-
+#include "Runtime/D3D12RHI/D3D12Texture.h"
 //extern const int gNumFrameResources;
 
 inline void d3dSetDebugName(IDXGIObject* obj, const char* name)
@@ -227,12 +227,11 @@ struct Light
 
 struct MaterialConstants
 {
-	DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
-	DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
-	float Roughness = 0.25f;
-
-	// Used in texture mapping.
-	DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
+    float Metallic = 0.0f;
+    float Specular = 0.5f;
+    float Roughness = 0.0f;
+    float TextureScale = 1.0f;
+    float padding[12];
 };
 
 // Simple struct to represent a material for our demos.  A production 3D engine
@@ -242,20 +241,17 @@ struct Material
 	// Unique material name for lookup.
 	std::string Name;
 
-	// Index into constant buffer corresponding to this material.
+
 	int MatCBIndex = -1;
 
-	// Index into SRV heap for diffuse texture.
-	int DiffuseSrvHeapIndex = -1;
+    float Metallic = 0.0f;
+    float Specular = 0.5f;
+    float Roughness = 0.0f;
+    float TextureScale = 1.0f;
 
-	// Index into SRV heap for normal texture.
-	int NormalSrvHeapIndex = -1;
-
-	// Material constant buffer data used for shading.
-	DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
-	DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
-	float Roughness = .25f;
-	DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
+    std::shared_ptr<XRHITexture2D>TextureBaseColor;
+    std::shared_ptr<XRHITexture2D>TextureNormal;
+    std::shared_ptr<XRHITexture2D>TextureRoughness;
 };
 
 

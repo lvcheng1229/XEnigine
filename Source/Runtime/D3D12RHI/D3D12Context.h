@@ -21,8 +21,16 @@ public:
 	void OpenCmdList()override;
 	void CloseCmdList()override;
 	
-	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(uint32 width, uint32 height, ETextureCreateFlags flags, uint8* tex_data);
+	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(
+		uint32 width, uint32 height, DXGI_FORMAT format,
+		ETextureCreateFlags flag, uint8* tex_data);
+
+	void RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
+	void RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI);
+	void RHISetShaderConstantBuffer(XRHIComputeShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
+
 	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);
+	
 	void RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
 	void RHISetShaderConstantBuffer(XRHIGraphicsShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
 	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;

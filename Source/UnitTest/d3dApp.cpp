@@ -114,51 +114,11 @@ void D3DApp::OnResize()
 	direct_cmd_queue->CommandQueueWaitFlush();
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-    // Create the depth/stencil buffer and view.
-    D3D12_RESOURCE_DESC depthStencilDesc;
-    depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    depthStencilDesc.Alignment = 0;
-    depthStencilDesc.Width = mClientWidth;
-    depthStencilDesc.Height = mClientHeight;
-    depthStencilDesc.DepthOrArraySize = 1;
-    depthStencilDesc.MipLevels = 1;
-    depthStencilDesc.Format = mDepthStencilFormat;
-    depthStencilDesc.SampleDesc.Count = 1;
-    depthStencilDesc.SampleDesc.Quality = 0;
-    depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-    D3D12_CLEAR_VALUE optClear;
-    optClear.Format = mDepthStencilFormat;
-    optClear.DepthStencil.Depth = 1.0f;
-    optClear.DepthStencil.Stencil = 0;
-    ThrowIfFailed(md3dDevice->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-        &depthStencilDesc,
-		D3D12_RESOURCE_STATE_COMMON,
-        &optClear,
-        IID_PPV_ARGS(mDepthStencilBuffer.GetAddressOf())));
-	mDepthStencilBuffer.Get()->SetName(L"mDepthStencilBuffer");
-	D3D12_DEPTH_STENCIL_VIEW_DESC ds_desc;
-	ds_desc.Format = mDepthStencilFormat;
-	ds_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	ds_desc.Flags = D3D12_DSV_FLAG_NONE;
-	ds_desc.Texture2D.MipSlice = 0;
-	ds_resource.Create(mDepthStencilBuffer.Get(), D3D12_RESOURCE_STATE_COMMON);
-
-	uint32 index_of_desc_in_heap_ds;
-	uint32 index_of_heap_ds;
-	DepthStencilDescArrayManager->AllocateDesc(index_of_desc_in_heap_ds, index_of_heap_ds);
-	//ds_view.Create(&Device, &ds_resource, ds_desc, mApp->ds_desc_array->GetCPUDescPtrByIndex(0));
-	ds_view.Create(&Device, &ds_resource, ds_desc, 
-		DepthStencilDescArrayManager->compute_cpu_ptr(index_of_desc_in_heap_ds, index_of_heap_ds));
-	DsView = &ds_view;
-
-	//// Transition the resource from its initial state to be used as a depth buffer.
-	//mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDepthStencilBuffer.Get(),
-	//	D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
-
+	TextureDepthStencil = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+		DXGI_FORMAT_R24G8_TYPELESS
+		, ETextureCreateFlags(TexCreate_DepthStencilTargetable| TexCreate_ShaderResource)
+		, nullptr);
+	
 	direct_ctx->CloseCmdList();
 
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };

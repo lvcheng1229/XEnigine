@@ -133,7 +133,7 @@ class XD3D12ConstantBuffer :public XRHIConstantBuffer
 {
 public:
 	XD3D12ResourceLocation ResourceLocation;
-	inline void UpdateData(void* data, uint32 size,uint32 offset_byte)override
+	inline void UpdateData(const void* data, uint32 size,uint32 offset_byte)override
 	{
 		void* data_ptr = ResourceLocation.GetMappedCPUResourcePtr();
 		data_ptr = static_cast<uint8*>(data_ptr) + offset_byte;

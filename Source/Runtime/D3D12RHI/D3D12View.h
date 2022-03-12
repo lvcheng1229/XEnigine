@@ -9,7 +9,9 @@ protected:
 	//std::shared_ptr<XD3D12Resource>pResource;
 	XD3D12Resource* pResource;
 	D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr;
+	bool IsDSV;
 public:
+	inline bool IsDsv() { return IsDSV; };
 	inline D3D12_CPU_DESCRIPTOR_HANDLE GetCPUPtr() { return cpu_ptr; }
 	inline XD3D12Resource* GetResource() { return pResource; };
 };
@@ -26,6 +28,7 @@ public:
 		const D3D12_RENDER_TARGET_VIEW_DESC desc_in,
 		D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr_in)
 	{
+		IsDSV = false;
 		pResource = resource;
 		desc = desc_in;
 		cpu_ptr = cpu_ptr_in;
@@ -47,6 +50,7 @@ public:
 		const D3D12_DEPTH_STENCIL_VIEW_DESC desc_in,
 		D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr_in)
 	{
+		IsDSV = true;
 		pResource = resource;
 		desc = desc_in;
 		cpu_ptr = cpu_ptr_in;
@@ -65,9 +69,29 @@ public:
 		const D3D12_SHADER_RESOURCE_VIEW_DESC desc_in,
 		D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr_in)
 	{
+		IsDSV = false;
 		pResource = resource;
 		desc = desc_in;
 		cpu_ptr = cpu_ptr_in;
 		device->GetDXDevice()->CreateShaderResourceView(resource->GetResource(), &desc, cpu_ptr);
+	}
+};
+
+class XD3D12UnorderedAcessView :public XRHIUnorderedAcessView, public XD3D12View
+{
+private:
+	D3D12_UNORDERED_ACCESS_VIEW_DESC desc;
+public:
+	inline void Create(
+		XD3D12PhysicDevice* device,
+		XD3D12Resource* resource,
+		const D3D12_UNORDERED_ACCESS_VIEW_DESC desc_in,
+		D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr_in)
+	{
+		IsDSV = false;
+		pResource = resource;
+		desc = desc_in;
+		cpu_ptr = cpu_ptr_in;
+		device->GetDXDevice()->CreateUnorderedAccessView(resource->GetResource(), nullptr, &desc, cpu_ptr);
 	}
 };

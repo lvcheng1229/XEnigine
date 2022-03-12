@@ -38,6 +38,7 @@ struct XPipelineRegisterBoundCount
 
 
 #define MAX_ROOT_CONSTANT_NUM 16
+#define MAX_UAV_NUM 16
 #define MAX_SHADER_RESOURCE_NUM 64
 
 #define PIPELINE_MAX_ROOT_PARAM_COUNT 32
@@ -62,6 +63,7 @@ public:
 	void Create(XD3D12PhysicDevice* device_in, XPipelineRegisterBoundCount& register_count);
 
 	uint32 GetSRVDescTableBindSlot(EShaderType shader_type)const;
+	uint32 GetUADescTableBindSlot(EShaderType shader_type)const;
 	uint32 GetCBVDescTableBindSlot(EShaderType shader_type)const;
 	uint32 GetSampleDescTableBindSlot(EShaderType shader_type)const;
 	uint32 GetCBVRootDescBindSlot(EShaderType shader_type)const;
@@ -70,10 +72,7 @@ public:
 	void SetSRVDescTableBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 	void SetCBVDescTableBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 	void SetSampleDescTableBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
-	inline void SetUAVDescTableTBindSlot(EShaderType SF, uint8 RootParameterIndex)
-	{
-		X_Assert(false);
-	}
+	void SetUAVDescTableTBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 
 	void SetCBVRootDescBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 

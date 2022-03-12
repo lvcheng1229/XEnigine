@@ -27,8 +27,11 @@ public:
 	std::shared_ptr<XD3D12ConstantBuffer>CreateUniformBuffer(uint32 size);
 
 	XD3D12Texture2D* CreateD3D12Texture2D(
-		XD3D12DirectCommandList* x_cmd_list,
-		uint32 width, uint32 height, ETextureCreateFlags flag, uint8* tex_data);
+		XD3D12DirectCommandList* x_cmd_list, 
+		uint32 width, uint32 height, 
+		DXGI_FORMAT format,
+		ETextureCreateFlags flag,
+		uint8* tex_data);
 
 
 	XD3D12CommandQueue* GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE cmd_type);
@@ -40,6 +43,7 @@ public:
 	inline XD3D12DescArrayManager* GetDepthStencilDescArrayManager() { return &DepthStencilDescArrayManager; }
 	inline XD3D12DescArrayManager* GetShaderResourceDescArrayManager() { return &ShaderResourceDescArrayManager; }
 private:
+	uint64 TempResourceIndex;
 	std::vector<XD3D12Resource>ResourceManagerTempVec;
 
 	XD3D12PhysicDevice* PhysicalDevice;

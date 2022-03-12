@@ -90,8 +90,8 @@ void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegiste
 			desc_range_array[root_parameter_count].NumDescriptors = Shader.UnorderedAccessCount;
 
 			slot_array[root_parameter_count].ShaderVisibility = visibility;
-			//SetUAVDescTableTBindSlot(EShaderVisibility(i), root_parameter_count);
-			X_Assert(false);
+			SetUAVDescTableTBindSlot(EShaderType(i), root_parameter_count);
+			
 			root_parameter_count++;
 		}
 
@@ -170,8 +170,22 @@ uint32 XD3D12RootSignature::GetSRVDescTableBindSlot(EShaderType shader_type)cons
 	case SV_Pixel:
 		return ShaderResourceBindSlotIndexArray[PS_SRVs];
 		break;
-	case SV_ShaderCount:
+	case SV_Compute:
 		return ShaderResourceBindSlotIndexArray[ALL_SRVs];
+		break;
+	default:
+		X_Assert(false);
+		return 0;
+		break;
+	}
+}
+
+uint32 XD3D12RootSignature::GetUADescTableBindSlot(EShaderType shader_type) const
+{
+	switch (shader_type)
+	{
+	case SV_Compute:
+		return ShaderResourceBindSlotIndexArray[ALL_UAVs];
 		break;
 	default:
 		X_Assert(false);
@@ -190,7 +204,7 @@ uint32 XD3D12RootSignature::GetCBVDescTableBindSlot(EShaderType shader_type)cons
 	case SV_Pixel:
 		return ShaderResourceBindSlotIndexArray[PS_CBVs];
 		break;
-	case SV_ShaderCount:
+	case SV_Compute:
 		return ShaderResourceBindSlotIndexArray[ALL_CBVs];
 		break;
 	default:
@@ -210,7 +224,7 @@ uint32 XD3D12RootSignature::GetSampleDescTableBindSlot(EShaderType shader_type)c
 	case SV_Pixel:
 		return ShaderResourceBindSlotIndexArray[PS_Samplers];
 		break;
-	case SV_ShaderCount:
+	case SV_Compute:
 		return ShaderResourceBindSlotIndexArray[ALL_Samplers];
 		break;
 	default:
@@ -230,7 +244,7 @@ uint32 XD3D12RootSignature::GetCBVRootDescBindSlot(EShaderType shader_type)const
 	case SV_Pixel:
 		return ShaderResourceBindSlotIndexArray[PS_RootCBVs];
 		break;
-	case SV_ShaderCount:
+	case SV_Compute:
 		return ShaderResourceBindSlotIndexArray[ALL_RootCBVs];
 		break;
 	default:
@@ -251,7 +265,7 @@ void XD3D12RootSignature::SetSRVDescTableBindSlot(EShaderType shader_type, uint8
 	case SV_Pixel:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[PS_SRVs];
 		break;
-	case SV_ShaderCount:
+	case SV_Compute:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[ALL_SRVs];
 		break;
 	default:
@@ -272,7 +286,7 @@ void XD3D12RootSignature::SetCBVDescTableBindSlot(EShaderType shader_type, uint8
 	case SV_Pixel:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[PS_CBVs];
 		break;
-	case SV_ShaderCount:
+	case SV_Compute:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[ALL_CBVs];
 		break;
 	default:
@@ -293,8 +307,23 @@ void XD3D12RootSignature::SetSampleDescTableBindSlot(EShaderType shader_type, ui
 	case SV_Pixel:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[PS_Samplers];
 		break;
-	case SV_ShaderCount:
+	case SV_Compute:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[ALL_Samplers];
+		break;
+	default:
+		X_Assert(false);
+		break;
+	}
+	*pBindSlot = RootParameterIndex;
+}
+
+void XD3D12RootSignature::SetUAVDescTableTBindSlot(EShaderType shader_type, uint8 RootParameterIndex)
+{
+	uint8* pBindSlot = nullptr;
+	switch (shader_type)
+	{
+	case SV_Compute:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[ERootParameterKeys::ALL_UAVs];
 		break;
 	default:
 		X_Assert(false);
@@ -314,7 +343,7 @@ void XD3D12RootSignature::SetCBVRootDescBindSlot(EShaderType shader_type, uint8 
 	case SV_Pixel:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[PS_RootCBVs];
 		break;
-	case SV_ShaderCount:
+	case SV_Compute:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[ALL_RootCBVs];
 		break;
 	default:
@@ -334,6 +363,9 @@ static D3D12_SHADER_VISIBILITY GetShaderVisibility(EShaderType shader_visibility
 		break;
 	case EShaderType::SV_Pixel:
 		visibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		break;
+	case EShaderType::SV_Compute:
+		visibility = D3D12_SHADER_VISIBILITY_ALL;
 		break;
 	default:
 		X_Assert(false);

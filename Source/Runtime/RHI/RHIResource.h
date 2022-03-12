@@ -17,6 +17,12 @@ public:
 	explicit XRHIGraphicsShader(EShaderType ShaderTypeIn) :XRHIShader(ShaderTypeIn) {}
 };
 
+class XRHIComputeShader :public XRHIShader
+{
+public:
+	explicit XRHIComputeShader(EShaderType ShaderTypeIn) :XRHIShader(ShaderTypeIn) {}
+};
+
 class XRHITexture
 {
 
@@ -42,8 +48,13 @@ class XRHIShaderResourceView
 
 };
 
+class XRHIUnorderedAcessView
+{
+
+};
+
 class XRHIConstantBuffer
 {
 public:
-	virtual void UpdateData(void* data, uint32 size, uint32 offset_byte) = 0;
+	virtual void UpdateData(const void* data, uint32 size, uint32 offset_byte) = 0;
 };

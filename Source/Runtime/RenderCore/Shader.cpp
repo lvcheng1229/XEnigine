@@ -2,7 +2,14 @@
 
 void XShader::CreateShader(EShaderType shader_type)
 {
-	RHIShader = std::make_shared<XRHIGraphicsShader>(shader_type);
+	if (shader_type == EShaderType::SV_Compute)
+	{
+		RHIComputeShader = std::make_shared<XRHIComputeShader>(shader_type);
+	}
+	else
+	{
+		RHIShader = std::make_shared<XRHIGraphicsShader>(shader_type);
+	}
 }
 
 void XShader::CompileShader(const std::wstring& filename, const D3D_SHADER_MACRO* defines, const std::string& entrypoint, const std::string& target)
@@ -84,6 +91,10 @@ void XShader::ShaderReflect()
 		else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D10_SIT_SAMPLER)
 		{
 			sampler_count++;
+		}
+		else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D11_SIT_UAV_RWTYPED)
+		{
+			uav_count++;
 		}
 		else
 		{

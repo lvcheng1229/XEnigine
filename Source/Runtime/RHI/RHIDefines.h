@@ -6,4 +6,5 @@ enum ETextureCreateFlags
 	TexCreate_DepthStencilTargetable = 1 << 1,
 	TexCreate_ShaderResource = 1 << 2,
 	TexCreate_SRGB = 1 << 3,
+	TexCreate_UAV = 1 << 4,
 };

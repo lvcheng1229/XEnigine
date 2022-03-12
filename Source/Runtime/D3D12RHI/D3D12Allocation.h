@@ -52,10 +52,13 @@ public:
 
 	bool Allocate(uint32 allocate_size_byte, uint32 alignment, XD3D12ResourceLocation& resource_location);
 	void Deallocate(XD3D12ResourceLocation& ResourceLocation);
+
+	inline uint64 GetAllocationOffsetInBytes(const BuddyAllocatorData& AllocatorPrivateData) const {
+		return uint64(AllocatorPrivateData.offset * min_block_size);}
 	inline ID3D12Heap* GetDXHeap() { return m_heap.Get(); };
 	inline ID3D12Resource* GetDXResource() { return back_resource.GetResource(); };
-	//void deallocate();
 private:
+	void PrintCurrentState();
 	uint32 Allocate_Impl(uint32 order);
 	inline uint32 SizeToOrder(uint32 size)
 	{

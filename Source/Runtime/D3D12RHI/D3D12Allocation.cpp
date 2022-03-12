@@ -1,6 +1,7 @@
 #include "D3D12Allocation.h"
 #include "d3dx12.h"
-
+#include "Core/AlignmentTemplates.h"
+#include <iostream>
 void XD3DBuddyAllocator::Create(
 	XD3D12PhysicDevice* device_in, 
 	
@@ -59,43 +60,54 @@ void XD3DBuddyAllocator::Create(
 bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment, XD3D12ResourceLocation& resource_location)
 {
 	bool can_allocate = false;
-	uint32 allocate_size_byte = allocate_size_byte_in + alignment;
-	if (alignment != 0 && min_block_size % alignment != 0)
+	uint32 allocate_size_byte = allocate_size_byte_in;
 	{
-		allocate_size_byte = allocate_size_byte_in + alignment;
-	}
-	uint32 order = SizeToOrder(allocate_size_byte);
-	for (; order <= max_order; ++order)
-	{
-		if (offset_from_left[order].size() != 0)
+		if (alignment != 0 && min_block_size % alignment != 0)
 		{
-			can_allocate = true;
-			break;
+			allocate_size_byte = allocate_size_byte_in + alignment;
+		}
+		uint32 order = SizeToOrder(allocate_size_byte);
+		for (; order <= max_order; ++order)
+		{
+			if (offset_from_left[order].size() != 0)
+			{
+				can_allocate = true;
+				break;
+			}
+		}
+
+		if (allocate_size_byte > (max_block_size - TotalUsed))
+		{
+			can_allocate = false;
 		}
 	}
 
-	
-
-	if (allocate_size_byte > (max_block_size- TotalUsed))
-	{
-		can_allocate = false;
-	}
 
 	if (can_allocate)
 	{
-		uint32 res_order = SizeToOrder(allocate_size_byte);
-		TotalUsed += min_block_size * (1 << res_order);
-		uint32 offset_res = Allocate_Impl(order - 1);
+		uint32 order = SizeToOrder(allocate_size_byte);
+		TotalUsed += min_block_size * (1 << order);
+		
+		X_Assert(TotalUsed < max_block_size);
+
+		uint32 OffsetRes = Allocate_Impl(order);
 		resource_location.SetBuddyAllocator(this);
 		BuddyAllocatorData& alloc_data = resource_location.GetBuddyAllocData();
-		alloc_data.offset = offset_res;
-		alloc_data.order = res_order;
+		alloc_data.offset = OffsetRes;
+		alloc_data.order = order;
 
+		uint32 AllocatedResourceOffset = uint32(OffsetRes * min_block_size);
+		if (alignment != 0 && AllocatedResourceOffset % alignment != 0)
+		{
+			AllocatedResourceOffset = AlignArbitrary(AllocatedResourceOffset, alignment);
+		}
+		
 		if (strategy == AllocStrategy::ManualSubAllocation)
 		{
 			resource_location.SetBackResource(&back_resource);
-			resource_location.SetMappedCPUResourcePtr((uint8*)back_resource.GetMappedResourceCPUPtr() + offset_res * min_block_size);
-			resource_location.SetGPUVirtualPtr(back_resource.GetGPUVirtaulAddress() + offset_res * min_block_size);
+			resource_location.SetMappedCPUResourcePtr((uint8*)back_resource.GetMappedResourceCPUPtr() + AllocatedResourceOffset);
+			//resource_location.SetGPUVirtualPtr(back_resource.GetGPUVirtaulAddress() + OffsetRes * min_block_size);
+			resource_location.SetGPUVirtualPtr(back_resource.GetGPUVirtaulAddress() + AllocatedResourceOffset);
 		}
 	}
 
@@ -110,17 +122,27 @@ void XD3DBuddyAllocator::Deallocate(XD3D12ResourceLocation& ResourceLocation)
 }
 
 
+void XD3DBuddyAllocator::PrintCurrentState()
+{
+
+}
+
 uint32 XD3DBuddyAllocator::Allocate_Impl(uint32 order)
 {
 	uint32 offset_left;
+	
+	X_Assert(order <= max_order);
+	
 	if (offset_from_left[order].size() == 0)
 	{
 		offset_left = Allocate_Impl(order + 1);
-		uint32 offset_right = 1 << order;
+		uint32 offset_right = offset_left + 1 << order;
+		
 		offset_from_left[order].insert(offset_right);
 	}
 	else
 	{
+		X_Assert(offset_from_left[order].size() > 0)
 		offset_left = *(offset_from_left[order].begin());
 		offset_from_left[order].erase(offset_left);
 	}

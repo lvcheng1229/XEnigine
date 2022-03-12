@@ -19,6 +19,14 @@ public:
 
 	}
 	static inline void TransitionResource(
+		XD3D12DirectCommandList& hCommandList, 
+		XD3D12UnorderedAcessView* pView, 
+		D3D12_RESOURCE_STATES after)
+	{
+		XD3D12Resource* pResource = pView->GetResource();
+		Base_TransitionResource(hCommandList, pResource, after);
+	}
+	static inline void TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,
 		XD3D12ShaderResourceView* sr_view,
 		D3D12_RESOURCE_STATES after)
