@@ -117,6 +117,7 @@ void D3DApp::OnResize()
 	TextureDepthStencil = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
 		DXGI_FORMAT_R24G8_TYPELESS
 		, ETextureCreateFlags(TexCreate_DepthStencilTargetable| TexCreate_ShaderResource)
+		,1
 		, nullptr);
 	
 	direct_ctx->CloseCmdList();

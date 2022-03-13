@@ -31,10 +31,10 @@ void XD3DDirectContex::CloseCmdList()
 
 std::shared_ptr<XRHITexture2D> XD3DDirectContex::CreateD3D12Texture2D(
 	uint32 width, uint32 height, DXGI_FORMAT format,
-	ETextureCreateFlags flag, uint8* tex_data)
+	ETextureCreateFlags flag, uint32 NumMipsIn,uint8* tex_data)
 {
 	return std::shared_ptr<XRHITexture2D>(
-		AbsDevice->CreateD3D12Texture2D(&cmd_dirrect_list, width, height, format, flag, tex_data));
+		AbsDevice->CreateD3D12Texture2D(&cmd_dirrect_list, width, height, format, flag, NumMipsIn, tex_data));
 }
 
 void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr)
@@ -50,11 +50,10 @@ void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView**
 	PassStateManager.SetRenderTarget(num_rt, RTPtrArrayPtr, DSVPtr);
 }
 
-void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
+//void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
+void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)
 {
-	X_Assert(ShaderRHI->GetShaderType() == SV_Compute);
-	XD3D12Texture2D* D3DTexturePtr = static_cast<XD3D12Texture2D*>(NewTextureRHI);
-	XD3D12UnorderedAcessView* D3DUAVPtr = D3DTexturePtr->GeUnorderedAcessView();
+	XD3D12UnorderedAcessView* D3DUAVPtr = static_cast<XD3D12UnorderedAcessView*>(UAV);
 	PassStateManager.SetUAV<EShaderType::SV_Compute>(D3DUAVPtr, TextureIndex);
 }
 
@@ -69,6 +68,12 @@ void XD3DDirectContex::RHISetShaderConstantBuffer(XRHIComputeShader* ShaderRHI, 
 {
 	XD3D12ConstantBuffer* ConstantBuffer = static_cast<XD3D12ConstantBuffer*>(RHIConstantBuffer);
 	PassStateManager.SetCBV<EShaderType::SV_Compute>(ConstantBuffer, BufferIndex);
+}
+
+void XD3DDirectContex::RHISetShaderResourceViewParameter(XRHIComputeShader* ComputeShaderRHI, uint32 TextureIndex, XRHIShaderResourceView* SRVRHI)
+{
+	XD3D12ShaderResourceView* D3DSRVPtr = static_cast<XD3D12ShaderResourceView*>(SRVRHI);
+	PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
 }
 
 void XD3DDirectContex::RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)

@@ -23,11 +23,12 @@ public:
 	
 	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(
 		uint32 width, uint32 height, DXGI_FORMAT format,
-		ETextureCreateFlags flag, uint8* tex_data);
+		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
-	void RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
+	void RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override;
 	void RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI);
 	void RHISetShaderConstantBuffer(XRHIComputeShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
+	void RHISetShaderResourceViewParameter(XRHIComputeShader* ComputeShaderRHI, uint32 TextureIndex, XRHIShaderResourceView* SRVRHI);
 
 	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);
 	

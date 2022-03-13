@@ -31,6 +31,7 @@ public:
 		uint32 width, uint32 height, 
 		DXGI_FORMAT format,
 		ETextureCreateFlags flag,
+		uint32 NumMipsIn,
 		uint8* tex_data);
 
 

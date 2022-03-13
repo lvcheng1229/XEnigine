@@ -186,6 +186,21 @@ private:
 	std::unique_ptr<RenderItem> LightPassItem;
 	ComPtr<ID3D12PipelineState>LightPassPso = nullptr;
 	XD3D12RootSignature LightPassRootSig;
+	std::shared_ptr<XRHITexture2D> SSROutput;
+	//SSR Pass
+private:
+	struct cbSSR
+	{
+		XMFLOAT4  SSRParams;
+	};
+	cbSSR cbSSRIns;
+	std::shared_ptr<XRHIConstantBuffer>RHIcbSSR;
+	
+	std::shared_ptr<XRHIConstantBuffer>RHISSRViewCB;
+
+	XD3D12RootSignature SSRPassRootSig;
+	ComPtr<ID3D12PipelineState>SSRPassPSO = nullptr;
+
 private:
 	float clear_color[4] = { 0, 0, 0, 0 };
 	std::unique_ptr<FrameResource>mFrameResource;
@@ -284,6 +299,13 @@ bool CrateApp::Initialize()
 
 	RHICbbHZB= abstrtact_device.CreateUniformBuffer(
 		d3dUtil::CalcConstantBufferByteSize(sizeof(cbHZB)));
+
+	RHIcbSSR = abstrtact_device.CreateUniformBuffer(
+		d3dUtil::CalcConstantBufferByteSize(sizeof(cbSSR)));
+
+	RHISSRViewCB = abstrtact_device.CreateUniformBuffer(
+		d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferTable)));
+
 	BuildPSOs();
 
 	OutputDebugString(L"1111\n");
@@ -430,19 +452,19 @@ void CrateApp::Renderer(const GameTimer& gt)
 		mCommandList->SetPipelineState(HZBPSO.Get());
 		pass_state_manager->SetRootSignature(&HZBPassRootSig);
 	
-		direct_ctx->RHISetShaderTexture(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 0,
-			TextureDepthStencil.get());
-	
-		direct_ctx->RHISetShaderConstantBuffer(
-			mShaders["HZBPassCS"].GetRHIComputeShader().get(),
-			0,
-			RHICbbHZB.get());
-		direct_ctx->RHISetShaderUAV(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 0, FurthestHZBOutput0.get());
-	
+		direct_ctx->RHISetShaderConstantBuffer(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 0, RHICbbHZB.get());
+
+		direct_ctx->RHISetShaderTexture(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 0, TextureDepthStencil.get());
+		XD3D12Texture2D* HZBOutTex = static_cast<XD3D12Texture2D*>(FurthestHZBOutput0.get());
+		direct_ctx->RHISetShaderUAV(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 0, HZBOutTex->GeUnorderedAcessView(0));
+		direct_ctx->RHISetShaderUAV(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 1, HZBOutTex->GeUnorderedAcessView(1));
+		direct_ctx->RHISetShaderUAV(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 2, HZBOutTex->GeUnorderedAcessView(2));
+		direct_ctx->RHISetShaderUAV(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 3, HZBOutTex->GeUnorderedAcessView(3));
+		direct_ctx->RHISetShaderUAV(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 4, HZBOutTex->GeUnorderedAcessView(4));
 		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
-		
 		direct_ctx->GetCmdList()->CmdListFlushBarrier();
 		mCommandList.Get()->Dispatch(512 / 16, 512 / 16, 1);
+
 		
 		direct_ctx->CloseCmdList();
 		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -672,8 +694,13 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
 	}
+	//Pass7 SSRPass
+	{
+		direct_ctx->ResetCmdAlloc();
+		direct_ctx->OpenCmdList();
+	}
 
-	//Pass7 FinalPass ToneMapping
+	//Pass8 FinalPass ToneMapping
 	{
 		direct_ctx->ResetCmdAlloc();
 		direct_ctx->OpenCmdList();
@@ -891,6 +918,7 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 
 
+
 	//ShadowMaskPass
 	//TODO combine ShadowMaskPassViewConstantBuffer with ViewConstantBuffer
 	ViewCB.BufferSizeAndInvSize =
@@ -916,6 +944,10 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		ShadowMaskNoCommonConstantBuffer[i].get()->UpdateData(&cbShadowMaskNoCommon[i], sizeof(cbShadowMaskNoCommonBuffer), 0);
 	}
 
+	//SSR Pass
+	RHISSRViewCB->UpdateData(&ViewCB, sizeof(ViewConstantBufferTable), 0);
+	cbSSRIns.SSRParams = XMFLOAT4(1.0, 1.0, 1.0, 1.0);
+	RHIcbSSR->UpdateData(&cbSSRIns, sizeof(cbSSR), 0);
 }
 
 
@@ -928,7 +960,7 @@ void CrateApp::LoadTextures()
 		
 		TextureMetalBaseColor = direct_ctx->CreateD3D12Texture2D(w, h,
 			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
-			,ETextureCreateFlags(TexCreate_SRGB)
+			,ETextureCreateFlags(TexCreate_SRGB),1
 			, BaseColorData);
 		stbi_image_free(BaseColorData);
 	}
@@ -948,7 +980,7 @@ void CrateApp::LoadTextures()
 		}
 		TextureMetalNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n,
 			DXGI_FORMAT_R8G8B8A8_UNORM
-			,ETextureCreateFlags(TexCreate_None)
+			,ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
 		stbi_image_free(NormalMapData);
 		delete[] FourChannelData;
@@ -969,7 +1001,7 @@ void CrateApp::LoadTextures()
 		}
 		TextureRoughness = direct_ctx->CreateD3D12Texture2D(w_r, h_r,
 			DXGI_FORMAT_R8G8B8A8_UNORM
-			, ETextureCreateFlags(TexCreate_None)
+			, ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
 		stbi_image_free(RoughnessMapData);
 		delete[] FourChannelData;
@@ -982,7 +1014,7 @@ void CrateApp::LoadTextures()
 		
 		TextureWoodBaseColor = direct_ctx->CreateD3D12Texture2D(w, h,
 			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
-			, ETextureCreateFlags(TexCreate_SRGB)
+			, ETextureCreateFlags(TexCreate_SRGB), 1
 			, BaseColorData);
 		stbi_image_free(BaseColorData);
 	}
@@ -1002,7 +1034,7 @@ void CrateApp::LoadTextures()
 		}
 		TextureWoodNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n,
 			DXGI_FORMAT_R8G8B8A8_UNORM
-			, ETextureCreateFlags(TexCreate_None)
+			, ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
 		stbi_image_free(NormalMapData);
 		delete[] FourChannelData;
@@ -1012,42 +1044,47 @@ void CrateApp::LoadTextures()
 	{
 		TextureGBufferA = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
 			DXGI_FORMAT_R32G32B32A32_FLOAT
-			,ETextureCreateFlags(TexCreate_RenderTargetable)
+			,ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		TextureGBufferB = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
 			DXGI_FORMAT_R32G32B32A32_FLOAT
-			, ETextureCreateFlags(TexCreate_RenderTargetable)
+			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		TextureGBufferC = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
 			DXGI_FORMAT_R32G32B32A32_FLOAT
-			, ETextureCreateFlags(TexCreate_RenderTargetable)
+			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		TextureGBufferD = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
 			DXGI_FORMAT_R8G8B8A8_UNORM
-			, ETextureCreateFlags(TexCreate_RenderTargetable)
+			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		TextureSceneColorDeffered = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
 			DXGI_FORMAT_R32G32B32A32_FLOAT
-			, ETextureCreateFlags(TexCreate_RenderTargetable)
+			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		ShadowTexture0 = direct_ctx->CreateD3D12Texture2D(ShadowMapWidth, ShadowMapHeight,
 			DXGI_FORMAT_R24G8_TYPELESS
-			, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource)
+			, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
 		ShadowMaskTexture = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
 			DXGI_FORMAT_R8G8B8A8_UNORM
-			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource)
+			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
 		FurthestHZBOutput0 = direct_ctx->CreateD3D12Texture2D(512, 512,
 			DXGI_FORMAT_R16_FLOAT
-			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource)
+			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 5
+			, nullptr);
+
+		SSROutput = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+			DXGI_FORMAT_R8G8B8A8_UNORM
+			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 	}
 
@@ -1105,6 +1142,7 @@ void CrateApp::BuildRootSignature()
 		d3d12_root_signature.Create(&Device, pipeline_register_count);
 	}
 
+	//ShadowMaskPass
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
@@ -1118,8 +1156,8 @@ void CrateApp::BuildRootSignature()
 			= mShaders["ShadowMaskPS"].GetSRVCount();
 
 		ShadowMaskPassRootSig.Create(&Device, pipeline_register_count);
-		
 	}
+
 	//LightPass
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
