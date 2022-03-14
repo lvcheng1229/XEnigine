@@ -105,12 +105,15 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 				XD3D12PlatformRHI::TransitionResource(*direct_cmd_list, PipelineState.Graphics.depth_stencil,
 					D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
+				direct_ctx->GetCmdList()->CmdListFlushBarrier();
+
 				direct_cmd_list->GetDXCmdList()->OMSetRenderTargets(
 					PipelineState.Graphics.current_num_rendertarget, RTVDescriptors, true,
 					&PipelineState.Graphics.depth_stencil->GetCPUPtr());
 			}
 			else
 			{
+				direct_ctx->GetCmdList()->CmdListFlushBarrier();
 				direct_cmd_list->GetDXCmdList()->OMSetRenderTargets(PipelineState.Graphics.current_num_rendertarget, RTVDescriptors, true, nullptr);
 			}
 		}

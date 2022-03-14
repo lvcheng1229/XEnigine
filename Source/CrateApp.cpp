@@ -92,6 +92,7 @@ private:
 	BoundSphere BuildBoundSphere(float FoVAngleY, float WHRatio, float SplirNear, float SplitFar);
 	
 private:
+	uint64 FrameNum = 0;
 	float Far = 1000.0f;
 	float Near = 1.0f;
 	float FoVAngleY = 0.25f * MathHelper::Pi;
@@ -114,11 +115,14 @@ private:
 private:
 	struct ViewConstantBufferTable
 	{
+		DirectX::XMFLOAT4X4 TranslatedViewProjectionMatrix;
 		DirectX::XMFLOAT4X4 ScreenToTranslatedWorld;
+		DirectX::XMFLOAT4X4 ViewToClip;
 		DirectX::XMFLOAT4 InvDeviceZToWorldZTransform;
 		DirectX::XMFLOAT3 WorldCameraOrigin;
 		float padding0 = 0.0;
 		DirectX::XMFLOAT4 BufferSizeAndInvSize;
+		uint32 StateFrameIndexMod8 = 0;
 	};
 
 	//Full Screen Pass
@@ -181,7 +185,7 @@ private:
 	XD3D12RootSignature PrePassRootSig;
 	ComPtr<ID3D12PipelineState> mDepthOnlyPSO = nullptr;
 private:
-
+	
 	std::shared_ptr<XRHIConstantBuffer>ViewConstantBuffer;
 	std::unique_ptr<RenderItem> LightPassItem;
 	ComPtr<ID3D12PipelineState>LightPassPso = nullptr;
@@ -200,6 +204,10 @@ private:
 
 	XD3D12RootSignature SSRPassRootSig;
 	ComPtr<ID3D12PipelineState>SSRPassPSO = nullptr;
+	
+private:
+	XD3D12RootSignature ReflectionEnvironmentRootSig;
+	ComPtr<ID3D12PipelineState>ReflectionEnvironmentPassPSO = nullptr;
 
 private:
 	float clear_color[4] = { 0, 0, 0, 0 };
@@ -694,13 +702,81 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
 	}
+
 	//Pass7 SSRPass
 	{
 		direct_ctx->ResetCmdAlloc();
 		direct_ctx->OpenCmdList();
+		mCommandList->SetPipelineState(SSRPassPSO.Get());
+		pass_state_manager->SetRootSignature(&SSRPassRootSig);
+		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
+		RTViews[0] = static_cast<XD3D12Texture2D*>(SSROutput.get())->GetRenderTargetView();
+		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);
+		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
+
+		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 0, TextureSceneColorDeffered.get());
+		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 1, TextureGBufferA.get());
+		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 2, TextureGBufferB.get());
+		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 3, TextureGBufferC.get());
+		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 4, TextureGBufferD.get());
+		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 5, TextureDepthStencil.get());
+		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 6, FurthestHZBOutput0.get());
+
+		direct_ctx->RHISetShaderConstantBuffer(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(),
+			0, RHISSRViewCB.get());
+
+		direct_ctx->RHISetShaderConstantBuffer(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(),
+			1, RHIcbSSR.get());
+
+		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
+		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
+		mCommandList.Get()->DrawIndexedInstanced(
+			fullScreenItem->IndexCount, 1,
+			fullScreenItem->StartIndexLocation,
+			fullScreenItem->BaseVertexLocation, 0);
+
+		direct_ctx->GetCmdList()->CmdListFlushBarrier();
+		direct_ctx->CloseCmdList();
+		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		direct_cmd_queue->CommandQueueWaitFlush();
+		pass_state_manager->ResetState();
+
 	}
 
-	//Pass8 FinalPass ToneMapping
+	//Pass8 ReflectionEnvironment Pass
+	{
+		direct_ctx->ResetCmdAlloc();
+		direct_ctx->OpenCmdList();
+		mCommandList->SetPipelineState(ReflectionEnvironmentPassPSO.Get());
+		pass_state_manager->SetRootSignature(&ReflectionEnvironmentRootSig);
+		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
+		
+		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureSceneColorDeffered.get())->GetRenderTargetView();
+		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);
+		//direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
+
+		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 0, SSROutput.get());
+
+		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
+		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
+		mCommandList.Get()->DrawIndexedInstanced(
+			fullScreenItem->IndexCount, 1,
+			fullScreenItem->StartIndexLocation,
+			fullScreenItem->BaseVertexLocation, 0);
+
+		direct_ctx->GetCmdList()->CmdListFlushBarrier();
+		direct_ctx->CloseCmdList();
+		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		direct_cmd_queue->CommandQueueWaitFlush();
+		pass_state_manager->ResetState();
+
+	}
+
+	//Pass9 FinalPass ToneMapping
 	{
 		direct_ctx->ResetCmdAlloc();
 		direct_ctx->OpenCmdList();
@@ -717,7 +793,11 @@ void CrateApp::Renderer(const GameTimer& gt)
 			mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
 			,0
 			, TextureSceneColorDeffered.get());
-
+		//direct_ctx->RHISetShaderTexture(
+		//	mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
+		//	, 0
+		//	, SSROutput.get());
+		
 		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
 		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
 		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
@@ -897,7 +977,12 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	memcpy(&mMainPassCB.ViewProj, &ViewMatrix.GetViewProjectionMatrixTranspose(), sizeof(DirectX::XMFLOAT4X4));
 	mFrameResource->PassConstantBuffer.get()->UpdateData(&mMainPassCB, sizeof(PassConstants), 0);
 	
+	FrameNum++;
+	ViewCB.StateFrameIndexMod8 = FrameNum % 8;
+
 	//Current For LightPass , will combine to BasePass for future
+	ViewCB.ViewToClip = ViewMatrix.GetProjectionMatrixTranspose();
+	ViewCB.TranslatedViewProjectionMatrix = ViewMatrix.GetTranslatedViewProjectionMatrixTranspose();
 	ViewCB.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorldTranPose();
 	ViewCB.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(ViewMatrix.GetProjectionMatrix());
 	ViewCB.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
@@ -1175,6 +1260,32 @@ void CrateApp::BuildRootSignature()
 		LightPassRootSig.Create(&Device, pipeline_register_count);
 	}
 
+	//SSR Pass
+	{
+		XPipelineRegisterBoundCount pipeline_register_count;
+		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
+
+		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+			= mShaders["SSRPassPS"].GetCBVCount();
+		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+			= mShaders["SSRPassPS"].GetSRVCount();
+
+		SSRPassRootSig.Create(&Device, pipeline_register_count);
+	}
+	
+	//Reflection Environment Pass
+	{
+		XPipelineRegisterBoundCount pipeline_register_count;
+		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
+
+		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+			= mShaders["ReflectionEnvironmentPS"].GetCBVCount();
+		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+			= mShaders["ReflectionEnvironmentPS"].GetSRVCount();
+
+		ReflectionEnvironmentRootSig.Create(&Device, pipeline_register_count);
+	}
+
 	//FullScreenPass
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
@@ -1248,6 +1359,31 @@ void CrateApp::BuildShadersAndInputLayout()
 		mShaders["LightPassPS"].ShaderReflect();
 	}
 	
+	{
+		mShaders["SSRPassVS"].CreateShader(EShaderType::SV_Vertex);
+		mShaders["SSRPassVS"].CompileShader(
+			L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl", nullptr, "VS", "vs_5_1");
+		mShaders["SSRPassVS"].ShaderReflect();
+
+		mShaders["SSRPassPS"].CreateShader(EShaderType::SV_Pixel);
+		mShaders["SSRPassPS"].CompileShader(
+			L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl", nullptr, "PS", "ps_5_1");
+		mShaders["SSRPassPS"].ShaderReflect();
+	}
+
+	{
+		mShaders["ReflectionEnvironmentVS"].CreateShader(EShaderType::SV_Vertex);
+		mShaders["ReflectionEnvironmentVS"].CompileShader(
+			L"E:/XEngine/XEnigine/Source/Shaders/ReflectionEnvironmentShader.hlsl", nullptr, "VS", "vs_5_1");
+		mShaders["ReflectionEnvironmentVS"].ShaderReflect();
+
+		mShaders["ReflectionEnvironmentPS"].CreateShader(EShaderType::SV_Pixel);
+		mShaders["ReflectionEnvironmentPS"].CompileShader(
+			L"E:/XEngine/XEnigine/Source/Shaders/ReflectionEnvironmentShader.hlsl", nullptr, "PS", "ps_5_1");
+		mShaders["ReflectionEnvironmentPS"].ShaderReflect();
+		
+	}
+
 	{
 		mShaders["fullScreenVS"].CreateShader(EShaderType::SV_Vertex);
 		mShaders["fullScreenVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/fullScreen.hlsl", nullptr, "VS", "vs_5_1");
@@ -1467,11 +1603,6 @@ void CrateApp::BuildPSOs()
 
 	//HZB Pass
 	{
-		//ID3D12RootSignature* pRootSignature;
-		//D3D12_SHADER_BYTECODE CS;
-		//UINT NodeMask;
-		//D3D12_CACHED_PIPELINE_STATE CachedPSO;
-		//D3D12_PIPELINE_STATE_FLAGS Flags;
 		D3D12_COMPUTE_PIPELINE_STATE_DESC HZBPassPSODesc;
 		ZeroMemory(&HZBPassPSODesc, sizeof(D3D12_COMPUTE_PIPELINE_STATE_DESC));
 		HZBPassPSODesc.pRootSignature = HZBPassRootSig.GetDXRootSignature();
@@ -1618,6 +1749,79 @@ void CrateApp::BuildPSOs()
 		LightPassPsoDesc.SampleDesc.Quality = 0;
 		LightPassPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&LightPassPsoDesc, IID_PPV_ARGS(&LightPassPso)));
+	}
+
+	//SSRPass
+	{
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC SSRPsoDesc;
+
+		ZeroMemory(&SSRPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+		SSRPsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
+		SSRPsoDesc.pRootSignature = SSRPassRootSig.GetDXRootSignature();
+		SSRPsoDesc.VS =
+		{
+			reinterpret_cast<BYTE*>(mShaders["SSRPassVS"].GetByteCode()->GetBufferPointer()),
+			mShaders["SSRPassVS"].GetByteCode()->GetBufferSize()
+		};
+		SSRPsoDesc.PS =
+		{
+			reinterpret_cast<BYTE*>(mShaders["SSRPassPS"].GetByteCode()->GetBufferPointer()),
+			mShaders["SSRPassPS"].GetByteCode()->GetBufferSize()
+		};
+		SSRPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		SSRPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		SSRPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		SSRPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		SSRPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+
+
+		SSRPsoDesc.SampleMask = UINT_MAX;
+		SSRPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		SSRPsoDesc.NumRenderTargets = 1;
+		SSRPsoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		SSRPsoDesc.SampleDesc.Count = 1;
+		SSRPsoDesc.SampleDesc.Quality = 0;
+		SSRPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&SSRPsoDesc, IID_PPV_ARGS(&SSRPassPSO)));
+	}
+
+	//Reflection Environment Pass
+	{
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC IBLPsoDesc;
+	
+		ZeroMemory(&IBLPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+		IBLPsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
+		IBLPsoDesc.pRootSignature = ReflectionEnvironmentRootSig.GetDXRootSignature();
+		IBLPsoDesc.VS =
+		{
+			reinterpret_cast<BYTE*>(mShaders["ReflectionEnvironmentVS"].GetByteCode()->GetBufferPointer()),
+			mShaders["ReflectionEnvironmentVS"].GetByteCode()->GetBufferSize()
+		};
+		IBLPsoDesc.PS =
+		{
+			reinterpret_cast<BYTE*>(mShaders["ReflectionEnvironmentPS"].GetByteCode()->GetBufferPointer()),
+			mShaders["ReflectionEnvironmentPS"].GetByteCode()->GetBufferSize()
+		};
+		IBLPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+
+		IBLPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		IBLPsoDesc.BlendState.RenderTarget[0].BlendEnable = true;
+		IBLPsoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		IBLPsoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+		IBLPsoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+
+		IBLPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		IBLPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		IBLPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	
+		IBLPsoDesc.SampleMask = UINT_MAX;
+		IBLPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		IBLPsoDesc.NumRenderTargets = 1;
+		IBLPsoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		IBLPsoDesc.SampleDesc.Count = 1;
+		IBLPsoDesc.SampleDesc.Quality = 0;
+		IBLPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&IBLPsoDesc, IID_PPV_ARGS(&ReflectionEnvironmentPassPSO)));
 	}
 
 	//FullScreenPass

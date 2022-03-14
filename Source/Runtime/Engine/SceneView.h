@@ -27,7 +27,8 @@ private:
 	DirectX::XMFLOAT4X4		ViewProjectionMatrix;
 	DirectX::XMFLOAT4X4		TranslatedViewMatrix;
 	DirectX::XMFLOAT4X4		TranslatedViewProjectionMatrix;
-	
+	DirectX::XMFLOAT4X4		TranslatedWorldToClip;
+
 	//Transpose
 	DirectX::XMFLOAT4X4		ProjectionMatrixTranspose;
 	DirectX::XMFLOAT4X4		ViewMatrixTranspose;
@@ -69,7 +70,7 @@ public:
 	inline const DirectX::XMFLOAT4X4& GetViewProjectionMatrixTranspose()const	{ return ViewProjectionMatrixTranspose; };
 	inline const DirectX::XMFLOAT4X4& GetTranslatedViewMatrixTranspose()const	{ return TranslatedViewMatrixTranspose; };
 	inline const DirectX::XMFLOAT4X4& GetTranslatedViewProjectionMatrixTranspose()const { return TranslatedViewProjectionMatrixTranspose; };
-	
+
 	//inverse
 	inline const DirectX::XMFLOAT4X4& GetViewProjectionMatrixInverse()const { return ViewProjectionMatrixInverse; };
 	inline const DirectX::XMFLOAT4X4& GetTranslatedViewProjectionMatrixInverse()const { return TranslatedViewProjectionMatrixInverse; };

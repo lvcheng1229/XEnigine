@@ -93,13 +93,14 @@ void XViewMatrices::UpdateViewMatrix(const DirectX::XMFLOAT3& ViewLocation, cons
 	XMMATRIX ViewProjectionMatrixCom = XMMatrixMultiply(ViewMatrixCom, ProjectionMatrixCom);
 	XMMATRIX TranslatedViewProjectionMatrixCom = XMMatrixMultiply(TranslatedViewMatrixCom, ProjectionMatrixCom);
 
+
 	StoreMat_Transpose_Inverse(
 		&ViewProjectionMatrix,
 		&ViewProjectionMatrixTranspose,
 		&ViewProjectionMatrixInverse,
 		ViewProjectionMatrixCom
 	);
-
+	
 	StoreMat_Transpose_Inverse(
 		&TranslatedViewProjectionMatrix,
 		&TranslatedViewProjectionMatrixTranspose,

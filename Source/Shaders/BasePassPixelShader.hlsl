@@ -90,9 +90,11 @@ void PS(FVertexFactoryInterpolantsVSToPS Input,
     out float4 OutTargetD : SV_Target3
     )
 {
+    float tempRes=0;
     float4 BaseColorSample = BaseColorMap.Sample(gsamLinearWarp, Input.TexCoords.xy*TextureScale);
     float4 RoughnessSampleValue=RoughnessMap.Sample(gsamLinearWarp, Input.TexCoords.xy*TextureScale);
     float4 SampleNormalValue = NormalMap.Sample(gsamPointWarp, Input.TexCoords.xy*TextureScale);
+
     float3 DecodeNormal=NormalSampleToWorldSpace(
         SampleNormalValue.xyz,
     normalize(Input.TangentToWorld2.xyz),
@@ -120,4 +122,5 @@ void PS(FVertexFactoryInterpolantsVSToPS Input,
         );
     OutTargetC=float4(OutputGbufferData.BaseColor,1.0f);
     OutTargetD=float4(Input.TestWorldPosition,1.0f);
+    OutTargetD.z+=(tempRes*0.0f);
 }
