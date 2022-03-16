@@ -30,11 +30,16 @@ void XD3DDirectContex::CloseCmdList()
 }
 
 std::shared_ptr<XRHITexture2D> XD3DDirectContex::CreateD3D12Texture2D(
-	uint32 width, uint32 height, DXGI_FORMAT format,
+	uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, DXGI_FORMAT format,
 	ETextureCreateFlags flag, uint32 NumMipsIn,uint8* tex_data)
 {
 	return std::shared_ptr<XRHITexture2D>(
-		AbsDevice->CreateD3D12Texture2D(&cmd_dirrect_list, width, height, format, flag, NumMipsIn, tex_data));
+		AbsDevice->CreateD3D12Texture2D(&cmd_dirrect_list, width, height, SizeZ, bTextureArray, bCubeTexture, format, flag, NumMipsIn, tex_data));
+}
+
+std::shared_ptr<XRHITexture3D> XD3DDirectContex::CreateD3D12Texture3D(uint32 width, uint32 height, uint32 SizeZ, DXGI_FORMAT format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
+{
+	return std::shared_ptr<XRHITexture3D>(AbsDevice->CreateD3D12Texture3D(&cmd_dirrect_list, width, height, SizeZ, format, flag, NumMipsIn, tex_data));
 }
 
 void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr)
@@ -59,7 +64,8 @@ void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 Text
 
 void XD3DDirectContex::RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
 {
-	XD3D12Texture2D* D3DTexturePtr = static_cast<XD3D12Texture2D*>(NewTextureRHI);
+	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
+	//XD3D12Texture2D* D3DTexturePtr = static_cast<XD3D12Texture2D*>(NewTextureRHI);
 	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
 	PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
 }
@@ -79,7 +85,8 @@ void XD3DDirectContex::RHISetShaderResourceViewParameter(XRHIComputeShader* Comp
 void XD3DDirectContex::RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
 {
 	EShaderType ShaderType = ShaderRHI->GetShaderType();
-	XD3D12Texture2D* D3DTexturePtr = static_cast<XD3D12Texture2D*>(NewTextureRHI);
+	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
+	//XD3D12Texture2D* D3DTexturePtr = static_cast<XD3D12Texture2D*>(NewTextureRHI);
 	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
 	switch (ShaderType)
 	{

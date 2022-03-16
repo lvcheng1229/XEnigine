@@ -92,6 +92,8 @@ private:
 	BoundSphere BuildBoundSphere(float FoVAngleY, float WHRatio, float SplirNear, float SplitFar);
 	
 	XMFLOAT3 LightDir = { -1,1,1 };
+	XMFLOAT3 LightColor = { 1,1,1 };
+	float LightIntensity = 7.0f;
 private:
 	uint64 FrameNum = 0;
 	float Far = 1000.0f;
@@ -113,18 +115,36 @@ private:
 	std::shared_ptr<XRHITexture2D>TextureSceneColorDeffered;
 
 	XRHIRenderTargetView* RTViews[8];
+
+//deffered light pass
+private:
+	struct cbDefferedLight
+	{
+		XMFLOAT3 LightDir;
+		float padding0 = 0;
+		XMFLOAT4 LightColorAndIntensityInLux;
+	};
+	cbDefferedLight cbDefferedLightIns;
+	std::shared_ptr<XRHIConstantBuffer> RHIcbDefferedLight;
 private:
 	struct ViewConstantBufferTable
 	{
 		DirectX::XMFLOAT4X4 TranslatedViewProjectionMatrix;
 		DirectX::XMFLOAT4X4 ScreenToTranslatedWorld;
 		DirectX::XMFLOAT4X4 ViewToClip;
+
 		DirectX::XMFLOAT4 InvDeviceZToWorldZTransform;
 		DirectX::XMFLOAT3 WorldCameraOrigin;
-		float padding0 = 0.0;
-		DirectX::XMFLOAT4 BufferSizeAndInvSize;
 		uint32 StateFrameIndexMod8 = 0;
+
+		DirectX::XMFLOAT4 BufferSizeAndInvSize;
 		DirectX::XMFLOAT4 AtmosphereLightDirection;
+
+		XMFLOAT3 SkyWorldCameraOrigin;
+		float padding1 = 0.0;
+
+		XMFLOAT4 SkyPlanetCenterAndViewHeight;
+		DirectX::XMFLOAT4X4 SkyViewLutReferential;
 	};
 
 	//Full Screen Pass
@@ -182,14 +202,23 @@ private:
 		XMFLOAT4 MieAbsorption;
 		XMFLOAT4 MieExtinction;
 		XMFLOAT4 GroundAlbedo;
+		
 		float TopRadiusKm;
 		float BottomRadiusKm;
 		float MieDensityExpScale;
 		float RayleighDensityExpScale;
+		
 		float TransmittanceSampleCount;
 		float MultiScatteringSampleCount;
 		float MiePhaseG;
-		float padding;
+		float padding0 = 0;
+
+		float MinSampleCount;
+		float MaxSampleCount;
+		float DistanceToSampleCountMaxInv;
+		float padding1 = 0;
+
+		XMFLOAT4 Light0Illuminance;
 	};
 	cbSkyAtmosphere cbSkyAtmosphereIns;
 	std::shared_ptr<XRHIConstantBuffer>RHICbSkyAtmosphere;
@@ -205,6 +234,10 @@ private:
 	ComPtr<ID3D12PipelineState>  SkyViewLutPSO = nullptr;
 	XD3D12RootSignature  SkyViewLutRootSig;
 	std::shared_ptr <XRHITexture2D> SkyViewLutUAV;
+
+	ComPtr<ID3D12PipelineState>  PerspectiveVolumePSO = nullptr;
+	XD3D12RootSignature  PerspectiveVolumeRootSig;
+	std::shared_ptr <XRHITexture3D> CameraAerialPerspectiveVolumeUAV;
 
 //Shadow Mask Pass 
 private:
@@ -356,6 +389,9 @@ bool CrateApp::Initialize()
 
 	RHICbSkyAtmosphere = abstrtact_device.CreateUniformBuffer(
 		d3dUtil::CalcConstantBufferByteSize(sizeof(cbSkyAtmosphere)));
+
+	RHIcbDefferedLight = abstrtact_device.CreateUniformBuffer(
+		d3dUtil::CalcConstantBufferByteSize(sizeof(cbDefferedLight)));
 
 	BuildPSOs();
 
@@ -564,21 +600,39 @@ void CrateApp::Renderer(const GameTimer& gt)
 		{
 			mCommandList->SetPipelineState(SkyViewLutPSO.Get());
 			pass_state_manager->SetRootSignature(&SkyViewLutRootSig);
-			//direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderMultiScatteredLuminanceLutCS"].GetRHIComputeShader().get(),
-			//	0, RHICbSkyAtmosphere.get());//NOTE: useless !!
+
+			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
+				0, ViewConstantBuffer.get());
+			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
+				1, RHICbSkyAtmosphere.get());
 
 			XD3D12Texture2D* SkyViewLutUAVTex = static_cast<XD3D12Texture2D*>(SkyViewLutUAV.get());
 			direct_ctx->RHISetShaderUAV(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
 				0, SkyViewLutUAVTex->GeUnorderedAcessView(0));
-			//direct_ctx->RHISetShaderTexture(mShaders["RenderMultiScatteredLuminanceLutCS"].GetRHIComputeShader().get(),
-			//	0, TransmittanceLutUAV.get());
+			
+			direct_ctx->RHISetShaderTexture(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
+				0, TransmittanceLutUAV.get());
+			direct_ctx->RHISetShaderTexture(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
+				1, MultiScatteredLuminanceLutUAV.get());
 
 			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
 			direct_ctx->GetCmdList()->CmdListFlushBarrier();
 			mCommandList.Get()->Dispatch(192 / 8, 104 / 8, 1);
 		}
 
-	
+		{
+			mCommandList->SetPipelineState(PerspectiveVolumePSO.Get());
+			pass_state_manager->SetRootSignature(&PerspectiveVolumeRootSig);
+
+			XD3D12TextureBase* CameraAerialPerspectiveVolume = GetD3D12TextureFromRHITexture(CameraAerialPerspectiveVolumeUAV.get());
+			direct_ctx->RHISetShaderUAV(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
+				0, CameraAerialPerspectiveVolume->GeUnorderedAcessView(0));
+
+			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
+			direct_ctx->GetCmdList()->CmdListFlushBarrier();
+			mCommandList.Get()->Dispatch(32 / 8, 32 / 8, 16 / 8);
+		}
+
 		direct_ctx->CloseCmdList();
 		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
@@ -775,8 +829,9 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 		direct_ctx->RHISetShaderConstantBuffer(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 
 			0,ViewConstantBuffer.get());
-
-
+		direct_ctx->RHISetShaderConstantBuffer(mShaders["LightPassPS"].GetRHIGraphicsShader().get(),
+			1, RHIcbDefferedLight.get());
+		
 		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 0,
 			TextureGBufferA.get());
 		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 1,
@@ -896,14 +951,14 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);//TODO
 		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
 
-		direct_ctx->RHISetShaderTexture(
-			mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
-			,0
-			, TextureSceneColorDeffered.get());
 		//direct_ctx->RHISetShaderTexture(
 		//	mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
-		//	, 0
-		//	, MultiScatteredLuminanceLutUAV.get());
+		//	,0
+		//	, TextureSceneColorDeffered.get());
+		direct_ctx->RHISetShaderTexture(
+			mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
+			, 0
+			, SkyViewLutUAV.get());
 		
 		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
 		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
@@ -1079,6 +1134,12 @@ void CrateApp::UpdateMaterialCBs(const GameTimer& gt)
 
 void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 {
+
+	//for deffered light pass
+	cbDefferedLightIns.LightDir = LightDir;
+	cbDefferedLightIns.LightColorAndIntensityInLux = XMFLOAT4(LightColor.x, LightColor.y, LightColor.z, LightIntensity);
+	RHIcbDefferedLight->UpdateData(&cbDefferedLightIns, sizeof(cbDefferedLight), 0);
+
 	//BasePass
 	memcpy(&mMainPassCB.ViewProj, &ViewMatrix.GetViewProjectionMatrixTranspose(), sizeof(DirectX::XMFLOAT4X4));
 	mFrameResource->PassConstantBuffer.get()->UpdateData(&mMainPassCB, sizeof(PassConstants), 0);
@@ -1087,15 +1148,16 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	ViewCB.StateFrameIndexMod8 = FrameNum % 8;
 
 	//Current For LightPass , will combine to BasePass for future
-	ViewCB.AtmosphereLightDirection = XMFLOAT4(LightDir.x, LightDir.y, LightDir.z, 1.0f);
+	float LenSqrt = sqrt(LightDir.x * LightDir.x + LightDir.y * LightDir.y + LightDir.z * LightDir.z);
+	ViewCB.AtmosphereLightDirection = XMFLOAT4(LightDir.x / LenSqrt, LightDir.y / LenSqrt, LightDir.z / LenSqrt, 1.0f);
 	ViewCB.ViewToClip = ViewMatrix.GetProjectionMatrixTranspose();
 	ViewCB.TranslatedViewProjectionMatrix = ViewMatrix.GetTranslatedViewProjectionMatrixTranspose();
 	ViewCB.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorldTranPose();
 	ViewCB.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(ViewMatrix.GetProjectionMatrix());
 	ViewCB.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
-	ViewConstantBuffer.get()->UpdateData(
-		&ViewCB,
-		sizeof(ViewConstantBufferTable), 0);
+	//ViewConstantBuffer.get()->UpdateData(
+	//	&ViewCB,
+	//	sizeof(ViewConstantBufferTable), 0);
 	
 	cbHZBins.DispatchThreadIdToBufferUV = XMFLOAT4(1.0 / 512.0, 1.0 / 512.0, 1.0, 1.0);
 	RHICbbHZB.get()->UpdateData(&cbHZBins, sizeof(cbHZB), 0);
@@ -1150,16 +1212,11 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		XMFLOAT4 RayleighScattering = XMFLOAT4(0.175287, 0.409607, 1, 1);
 		float RayleighScatteringScale = 0.0331;
 
-		// The altitude in kilometer at which Rayleigh scattering effect is reduced to 40%.
 		float RayleighExponentialDistribution = 8.0f;
 		float RayleighDensityExpScale = -1.0 / RayleighExponentialDistribution;
 
-		// The Mie scattering coefficients resulting from particles in the air at an altitude of 0 kilometer. 
-		//As it becomes higher, light will be scattered more.
+
 		XMFLOAT4 MieScattering= XMFLOAT4(1, 1, 1, 1);
-		
-		/// The Mie absorption coefficients resulting from particles in the air at an altitude of 0 kilometer. 
-		// As it becomes higher, light will be absorbed more.
 		XMFLOAT4 MieAbsorption = XMFLOAT4(1, 1, 1, 1);
 		
 		// The altitude in kilometer at which Mie effects are reduced to 40%.
@@ -1171,18 +1228,30 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		float TransmittanceSampleCount = 10.0f;
 		float MultiScatteringSampleCount = 15.0f;
 
+
+		XMFLOAT3 CametaWorldOrigin = mEyePos;
+		//TODOOOOOOOOOOOOOO 7M
+		
+
 		//For RenderSkyViewLutCS
 		//FAtmosphereSetup::ComputeViewData
 		const float CmToSkyUnit = 0.00001f;			// Centimeters to Kilometers
 		const float SkyUnitToCm = 1.0f / 0.00001f;	// Kilometers to Centimeters
-		XMVECTOR Forward = XMLoadFloat3(&XMFLOAT3(mTargetPos.x - mEyePos.x, mTargetPos.y - mEyePos.y, mTargetPos.z - mEyePos.z));
+		XMVECTOR Forward = XMLoadFloat3(&XMFLOAT3(mTargetPos.x - CametaWorldOrigin.x, 
+			mTargetPos.y - CametaWorldOrigin.y, mTargetPos.z - CametaWorldOrigin.z));
 
-		XMVECTOR PlanetCenterKm = XMLoadFloat3(&XMFLOAT3(0, 0, -EarthBottomRadius));
+		//XMVECTOR PlanetCenterKm = XMLoadFloat3(&XMFLOAT3(0, 0, -EarthBottomRadius));
+		XMVECTOR PlanetCenterKm = XMLoadFloat3(&XMFLOAT3(0, -EarthBottomRadius, 0));
 		const float PlanetRadiusOffset = 0.005f;
 		const float Offset = PlanetRadiusOffset * SkyUnitToCm;
 		const float BottomRadiusWorld = EarthBottomRadius * SkyUnitToCm;
 		const XMVECTOR PlanetCenterWorld = PlanetCenterKm * SkyUnitToCm;
-		const XMVECTOR PlanetCenterToCameraWorld = XMLoadFloat3(&mEyePos)* SkyUnitToCm - PlanetCenterWorld;
+		
+		//CametaWorldOrigin.y += 700;
+		//???
+		//const XMVECTOR PlanetCenterToCameraWorld = XMLoadFloat3(&mEyePos)* SkyUnitToCm - PlanetCenterWorld;
+		XMVECTOR CametaWorldOriginCom = XMLoadFloat3(&CametaWorldOrigin);
+		const XMVECTOR PlanetCenterToCameraWorld = CametaWorldOriginCom - PlanetCenterWorld;
 		
 		XMFLOAT3 LengthCamToCenter;
 		XMStoreFloat3(&LengthCamToCenter, XMVector3Length(PlanetCenterToCameraWorld));
@@ -1192,8 +1261,59 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		// If the camera is below the planet surface, we snap it back onto the surface.
 		XMVECTOR SkyWorldCameraOrigin = DistanceToPlanetCenterWorld < (BottomRadiusWorld + Offset)
 			? PlanetCenterWorld + (BottomRadiusWorld + Offset) * (PlanetCenterToCameraWorld / DistanceToPlanetCenterWorld) : 
-			XMLoadFloat3(&mTargetPos);
+			//XMLoadFloat3(&mEyePos) * SkyUnitToCm;
+			XMLoadFloat3(&CametaWorldOrigin);
+		
+		XMFLOAT3 SkyPlanetCenter; XMStoreFloat3(&SkyPlanetCenter, PlanetCenterWorld);
+		XMFLOAT3 SkyViewHeight; XMStoreFloat3(&SkyViewHeight, XMVector3Length(SkyWorldCameraOrigin - PlanetCenterWorld));
 
+		XMStoreFloat3(&ViewCB.SkyWorldCameraOrigin, SkyWorldCameraOrigin);
+		ViewCB.SkyPlanetCenterAndViewHeight = XMFLOAT4(SkyPlanetCenter.x, SkyPlanetCenter.y, SkyPlanetCenter.z, SkyViewHeight.x);
+
+		XMVECTOR SkyUp = (SkyWorldCameraOrigin - PlanetCenterWorld) * CmToSkyUnit;
+		SkyUp = XMVector3Normalize(SkyUp);
+		
+		//TODO
+		//XMVECTOR SkyLeft = XMVector3Cross(Forward, SkyUp);
+		XMVECTOR SkyLeft = XMVector3Cross(SkyUp, Forward);
+		SkyLeft = XMVector3Normalize(SkyLeft);
+		
+		XMFLOAT3 DotMainDir;
+		XMStoreFloat3(&DotMainDir, XMVectorAbs(XMVector3Dot(SkyUp, Forward)));
+		if (DotMainDir.x > 0.999f) 
+		{ 
+			XMFLOAT3 UpStore; XMStoreFloat3(&UpStore, SkyUp);
+			const float Sign = UpStore.z >= 0.0f ? 1.0f : -1.0f;
+			const float a = -1.0f / (Sign + UpStore.z);
+			const float b = UpStore.x * UpStore.y * a;
+			Forward = XMLoadFloat3(&XMFLOAT3(1 + Sign * a * pow(UpStore.x, 2.0f), Sign * b, -Sign * UpStore.x));
+			SkyLeft = XMLoadFloat3(&XMFLOAT3(b, Sign + a * pow(UpStore.y, 2.0f), -UpStore.y));
+		}
+		else
+		{
+			Forward = XMVector3Cross(SkyUp, SkyLeft);
+			Forward = XMVector3Normalize(Forward);
+		}
+		
+		//XMFLOAT4 SkyViewRow0; XMStoreFloat4(&SkyViewRow0, Forward);
+		//XMFLOAT4 SkyViewRow1; XMStoreFloat4(&SkyViewRow1, SkyLeft);
+		//XMFLOAT4 SkyViewRow2; XMStoreFloat4(&SkyViewRow2, SkyUp);
+
+		//XMFLOAT4 SkyViewRow0; XMStoreFloat4(&SkyViewRow0, Forward);
+		//XMFLOAT4 SkyViewRow1; XMStoreFloat4(&SkyViewRow1, SkyUp);
+		//XMFLOAT4 SkyViewRow2; XMStoreFloat4(&SkyViewRow2, SkyLeft);
+
+		XMFLOAT4 SkyViewRow0; XMStoreFloat4(&SkyViewRow0, SkyLeft);
+		XMFLOAT4 SkyViewRow1; XMStoreFloat4(&SkyViewRow1, SkyUp);
+		XMFLOAT4 SkyViewRow2; XMStoreFloat4(&SkyViewRow2, Forward);
+		
+		XMFLOAT4X4 SkyViewLutReferentialTransposed(
+			SkyViewRow0.x, SkyViewRow1.x, SkyViewRow2.x, 0,
+			SkyViewRow0.y, SkyViewRow1.y, SkyViewRow2.y, 0,
+			SkyViewRow0.z, SkyViewRow1.z, SkyViewRow2.z, 0,
+			0, 0, 0, 0);
+
+		ViewCB.SkyViewLutReferential = SkyViewLutReferentialTransposed;
 	//}
 	
 	//SkyAtmosphere Precompute
@@ -1218,6 +1338,7 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		MieAbsorption.y * MieAbsorptionScale,
 		MieAbsorption.z * MieAbsorptionScale,
 		MieAbsorption.w * MieAbsorptionScale);
+
 	cbSkyAtmosphereIns.MieExtinction = XMFLOAT4(
 		cbSkyAtmosphereIns.MieScattering.x+cbSkyAtmosphereIns.MieAbsorption.x,
 		cbSkyAtmosphereIns.MieScattering.y+cbSkyAtmosphereIns.MieAbsorption.y,
@@ -1232,7 +1353,27 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	cbSkyAtmosphereIns.MultiScatteringSampleCount = MultiScatteringSampleCount;
 	cbSkyAtmosphereIns.GroundAlbedo = XMFLOAT4(0.66, 0.66, 0.66, 1.0);
 	cbSkyAtmosphereIns.MiePhaseG = 0.8f;
+
+	cbSkyAtmosphereIns.MinSampleCount = 2.0f;
+	cbSkyAtmosphereIns.MaxSampleCount = 32.0f;
+	cbSkyAtmosphereIns.DistanceToSampleCountMaxInv = 150.0f;
+
+	cbSkyAtmosphereIns.Light0Illuminance = XMFLOAT4(
+		LightColor.x * LightIntensity, LightColor.y * LightIntensity, LightColor.z * LightIntensity, 0);
+	
+
 	RHICbSkyAtmosphere->UpdateData(&cbSkyAtmosphereIns, sizeof(cbSkyAtmosphere), 0);
+
+
+
+
+
+
+
+	ViewConstantBuffer.get()->UpdateData(
+		&ViewCB,
+		sizeof(ViewConstantBufferTable), 0);
+
 }
 
 
@@ -1243,7 +1384,7 @@ void CrateApp::LoadTextures()
 		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Metal_Gold_D.TGA", &w, &h, &n, 0);
 		if (n == 3) { X_Assert(false); }
 		
-		TextureMetalBaseColor = direct_ctx->CreateD3D12Texture2D(w, h,
+		TextureMetalBaseColor = direct_ctx->CreateD3D12Texture2D(w, h,1, false, false,
 			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
 			,ETextureCreateFlags(TexCreate_SRGB),1
 			, BaseColorData);
@@ -1263,7 +1404,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 2] = NormalMapData[k + 2];
 			FourChannelData[i + 3] = 0b11111111;
 		}
-		TextureMetalNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n,
+		TextureMetalNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n, 1, false, false,
 			DXGI_FORMAT_R8G8B8A8_UNORM
 			,ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
@@ -1284,7 +1425,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 2] = RoughnessMapData[k + 2];
 			FourChannelData[i + 3] = 0b11111111;
 		}
-		TextureRoughness = direct_ctx->CreateD3D12Texture2D(w_r, h_r,
+		TextureRoughness = direct_ctx->CreateD3D12Texture2D(w_r, h_r, 1, false, false,
 			DXGI_FORMAT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
@@ -1297,7 +1438,7 @@ void CrateApp::LoadTextures()
 		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA", &w, &h, &n, 0);
 		if (n == 3) { X_Assert(false); }
 		
-		TextureWoodBaseColor = direct_ctx->CreateD3D12Texture2D(w, h,
+		TextureWoodBaseColor = direct_ctx->CreateD3D12Texture2D(w, h, 1,false, false,
 			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
 			, ETextureCreateFlags(TexCreate_SRGB), 1
 			, BaseColorData);
@@ -1317,7 +1458,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 2] = NormalMapData[k + 2];
 			FourChannelData[i + 3] = 0b11111111;
 		}
-		TextureWoodNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n,
+		TextureWoodNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n, 1, false, false,
 			DXGI_FORMAT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
@@ -1327,63 +1468,68 @@ void CrateApp::LoadTextures()
 
 
 	{
-		TextureGBufferA = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+		TextureGBufferA = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
 			DXGI_FORMAT_R32G32B32A32_FLOAT
 			,ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		TextureGBufferB = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+		TextureGBufferB = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
 			DXGI_FORMAT_R32G32B32A32_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		TextureGBufferC = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+		TextureGBufferC = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
 			DXGI_FORMAT_R32G32B32A32_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		TextureGBufferD = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+		TextureGBufferD = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
 			DXGI_FORMAT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		TextureSceneColorDeffered = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+		TextureSceneColorDeffered = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
 			DXGI_FORMAT_R32G32B32A32_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		ShadowTexture0 = direct_ctx->CreateD3D12Texture2D(ShadowMapWidth, ShadowMapHeight,
+		ShadowTexture0 = direct_ctx->CreateD3D12Texture2D(ShadowMapWidth, ShadowMapHeight, 1, false, false,
 			DXGI_FORMAT_R24G8_TYPELESS
 			, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		ShadowMaskTexture = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+		ShadowMaskTexture = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
 			DXGI_FORMAT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		FurthestHZBOutput0 = direct_ctx->CreateD3D12Texture2D(512, 512,
+		FurthestHZBOutput0 = direct_ctx->CreateD3D12Texture2D(512, 512, 1, false, false,
 			DXGI_FORMAT_R16_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 5
 			, nullptr);
 
-		SSROutput = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+		SSROutput = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
 			DXGI_FORMAT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		TransmittanceLutUAV = direct_ctx->CreateD3D12Texture2D(256, 64,
+		TransmittanceLutUAV = direct_ctx->CreateD3D12Texture2D(256, 64, 1, false, false,
 			DXGI_FORMAT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		MultiScatteredLuminanceLutUAV = direct_ctx->CreateD3D12Texture2D(32, 32,
+		MultiScatteredLuminanceLutUAV = direct_ctx->CreateD3D12Texture2D(32, 32, 1, false, false,
 			DXGI_FORMAT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		SkyViewLutUAV = direct_ctx->CreateD3D12Texture2D(192, 104,
+		SkyViewLutUAV = direct_ctx->CreateD3D12Texture2D(192, 104, 1, false, false,
 			DXGI_FORMAT_R11G11B10_FLOAT
+			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
+			, nullptr);
+
+		CameraAerialPerspectiveVolumeUAV = direct_ctx->CreateD3D12Texture3D(32, 32, 16,
+			DXGI_FORMAT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 	}
@@ -1450,6 +1596,18 @@ void CrateApp::BuildRootSignature()
 		pipeline_register_count.register_count[EShaderType::SV_Compute].ConstantBufferCount
 			= mShaders["RenderSkyViewLutCS"].GetCBVCount();
 		SkyViewLutRootSig.Create(&Device, pipeline_register_count);
+	}
+
+	{
+		XPipelineRegisterBoundCount pipeline_register_count;
+		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
+		pipeline_register_count.register_count[EShaderType::SV_Compute].UnorderedAccessCount
+			= mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetUAVCount();
+		pipeline_register_count.register_count[EShaderType::SV_Compute].ShaderResourceCount
+			= mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetSRVCount();
+		pipeline_register_count.register_count[EShaderType::SV_Compute].ConstantBufferCount
+			= mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetCBVCount();
+		PerspectiveVolumeRootSig.Create(&Device, pipeline_register_count);
 	}
 
 	{
@@ -1586,6 +1744,15 @@ void CrateApp::BuildShadersAndInputLayout()
 		mShaders["RenderSkyViewLutCS"].CompileShader(
 			L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl", Macro, "RenderSkyViewLutCS", "cs_5_1");
 		mShaders["RenderSkyViewLutCS"].ShaderReflect();
+	}
+
+	//RenderCameraAerialPerspectiveVolumeCS
+	{
+		const D3D_SHADER_MACRO Macro[] = { "THREADGROUP_SIZE","8",NULL,NULL };
+		mShaders["RenderCameraAerialPerspectiveVolumeCS"].CreateShader(EShaderType::SV_Compute);
+		mShaders["RenderCameraAerialPerspectiveVolumeCS"].CompileShader(
+			L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl", Macro, "RenderCameraAerialPerspectiveVolumeCS", "cs_5_1");
+		mShaders["RenderCameraAerialPerspectiveVolumeCS"].ShaderReflect();
 	}
 
 	{
@@ -1927,6 +2094,7 @@ void CrateApp::BuildPSOs()
 		
 	}
 
+	//RenderSkyViewLutCS
 	{
 		D3D12_COMPUTE_PIPELINE_STATE_DESC SkyAtmospherePSODesc;
 		ZeroMemory(&SkyAtmospherePSODesc, sizeof(D3D12_COMPUTE_PIPELINE_STATE_DESC));
@@ -1940,6 +2108,22 @@ void CrateApp::BuildPSOs()
 			mShaders["RenderSkyViewLutCS"].GetByteCode()->GetBufferSize()
 		};
 		ThrowIfFailed(md3dDevice->CreateComputePipelineState(&SkyAtmospherePSODesc, IID_PPV_ARGS(&SkyViewLutPSO)));
+	}
+
+	//RenderCameraAerialPerspectiveVolumeCS
+	{
+		D3D12_COMPUTE_PIPELINE_STATE_DESC SkyAtmospherePSODesc;
+		ZeroMemory(&SkyAtmospherePSODesc, sizeof(D3D12_COMPUTE_PIPELINE_STATE_DESC));
+		SkyAtmospherePSODesc.NodeMask = 0;
+		SkyAtmospherePSODesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+
+		SkyAtmospherePSODesc.pRootSignature = PerspectiveVolumeRootSig.GetDXRootSignature();
+		SkyAtmospherePSODesc.CS = {
+			reinterpret_cast<BYTE*>(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetByteCode()->GetBufferPointer()),
+			mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetByteCode()->GetBufferSize()
+		};
+		ThrowIfFailed(md3dDevice->CreateComputePipelineState(&SkyAtmospherePSODesc, IID_PPV_ARGS(&PerspectiveVolumePSO)));
 	}
 
 	//ShadowPass

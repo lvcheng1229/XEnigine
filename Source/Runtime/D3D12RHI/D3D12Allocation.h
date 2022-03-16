@@ -23,9 +23,14 @@ struct XAllocConfig
 	D3D12_RESOURCE_FLAGS d3d12_resource_flags;
 };
 
+//#define LOG_USED_BLOCK 0
+
 class XD3DBuddyAllocator: public XD3D12DeviceChild
 {
-	
+#ifdef LOG_USED_BLOCK
+	int heap_index = -1;
+	std::vector<int> blocks_free_index;
+#endif
 private:
 	std::vector<std::set<uint32>>offset_from_left;
 
@@ -63,7 +68,10 @@ private:
 	inline uint32 SizeToOrder(uint32 size)
 	{
 		uint32 min_block_times = (size + (min_block_size - 1)) / min_block_size;
-		return ceil(log(min_block_times) / log(2.0));
+		unsigned long Result;
+		_BitScanReverse(&Result, min_block_times + min_block_times - 1);
+		//return ceil(log(min_block_times) / log(2.0));
+		return Result;
 	}
 	uint32 TotalUsed;
 

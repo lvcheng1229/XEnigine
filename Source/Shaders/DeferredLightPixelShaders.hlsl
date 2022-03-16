@@ -9,6 +9,14 @@ Texture2D SceneTexturesStruct_GBufferDTexture;
 Texture2D SceneTexturesStruct_SceneDepthTexture;
 
 Texture2D LightAttenuationTexture;
+
+cbuffer cbLightPass
+{
+	float3 LightDir;
+	float cbLightPass_padding;
+	float4 LightColorAndIntensityInLux;
+}
+
 struct FGBufferData
 {
 	float3 WorldNormal;
@@ -92,11 +100,16 @@ float3 SurfaceShading( FGBufferData GBuffer, float Roughness, float3 L, float3 V
 
 float4 GetDynamicLighting(float3 CameraVector, FGBufferData GBuffer, uint ShadingModelID)
 {
-	float3 L = normalize(float3(-1,1,1));
+	float3 L = normalize(LightDir);
 	float3 V = -CameraVector;
 	float3 N = GBuffer.WorldNormal;
 
 	float3 SurfaceLighting = SurfaceShading(GBuffer, GBuffer.Roughness,  L, V, N);
+	
+	//////////////////////////////////////////////////////////////////////////
+	SurfaceLighting*=(saturate(dot(L,N))*LightColorAndIntensityInLux.xyz*LightColorAndIntensityInLux.w);
+	//////////////////////////////////////////////////////////////////////////
+	
 	return float4(SurfaceLighting.xyz,1.0f);
 }
 
@@ -139,6 +152,7 @@ void DeferredLightPixelMain(
 		float Shadow=LightAttenuationTexture.Sample(gsamPointWarp,ScreenUV).r;
 		Shadow*=0.0f;
 		SurfaceLighting=(1.0-Shadow)*GetDynamicLighting(CameraVector,GBuffer,GBuffer.ShadingModelID);
+		
 	}
     OutColor=float4(SurfaceLighting.xyz,1.0f);
 	OutColor.z+=tempres;

@@ -59,8 +59,10 @@ void XViewMatrices::UpdateViewMatrix(const DirectX::XMFLOAT3& ViewLocation, cons
 	//compute uvw
 	XMVECTOR WNormalize = XMVector3Normalize(EyeDirection);
 	XMVECTOR UNormalize = XMVector3Cross(UpDirection, WNormalize);//??
+	//XMVECTOR UNormalize = XMVector3Cross(WNormalize,UpDirection);//??
 	UNormalize = XMVector3Normalize(UNormalize);
 	XMVECTOR VNormalize = XMVector3Cross(WNormalize, UNormalize);
+	//XMVECTOR VNormalize = XMVector3Cross(UNormalize, WNormalize);
 
 	//compute -qu
 	XMVECTOR NegEyePosition = XMVectorNegate(ViewOriginVec);

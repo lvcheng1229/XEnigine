@@ -22,7 +22,12 @@ public:
 	void CloseCmdList()override;
 	
 	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(
-		uint32 width, uint32 height, DXGI_FORMAT format,
+		uint32 width, uint32 height, uint32 SizeZ,
+		bool bTextureArray, bool bCubeTexture, DXGI_FORMAT format,
+		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
+
+	std::shared_ptr<XRHITexture3D> CreateD3D12Texture3D(
+		uint32 width, uint32 height, uint32 SizeZ, DXGI_FORMAT format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
 	void RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override;

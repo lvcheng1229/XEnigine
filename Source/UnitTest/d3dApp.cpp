@@ -114,7 +114,7 @@ void D3DApp::OnResize()
 	direct_cmd_queue->CommandQueueWaitFlush();
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-	TextureDepthStencil = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,
+	TextureDepthStencil = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,1,false,false,
 		DXGI_FORMAT_R24G8_TYPELESS
 		, ETextureCreateFlags(TexCreate_DepthStencilTargetable| TexCreate_ShaderResource)
 		,1

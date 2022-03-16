@@ -3,13 +3,21 @@ cbuffer cbView
     float4x4 View_TranslatedViewProjectionMatrix;
     float4x4 View_ScreenToTranslatedWorld;
     float4x4 View_ViewToClip;
+
     float4 View_InvDeviceZToWorldZTransform;
     float3 View_WorldCameraOrigin;
-    float padding0;
-    float4 View_BufferSizeAndInvSize;//Texture Size
     uint View_StateFrameIndexMod8;
+
+    float4 View_BufferSizeAndInvSize;
+    
     float4 View_AtmosphereLightDirection;
-    //float4 View_ScreenPositionScaleBias;//match Buffer size to ScreenSize
+
+    float3 View_SkyWorldCameraOrigin;
+    float cbView_padding1;
+
+    float4 View_SkyPlanetCenterAndViewHeight;
+    float4x4 View_SkyViewLutReferential;
+    
 };
 
 #define PI 3.141592653589

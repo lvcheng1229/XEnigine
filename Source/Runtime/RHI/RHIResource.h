@@ -25,10 +25,20 @@ public:
 
 class XRHITexture
 {
-
+public:
+	virtual void* GetTextureBaseRHI()
+	{
+		// Override this in derived classes to expose access to the native texture resource
+		return nullptr;
+	}
 };
 
 class XRHITexture2D :public XRHITexture
+{
+
+};
+
+class XRHITexture3D :public XRHITexture
 {
 
 };

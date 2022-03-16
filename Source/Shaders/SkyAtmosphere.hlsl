@@ -25,7 +25,14 @@ cbuffer SkyAtmosphere
 	float Atmosphere_TransmittanceSampleCount;
 	float SkyAtmosphere_MultiScatteringSampleCount;
     float Atmosphere_MiePhaseG;
-	float3 Atmosphere_padding;
+    float Atmosphere_padding0;
+
+    float Atmosphere_MinSampleCount;
+	float Atmosphere_MaxSampleCount;
+	float Atmosphere_DistanceToSampleCountMaxInv;
+	float Atmosphere_padding1;
+    
+    float4 Atmosphere_Light0Illuminance;
 }
 
 
@@ -219,8 +226,10 @@ void RenderTransmittanceLutCS(uint3 ThreadId : SV_DispatchThreadID)
 	UvToLutTransmittanceParams(ViewHeight, ViewZenithCosAngle, UV);
 
     //  A few extra needed constants
-	float3 WorldPos = float3(0.0f, 0.0f, ViewHeight);
-	float3 WorldDir = float3(0.0f, sqrt(1.0f - ViewZenithCosAngle * ViewZenithCosAngle), ViewZenithCosAngle);
+	//float3 WorldPos = float3(0.0f, 0.0f, ViewHeight);
+    float3 WorldPos = float3(0.0f, ViewHeight, 0);
+	//float3 WorldDir = float3(0.0f, sqrt(1.0f - ViewZenithCosAngle * ViewZenithCosAngle), ViewZenithCosAngle);
+    float3 WorldDir = float3(0.0f, ViewZenithCosAngle,sqrt(1.0f - ViewZenithCosAngle * ViewZenithCosAngle));
 
 	//tau(s)= -int_0^s (extinction(p))dt
 	float3 OpticalDepth = ComputeOpticalDepth(WorldPos,WorldDir,Atmosphere_TransmittanceSampleCount);
@@ -370,14 +379,17 @@ void RenderMultiScatteredLuminanceLutCS(uint3 ThreadId : SV_DispatchThreadID)
 {
 	float2 PixPos = float2(ThreadId.xy) + 0.5f;
 	float CosLightZenithAngle = (PixPos.x * SkyAtmosphere_MultiScatteredLuminanceLutSizeAndInvSize.z) * 2.0f - 1.0f;
-    float3 LightDir = float3(0.0f, sqrt(saturate(1.0f - CosLightZenithAngle * CosLightZenithAngle)), CosLightZenithAngle);
+    //float3 LightDir = float3(0.0f, sqrt(saturate(1.0f - CosLightZenithAngle * CosLightZenithAngle)), CosLightZenithAngle);
+    float3 LightDir = float3(0.0f, CosLightZenithAngle, sqrt(saturate(1.0f - CosLightZenithAngle * CosLightZenithAngle)));
     
     float ViewHeight = Atmosphere_BottomRadiusKm +
 	(PixPos.y * SkyAtmosphere_MultiScatteredLuminanceLutSizeAndInvSize.w) *
 	(Atmosphere_TopRadiusKm - Atmosphere_BottomRadiusKm);
 
-    float3 WorldPos = float3(0.0f, 0.0f, ViewHeight);
-    float3 WorldDir = float3(0.0f, 0.0f, 1.0f);
+    //float3 WorldPos = float3(0.0f, 0.0f, ViewHeight);
+    float3 WorldPos = float3(0.0f, ViewHeight, 0);
+    //float3 WorldDir = float3(0.0f, 0.0f, 1.0f);
+    float3 WorldDir = float3(0.0f, 1.0f, 0.0f);
 
 	const float3 OneIlluminance = float3(1.0f, 1.0f, 1.0f);
 
@@ -415,7 +427,7 @@ Texture2D<float3> MultiScatteredLuminanceLutTexture;
 // This is convenient because for all the math in this file using world position relative to the virtual planet center.
 float3 GetCameraPlanetPos()
 {
-	return (View.SkyWorldCameraOrigin - View.SkyPlanetCenterAndViewHeight.xyz)* CM_TO_SKY_UNIT;
+    return (View_SkyWorldCameraOrigin - View_SkyPlanetCenterAndViewHeight.xyz) * CM_TO_SKY_UNIT;
 }
 
 float2 FromSubUvsToUnit(float2 uv, float4 SizeAndInvSize) { return (uv - 0.5f * SizeAndInvSize.zw) * (SizeAndInvSize.xy / (SizeAndInvSize.xy - 1.0f)); }
@@ -457,10 +469,15 @@ void UvToSkyViewLutParams(out float3 ViewDir, in float ViewHeight, in float2 UV)
 	// Make sure those values are in range as it could disrupt other math done later such as sqrt(1.0-c*c)
 	float CosLongitudeViewCosAngle = cos(LongitudeViewCosAngle);
 	float SinLongitudeViewCosAngle = sqrt(1.0 - CosLongitudeViewCosAngle * CosLongitudeViewCosAngle) * (LongitudeViewCosAngle <= PI ? 1.0f : -1.0f); // Equivalent to sin(LongitudeViewCosAngle)
-	ViewDir = float3(
-		SinViewZenithAngle * CosLongitudeViewCosAngle,
-		SinViewZenithAngle * SinLongitudeViewCosAngle,
-		CosViewZenithAngle
+	//ViewDir = float3(
+	//	SinViewZenithAngle * CosLongitudeViewCosAngle,
+	//	SinViewZenithAngle * SinLongitudeViewCosAngle,
+	//	CosViewZenithAngle
+	//	);
+    ViewDir = float3(
+		-SinViewZenithAngle * CosLongitudeViewCosAngle,
+        CosViewZenithAngle,
+		SinViewZenithAngle * SinLongitudeViewCosAngle
 		);
 }
 
@@ -479,12 +496,11 @@ float HgPhase(float G, float CosTheta)
     return Numer / (4.0f * PI * Denom * sqrt(Denom));
 }
 
-void ComputeLForRenderSkyViewLut(
+float3 ComputeLForRenderSkyViewLut(
 	in float3 WorldPos, in float3 WorldDir,
 	in float MinSampleCount, in float MaxSampleCount,
 	in float3 Light0Dir, in float3 Light0Illuminance,
-	in float DistanceToSampleCountMaxInv,
-)
+	in float DistanceToSampleCountMaxInv)
 {
 	float t = 0.0f, tMax = 0.0f;
     float3 L = 0.0f;
@@ -496,7 +512,7 @@ void ComputeLForRenderSkyViewLut(
 	
     if (tBottom < 0.0f)
     {
-        if      (tTop < 0.0f)   {   tMax = 0.0f;    return;     } // No intersection with planet nor its atmosphere: stop right away  
+        if      (tTop < 0.0f)   {   tMax = 0.0f;    return 0;     } // No intersection with planet nor its atmosphere: stop right away  
         else                    {   tMax = tTop;}
     }
     else
@@ -511,14 +527,15 @@ void ComputeLForRenderSkyViewLut(
 	float tMaxFloor = tMax * SampleCountFloor / SampleCount;	// rescale tMax to map to the last entire step segment.
 
     // Phase functions
-    const float uniformPhase = 1.0f / (4.0f * PI);
     const float3 wi = Light0Dir;
     const float3 wo = WorldDir;
     float cosTheta = dot(wi, wo);
-    float MiePhaseValueLight0 = HgPhase(Atmosphere.MiePhaseG, -cosTheta); // negate cosTheta because due to WorldDir being a "in" direction. 
+    float MiePhaseValueLight0 = HgPhase(Atmosphere_MiePhaseG, -cosTheta); // negate cosTheta because due to WorldDir being a "in" direction. 
     float RayleighPhaseValueLight0 = RayleighPhase(cosTheta);
 
+    //SampleCount= 32.0f;
     float dt = 0;
+    
 	for (float SampleI = 0.0f; SampleI < SampleCount; SampleI += 1.0f)
 	{
 		{
@@ -528,14 +545,14 @@ void ComputeLForRenderSkyViewLut(
 			t0 = t0 * t0; // Non linear distribution of samples within the range.
 			t1 = t1 * t1;
             t0 = tMaxFloor * t0; // Make t0 and t1 world space distances.
-
+        
 			if (t1 > 1.0f)	{	t1 = tMax;			}
 			else			{	t1 = tMaxFloor * t1;}
-
+        
 			t = t0 + (t1 - t0) * DEFAULT_SAMPLE_OFFSET;
             dt = t1 - t0;
         }
-		
+
 		float3 P = WorldPos + t * WorldDir;
         float PHeight = length(P);
 
@@ -572,6 +589,7 @@ void ComputeLForRenderSkyViewLut(
 		L += Throughput * Sint;		
 		Throughput *= SampleTransmittance;
 	}
+    return L;
 }
 
 
@@ -583,24 +601,38 @@ void RenderSkyViewLutCS(uint3 ThreadId : SV_DispatchThreadID)
 
     float3 WorldPos = GetCameraPlanetPos();
     float ViewHeight = length(WorldPos);
-    WorldPos = float3(0.0, 0.0, ViewHeight); // transform to local referential
+    //WorldPos = float3(0.0, 0.0, ViewHeight); // transform to local referential
+    WorldPos = float3(0.0, ViewHeight, 0); // transform to local referential
 
     float3 WorldDir;
     UvToSkyViewLutParams(WorldDir, ViewHeight, UV); // UV to lat/long	
 
 	// For the sky view lut to work, and not be distorted, we need to transform the view and light directions 
 	// into a referential with UP being perpendicular to the ground. And with origin at the planet center.
-    float3x3 LocalReferencial = GetSkyViewLutReferential(View.SkyViewLutReferential);
+    float3x3 LocalReferencial = (float3x3)View_SkyViewLutReferential;
     float3 AtmosphereLightDirection0 = View_AtmosphereLightDirection.xyz;
     AtmosphereLightDirection0 = mul(LocalReferencial, AtmosphereLightDirection0);
+    //AtmosphereLightDirection0 = mul(AtmosphereLightDirection0,LocalReferencial);
 
 	//if ((Ray is not intersecting the atmosphere)) {}
 
+    //TODO Ground = True
+    float MinSampleCount = Atmosphere_MinSampleCount;
+    float MaxSampleCount = Atmosphere_MaxSampleCount;
+    float DistanceToSampleCountMaxInv = Atmosphere_DistanceToSampleCountMaxInv;
+    float3 Light0Illuminance = Atmosphere_Light0Illuminance.xyz;
+    
+    float3 OutL = ComputeLForRenderSkyViewLut(
+	    WorldPos, WorldDir, MinSampleCount, MaxSampleCount,
+        AtmosphereLightDirection0, Light0Illuminance, DistanceToSampleCountMaxInv);
+    SkyViewLutUAV[int2(PixPos)] = OutL;
 
 }
 
-//[numthreads(THREADGROUP_SIZE, THREADGROUP_SIZE, 1)]
-//void RenderSkyViewLutCS(uint3 ThreadId : SV_DispatchThreadID)
-//{
-//    SkyViewLutUAV[ThreadId.xy]=float3(1.0,0.0,0.0);
-//}
+RWTexture3D<float4> CameraAerialPerspectiveVolumeUAV;
+
+[numthreads(THREADGROUP_SIZE, THREADGROUP_SIZE, THREADGROUP_SIZE)]
+void RenderCameraAerialPerspectiveVolumeCS(uint3 ThreadId : SV_DispatchThreadID)
+{
+    CameraAerialPerspectiveVolumeUAV[ThreadId.xyz]=float4(ThreadId.xyz/32.0,1.0f);
+}

@@ -42,6 +42,28 @@ private:
 
 class XD3D12Texture2D :public XRHITexture2D, public XD3D12TextureBase
 {
+public:
+	virtual void* GetTextureBaseRHI() final override
+	{
+		return static_cast<XD3D12TextureBase*>(this);
+	}
 };
 
+class XD3D12Texture3D :public XRHITexture3D, public XD3D12TextureBase
+{
+public:
+	virtual void* GetTextureBaseRHI() final override
+	{
+		return static_cast<XD3D12TextureBase*>(this);
+	}
+};
+
+/** Given a pointer to a RHI texture that was created by the D3D12 RHI, returns a pointer to the FD3D12TextureBase it encapsulates. */
+inline XD3D12TextureBase* GetD3D12TextureFromRHITexture(XRHITexture* Texture)
+{
+	if (!Texture)	{	return NULL;	}
+	XD3D12TextureBase* Result = ((XD3D12TextureBase*)Texture->GetTextureBaseRHI());
+	X_Assert(Result);
+	return Result;
+}
 

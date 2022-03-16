@@ -73,27 +73,32 @@ std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(
 }
 
 
-XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, DXGI_FORMAT format, ETextureCreateFlags flag,uint32 NumMipsIn,uint8* tex_data)
+XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
+	XD3D12DirectCommandList* x_cmd_list, 
+	uint32 width, uint32 height, uint32 SizeZ,
+	bool bTextureArray, bool bCubeTexture,
+	DXGI_FORMAT format, ETextureCreateFlags flag,uint32 NumMipsIn,uint8* tex_data)
 {
 	bool bCreateShaderResource = true;
 	bool bCreateRTV = false;
 	bool bCreateDSV = false;
 	bool bCreateUAV = false;
 
+	if (bTextureArray)
+	{
+		X_Assert(SizeZ > 1);
+	}
 
 	auto cmd_list = x_cmd_list->GetDXCmdList();
-	//ResourceManagerTempVec.push_back(XD3D12Resource());
 	XD3D12Resource* TextureResource = &ResourceManagerTempVec[TempResourceIndex];
-	//XLog(TextureResource);
 	TempResourceIndex++;
-	XLog("Memory Leak : CreateD3D12Texture2D");
 
 	D3D12_RESOURCE_DESC textureDesc = {};
-	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // If bCreateTexture2DArray
 	textureDesc.Alignment = MIN_PLACED_BUFFER_SIZE;
 	textureDesc.Width = width;
 	textureDesc.Height = height;
-	textureDesc.DepthOrArraySize = 1;
+	textureDesc.DepthOrArraySize = SizeZ;
 	textureDesc.MipLevels = NumMipsIn;
 	textureDesc.Format = format;
 	textureDesc.SampleDesc.Count = 1;
@@ -181,18 +186,14 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(XD3D12DirectCommandL
 			&textureDesc,
 			ResourceState,
 			nullptr, IID_PPV_ARGS(TextureResource->GetPtrToResourceAdress())));
-		//XLog(TextureResource->GetPtrToResourceAdress());
 		TextureResource->SetResourceState(ResourceState);
 	}
 
 	{
-		
 		std::wstring str = L"xx" + std::to_wstring(TempResourceIndex) + L"xx\n";
 		TextureResource->GetResource()->SetName(str.c_str());
 	}
 	
-	
-
 	XD3D12Texture2D* TextureRet = new XD3D12Texture2D();
 	
 	if (bCreateShaderResource)
@@ -200,10 +201,22 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(XD3D12DirectCommandL
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = PlatformShaderResourceFormat;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.MipLevels = TextureResource->GetResource()->GetDesc().MipLevels;
-		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+		//if (bTextureArray)
+		//{
+		//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+		//	srvDesc.Texture2DArray.MostDetailedMip = 0;
+		//	srvDesc.Texture2DArray.MipLevels = TextureResource->GetResource()->GetDesc().MipLevels;
+		//	srvDesc.Texture2DArray.FirstArraySlice = 0;
+		//	srvDesc.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
+		//	srvDesc.Texture2DArray.PlaneSlice = 0;
+		//}
+		//else
+		{
+			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			srvDesc.Texture2D.MostDetailedMip = 0;
+			srvDesc.Texture2D.MipLevels = TextureResource->GetResource()->GetDesc().MipLevels;
+			srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+		}
 
 		uint32 index_of_desc_in_heap;
 		uint32 index_of_heap;
@@ -221,11 +234,21 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(XD3D12DirectCommandL
 	{
 		for (uint32 i = 0; i < NumMipsIn; i++)
 		{
+
 			D3D12_UNORDERED_ACCESS_VIEW_DESC UavDesc = {};
 			UavDesc.Format = PlatformShaderResourceFormat;
-			UavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-			UavDesc.Texture2D.MipSlice = i;
-			UavDesc.Texture2D.PlaneSlice = 0;
+			//if (bTextureArray)
+			//{
+			//	UavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+			//	UavDesc.Texture2DArray.ArraySize= textureDesc.DepthOrArraySize;
+			//}
+			//else
+			{
+				UavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+				UavDesc.Texture2D.MipSlice = i;
+				UavDesc.Texture2D.PlaneSlice = 0;
+			}
+
 
 			uint32 index_of_desc_in_heap;
 			uint32 index_of_heap;
@@ -294,6 +317,179 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(XD3D12DirectCommandL
 		CopyDataFromUploadToDefaulHeap
 		(cmd_list, TextureResource->GetResource(),
 			UploadHeapAlloc.GetDXResource(), 
+			UploadHeapAlloc.GetAllocationOffsetInBytes(upload_location.GetBuddyAllocData()),
+			0, 1, &textureData);
+		cmd_list->ResourceBarrier(1, &(CD3DX12_RESOURCE_BARRIER::Transition(TextureResource->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)));
+		TextureResource->SetResourceState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	}
+	return TextureRet;
+}
+
+XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ, DXGI_FORMAT format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
+{
+	bool bCreateShaderResource = true;
+	bool bCreateRTV = false;
+	bool bCreateUAV = false;
+
+	auto cmd_list = x_cmd_list->GetDXCmdList();
+
+	XD3D12Resource* TextureResource = &ResourceManagerTempVec[TempResourceIndex];
+	TempResourceIndex++;
+
+	D3D12_RESOURCE_DESC textureDesc = {};
+	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+	textureDesc.Alignment = MIN_PLACED_BUFFER_SIZE;
+	textureDesc.Width = width;
+	textureDesc.Height = height;
+	textureDesc.DepthOrArraySize = SizeZ;
+	textureDesc.MipLevels = NumMipsIn;
+	textureDesc.Format = format;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	if (flag & ETextureCreateFlags::TexCreate_RenderTargetable)
+	{
+		X_Assert(false);
+	}
+
+	if (flag & TexCreate_UAV)
+	{
+		textureDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		bCreateUAV = true;
+	}
+
+	const DXGI_FORMAT PlatformShaderResourceFormat = FindShaderResourceDXGIFormat(format);
+	const DXGI_FORMAT PlatformDepthStencilFormat = FindDepthStencilDXGIFormat(format);
+
+	const XD3D12ResourceTypeHelper Type(textureDesc, D3D12_HEAP_TYPE_DEFAULT);
+	const D3D12_RESOURCE_STATES InitialState = Type.GetOptimalInitialState(false);
+
+	const D3D12_RESOURCE_ALLOCATION_INFO Info = PhysicalDevice->GetDXDevice()->GetResourceAllocationInfo(0, 1, &textureDesc);
+	XD3D12ResourceLocation default_location;
+
+	if (bCreateRTV)
+	{
+		D3D12_CLEAR_VALUE clearValue;
+		clearValue.Format = PlatformShaderResourceFormat;
+		clearValue.Color[0] = 0.0f; clearValue.Color[1] = 0.0f; clearValue.Color[2] = 0.0f; clearValue.Color[3] = 0.0f;
+	
+		const D3D12_HEAP_PROPERTIES HeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		PhysicalDevice->GetDXDevice()->CreateCommittedResource(
+			&HeapProps, D3D12_HEAP_FLAG_NONE, &textureDesc,
+			InitialState, &clearValue,
+			IID_PPV_ARGS(TextureResource->GetPtrToResourceAdress()));
+		
+		TextureResource->SetResourceState(InitialState);
+	}
+	else
+	{
+		bool res = DefaultNonRtDsTextureHeapAlloc.Allocate(
+			Info.SizeInBytes,
+			D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
+			default_location);
+		X_Assert(res == true);
+
+		const D3D12_RESOURCE_STATES ResourceState = (tex_data != nullptr ? D3D12_RESOURCE_STATE_COPY_DEST : InitialState);
+
+		uint64 ResoureceAlignOffset = AlignArbitrary(
+			DefaultNonRtDsTextureHeapAlloc.GetAllocationOffsetInBytes(default_location.GetBuddyAllocData()),
+			D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+
+		ThrowIfFailed(PhysicalDevice->GetDXDevice()->CreatePlacedResource(
+			default_location.GetBuddyAllocator()->GetDXHeap(), ResoureceAlignOffset,
+			&textureDesc, ResourceState, nullptr, IID_PPV_ARGS(TextureResource->GetPtrToResourceAdress())));
+
+		TextureResource->SetResourceState(ResourceState);
+	}
+
+	{
+		std::wstring str = L"xx" + std::to_wstring(TempResourceIndex) + L"xx\n";
+		TextureResource->GetResource()->SetName(str.c_str());
+	}
+
+	XD3D12Texture3D* TextureRet = new XD3D12Texture3D();
+	if (bCreateShaderResource)
+	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = PlatformShaderResourceFormat;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		srvDesc.Texture3D.MipLevels = TextureResource->GetResource()->GetDesc().MipLevels;
+		srvDesc.Texture3D.MostDetailedMip = 0;
+		srvDesc.Texture3D.ResourceMinLODClamp = 0;
+
+		uint32 index_of_desc_in_heap;
+		uint32 index_of_heap;
+		ShaderResourceDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
+
+		XD3D12ShaderResourceView ShaderResourceView;
+		ShaderResourceView.Create(
+			PhysicalDevice, TextureResource,
+			srvDesc, ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+		TextureRet->SetShaderResourceView(ShaderResourceView);
+
+	}
+
+	if (bCreateUAV)
+	{
+		X_Assert(NumMipsIn == 1);
+		D3D12_UNORDERED_ACCESS_VIEW_DESC UavDesc = {};
+		UavDesc.Format = PlatformShaderResourceFormat;
+		UavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+		UavDesc.Texture3D.WSize = SizeZ;
+		UavDesc.Texture3D.FirstWSlice = 0;
+		UavDesc.Texture3D.MipSlice = 0;
+
+		uint32 index_of_desc_in_heap;
+		uint32 index_of_heap;
+		ShaderResourceDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
+
+		XD3D12UnorderedAcessView UnorderedAcessView;
+		UnorderedAcessView.Create(
+			PhysicalDevice, TextureResource,
+			UavDesc, ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+		TextureRet->SetUnorderedAcessView(UnorderedAcessView);
+	}
+
+	if (bCreateRTV)
+	{
+		X_Assert(false);
+		D3D12_RENDER_TARGET_VIEW_DESC rtDesc = {};
+		rtDesc.Format = TextureResource->GetResource()->GetDesc().Format;
+		rtDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		rtDesc.Texture2D.MipSlice = 0;
+		rtDesc.Texture2D.PlaneSlice = 0;
+
+		uint32 index_of_desc_in_heap;
+		uint32 index_of_heap;
+		RenderTargetDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
+
+		XD3D12RenderTargetView ShaderResourceView;
+		ShaderResourceView.Create(
+			PhysicalDevice, TextureResource,
+			rtDesc, RenderTargetDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+		TextureRet->SetRenderTargetView(ShaderResourceView);
+
+	}
+
+
+	if (tex_data != nullptr)
+	{
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(TextureResource->GetResource(), 0, 1);
+
+		XD3D12ResourceLocation upload_location;
+		bool res = UploadHeapAlloc.Allocate(uploadBufferSize, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
+		X_Assert(res == true);
+
+		D3D12_SUBRESOURCE_DATA textureData = {};
+		textureData.pData = tex_data;
+		textureData.RowPitch = width * 4;
+		textureData.SlicePitch = textureData.RowPitch * height;
+
+		CopyDataFromUploadToDefaulHeap
+		(cmd_list, TextureResource->GetResource(),
+			UploadHeapAlloc.GetDXResource(),
 			UploadHeapAlloc.GetAllocationOffsetInBytes(upload_location.GetBuddyAllocData()),
 			0, 1, &textureData);
 		cmd_list->ResourceBarrier(1, &(CD3DX12_RESOURCE_BARRIER::Transition(TextureResource->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)));
