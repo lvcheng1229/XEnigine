@@ -136,12 +136,9 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { pipe_curr_desc_array_manager.GetCurrentDescArray()->GetDescHeapPtr() };
 	dx_cmd_list->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-	if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
-	{
-		dx_cmd_list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	}
 	
+	//TODOOOOOOOOOOOOOOOO
+
 	//if (bNeedSetHeapDesc)
 	//{
 	//	ID3D12DescriptorHeap* descriptorHeaps[] = { pipe_curr_desc_array_manager.GetCurrentDescArray()->GetDescHeapPtr() };
@@ -149,7 +146,10 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 	//	bNeedSetHeapDesc = false;
 	//}
 
-	//dx_cmd_list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
+	{
+		dx_cmd_list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
 
 	if (bNeedSetSRV)
 	{

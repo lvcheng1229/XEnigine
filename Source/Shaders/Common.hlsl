@@ -8,6 +8,7 @@ cbuffer cbView
     float padding0;
     float4 View_BufferSizeAndInvSize;//Texture Size
     uint View_StateFrameIndexMod8;
+    float4 View_AtmosphereLightDirection;
     //float4 View_ScreenPositionScaleBias;//match Buffer size to ScreenSize
 };
 
@@ -15,6 +16,7 @@ cbuffer cbView
 
 SamplerState gsamPointWarp  : register(s0,space1000);
 SamplerState gsamLinearWarp  : register(s4,space1000);
+SamplerState gsamLinearClamp  : register(s5,space1000);
 
 float Luminance( float3 LinearColor )
 {
@@ -42,3 +44,4 @@ float ClampedPow(float X,float Y)
 {
 	return pow(max(abs(X),POW_CLAMP),Y);
 }
+

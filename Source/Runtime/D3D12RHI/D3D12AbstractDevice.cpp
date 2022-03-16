@@ -40,7 +40,7 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	DefaultNonRtDsTextureHeapAlloc.Create(
 		PhysicalDevice,
 		default_cfg,
-		128 * (1 << 20),
+		512 * (1 << 20),
 		(64 * 1024),
 		AllocStrategy::PlacedResource);
 
@@ -50,7 +50,7 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	UploadHeapAlloc.Create(
 		PhysicalDevice,
 		upload_cfg,
-		128 * (1 << 20),
+		512 * (1 << 20),
 		(64 * 1024),
 		AllocStrategy::ManualSubAllocation
 	);
