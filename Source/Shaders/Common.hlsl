@@ -3,6 +3,7 @@ cbuffer cbView
     float4x4 View_TranslatedViewProjectionMatrix;
     float4x4 View_ScreenToTranslatedWorld;
     float4x4 View_ViewToClip;
+    float4x4 View_ScreenToWorld;
 
     float4 View_InvDeviceZToWorldZTransform;
     float3 View_WorldCameraOrigin;
@@ -17,10 +18,13 @@ cbuffer cbView
 
     float4 View_SkyPlanetCenterAndViewHeight;
     float4x4 View_SkyViewLutReferential;
+
+    float4 View_ViewSizeAndInvSize;
     
 };
 
 #define PI 3.141592653589
+const static float Max10BitsFloat = 64512.0f;
 
 SamplerState gsamPointWarp  : register(s0,space1000);
 SamplerState gsamLinearWarp  : register(s4,space1000);

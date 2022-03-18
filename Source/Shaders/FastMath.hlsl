@@ -19,3 +19,24 @@ float acosFast4(float inX)
 	// check per platform if compiles to a selector - no branch neeeded
 	return inX >= 0.0f ? s : PI - s;
 }
+
+
+float atan2Fast( float y, float x )
+{
+	float t0 = max( abs(x), abs(y) );
+	float t1 = min( abs(x), abs(y) );
+	float t3 = t1 / t0;
+	float t4 = t3 * t3;
+
+	// Same polynomial as atanFastPos
+	t0 =         + 0.0872929;
+	t0 = t0 * t4 - 0.301895;
+	t0 = t0 * t4 + 1.0;
+	t3 = t0 * t3;
+
+	t3 = abs(y) > abs(x) ? (0.5 * PI) - t3 : t3;
+	t3 = x < 0 ? PI - t3 : t3;
+	t3 = y < 0 ? -t3 : t3;
+
+	return t3;
+}

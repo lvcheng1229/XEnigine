@@ -121,6 +121,11 @@ void DeferredLightPixelMain(
 	)
 {
 	float DeviceZ=SceneTexturesStruct_SceneDepthTexture.Sample(gsamPointWarp,ScreenUV).r;
+	if(DeviceZ<0.01)
+	{
+		OutColor=float4(0,0,0,0);
+		return;
+	}
 	float WorldZ=ConvertFromDeviceZ(DeviceZ);
 	float3 WorldPosition = ScreenVector * WorldZ + View_WorldCameraOrigin;
 	float3 CameraVector = normalize(ScreenVector);

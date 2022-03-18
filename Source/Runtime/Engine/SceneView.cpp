@@ -127,3 +127,19 @@ DirectX::XMFLOAT4X4 XViewMatrices::GetScreenToTranslatedWorldTranPose()
 	return Ret;
 }
 
+DirectX::XMFLOAT4X4 XViewMatrices::GetScreenToWorldTranPose()
+{
+	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
+	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
+	ScreenToClip.m[3][2] = ProjectionMatrix.m[3][2];
+	ScreenToClip.m[2][3] = 1.0f;
+	ScreenToClip.m[3][3] = 0.0f;
+
+	XMMATRIX ScreenToWorldCom = XMLoadFloat4x4(&ScreenToClip);
+	ScreenToWorldCom = XMMatrixMultiply(ScreenToWorldCom, XMLoadFloat4x4(&ViewProjectionMatrixInverse));
+
+	DirectX::XMFLOAT4X4 Ret;
+	XMStoreFloat4x4(&Ret, XMMatrixTranspose(ScreenToWorldCom));
+	return Ret;
+}
+

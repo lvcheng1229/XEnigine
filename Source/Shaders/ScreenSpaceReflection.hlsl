@@ -94,7 +94,7 @@ FSSRTRay InitScreenSpaceRayFromWorldSpace(
     FSSRTRay Ray;
 	Ray.RayStartScreen = RayStartScreen;
 	Ray.RayStepScreen = RayEndScreen - RayStartScreen;
-    Ray.RayStepScreen *= GetStepScreenFactorToClipAtScreenEdge(Ray.RayStartScreen, Ray.RayStepScreen);
+    Ray.RayStepScreen *= GetStepScreenFactorToClipAtScreenEdge(Ray.RayStartScreen.xy, Ray.RayStepScreen.xy);
     return Ray;
 }
 

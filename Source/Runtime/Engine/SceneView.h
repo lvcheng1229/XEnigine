@@ -77,5 +77,6 @@ public:
 
 	//misc
 	DirectX::XMFLOAT4X4 GetScreenToTranslatedWorldTranPose();
+	DirectX::XMFLOAT4X4 GetScreenToWorldTranPose();
 	
 };

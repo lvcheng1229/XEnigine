@@ -54,6 +54,59 @@ struct BoundSphere
 	float Radius;
 };
 
+class Camera
+{
+public:
+	void Camera::RotateY(float angle)
+	{
+		// Rotate the basis vectors about the world y-axis.
+
+		XMMATRIX R = XMMatrixRotationY(angle);
+		XMStoreFloat3(&mRight, XMVector3TransformNormal(XMLoadFloat3(&mRight), R));
+		XMStoreFloat3(&mUp, XMVector3TransformNormal(XMLoadFloat3(&mUp), R));
+		XMStoreFloat3(&mLook, XMVector3TransformNormal(XMLoadFloat3(&mLook), R));
+	}
+
+	void Camera::Pitch(float angle)
+	{
+		// Rotate up and look vector about the right vector.
+		XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
+		XMStoreFloat3(&mUp, XMVector3TransformNormal(XMLoadFloat3(&mUp), R));
+		XMStoreFloat3(&mLook, XMVector3TransformNormal(XMLoadFloat3(&mLook), R));
+	}
+
+	void Strafe(float d)
+	{
+		XMVECTOR s = XMVectorReplicate(d);
+		XMVECTOR r = XMLoadFloat3(&mRight);
+		XMVECTOR p = XMLoadFloat3(&mPosition);
+		XMStoreFloat3(&mPosition, XMVectorMultiplyAdd(s, r, p));
+	}
+	void Walk(float d)
+	{
+		// mPosition += d*mLook
+		XMVECTOR s = XMVectorReplicate(d);
+		XMVECTOR l = XMLoadFloat3(&mLook);
+		XMVECTOR p = XMLoadFloat3(&mPosition);
+		XMStoreFloat3(&mPosition, XMVectorMultiplyAdd(s, l, p));
+	}
+
+	DirectX::XMFLOAT3 GetEyePosition()
+	{
+		return mPosition;
+	}
+
+	DirectX::XMFLOAT3 GetTargetPosition()
+	{
+		return XMFLOAT3(mPosition.x + mLook.x, mPosition.y + mLook.y, mPosition.z + mLook.z);
+	}
+private:
+	DirectX::XMFLOAT3 mPosition = { 0.0f, 3.0f, -3.0f };
+	DirectX::XMFLOAT3 mRight = { 1.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 mUp = { 0.0f, 1.0f, 0.0f };
+	DirectX::XMFLOAT3 mLook = { 0.0f, 0.0f, 1.0f };
+};
+
 class CrateApp : public D3DApp
 {
 public:
@@ -91,6 +144,8 @@ private:
 	
 	BoundSphere BuildBoundSphere(float FoVAngleY, float WHRatio, float SplirNear, float SplitFar);
 	
+	Camera cam_ins;
+
 	XMFLOAT3 LightDir = { -1,1,1 };
 	XMFLOAT3 LightColor = { 1,1,1 };
 	float LightIntensity = 7.0f;
@@ -132,6 +187,7 @@ private:
 		DirectX::XMFLOAT4X4 TranslatedViewProjectionMatrix;
 		DirectX::XMFLOAT4X4 ScreenToTranslatedWorld;
 		DirectX::XMFLOAT4X4 ViewToClip;
+		DirectX::XMFLOAT4X4 ScreenToWorld;
 
 		DirectX::XMFLOAT4 InvDeviceZToWorldZTransform;
 		DirectX::XMFLOAT3 WorldCameraOrigin;
@@ -145,6 +201,8 @@ private:
 
 		XMFLOAT4 SkyPlanetCenterAndViewHeight;
 		DirectX::XMFLOAT4X4 SkyViewLutReferential;
+
+		XMFLOAT4 ViewSizeAndInvSize;;
 	};
 
 	//Full Screen Pass
@@ -197,10 +255,13 @@ private:
 		XMFLOAT4 TransmittanceLutSizeAndInvSize;
 		XMFLOAT4 MultiScatteredLuminanceLutSizeAndInvSize;
 		XMFLOAT4 SkyViewLutSizeAndInvSize;
+		XMFLOAT4 CameraAerialPerspectiveVolumeSizeAndInvSize;
+
 		XMFLOAT4 RayleighScattering;
 		XMFLOAT4 MieScattering;
 		XMFLOAT4 MieAbsorption;
 		XMFLOAT4 MieExtinction;
+
 		XMFLOAT4 GroundAlbedo;
 		
 		float TopRadiusKm;
@@ -213,12 +274,12 @@ private:
 		float MiePhaseG;
 		float padding0 = 0;
 
-		float MinSampleCount;
-		float MaxSampleCount;
-		float DistanceToSampleCountMaxInv;
-		float padding1 = 0;
-
 		XMFLOAT4 Light0Illuminance;
+
+		float CameraAerialPerspectiveVolumeDepthResolution;
+		float CameraAerialPerspectiveVolumeDepthResolutionInv;
+		float CameraAerialPerspectiveVolumeDepthSliceLengthKm;
+		float padding1;
 	};
 	cbSkyAtmosphere cbSkyAtmosphereIns;
 	std::shared_ptr<XRHIConstantBuffer>RHICbSkyAtmosphere;
@@ -238,6 +299,10 @@ private:
 	ComPtr<ID3D12PipelineState>  PerspectiveVolumePSO = nullptr;
 	XD3D12RootSignature  PerspectiveVolumeRootSig;
 	std::shared_ptr <XRHITexture3D> CameraAerialPerspectiveVolumeUAV;
+
+private:
+	ComPtr<ID3D12PipelineState>  SkyAtmosphereCombinePSO = nullptr;
+	XD3D12RootSignature  SkyAtmosphereCombineRootSig;
 
 //Shadow Mask Pass 
 private:
@@ -303,14 +368,15 @@ private:
 
     PassConstants mMainPassCB;
 
-	XMFLOAT3 mEyePos = { 0.0f, 0.0f, 0.0f };
-	XMFLOAT3 mTargetPos = { 0.0f, 0.0f, 0.0f };
+	//XMFLOAT3 mEyePos = { 0.0f, 0.0f, 0.0f };
+	//XMFLOAT3 mTargetPos = { 0.0f, 1.0f, 0.0f };
+	
 	//XMFLOAT4X4 mView = MathHelper::Identity4x4();
 	XMFLOAT4X4 mProj = MathHelper::Identity4x4();
 	XMFLOAT4X4 mLightProj = MathHelper::Identity4x4();
-	float mTheta = 1.3f*XM_PI;
-	float mPhi = 0.4f*XM_PI;
-	float mRadius = 2.5f;
+	//float mTheta = 1.3f*XM_PI;
+	//float mPhi = 0.4f*XM_PI;
+	//float mRadius = 2.5f;
 
     POINT mLastMousePos;
 };
@@ -426,8 +492,8 @@ BoundSphere CrateApp::BuildBoundSphere(float FoVAngleY, float WHRatio, float Spl
 	XMVECTOR FarVOffsetCom = XMLoadFloat3(&FarVOffset);
 	
 
-	XMVECTOR EyePosCom = XMLoadFloat3(&mEyePos);
-	XMVECTOR TargetPosCom = XMLoadFloat3(&mTargetPos);
+	XMVECTOR EyePosCom = XMLoadFloat3(&cam_ins.GetEyePosition());
+	XMVECTOR TargetPosCom = XMLoadFloat3(&cam_ins.GetTargetPosition());
 	XMVECTOR CameraDirection = DirectX::XMVector3Normalize(TargetPosCom - EyePosCom);
 	
 	XMVECTOR CascadeFrustumVerts[8];
@@ -471,7 +537,7 @@ void CrateApp::OnResize()
 	XMMATRIX P = XDirectx::XXMMatrixPerspectiveFovLH(FoVAngleY, AspectRatio(), Near, Far);
 	
 	XMStoreFloat4x4(&mProj, P);
-	ViewMatrix.Create(mProj, mEyePos, mTargetPos);
+	ViewMatrix.Create(mProj, cam_ins.GetEyePosition(), cam_ins.GetTargetPosition());
 	
 	
 }
@@ -597,6 +663,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			mCommandList.Get()->Dispatch(32 / 8, 32 / 8, 1);
 		}
 
+		//RenderSkyViewLutCS
 		{
 			mCommandList->SetPipelineState(SkyViewLutPSO.Get());
 			pass_state_manager->SetRootSignature(&SkyViewLutRootSig);
@@ -620,13 +687,24 @@ void CrateApp::Renderer(const GameTimer& gt)
 			mCommandList.Get()->Dispatch(192 / 8, 104 / 8, 1);
 		}
 
+		//RenderCameraAerialPerspectiveVolumeCS
 		{
 			mCommandList->SetPipelineState(PerspectiveVolumePSO.Get());
 			pass_state_manager->SetRootSignature(&PerspectiveVolumeRootSig);
 
 			XD3D12TextureBase* CameraAerialPerspectiveVolume = GetD3D12TextureFromRHITexture(CameraAerialPerspectiveVolumeUAV.get());
+			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
+				0, ViewConstantBuffer.get());
+			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
+				1, RHICbSkyAtmosphere.get());
+			
 			direct_ctx->RHISetShaderUAV(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
 				0, CameraAerialPerspectiveVolume->GeUnorderedAcessView(0));
+
+			direct_ctx->RHISetShaderTexture(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
+				0, TransmittanceLutUAV.get());
+			direct_ctx->RHISetShaderTexture(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
+				1, MultiScatteredLuminanceLutUAV.get());
 
 			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
 			direct_ctx->GetCmdList()->CmdListFlushBarrier();
@@ -913,13 +991,52 @@ void CrateApp::Renderer(const GameTimer& gt)
 		pass_state_manager->SetRootSignature(&ReflectionEnvironmentRootSig);
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		
-		
-		
 		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureSceneColorDeffered.get())->GetRenderTargetView();
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);
 		//direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
 
 		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 0, SSROutput.get());
+
+		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
+		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
+		mCommandList.Get()->DrawIndexedInstanced(
+			fullScreenItem->IndexCount, 1,
+			fullScreenItem->StartIndexLocation,
+			fullScreenItem->BaseVertexLocation, 0);
+
+		direct_ctx->GetCmdList()->CmdListFlushBarrier();
+		direct_ctx->CloseCmdList();
+		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		direct_cmd_queue->CommandQueueWaitFlush();
+		pass_state_manager->ResetState();
+	}
+
+	//Pass8 SkyAtmosphere Combine Pass
+	{
+		direct_ctx->ResetCmdAlloc();
+		direct_ctx->OpenCmdList();
+		mCommandList->SetPipelineState(SkyAtmosphereCombinePSO.Get());
+		pass_state_manager->SetRootSignature(&SkyAtmosphereCombineRootSig);
+		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
+
+		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureSceneColorDeffered.get())->GetRenderTargetView();
+		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);
+
+		direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(),
+			0, ViewConstantBuffer.get());
+		direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(),
+			1, RHICbSkyAtmosphere.get());
+
+		direct_ctx->RHISetShaderTexture(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(), 
+			0, SkyViewLutUAV.get());
+		direct_ctx->RHISetShaderTexture(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(),
+			1, TextureDepthStencil.get());
+		direct_ctx->RHISetShaderTexture(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(),
+			2, TransmittanceLutUAV.get());
+		//direct_ctx->RHISetShaderTexture(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(),
+		//	3, CameraAerialPerspectiveVolumeUAV.get());
 
 		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
 		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
@@ -951,14 +1068,14 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);//TODO
 		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
 
-		//direct_ctx->RHISetShaderTexture(
-		//	mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
-		//	,0
-		//	, TextureSceneColorDeffered.get());
 		direct_ctx->RHISetShaderTexture(
 			mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
-			, 0
-			, SkyViewLutUAV.get());
+			,0
+			, TextureSceneColorDeffered.get());
+		//direct_ctx->RHISetShaderTexture(
+		//	mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
+		//	, 0
+		//	, SkyViewLutUAV.get());
 		
 		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
 		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
@@ -1009,29 +1126,14 @@ void CrateApp::OnMouseMove(WPARAM btnState, int x, int y)
 {
     if((btnState & MK_LBUTTON) != 0)
     {
-        // Make each pixel correspond to a quarter of a degree.
-        float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
-        float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
+		// Make each pixel correspond to a quarter of a degree.
+		float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
 
-        // Update angles based on input to orbit camera around box.
-        mTheta += dx;
-        mPhi += dy;
-
-        // Restrict the angle mPhi.
-        mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
+		cam_ins.Pitch(dy);
+		cam_ins.RotateY(dx);
     }
-    else if((btnState & MK_RBUTTON) != 0)
-    {
-        // Make each pixel correspond to 0.2 unit in the scene.
-        float dx = 0.05f*static_cast<float>(x - mLastMousePos.x);
-        float dy = 0.05f*static_cast<float>(y - mLastMousePos.y);
-
-        // Update the camera radius based on input.
-        mRadius += dx - dy;
-
-        // Restrict the radius.
-        mRadius = MathHelper::Clamp(mRadius, 5.0f, 150.0f);
-    }
+    
 
     mLastMousePos.x = x;
     mLastMousePos.y = y;
@@ -1039,6 +1141,19 @@ void CrateApp::OnMouseMove(WPARAM btnState, int x, int y)
  
 void CrateApp::OnKeyboardInput(const GameTimer& gt)
 {
+	const float dt = gt.DeltaTime();
+
+	if (GetAsyncKeyState('W') & 0x8000)
+		cam_ins.Walk(10.0f * dt);
+
+	if (GetAsyncKeyState('S') & 0x8000)
+		cam_ins.Walk(-10.0f * dt);
+
+	if (GetAsyncKeyState('A') & 0x8000)
+		cam_ins.Strafe(-10.0f * dt);
+
+	if (GetAsyncKeyState('D') & 0x8000)
+		cam_ins.Strafe(10.0f * dt);
 }
  
 void CrateApp::UpdateShadowTransform(const GameTimer& gt)
@@ -1048,10 +1163,10 @@ void CrateApp::UpdateShadowTransform(const GameTimer& gt)
 void CrateApp::UpdateCamera(const GameTimer& gt)
 {
 	// Convert Spherical to Cartesian coordinates.
-	mEyePos.x = mRadius*sinf(mPhi)*cosf(mTheta);
-	mEyePos.z = mRadius*sinf(mPhi)*sinf(mTheta);
-	mEyePos.y = mRadius*cosf(mPhi);
-	ViewMatrix.UpdateViewMatrix(mEyePos,mTargetPos);
+	//mEyePos.x = mRadius*sinf(mPhi)*cosf(mTheta);
+	//mEyePos.z = mRadius*sinf(mPhi)*sinf(mTheta);
+	//mEyePos.y = mRadius*cosf(mPhi);
+	ViewMatrix.UpdateViewMatrix(cam_ins.GetEyePosition(), cam_ins.GetTargetPosition());
 
 	//------------------------------------
 	float NearFarLength = Far - Near;
@@ -1148,10 +1263,13 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	ViewCB.StateFrameIndexMod8 = FrameNum % 8;
 
 	//Current For LightPass , will combine to BasePass for future
+	ViewCB.ViewSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0 / mClientWidth, 1.0 / mClientHeight);
 	float LenSqrt = sqrt(LightDir.x * LightDir.x + LightDir.y * LightDir.y + LightDir.z * LightDir.z);
 	ViewCB.AtmosphereLightDirection = XMFLOAT4(LightDir.x / LenSqrt, LightDir.y / LenSqrt, LightDir.z / LenSqrt, 1.0f);
 	ViewCB.ViewToClip = ViewMatrix.GetProjectionMatrixTranspose();
+	
 	ViewCB.TranslatedViewProjectionMatrix = ViewMatrix.GetTranslatedViewProjectionMatrixTranspose();
+	ViewCB.ScreenToWorld = ViewMatrix.GetScreenToWorldTranPose();
 	ViewCB.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorldTranPose();
 	ViewCB.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(ViewMatrix.GetProjectionMatrix());
 	ViewCB.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
@@ -1229,16 +1347,20 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		float MultiScatteringSampleCount = 15.0f;
 
 
-		XMFLOAT3 CametaWorldOrigin = mEyePos;
-		//TODOOOOOOOOOOOOOO 7M
+
 		
 
 		//For RenderSkyViewLutCS
 		//FAtmosphereSetup::ComputeViewData
 		const float CmToSkyUnit = 0.00001f;			// Centimeters to Kilometers
 		const float SkyUnitToCm = 1.0f / 0.00001f;	// Kilometers to Centimeters
-		XMVECTOR Forward = XMLoadFloat3(&XMFLOAT3(mTargetPos.x - CametaWorldOrigin.x, 
-			mTargetPos.y - CametaWorldOrigin.y, mTargetPos.z - CametaWorldOrigin.z));
+
+		XMFLOAT3 CametaWorldOrigin = cam_ins.GetEyePosition();
+		XMFLOAT3 CametaTargetPos = cam_ins.GetTargetPosition();
+
+
+		XMVECTOR Forward = XMLoadFloat3(&XMFLOAT3(CametaTargetPos.x - CametaWorldOrigin.x,
+			CametaTargetPos.y - CametaWorldOrigin.y, CametaTargetPos.z - CametaWorldOrigin.z));
 
 		//XMVECTOR PlanetCenterKm = XMLoadFloat3(&XMFLOAT3(0, 0, -EarthBottomRadius));
 		XMVECTOR PlanetCenterKm = XMLoadFloat3(&XMFLOAT3(0, -EarthBottomRadius, 0));
@@ -1320,6 +1442,7 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	cbSkyAtmosphereIns.TransmittanceLutSizeAndInvSize = XMFLOAT4(256.0, 64.0, 1.0 / 256.0, 1.0 / 64.0);
 	cbSkyAtmosphereIns.MultiScatteredLuminanceLutSizeAndInvSize = XMFLOAT4(32.0, 32.0, 1.0 / 32.0, 1.0 / 32.0);
 	cbSkyAtmosphereIns.SkyViewLutSizeAndInvSize = XMFLOAT4(192.0, 104.0, 1.0 / 192.0, 1.0 / 104.0);
+	cbSkyAtmosphereIns.CameraAerialPerspectiveVolumeSizeAndInvSize = XMFLOAT4(32.0, 32.0, 1.0 / 32.0, 1.0 / 32.0);
 
 	cbSkyAtmosphereIns.RayleighScattering = XMFLOAT4(
 		RayleighScattering.x*RayleighScatteringScale,
@@ -1354,13 +1477,14 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	cbSkyAtmosphereIns.GroundAlbedo = XMFLOAT4(0.66, 0.66, 0.66, 1.0);
 	cbSkyAtmosphereIns.MiePhaseG = 0.8f;
 
-	cbSkyAtmosphereIns.MinSampleCount = 2.0f;
-	cbSkyAtmosphereIns.MaxSampleCount = 32.0f;
-	cbSkyAtmosphereIns.DistanceToSampleCountMaxInv = 150.0f;
 
 	cbSkyAtmosphereIns.Light0Illuminance = XMFLOAT4(
 		LightColor.x * LightIntensity, LightColor.y * LightIntensity, LightColor.z * LightIntensity, 0);
 	
+
+	cbSkyAtmosphereIns.CameraAerialPerspectiveVolumeDepthResolution = 16;
+	cbSkyAtmosphereIns.CameraAerialPerspectiveVolumeDepthResolutionInv = 1.0 / 16.0;
+	cbSkyAtmosphereIns.CameraAerialPerspectiveVolumeDepthSliceLengthKm = 96 / 16;
 
 	RHICbSkyAtmosphere->UpdateData(&cbSkyAtmosphereIns, sizeof(cbSkyAtmosphere), 0);
 
@@ -1696,6 +1820,19 @@ void CrateApp::BuildRootSignature()
 		ReflectionEnvironmentRootSig.Create(&Device, pipeline_register_count);
 	}
 
+
+	{
+		XPipelineRegisterBoundCount pipeline_register_count;
+		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
+
+		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+			= mShaders["RenderSkyAtmosphereRayMarchingPS"].GetCBVCount();
+		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+			= mShaders["RenderSkyAtmosphereRayMarchingPS"].GetSRVCount();
+
+		SkyAtmosphereCombineRootSig.Create(&Device, pipeline_register_count);
+	}
+
 	//FullScreenPass
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
@@ -1818,6 +1955,18 @@ void CrateApp::BuildShadersAndInputLayout()
 	}
 
 	{
+		mShaders["RenderSkyAtmosphereRayMarchingVS"].CreateShader(EShaderType::SV_Vertex);
+		mShaders["RenderSkyAtmosphereRayMarchingVS"].CompileShader(
+			L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl", nullptr, "VS", "vs_5_1");
+		mShaders["RenderSkyAtmosphereRayMarchingVS"].ShaderReflect();
+
+		mShaders["RenderSkyAtmosphereRayMarchingPS"].CreateShader(EShaderType::SV_Pixel);
+		mShaders["RenderSkyAtmosphereRayMarchingPS"].CompileShader(
+			L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl", nullptr, "RenderSkyAtmosphereRayMarchingPS", "ps_5_1");
+		mShaders["RenderSkyAtmosphereRayMarchingPS"].ShaderReflect();
+	}
+
+	{
 		mShaders["ReflectionEnvironmentVS"].CreateShader(EShaderType::SV_Vertex);
 		mShaders["ReflectionEnvironmentVS"].CompileShader(
 			L"E:/XEngine/XEnigine/Source/Shaders/ReflectionEnvironmentShader.hlsl", nullptr, "VS", "vs_5_1");
@@ -1867,7 +2016,7 @@ void CrateApp::BuildShapeGeometry()
     GeometryGenerator geoGen;
 	{
 		GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5, 20, 20);//geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
-		GeometryGenerator::MeshData grid = geoGen.CreateGrid(40.0f, 60.0f, 60, 40);
+		GeometryGenerator::MeshData grid = geoGen.CreateGrid(10.0f, 15.0f, 60, 40);
 
 		//step2
 		UINT sphereVertexOffset = 0;
@@ -2334,6 +2483,52 @@ void CrateApp::BuildPSOs()
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&IBLPsoDesc, IID_PPV_ARGS(&ReflectionEnvironmentPassPSO)));
 	}
 
+	//SkyAtmosphereCombine
+	{
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC SkyAtmosphereCombinePsoDesc;
+
+		ZeroMemory(&SkyAtmosphereCombinePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+		SkyAtmosphereCombinePsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
+		SkyAtmosphereCombinePsoDesc.pRootSignature = SkyAtmosphereCombineRootSig.GetDXRootSignature();
+		SkyAtmosphereCombinePsoDesc.VS =
+		{
+			reinterpret_cast<BYTE*>(mShaders["RenderSkyAtmosphereRayMarchingVS"].GetByteCode()->GetBufferPointer()),
+			mShaders["RenderSkyAtmosphereRayMarchingVS"].GetByteCode()->GetBufferSize()
+		};
+		SkyAtmosphereCombinePsoDesc.PS =
+		{
+			reinterpret_cast<BYTE*>(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetByteCode()->GetBufferPointer()),
+			mShaders["RenderSkyAtmosphereRayMarchingPS"].GetByteCode()->GetBufferSize()
+		};
+		SkyAtmosphereCombinePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+
+		SkyAtmosphereCombinePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		SkyAtmosphereCombinePsoDesc.BlendState.RenderTarget[0].BlendEnable = true;
+
+		SkyAtmosphereCombinePsoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		SkyAtmosphereCombinePsoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+		SkyAtmosphereCombinePsoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+
+		SkyAtmosphereCombinePsoDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		SkyAtmosphereCombinePsoDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		SkyAtmosphereCombinePsoDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+
+
+		SkyAtmosphereCombinePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		SkyAtmosphereCombinePsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		SkyAtmosphereCombinePsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+
+		SkyAtmosphereCombinePsoDesc.SampleMask = UINT_MAX;
+		SkyAtmosphereCombinePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		SkyAtmosphereCombinePsoDesc.NumRenderTargets = 1;
+		SkyAtmosphereCombinePsoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		SkyAtmosphereCombinePsoDesc.SampleDesc.Count = 1;
+		SkyAtmosphereCombinePsoDesc.SampleDesc.Quality = 0;
+		SkyAtmosphereCombinePsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&SkyAtmosphereCombinePsoDesc, IID_PPV_ARGS(&SkyAtmosphereCombinePSO)));
+		
+	}
+
 	//FullScreenPass
 	{
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC FullScreenPsoDesc;
@@ -2405,8 +2600,8 @@ void CrateApp::BuildRenderItems()
 
 	{
 		auto sphereBackRitem = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&sphereBackRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, -1.5f, 0.0f));
-		XMStoreFloat4x4(&sphereBackRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
+		XMStoreFloat4x4(&sphereBackRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, -0.5f, 0.0f));
+		//XMStoreFloat4x4(&sphereBackRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 		sphereBackRitem->ObjCBIndex = 0;
 		sphereBackRitem->Mat = mMaterials["metal"].get();
 		sphereBackRitem->Geo = mGeometries["shapeGeo"].get();
@@ -2416,8 +2611,8 @@ void CrateApp::BuildRenderItems()
 		mAllRitems.push_back(std::move(sphereBackRitem));
 
 		auto sphereRitem = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, 0.5f, 0.0f));
-		XMStoreFloat4x4(&sphereRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
+		XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, 1.5f, 0.0f));
+		//XMStoreFloat4x4(&sphereRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 		sphereRitem->ObjCBIndex = 1;
 		sphereRitem->Mat = mMaterials["metal"].get();
 		sphereRitem->Geo = mGeometries["shapeGeo"].get();
@@ -2428,7 +2623,8 @@ void CrateApp::BuildRenderItems()
 
 
 		auto gridRitem = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
+		XMStoreFloat4x4(&gridRitem->World, XMMatrixTranslation(0.0f, 1.0f, 0.0f));
+		//XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 1.0f, 8.0f) * XMMatrixTranslation(0.0f, 1.0f, 0.0f));
 		gridRitem->ObjCBIndex = 2;
 		gridRitem->Mat = mMaterials["wood"].get();
 		gridRitem->Geo = mGeometries["shapeGeo"].get();
@@ -2444,7 +2640,7 @@ void CrateApp::BuildRenderItems()
 
 	{
 		LightPassItem = std::make_unique<RenderItem>();
-		LightPassItem->ObjCBIndex = 3;
+		LightPassItem->ObjCBIndex = 4;
 		//fullScreenItem->Mat = mMaterials["woodCrate"].get();
 		LightPassItem->Geo = mGeometries["fullQuad"].get();
 		LightPassItem->IndexCount = LightPassItem->Geo->DrawArgs["quad"].IndexCount;
