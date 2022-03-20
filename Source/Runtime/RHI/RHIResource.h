@@ -48,8 +48,8 @@ public:
 };
 
 
-class XRHIBlendState {};;
-class XRHIDepthStencilState {};;
+class XRHIBlendState {};
+class XRHIDepthStencilState {};
 
 class XRHIVertexLayout {};
 class XRHIVertexShader: public XRHIGraphicsShader {};
@@ -62,7 +62,10 @@ struct XRHIBoundShaderStateInput
 	XRHIPixelShader* RHIPixelShader;
 };
 
-class XGraphicsPSOInit
+class XGraphicsPSOInitializer
 {
+public:
 	XRHIBoundShaderStateInput BoundShaderState;
+	XRHIBlendState* BlendState;
+	XRHIDepthStencilState* DepthStencilState;
 };

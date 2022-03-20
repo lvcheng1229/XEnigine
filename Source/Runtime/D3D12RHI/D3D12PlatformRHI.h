@@ -9,6 +9,7 @@ class XD3D12PlatformRHI :public XPlatformRHI
 public:
 	inline void Init() override {};
 	std::shared_ptr<XRHIDepthStencilState> RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer)final override;
+	std::shared_ptr<XRHIBlendState> RHICreateBlendState(const XBlendStateInitializerRHI& Initializer)final override;
 public:
 	static inline void Base_TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,

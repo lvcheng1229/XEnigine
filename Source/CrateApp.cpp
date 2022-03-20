@@ -17,6 +17,7 @@
 #include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
 #include "Runtime/D3D12RHI/D3D12Texture.h"
 
+#include "Runtime/RHI/RHIStaticStates.h"
 
 #include  "Runtime/Engine/SceneView.h"
 #include "Runtime/Core/XMath.h"
@@ -396,6 +397,9 @@ bool CrateApp::Initialize()
 	
     if(!D3DApp::Initialize())
         return false;
+
+	
+
 	direct_ctx->OpenCmdList();
 	
 
@@ -2165,6 +2169,15 @@ void CrateApp::BuildShapeGeometry()
 
 void CrateApp::BuildPSOs()
 {
+	//RHIInit()
+	//XRenderResource::InitRHIForAllResources();
+
+	XRHIBlendState* TestBlend = TStaticBlendState<>::GetRHI();
+	XGraphicsPSOInitializer TestPSOInitializer;
+	TestPSOInitializer.BlendState = TStaticBlendState<>::GetRHI();;
+	TestPSOInitializer.DepthStencilState= TStaticDepthStencilState<>::GetRHI();
+
+
 	//PrePass
 	{
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC DepthOnlyPSODesc;

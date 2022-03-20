@@ -157,6 +157,7 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12State.h" />
     <ClInclude Include="Runtime\RHI\RHIStaticStates.h" />
     <ClInclude Include="Runtime\Core\Template\XEngineTemplate.h" />
+    <ClInclude Include="Runtime\RenderCore\RenderResource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
@@ -235,5 +236,6 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12State.cpp" />
     <ClCompile Include="Runtime\RHI\PlatformRHI.cpp" />
     <ClCompile Include="Runtime\RHI\Windows\WindowsRHI.cpp" />
+    <ClCompile Include="Runtime\RenderCore\RenderResource.cpp" />
   </ItemGroup>
 </Project>

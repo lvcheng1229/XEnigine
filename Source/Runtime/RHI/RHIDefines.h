@@ -9,6 +9,17 @@ enum ETextureCreateFlags
 	TexCreate_UAV = 1 << 4,
 };
 
+enum class EBlendOperation
+{
+	BO_Add,
+};
+
+enum class EBlendFactor
+{
+	BF_Zero,
+	BF_One,
+};
+
 enum class ECompareFunction
 {
 	CF_Greater,
