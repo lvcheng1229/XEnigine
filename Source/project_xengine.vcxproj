@@ -59,12 +59,12 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>X_PLATFORM_WIN;X_RHI_DX12;XE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\boost_1_78_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/MTd %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -77,7 +77,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>X_PLATFORM_WIN;X_RHI_DX12;XE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\boost_1_78_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -85,7 +85,7 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/MT %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -96,39 +96,44 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Core\AlignmentTemplates.h" />
-    <ClInclude Include="File\LoadTGATexture.h" />
     <ClInclude Include="File\stb_image.h" />
     <ClInclude Include="FrameResource.h" />
+    <ClInclude Include="Runtime\Core\Template\XEngineTemplate.h" />
     <ClInclude Include="Runtime\Core\XMath.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12AbstractDevice.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Adapter.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Allocation.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12CommandList.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12CommandQueue.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Common.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Context.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12DescriptorArray.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PassStateManager.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PhysicDevice.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PlatformRHI.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Resource.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Rootsignature.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Shader.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12State.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Texture.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12View.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Viewport.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12Adapter.h" />
     <ClInclude Include="Runtime\D3D12RHI\XD3D12CommandListManger.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.h" />
+    <ClInclude Include="Runtime\D3D12RHI\d3dx12.h" />
     <ClInclude Include="Runtime\DataStruct\XRefCountPtr.h" />
     <ClInclude Include="Runtime\Engine\SceneView.h" />
-    <ClInclude Include="Runtime\HAL\PlatformTypes.h" />
-    <ClInclude Include="Runtime\RenderCore\Shader.h" />
     <ClInclude Include="Runtime\HAL\Mch.h" />
+    <ClInclude Include="Runtime\HAL\PlatformTypes.h" />
+    <ClInclude Include="Runtime\RenderCore\ShaderCore.h" />
     <ClInclude Include="Runtime\RHI\PlatformRHI.h" />
     <ClInclude Include="Runtime\RHI\RHI.h" />
     <ClInclude Include="Runtime\RHI\RHIContext.h" />
     <ClInclude Include="Runtime\RHI\RHIDefines.h" />
     <ClInclude Include="Runtime\RHI\RHIResource.h" />
+    <ClInclude Include="Runtime\RenderCore\Shader.h" />
+    <ClInclude Include="Runtime\RHI\RHIStaticStates.h" />
     <ClInclude Include="UnitTest\GameTimer.h" />
     <ClInclude Include="UnitTest\GeometryGenerator.h" />
     <ClInclude Include="UnitTest\MathHelper.h" />
@@ -141,22 +146,25 @@
     <ClCompile Include="Runtime\Core\XMath.cpp" />
     <ClCompile Include="Runtime\Core\XMathcpp.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12AbstractDevice.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Adapter.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Allocation.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12CommandList.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12CommandQueue.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Context.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12DescriptorArray.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PassStateManager.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PhysicDevice.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Resource.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12State.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12Adapter.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\XD3D12CommandListManger.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.cpp" />
     <ClCompile Include="Runtime\Engine\SceneView.cpp" />
     <ClCompile Include="Runtime\RenderCore\Shader.cpp" />
+    <ClCompile Include="Runtime\RHI\PlatformRHI.cpp" />
+    <ClCompile Include="Runtime\RHI\Windows\WindowsRHI.cpp" />
     <ClCompile Include="UnitTest\GameTimer.cpp" />
     <ClCompile Include="UnitTest\GeometryGenerator.cpp" />
     <ClCompile Include="UnitTest\MathHelper.cpp" />

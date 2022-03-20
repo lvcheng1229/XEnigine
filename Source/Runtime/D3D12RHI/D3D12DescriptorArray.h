@@ -10,20 +10,25 @@ private:
 	struct DescArray
 	{
 		XDxRefCount<ID3D12DescriptorHeap> d3d12_heap;
-		std::unordered_set<uint32>desc_index_free;
+		std::unordered_set<uint32>	desc_index_free;
 		D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr_begin;
 		D3D12_GPU_DESCRIPTOR_HANDLE gpu_ptr_begin;
 	};
 
-	std::unordered_set<uint32>free_desc_array_index;;
-	std::vector<DescArray>all_desc_arrays;
+	uint32							desc_per_heap;
+	uint32							element_size;
 
+	XD3D12PhysicDevice*				device;
+	D3D12_DESCRIPTOR_HEAP_DESC		desc;
 
-	XD3D12PhysicDevice* device;
-	D3D12_DESCRIPTOR_HEAP_DESC desc;
-	uint32 desc_per_heap;
-	uint32 element_size;
+	std::unordered_set<uint32>		free_desc_array_index;;
+	std::vector<DescArray>			all_desc_arrays;
 public:
+
+	void FreeDesc(uint32 index_of_desc_in_heap, uint32 index_of_heap);
+	void AllocateDesc(uint32& index_of_desc_in_heap, uint32& index_of_heap);
+	void Create(XD3D12PhysicDevice* device_in, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32 num);
+
 	inline D3D12_CPU_DESCRIPTOR_HANDLE compute_cpu_ptr(const uint32 index_of_desc_in_heap,const  uint32 index_of_heap)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE ret_ptr = { 
@@ -39,9 +44,6 @@ public:
 		return ret_ptr;
 	}
 
-	void Create(XD3D12PhysicDevice* device_in, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32 num);
-	void AllocateDesc(uint32& index_of_desc_in_heap, uint32& index_of_heap);
-	void FreeDesc(uint32 index_of_desc_in_heap, uint32 index_of_heap);
 private:
 	void AllocHeap();
 };

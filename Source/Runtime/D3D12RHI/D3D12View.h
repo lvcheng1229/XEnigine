@@ -6,7 +6,6 @@
 class XD3D12View
 {
 protected:
-	//std::shared_ptr<XD3D12Resource>pResource;
 	XD3D12Resource* pResource;
 	D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr;
 	bool IsDSV;

@@ -27,6 +27,14 @@
 #include <iostream>
 #define XLog(x) {std::cout << (x) << std::endl; }
 
+#include <type_traits>
+template<typename T>
+requires(!std::is_lvalue_reference_v<T>)
+T* GetRValuePtr(T&& v) 
+{
+    return &v;
+}
+
 
 
 

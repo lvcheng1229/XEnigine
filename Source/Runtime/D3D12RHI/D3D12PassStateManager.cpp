@@ -12,57 +12,50 @@ void XD3D12PassStateManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectCon
 
 	bNeedSetHeapDesc = true;
 	bNeedSetRT = false;
-	bNeedSetSRV = false;
-	bNeedSetUAV = false;
-	bNeedSetCBV = false;
+	//bNeedSetSRV = false;
+	//bNeedSetUAV = false;
+	//bNeedSetCBV = false;
 	bNeedSetRootSig = false;
 	bNeedClearMRT = false;
 
-	CurrentDescHeapSlotIndex = 0;
+	//CurrentDescHeapSlotIndex = 0;
 
 	PipelineState.Graphics.depth_stencil = nullptr;
 
 	PipelineState.Common.RootSignature = nullptr;
-	PipelineState.Common.SRVManager.Clear();
-	PipelineState.Common.CBVRootDescManager.Clear();
-	PipelineState.Common.UAVManager.Clear();
+	PipelineState.Common.SRVManager.UnsetMasks();
+	PipelineState.Common.CBVRootDescManager.UnsetMasks();
+	PipelineState.Common.UAVManager.UnsetMasks();
 }
 
 void XD3D12PassStateManager::ResetState()
 {
 	bNeedSetRT = false;
-	bNeedSetSRV = false;
-	bNeedSetUAV = false;
-	bNeedSetCBV = false;
+	//bNeedSetSRV = false;
+	//bNeedSetUAV = false;
+	//bNeedSetCBV = false;
 	bNeedSetRootSig = false;
 	bNeedClearMRT = false;
 
-	CurrentDescHeapSlotIndex = 0;
+	//CurrentDescHeapSlotIndex = 0;
 
-	PipelineState.Graphics.depth_stencil = nullptr;
+	//PipelineState.Graphics.depth_stencil = nullptr;
 
 	PipelineState.Common.RootSignature = nullptr;
-	PipelineState.Common.SRVManager.Clear();
-	PipelineState.Common.CBVRootDescManager.Clear();
-	PipelineState.Common.UAVManager.Clear();
+	PipelineState.Common.SRVManager.UnsetMasks();
+	PipelineState.Common.CBVRootDescManager.UnsetMasks();
+	PipelineState.Common.UAVManager.UnsetMasks();
+
+	//pipe_curr_desc_array_manager.GetCurrentDescArray()->ResetIndexToZero();
 }
 
 
-//void XD3D12PassStateManager::GetRenderTargets(uint32& num_rt, XD3D12RenderTargetView** ptr_to_rt_array_ptr, XD3D12DepthStencilView** ptr_to_ds_ptr)
-//{
-//	num_rt = PipelineState.Graphics.current_num_rendertarget;
-//	*ptr_to_rt_array_ptr = *PipelineState.Graphics.render_target_array;
-//	*ptr_to_ds_ptr = PipelineState.Graphics.depth_stencil;
-//}
+
 
 void XD3D12PassStateManager::SetRenderTarget(uint32 num_rt, XD3D12RenderTargetView** rt_array_ptr, XD3D12DepthStencilView* ds_ptr)
 {
 	bNeedSetRT = true;
 	PipelineState.Graphics.depth_stencil = ds_ptr;
-
-	//why error?because render_target_array is ptr array,not XD3D12RenderTargetView array !!!!!! :(
-	//memset(PipelineState.Graphics.render_target_array, 0, num_rt * sizeof(XD3D12RenderTargetView));
-	//memcpy(PipelineState.Graphics.render_target_array, rt_array_ptr, num_rt * sizeof(XD3D12RenderTargetView));
 
 	uint32 active_rt = 0;
 	for (uint32 i = 0; i < num_rt; ++i)
@@ -109,7 +102,7 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 
 				direct_cmd_list->GetDXCmdList()->OMSetRenderTargets(
 					PipelineState.Graphics.current_num_rendertarget, RTVDescriptors, true,
-					&PipelineState.Graphics.depth_stencil->GetCPUPtr());
+					GetRValuePtr(PipelineState.Graphics.depth_stencil->GetCPUPtr()));
 			}
 			else
 			{
@@ -134,80 +127,112 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 		bNeedSetRootSig = false;
 	}
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { pipe_curr_desc_array_manager.GetCurrentDescArray()->GetDescHeapPtr() };
-	dx_cmd_list->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	//ID3D12DescriptorHeap* descriptorHeaps[] = { pipe_curr_desc_array_manager.GetCurrentDescArray()->GetDescHeapPtr() };
+	//dx_cmd_list->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	
 	//TODOOOOOOOOOOOOOOOO
 
-	//if (bNeedSetHeapDesc)
-	//{
-	//	ID3D12DescriptorHeap* descriptorHeaps[] = { pipe_curr_desc_array_manager.GetCurrentDescArray()->GetDescHeapPtr() };
-	//	dx_cmd_list->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	//	bNeedSetHeapDesc = false;
-	//}
+	if (bNeedSetHeapDesc)
+	{
+		ID3D12DescriptorHeap* descriptorHeaps[] = { pipe_curr_desc_array_manager.GetCurrentDescArray()->GetDescHeapPtr() };
+		dx_cmd_list->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		bNeedSetHeapDesc = false;
+	}
+
+	uint32 NumViews = 0;
+	for (uint32 i = 0; i < EShaderType_Underlying(EShaderType::SV_ShaderCount); i++)
+	{
+		NumViews += PipelineState.Common.NumSRVs[i];
+		NumViews += PipelineState.Common.NumUAVs[i];
+	}
+
+	uint32 DescArraySlotStart = pipe_curr_desc_array_manager.GetCurrentDescArray()->GetCurrentFrameSlotStart(NumViews);
 
 	if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
 	{
 		dx_cmd_list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	if (bNeedSetSRV)
+	//if (bNeedSetSRV)
 	{
 		if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
 		{
-			pipe_curr_desc_array_manager.SetDescTableSRVs<EShaderType::SV_Pixel>(
-				PipelineState.Common.RootSignature,
-				&PipelineState.Common.SRVManager,
-				CurrentDescHeapSlotIndex,
-				PipelineState.Common.SRVManager.Mask[EShaderType::SV_Pixel]);
+			if (PipelineState.Common.SRVManager.Mask[EShaderType_Underlying(EShaderType::SV_Pixel)])
+			{
+				pipe_curr_desc_array_manager.SetDescTableSRVs<EShaderType::SV_Pixel>(
+					PipelineState.Common.RootSignature,
+					&PipelineState.Common.SRVManager,
+					DescArraySlotStart,
+					PipelineState.Common.SRVManager.Mask[EShaderType_Underlying(EShaderType::SV_Pixel)]);
+			}
+
 		}
 		else
 		{
-			pipe_curr_desc_array_manager.SetDescTableSRVs<EShaderType::SV_Compute>(
-				PipelineState.Common.RootSignature,
-				&PipelineState.Common.SRVManager,
-				CurrentDescHeapSlotIndex,
-				PipelineState.Common.SRVManager.Mask[EShaderType::SV_Compute]);
+			if (PipelineState.Common.SRVManager.Mask[EShaderType_Underlying(EShaderType::SV_Compute)])
+			{
+				pipe_curr_desc_array_manager.SetDescTableSRVs<EShaderType::SV_Compute>(
+					PipelineState.Common.RootSignature,
+					&PipelineState.Common.SRVManager,
+					DescArraySlotStart,
+					PipelineState.Common.SRVManager.Mask[EShaderType_Underlying(EShaderType::SV_Compute)]);
+			}
 		}
-		bNeedSetSRV = false;
+		//bNeedSetSRV = false;
 	}
 
-	if (bNeedSetUAV)
+	//if (bNeedSetUAV)
 	{
 		if (PipelineType == ED3D12PipelineType::D3D12PT_Compute)
 		{
-			pipe_curr_desc_array_manager.SetDescTableUAVs<EShaderType::SV_Compute>(
-				PipelineState.Common.RootSignature,
-				&PipelineState.Common.UAVManager,
-				CurrentDescHeapSlotIndex,
-				PipelineState.Common.UAVManager.Mask[EShaderType::SV_Compute]);
+			if (PipelineState.Common.UAVManager.Mask[EShaderType_Underlying(EShaderType::SV_Compute)])
+			{
+				pipe_curr_desc_array_manager.SetDescTableUAVs<EShaderType::SV_Compute>(
+					PipelineState.Common.RootSignature,
+					&PipelineState.Common.UAVManager,
+					DescArraySlotStart,
+					PipelineState.Common.UAVManager.Mask[EShaderType_Underlying(EShaderType::SV_Compute)]);
+			}
 		}
-		bNeedSetUAV = false;
+		//bNeedSetUAV = false;
 	}
 
 
-	if (bNeedSetCBV)
+	//if (bNeedSetCBV)
 	{
 		if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
 		{
-			pipe_curr_desc_array_manager.SetRootDescCBVs<EShaderType::SV_Vertex>(
-				PipelineState.Common.RootSignature,
-				&PipelineState.Common.CBVRootDescManager,
-				PipelineState.Common.CBVRootDescManager.Mask[EShaderType::SV_Vertex]);
+			if (PipelineState.Common.CBVRootDescManager.Mask[EShaderType_Underlying(EShaderType::SV_Vertex)])
+			{
+				pipe_curr_desc_array_manager.SetRootDescCBVs<EShaderType::SV_Vertex>(
+					PipelineState.Common.RootSignature,
+					&PipelineState.Common.CBVRootDescManager,
+					PipelineState.Common.CBVRootDescManager.Mask[EShaderType_Underlying(EShaderType::SV_Vertex)]);
+			}
 
-			pipe_curr_desc_array_manager.SetRootDescCBVs<EShaderType::SV_Pixel>(
-				PipelineState.Common.RootSignature,
-				&PipelineState.Common.CBVRootDescManager,
-				PipelineState.Common.CBVRootDescManager.Mask[EShaderType::SV_Pixel]);
+			if (PipelineState.Common.CBVRootDescManager.Mask[EShaderType_Underlying(EShaderType::SV_Pixel)])
+			{
+				pipe_curr_desc_array_manager.SetRootDescCBVs<EShaderType::SV_Pixel>(
+					PipelineState.Common.RootSignature,
+					&PipelineState.Common.CBVRootDescManager,
+					PipelineState.Common.CBVRootDescManager.Mask[EShaderType_Underlying(EShaderType::SV_Pixel)]);
+			}
+
 		}
 		else
 		{
-			pipe_curr_desc_array_manager.SetRootDescCBVs<EShaderType::SV_Compute>(
-				PipelineState.Common.RootSignature,
-				&PipelineState.Common.CBVRootDescManager,
-				PipelineState.Common.CBVRootDescManager.Mask[EShaderType::SV_Compute]);
+			if (PipelineState.Common.CBVRootDescManager.Mask[EShaderType_Underlying(EShaderType::SV_Compute)])
+			{
+				pipe_curr_desc_array_manager.SetRootDescCBVs<EShaderType::SV_Compute>(
+					PipelineState.Common.RootSignature,
+					&PipelineState.Common.CBVRootDescManager,
+					PipelineState.Common.CBVRootDescManager.Mask[EShaderType_Underlying(EShaderType::SV_Compute)]);
+			}
+
 		}
 
-		bNeedSetCBV = false;
+		//bNeedSetCBV = false;
 	}
+
+	direct_cmd_list->CmdListFlushBarrier();
 }

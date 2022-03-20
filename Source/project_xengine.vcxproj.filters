@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File">
+      <UniqueIdentifier>{053F857C-F175-860D-9A62-6C108678020F}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Runtime">
       <UniqueIdentifier>{4995DAC4-B574-5960-BE8C-E4362AEBBFC1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Runtime\Core">
+      <UniqueIdentifier>{416F811B-2DD2-10C0-D657-4976C299DC42}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Runtime\D3D12RHI">
       <UniqueIdentifier>{9949F743-8542-1696-AE74-FB1A9ACCF5A1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Runtime\DataStruct">
+      <UniqueIdentifier>{97FE0818-83E2-C96D-EC42-C4C0D845B4EF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Runtime\Engine">
+      <UniqueIdentifier>{AE932C06-9A61-200C-83F5-90326F62FC70}</UniqueIdentifier>
     </Filter>
     <Filter Include="Runtime\HAL">
       <UniqueIdentifier>{8D12612F-F9C7-D924-82BC-D3FBEE70D028}</UniqueIdentifier>
@@ -13,16 +28,31 @@
     <Filter Include="Runtime\RHI">
       <UniqueIdentifier>{FB3D612F-67F3-D924-F0E7-D3FB5C9CD028}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Runtime\Useless">
-      <UniqueIdentifier>{BCF0E9A6-287C-576B-318D-DA5F9D97B36B}</UniqueIdentifier>
+    <Filter Include="Runtime\RenderCore">
+      <UniqueIdentifier>{4138B1A9-2D1C-72FF-967C-6C52827F5C81}</UniqueIdentifier>
     </Filter>
     <Filter Include="UnitTest">
       <UniqueIdentifier>{E5A465FE-D171-C009-FA8A-AEB1E6B6F597}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Core\AlignmentTemplates.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="File\stb_image.h">
+      <Filter>File</Filter>
+    </ClInclude>
     <ClInclude Include="FrameResource.h" />
+    <ClInclude Include="Runtime\Core\XMath.h">
+      <Filter>Runtime\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12AbstractDevice.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Adapter.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Allocation.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12CommandList.h">
@@ -31,13 +61,25 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12CommandQueue.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Common.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12Context.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12DescriptorArray.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PassStateManager.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12PhysicDevice.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12PlatformRHI.h">
@@ -46,26 +88,53 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12Resource.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Rootsignature.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12Texture.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
-    <ClInclude Include="Runtime\D3D12RHI\D3D12Adapter.h">
+    <ClInclude Include="Runtime\D3D12RHI\D3D12View.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Viewport.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\XD3D12CommandListManger.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
-    <ClInclude Include="Runtime\HAL\PlatformTypes.h">
-      <Filter>Runtime\HAL</Filter>
+    <ClInclude Include="Runtime\D3D12RHI\d3dx12.h">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\DataStruct\XRefCountPtr.h">
+      <Filter>Runtime\DataStruct</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\Engine\SceneView.h">
+      <Filter>Runtime\Engine</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\HAL\Mch.h">
-      <Filter>Runtime\RHI</Filter>
+      <Filter>Runtime\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\HAL\PlatformTypes.h">
+      <Filter>Runtime\HAL</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\RHI\PlatformRHI.h">
       <Filter>Runtime\RHI</Filter>
     </ClInclude>
+    <ClInclude Include="Runtime\RHI\RHI.h">
+      <Filter>Runtime\RHI</Filter>
+    </ClInclude>
     <ClInclude Include="Runtime\RHI\RHIContext.h">
       <Filter>Runtime\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\RHI\RHIDefines.h">
+      <Filter>Runtime\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\RHI\RHIResource.h">
+      <Filter>Runtime\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\RenderCore\Shader.h">
+      <Filter>Runtime\RenderCore</Filter>
     </ClInclude>
     <ClInclude Include="UnitTest\GameTimer.h">
       <Filter>UnitTest</Filter>
@@ -83,28 +152,27 @@
       <Filter>UnitTest</Filter>
     </ClInclude>
     <ClInclude Include="xtrack_new.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12Allocation.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.h" />
-    <ClInclude Include="Runtime\RenderCore\Shader.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.h" />
-    <ClInclude Include="Runtime\RHI\RHI.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PassStateManager.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12View.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12Viewport.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12Rootsignature.h" />
-    <ClInclude Include="Runtime\RHI\RHIResource.h" />
-    <ClInclude Include="File\stb_image.h" />
-    <ClInclude Include="File\LoadTGATexture.h" />
-    <ClInclude Include="Runtime\RHI\RHIDefines.h" />
-    <ClInclude Include="Runtime\DataStruct\XRefCountPtr.h" />
-    <ClInclude Include="Core\AlignmentTemplates.h" />
-    <ClInclude Include="Runtime\Engine\SceneView.h" />
-    <ClInclude Include="Runtime\Core\XMath.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12Common.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12Shader.h" />
+    <ClInclude Include="Runtime\RenderCore\ShaderCore.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12State.h" />
+    <ClInclude Include="Runtime\RHI\RHIStaticStates.h" />
+    <ClInclude Include="Runtime\Core\Template\XEngineTemplate.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
+    <ClCompile Include="Runtime\Core\XMath.cpp">
+      <Filter>Runtime\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\Core\XMathcpp.cpp">
+      <Filter>Runtime\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Runtime\D3D12RHI\D3D12AbstractDevice.cpp">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Adapter.cpp">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Allocation.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
     <ClCompile Include="Runtime\D3D12RHI\D3D12CommandList.cpp">
@@ -119,14 +187,35 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12DescriptorArray.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PassStateManager.cpp">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClCompile>
     <ClCompile Include="Runtime\D3D12RHI\D3D12PhysicDevice.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
-    <ClCompile Include="Runtime\D3D12RHI\D3D12Adapter.cpp">
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.cpp">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.cpp">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Resource.cpp">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp">
+      <Filter>Runtime\D3D12RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
     <ClCompile Include="Runtime\D3D12RHI\XD3D12CommandListManger.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\Engine\SceneView.cpp">
+      <Filter>Runtime\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Runtime\RenderCore\Shader.cpp">
+      <Filter>Runtime\RenderCore</Filter>
     </ClCompile>
     <ClCompile Include="UnitTest\GameTimer.cpp">
       <Filter>UnitTest</Filter>
@@ -143,16 +232,8 @@
     <ClCompile Include="UnitTest\d3dUtil.cpp">
       <Filter>UnitTest</Filter>
     </ClCompile>
-    <ClCompile Include="Runtime\D3D12RHI\D3D12Allocation.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12Resource.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.cpp" />
-    <ClCompile Include="Runtime\RenderCore\Shader.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PassStateManager.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp" />
-    <ClCompile Include="Runtime\Engine\SceneView.cpp" />
-    <ClCompile Include="Runtime\Core\XMathcpp.cpp" />
-    <ClCompile Include="Runtime\Core\XMath.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12State.cpp" />
+    <ClCompile Include="Runtime\RHI\PlatformRHI.cpp" />
+    <ClCompile Include="Runtime\RHI\Windows\WindowsRHI.cpp" />
   </ItemGroup>
 </Project>

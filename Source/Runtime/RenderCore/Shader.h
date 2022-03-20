@@ -17,8 +17,10 @@ private:
 	uint16 sampler_count;
 	XDxRefCount<ID3DBlob> byteCode;
 
+	EShaderType ShaderType;
 	std::shared_ptr<XRHIGraphicsShader>RHIShader = nullptr;
 	std::shared_ptr<XRHIComputeShader>RHIComputeShader = nullptr;
+
 public:
 	XShader() :byteCode(nullptr), srv_count(0), cbv_count(0), uav_count(0), sampler_count(0) {};
 
@@ -30,6 +32,7 @@ public:
 	void ShaderReflect();
 	inline XDxRefCount<ID3DBlob> GetByteCode() { return byteCode; }
 
+	inline EShaderType GetShaderType() { return ShaderType; }
 	inline std::shared_ptr<XRHIGraphicsShader> GetRHIGraphicsShader() { return RHIShader; }
 	inline std::shared_ptr<XRHIComputeShader> GetRHIComputeShader() { return RHIComputeShader; }
 

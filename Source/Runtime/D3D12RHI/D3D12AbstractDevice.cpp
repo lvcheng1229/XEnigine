@@ -24,7 +24,7 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 
 	uint32 temp_thread_num = 2;
 	DirectCtxs.resize(temp_thread_num);
-	for (int i = 0; i < temp_thread_num; ++i)
+	for (uint32 i = 0; i < temp_thread_num; ++i)
 	{
 		DirectCtxs[i].Create(this);
 	}
@@ -33,35 +33,17 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	DepthStencilDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 128);
 	ShaderResourceDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128);
 
-
 	XAllocConfig default_cfg;
 	default_cfg.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
 	default_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
-	DefaultNonRtDsTextureHeapAlloc.Create(
-		PhysicalDevice,
-		default_cfg,
-		512 * (1 << 20),
-		(64 * 1024),
-		AllocStrategy::PlacedResource);
+	DefaultNonRtDsTextureHeapAlloc.Create(PhysicalDevice, default_cfg, 512 * (1 << 20), (64 * 1024), AllocStrategy::PlacedResource);
 
 	XAllocConfig upload_cfg;
 	upload_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_UPLOAD;
 	upload_cfg.d3d12_resource_states = D3D12_RESOURCE_STATE_GENERIC_READ;
-	UploadHeapAlloc.Create(
-		PhysicalDevice,
-		upload_cfg,
-		512 * (1 << 20),
-		(64 * 1024),
-		AllocStrategy::ManualSubAllocation
-	);
+	UploadHeapAlloc.Create(PhysicalDevice, upload_cfg, 512 * (1 << 20), (64 * 1024), AllocStrategy::ManualSubAllocation);
 
-	ConstantBufferUploadHeapAlloc.Create(
-		PhysicalDevice,
-		upload_cfg,
-		128 * (1 << 20),
-		256,
-		AllocStrategy::ManualSubAllocation
-	);
+	ConstantBufferUploadHeapAlloc.Create(PhysicalDevice, upload_cfg, 128 * (1 << 20), 256, AllocStrategy::ManualSubAllocation);
 }
 
 std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(uint32 size)
@@ -168,7 +150,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 	else
 	{
 		bool res = DefaultNonRtDsTextureHeapAlloc.Allocate(
-			Info.SizeInBytes, 
+			static_cast<uint32>(Info.SizeInBytes),
 			D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, 
 			default_location);
 		X_Assert(res == true);
@@ -306,7 +288,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(TextureResource->GetResource(), 0, 1);
 
 		XD3D12ResourceLocation upload_location;
-		bool res = UploadHeapAlloc.Allocate(uploadBufferSize, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
+		bool res = UploadHeapAlloc.Allocate(static_cast<uint32>(uploadBufferSize), D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
 		X_Assert(res == true);
 
 		D3D12_SUBRESOURCE_DATA textureData = {};
@@ -319,7 +301,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 			UploadHeapAlloc.GetDXResource(), 
 			UploadHeapAlloc.GetAllocationOffsetInBytes(upload_location.GetBuddyAllocData()),
 			0, 1, &textureData);
-		cmd_list->ResourceBarrier(1, &(CD3DX12_RESOURCE_BARRIER::Transition(TextureResource->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)));
+		cmd_list->ResourceBarrier(1, GetRValuePtr((CD3DX12_RESOURCE_BARRIER::Transition(TextureResource->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE))));
 		TextureResource->SetResourceState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	}
 	return TextureRet;
@@ -384,10 +366,8 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandL
 	}
 	else
 	{
-		bool res = DefaultNonRtDsTextureHeapAlloc.Allocate(
-			Info.SizeInBytes,
-			D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
-			default_location);
+		bool res = DefaultNonRtDsTextureHeapAlloc.Allocate(static_cast<uint32>(Info.SizeInBytes),
+			D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, default_location);
 		X_Assert(res == true);
 
 		const D3D12_RESOURCE_STATES ResourceState = (tex_data != nullptr ? D3D12_RESOURCE_STATE_COPY_DEST : InitialState);
@@ -466,20 +446,16 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandL
 		RenderTargetDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
 
 		XD3D12RenderTargetView ShaderResourceView;
-		ShaderResourceView.Create(
-			PhysicalDevice, TextureResource,
-			rtDesc, RenderTargetDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+		ShaderResourceView.Create(PhysicalDevice, TextureResource, rtDesc, RenderTargetDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
 		TextureRet->SetRenderTargetView(ShaderResourceView);
-
 	}
-
 
 	if (tex_data != nullptr)
 	{
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(TextureResource->GetResource(), 0, 1);
 
 		XD3D12ResourceLocation upload_location;
-		bool res = UploadHeapAlloc.Allocate(uploadBufferSize, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
+		bool res = UploadHeapAlloc.Allocate(static_cast<uint32>(uploadBufferSize), D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
 		X_Assert(res == true);
 
 		D3D12_SUBRESOURCE_DATA textureData = {};
@@ -487,12 +463,10 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandL
 		textureData.RowPitch = width * 4;
 		textureData.SlicePitch = textureData.RowPitch * height;
 
-		CopyDataFromUploadToDefaulHeap
-		(cmd_list, TextureResource->GetResource(),
-			UploadHeapAlloc.GetDXResource(),
-			UploadHeapAlloc.GetAllocationOffsetInBytes(upload_location.GetBuddyAllocData()),
-			0, 1, &textureData);
-		cmd_list->ResourceBarrier(1, &(CD3DX12_RESOURCE_BARRIER::Transition(TextureResource->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)));
+		CopyDataFromUploadToDefaulHeap(cmd_list, TextureResource->GetResource(), UploadHeapAlloc.GetDXResource(),
+			UploadHeapAlloc.GetAllocationOffsetInBytes(upload_location.GetBuddyAllocData()), 0, 1, &textureData);
+
+		cmd_list->ResourceBarrier(1, GetRValuePtr((CD3DX12_RESOURCE_BARRIER::Transition(TextureResource->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE))));
 		TextureResource->SetResourceState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	}
 	return TextureRet;
@@ -512,4 +486,5 @@ XD3D12CommandQueue* XD3D12AbstractDevice::GetCmdQueueByType(D3D12_COMMAND_LIST_T
 		X_Assert(false);
 		break;
 	}
+	return DirectxCmdQueue;
 }

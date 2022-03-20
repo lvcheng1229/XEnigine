@@ -10,6 +10,7 @@ void XShader::CreateShader(EShaderType shader_type)
 	{
 		RHIShader = std::make_shared<XRHIGraphicsShader>(shader_type);
 	}
+	ShaderType = shader_type;
 }
 
 void XShader::CompileShader(const std::wstring& filename, const D3D_SHADER_MACRO* defines, const std::string& entrypoint, const std::string& target)

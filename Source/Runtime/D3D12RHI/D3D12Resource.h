@@ -1,14 +1,7 @@
 #pragma once
 #include "D3D12PhysicDevice.h"
 #include "Runtime/RHI/RHIResource.h"
-class ResourceState
-{
-private:
-	D3D12_RESOURCE_STATES m_ResourceState;
-public:
-	inline D3D12_RESOURCE_STATES GetResourceState() { return m_ResourceState; }
-	inline void SetResourceState(const D3D12_RESOURCE_STATES state) { m_ResourceState = state; }
-};
+
 
 class XD3D12ResourceTypeHelper
 {
@@ -73,26 +66,36 @@ public:
 
 };
 
+class ResourceState
+{
+private:
+	D3D12_RESOURCE_STATES m_ResourceState;
+public:
+	inline D3D12_RESOURCE_STATES GetResourceState() { return m_ResourceState; }
+	inline void SetResourceState(const D3D12_RESOURCE_STATES state) { m_ResourceState = state; }
+};
+
 class XD3D12Resource
 {
 public:
 	void Create(ID3D12Resource* resource_in, D3D12_RESOURCE_STATES state);
 
-	inline void SetResourceState(D3D12_RESOURCE_STATES state) { m_resourceState.SetResourceState(state); }
-	inline ID3D12Resource* GetResource() { return d3d12_resource.Get(); }
-	inline ID3D12Resource** GetPtrToResourceAdress() { return &d3d12_resource; }
-	inline ResourceState& GetResourceState() { return m_resourceState; }
-	inline void* GetMappedResourceCPUPtr() { 
+	inline void							SetResourceState(D3D12_RESOURCE_STATES state) { m_resourceState.SetResourceState(state); }
+	inline ID3D12Resource*				GetResource() { return d3d12_resource.Get(); }
+	inline ID3D12Resource**				GetPtrToResourceAdress() { return &d3d12_resource; }
+	inline ResourceState&				GetResourceState() { return m_resourceState; }
+	inline D3D12_GPU_VIRTUAL_ADDRESS	GetGPUVirtaulAddress() { return GPUVirtualPtr; }
+
+	inline void* GetMappedResourceCPUPtr() 
+	{ 
 		d3d12_resource->Map(0, nullptr, &mapped_resource_cpu_ptr);
 		return mapped_resource_cpu_ptr;
 	}
-
-	inline D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtaulAddress() { return GPUVirtualPtr; }
 private:
-	D3D12_GPU_VIRTUAL_ADDRESS GPUVirtualPtr;
-	void* mapped_resource_cpu_ptr;
-	XDxRefCount<ID3D12Resource> d3d12_resource;
-	ResourceState	m_resourceState;
+	void*							mapped_resource_cpu_ptr;
+	ResourceState					m_resourceState;
+	D3D12_GPU_VIRTUAL_ADDRESS		GPUVirtualPtr;
+	XDxRefCount<ID3D12Resource>		d3d12_resource;
 };
 
 class XD3DBuddyAllocator;

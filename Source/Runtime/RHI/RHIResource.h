@@ -28,43 +28,41 @@ class XRHITexture
 public:
 	virtual void* GetTextureBaseRHI()
 	{
-		// Override this in derived classes to expose access to the native texture resource
-		return nullptr;
+		return nullptr;// Override this in derived classes to expose access to the native texture resource
 	}
 };
 
-class XRHITexture2D :public XRHITexture
-{
+class XRHITexture2D :public XRHITexture {};
+class XRHITexture3D :public XRHITexture {};
 
-};
 
-class XRHITexture3D :public XRHITexture
-{
-
-};
-
-class XRHIRenderTargetView
-{
-
-};
-
-class XRHIDepthStencilView
-{
-
-};
-
-class XRHIShaderResourceView
-{
-
-};
-
-class XRHIUnorderedAcessView
-{
-
-};
+class XRHIRenderTargetView {};
+class XRHIDepthStencilView {};
+class XRHIShaderResourceView {};
+class XRHIUnorderedAcessView {};
 
 class XRHIConstantBuffer
 {
 public:
 	virtual void UpdateData(const void* data, uint32 size, uint32 offset_byte) = 0;
+};
+
+
+class XRHIBlendState {};;
+class XRHIDepthStencilState {};;
+
+class XRHIVertexLayout {};
+class XRHIVertexShader: public XRHIGraphicsShader {};
+class XRHIPixelShader : public XRHIGraphicsShader {};
+
+struct XRHIBoundShaderStateInput
+{
+	XRHIVertexLayout* RHIVertexLayout;
+	XRHIVertexShader* RHIVertexShader;
+	XRHIPixelShader* RHIPixelShader;
+};
+
+class XGraphicsPSOInit
+{
+	XRHIBoundShaderStateInput BoundShaderState;
 };

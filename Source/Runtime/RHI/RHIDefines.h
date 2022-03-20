@@ -8,3 +8,9 @@ enum ETextureCreateFlags
 	TexCreate_SRGB = 1 << 3,
 	TexCreate_UAV = 1 << 4,
 };
+
+enum class ECompareFunction
+{
+	CF_Greater,
+	CF_Always,
+};

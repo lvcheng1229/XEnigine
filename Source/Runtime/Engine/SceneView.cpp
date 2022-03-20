@@ -1,4 +1,5 @@
 #include "SceneView.h"
+
 using namespace DirectX;
 
 DirectX::XMFLOAT4 CreateInvDeviceZToWorldZTransform(const DirectX::XMFLOAT4X4 ProjMatrix)
@@ -37,7 +38,9 @@ static void StoreMat_Transpose_Inverse(
 {
 	XMStoreFloat4x4(Common, MatrixIn);
 	XMStoreFloat4x4(Tranpose, XMMatrixTranspose(MatrixIn));
-	XMStoreFloat4x4(Inverse, XMMatrixInverse(&XMMatrixDeterminant(MatrixIn), MatrixIn));
+
+	DirectX::XMVECTOR Determinant = XMMatrixDeterminant(MatrixIn);
+	XMStoreFloat4x4(Inverse, XMMatrixInverse(&Determinant, MatrixIn));
 }
 
 void XViewMatrices::Create(const DirectX::XMFLOAT4X4& ProjectionMatrixIn, const DirectX::XMFLOAT3& ViewLocation, const DirectX::XMFLOAT3& ViewTargetPosition)

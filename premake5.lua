@@ -17,7 +17,7 @@ project "project_xengine"
 	location "Source"
 	kind "ConsoleApp"
 	language "C++"
-	cppdialect "C++14"
+	cppdialect "C++20"
 	staticruntime "on"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -27,6 +27,7 @@ project "project_xengine"
 	includedirs
 	{
 		"./Source",
+		"boost_1_78_0",
 	}
 
 	files
@@ -35,12 +36,20 @@ project "project_xengine"
 		"./Source/**.cpp",
 	}
 
+	libdirs 
+	{ 
+		--"./boost_1_78_0/stage/lib",
+	}
+
 	links 
 	{ 
 		"d3dcompiler.lib",
 		"D3D12.lib",
 		"dxgi.lib",
+		--"libboost_log-vc143-mt-gd-x64-1_78.lib",
+		--"libboost_log-vc143-mt-x64-1_78.lib",
 	}
+
 
 
 

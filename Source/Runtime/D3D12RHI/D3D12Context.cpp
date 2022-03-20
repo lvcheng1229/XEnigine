@@ -6,7 +6,6 @@ void XD3DDirectContex::Create(XD3D12AbstractDevice* device_in)
 {
 	AbsDevice = device_in;
 	XD3D12PhysicDevice* PhyDevice = AbsDevice->GetPhysicalDevice();
-	//SetParentDevice(device_in);
 	cmd_direct_alloc.Create(PhyDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
 	cmd_direct_alloc.Reset();
 
@@ -65,7 +64,6 @@ void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 Text
 void XD3DDirectContex::RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
 {
 	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
-	//XD3D12Texture2D* D3DTexturePtr = static_cast<XD3D12Texture2D*>(NewTextureRHI);
 	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
 	PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
 }
@@ -86,17 +84,16 @@ void XD3DDirectContex::RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32
 {
 	EShaderType ShaderType = ShaderRHI->GetShaderType();
 	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
-	//XD3D12Texture2D* D3DTexturePtr = static_cast<XD3D12Texture2D*>(NewTextureRHI);
 	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
 	switch (ShaderType)
 	{
-	case SV_Vertex:
+	case EShaderType::SV_Vertex:
 		PassStateManager.SetShaderResourceView<EShaderType::SV_Vertex>(D3DSRVPtr, TextureIndex);
 		break;
-	case SV_Pixel:
+	case EShaderType::SV_Pixel:
 		PassStateManager.SetShaderResourceView<EShaderType::SV_Pixel>(D3DSRVPtr, TextureIndex);
 		break;
-	case SV_Compute:
+	case EShaderType::SV_Compute:
 		PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
 		break;
 	default:
@@ -111,13 +108,13 @@ void XD3DDirectContex::RHISetShaderConstantBuffer(XRHIGraphicsShader* ShaderRHI,
 	XD3D12ConstantBuffer* ConstantBuffer = static_cast<XD3D12ConstantBuffer*>(RHIConstantBuffer);
 	switch (ShaderType)
 	{
-	case SV_Vertex:
+	case EShaderType::SV_Vertex:
 		PassStateManager.SetCBV<EShaderType::SV_Vertex>(ConstantBuffer, BufferIndex);
 		break;
-	case SV_Pixel:
+	case EShaderType::SV_Pixel:
 		PassStateManager.SetCBV<EShaderType::SV_Pixel>(ConstantBuffer, BufferIndex);
 		break;
-	case SV_Compute:
+	case EShaderType::SV_Compute:
 		PassStateManager.SetCBV<EShaderType::SV_Compute>(ConstantBuffer, BufferIndex);
 		break;
 	default:
@@ -137,9 +134,6 @@ void XD3DDirectContex::RHISetViewport(float MinX, float MinY, float MinZ, float 
 void XD3DDirectContex::RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue)
 {
 	uint32 numRT = CurrentNumRT;
-	//XD3D12RenderTargetView* RrPtrArrayPtr[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] ;
-	//XD3D12DepthStencilView* DsPtr=nullptr;
-	//PassStateManager.GetRenderTargets(numRT, &RrPtrArrayPtr, &DsPtr);
 
 	if (ClearRT)
 	{
@@ -170,8 +164,6 @@ void XD3DDirectContex::RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray
 				ColorArray, 0, nullptr);
 		}
 	}
-
-
 	
 	if (ClearDS)
 	{
@@ -193,11 +185,6 @@ void XD3DDirectContex::RHIDrawFullScreenQuad()
 	///cmd_dirrect_list->DrawInstanced(3, 1, 0, 0);
 }
 
-//void XD3DDirectContex::RHIUpdateConstantBufferData(std::shared_ptr<XD3D12ConstantBuffer> CB, void* Data, uint32 size)
-//{
-//	void* data_ptr = CB.get()->ResourceLocation.GetMappedCPUResourcePtr();
-//	memcpy(data_ptr, Data, size);
-//}
 
 void XD3DDirectContex::ResetCmdAlloc()
 {

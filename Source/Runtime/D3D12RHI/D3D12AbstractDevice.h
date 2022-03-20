@@ -15,7 +15,8 @@ class XD3D12AbstractDevice
 {
 	
 public:
-	XD3D12AbstractDevice() :
+	XD3D12AbstractDevice():
+		TempResourceIndex(0),
 		PhysicalDevice(nullptr),
 		DirectxCmdQueue(nullptr),
 		ComputeCmdQueue(nullptr)
@@ -26,22 +27,11 @@ public:
 
 	std::shared_ptr<XD3D12ConstantBuffer>CreateUniformBuffer(uint32 size);
 
-	XD3D12Texture2D* CreateD3D12Texture2D(
-		XD3D12DirectCommandList* x_cmd_list, 
-		uint32 width, uint32 height, uint32 SizeZ,
-		bool bTextureArray, bool bCubeTexture,
-		DXGI_FORMAT format,
-		ETextureCreateFlags flag,
-		uint32 NumMipsIn,
-		uint8* tex_data);
+	XD3D12Texture2D* CreateD3D12Texture2D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,
+		bool bTextureArray, bool bCubeTexture, DXGI_FORMAT format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
-	XD3D12Texture3D* CreateD3D12Texture3D(
-		XD3D12DirectCommandList* x_cmd_list,
-		uint32 width, uint32 height, uint32 SizeZ,
-		DXGI_FORMAT format,
-		ETextureCreateFlags flag,
-		uint32 NumMipsIn,
-		uint8* tex_data);
+	XD3D12Texture3D* CreateD3D12Texture3D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,
+		DXGI_FORMAT format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
 	XD3D12CommandQueue* GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE cmd_type);
 

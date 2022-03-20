@@ -32,8 +32,8 @@ void XD3D12DescArrayManager::AllocateDesc(uint32& index_of_desc_in_heap, uint32&
 void XD3D12DescArrayManager::AllocHeap()
 {
 	all_desc_arrays.push_back(DescArray());
-	uint32 index = all_desc_arrays.size() - 1;
-	free_desc_array_index.insert(index);
+	size_t index = all_desc_arrays.size() - 1;
+	free_desc_array_index.insert(static_cast<uint32>(index));
 
 	ThrowIfFailed(device->GetDXDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&all_desc_arrays[index].d3d12_heap)));
 	all_desc_arrays[index].cpu_ptr_begin = all_desc_arrays[index].d3d12_heap->GetCPUDescriptorHandleForHeapStart();

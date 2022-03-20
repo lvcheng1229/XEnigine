@@ -57,9 +57,9 @@ void XD3DBuddyAllocator::Create(
 	else
 	{
 		ThrowIfFailed(GetParentDevice()->GetDXDevice()->CreateCommittedResource(
-			&(CD3DX12_HEAP_PROPERTIES(config.d3d12_heap_type)),
+			GetRValuePtr((CD3DX12_HEAP_PROPERTIES(config.d3d12_heap_type))),
 			D3D12_HEAP_FLAG_NONE,
-			&(CD3DX12_RESOURCE_DESC::Buffer(max_block_size)),
+			GetRValuePtr((CD3DX12_RESOURCE_DESC::Buffer(max_block_size))),
 			config.d3d12_resource_states,
 			nullptr,
 			IID_PPV_ARGS(back_resource.GetPtrToResourceAdress())));
@@ -161,10 +161,7 @@ void XD3DBuddyAllocator::Deallocate(XD3D12ResourceLocation& ResourceLocation)
 }
 
 
-void XD3DBuddyAllocator::PrintCurrentState()
-{
 
-}
 
 uint32 XD3DBuddyAllocator::Allocate_Impl(uint32 order)
 {
@@ -175,7 +172,7 @@ uint32 XD3DBuddyAllocator::Allocate_Impl(uint32 order)
 	if (offset_from_left[order].size() == 0)
 	{
 		offset_left = Allocate_Impl(order + 1);
-		uint32 offset_right = offset_left + uint32(((uint32)1) << order);//!!!!!!!!!!!!!!!!!!!!! ++ ++ ++ ++ ( dont forget uint32)!!!!!!!!!!!!!!
+		uint32 offset_right = offset_left + uint32(((uint32)1) << order);
 		offset_from_left[order].insert(offset_right);
 	}
 	else

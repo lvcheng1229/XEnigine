@@ -1,4 +1,9 @@
 #pragma once
+
+
+//NOTE!!!!!!!!!!!!!!!!
+//Removed TO Runtime/Core/Template
+
 #include "Runtime/HAL/PlatformTypes.h"
 #include <type_traits>
 template <typename T>

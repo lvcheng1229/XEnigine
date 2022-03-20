@@ -1,11 +1,11 @@
 #include "D3D12Viewport.h"
 
 void XD3D12Viewport::Create(
-    XD3D12AbstractDevice* device_in,
-    uint32 size_x_in, uint32 size_y_in,
-    DXGI_FORMAT format_back_buffer_in,
-    HWND WindowHandle_in
-    )
+    XD3D12AbstractDevice* device_in, 
+    uint32 size_x_in, 
+    uint32 size_y_in,
+    DXGI_FORMAT format_back_buffer_in, 
+    HWND WindowHandle_in)
 {
     device = device_in;
     size_x = size_x_in;
@@ -78,7 +78,6 @@ void XD3D12Viewport::Resize(
         device->GetRenderTargetDescArrayManager()->AllocateDesc(index_of_desc_in_heap_rt, index_of_heap_rt);
 
         ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(back_buffer_resources[i].GetPtrToResourceAdress())));
-        //back_buffer_resources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON); 
         back_buffer_resources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON);
         back_buffer_resources[i].GetResource()->SetName(L"BackBuffer");
         back_rt_views[i].Create(

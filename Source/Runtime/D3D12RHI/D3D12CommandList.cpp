@@ -27,8 +27,6 @@ void XD3D12ResourceBarrierManager::AddTransition(XD3D12Resource* pResource, D3D1
 		}
 	}
 
-	//D3D12_RESOURCE_BARRIER Barrier;
-
 	barriers.push_back(D3D12_RESOURCE_BARRIER());
 	D3D12_RESOURCE_BARRIER* barrier_ptr = &barriers[barriers.size() - 1];
 	barrier_ptr->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -43,23 +41,14 @@ void XD3D12ResourceBarrierManager::Flush(ID3D12GraphicsCommandList* pCommandList
 {
 	if (barriers.size() > 0)
 	{
-		pCommandList->ResourceBarrier(barriers.size(), barriers.data());
+		pCommandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
 	}
 	barriers.resize(0);
 }
 
-
-
 void XD3D12DirectCommandList::CreateDirectCmdList(XD3D12PhysicDevice* device, XD3D12CommandAllocator* cmd_alloc)
 {
-	ThrowIfFailed(
-		device->GetDXDevice()->CreateCommandList(
-			0,
-			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			cmd_alloc->GetDXAlloc(),
-			nullptr,
-			IID_PPV_ARGS(&d3d12_cmd_list)));
-
+	ThrowIfFailed(device->GetDXDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmd_alloc->GetDXAlloc(), nullptr, IID_PPV_ARGS(&d3d12_cmd_list)));
 }
 
 void XD3D12DirectCommandList::Reset(XD3D12CommandAllocator* cmd_alloc)

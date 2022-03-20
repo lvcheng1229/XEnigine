@@ -3,34 +3,39 @@
 #include "D3D12PlatformRHI.h"
 #include "d3dx12.h"
 
+#pragma warning( push )
+#pragma warning( disable : 6385)
+#pragma warning( disable : 6001)
 
 template void XD3D12PipelineCurrentDescArrayManager::SetRootDescCBVs<EShaderType::SV_Vertex>(
 	const XD3D12RootSignature* root_signature,
 	XD3D12CBVRootDescManager* gpu_virtual_ptr_array,
-	uint16 slot_mask);
+	uint16& slot_mask);
+
 template void XD3D12PipelineCurrentDescArrayManager::SetRootDescCBVs<EShaderType::SV_Pixel>(
 	const XD3D12RootSignature* root_signature,
 	XD3D12CBVRootDescManager* gpu_virtual_ptr_array,
-	uint16 slot_mask);
+	uint16& slot_mask);
+
 template void XD3D12PipelineCurrentDescArrayManager::SetRootDescCBVs<EShaderType::SV_Compute>(
 	const XD3D12RootSignature* root_signature,
 	XD3D12CBVRootDescManager* gpu_virtual_ptr_array,
-	uint16 slot_mask);
+	uint16& slot_mask);
 
 template void XD3D12PipelineCurrentDescArrayManager::SetDescTableSRVs<EShaderType::SV_Pixel>(
 	const XD3D12RootSignature* root_signature,
 	XD3D12PassShaderResourceManager* SRVManager,
-	uint32& slot_start, uint64 slot_mask);
+	uint32& slot_start, uint64& slot_mask);
+
 template void XD3D12PipelineCurrentDescArrayManager::SetDescTableSRVs<EShaderType::SV_Compute>(
 	const XD3D12RootSignature* root_signature,
 	XD3D12PassShaderResourceManager* SRVManager,
-	uint32& slot_start, uint64 slot_mask);
-
+	uint32& slot_start, uint64& slot_mask);
 
 template void XD3D12PipelineCurrentDescArrayManager::SetDescTableUAVs<EShaderType::SV_Compute>(
 	const XD3D12RootSignature* root_signature, 
 	XD3D12PassUnorderedAcessManager* UAVManager, 
-	uint32& slot_start, uint16 slot_mask);
+	uint32& slot_start, uint16& slot_mask);
 
 void XD3D12PipelineCurrentDescArrayManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in)
 {
@@ -42,7 +47,7 @@ void XD3D12PipelineCurrentDescArrayManager::Create(XD3D12PhysicDevice* device_in
 
 
 template<EShaderType shader_type>
-void XD3D12PipelineCurrentDescArrayManager::SetDescTableUAVs(const XD3D12RootSignature* root_signature, XD3D12PassUnorderedAcessManager* UAVManager, uint32& slot_start, uint16 slot_mask)
+void XD3D12PipelineCurrentDescArrayManager::SetDescTableUAVs(const XD3D12RootSignature* root_signature, XD3D12PassUnorderedAcessManager* UAVManager, uint32& slot_start, uint16& slot_mask)
 {
 	X_Assert(shader_type == EShaderType::SV_Compute);
 
@@ -56,24 +61,19 @@ void XD3D12PipelineCurrentDescArrayManager::SetDescTableUAVs(const XD3D12RootSig
 	XD3D12DirectCommandList* cmdList = direct_ctx->GetCmdList();
 	for (uint32 i = 0; i < slotnum; i++)
 	{
-		UavDescriptors[i] = UAVManager->Views[shader_type][i]->GetCPUPtr();
+		UavDescriptors[i] = UAVManager->Views[EShaderType_Underlying(shader_type)][i]->GetCPUPtr();
 
-		XD3D12PlatformRHI::TransitionResource(
-			(*cmdList),
-			UAVManager->Views[shader_type][i],
-			(D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+		XD3D12PlatformRHI::TransitionResource((*cmdList), UAVManager->Views[EShaderType_Underlying(shader_type)][i], (D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	}
 
 	uint32 NumCopy = static_cast<uint32>(slotnum);
-	device->GetDXDevice()->CopyDescriptors(
-		1, &DestCPUPtr,
-		&NumCopy, NumCopy,
-		UavDescriptors,
-		nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	device->GetDXDevice()->CopyDescriptors(1, &DestCPUPtr, &NumCopy, NumCopy,
+		UavDescriptors, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	XD3D12PassUnorderedAcessManager::SlotsBitsUnSet(slot_mask, slotnum);
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GPUDescPtr = pipeline_current_desc_array.GetGPUDescPtrByIndex(first_slot_index);
 	uint32 slot_index = root_signature->GetUADescTableBindSlot(shader_type);
-	if (shader_type == SV_Compute)
+	if (shader_type == EShaderType::SV_Compute)
 	{
 		(*cmdList)->SetComputeRootDescriptorTable(slot_index, GPUDescPtr);
 	}
@@ -81,14 +81,13 @@ void XD3D12PipelineCurrentDescArrayManager::SetDescTableUAVs(const XD3D12RootSig
 	{
 		(*cmdList)->SetGraphicsRootDescriptorTable(slot_index, GPUDescPtr);
 	}
-	
 }
 
 template<EShaderType shader_type>
 void XD3D12PipelineCurrentDescArrayManager::SetDescTableSRVs(
 	const XD3D12RootSignature* root_signature,
 	XD3D12PassShaderResourceManager* SRVManager,
-	uint32& slot_start, uint64 slot_mask)
+	uint32& slot_start, uint64& slot_mask)
 {
 	uint32 first_slot_index = slot_start; unsigned long slotnum;
 
@@ -101,23 +100,20 @@ void XD3D12PipelineCurrentDescArrayManager::SetDescTableSRVs(
 	XD3D12DirectCommandList* cmdList = direct_ctx->GetCmdList();
 	for (uint32 i = 0; i < slotnum; i++)
 	{
-		SrcDescriptors[i] = SRVManager->Views[shader_type][i]->GetCPUPtr();
+		SrcDescriptors[i] = SRVManager->Views[EShaderType_Underlying(shader_type)][i]->GetCPUPtr();
 
-		XD3D12PlatformRHI::TransitionResource(
-			(*cmdList),
-			SRVManager->Views[shader_type][i],
-			(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));	
+		XD3D12PlatformRHI::TransitionResource((*cmdList), SRVManager->Views[EShaderType_Underlying(shader_type)][i],
+			(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 	}
 
 	uint32 NumCopy = static_cast<uint32>(slotnum);
-	device->GetDXDevice()->CopyDescriptors(1, &DestCPUPtr, &NumCopy,
-		NumCopy, SrcDescriptors, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
+	device->GetDXDevice()->CopyDescriptors(1, &DestCPUPtr, &NumCopy, NumCopy, SrcDescriptors, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	XD3D12PassShaderResourceManager::SlotsBitsUnSet(slot_mask, slotnum);
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GPUDescPtr = pipeline_current_desc_array.GetGPUDescPtrByIndex(first_slot_index);
 	uint32 slot_index = root_signature->GetSRVDescTableBindSlot(shader_type);
 
-	if (shader_type == SV_Compute)
+	if (shader_type == EShaderType::SV_Compute)
 	{
 		(*cmdList)->SetComputeRootDescriptorTable(slot_index, GPUDescPtr);
 	}
@@ -125,7 +121,6 @@ void XD3D12PipelineCurrentDescArrayManager::SetDescTableSRVs(
 	{
 		(*cmdList)->SetGraphicsRootDescriptorTable(slot_index, GPUDescPtr);
 	}
-
 }
 
 
@@ -134,7 +129,7 @@ template<EShaderType shader_type>
 void XD3D12PipelineCurrentDescArrayManager::SetRootDescCBVs(
 	const XD3D12RootSignature* root_signature,
 	XD3D12CBVRootDescManager* gpu_virtual_ptr_array,
-	uint16 slot_mask)
+	uint16& slot_mask)
 {
 	unsigned long slotnum;
 	if (_BitScanReverse(&slotnum, slot_mask) == 0) { slotnum = -1; }; slotnum++;
@@ -142,10 +137,11 @@ void XD3D12PipelineCurrentDescArrayManager::SetRootDescCBVs(
 	uint32 base_index = root_signature->GetCBVRootDescBindSlot(shader_type);
 	for (uint32 slot_index = 0; slot_index < slotnum; ++slot_index)
 	{
-		if (XD3D12CBVRootDescManager::IsSlotDirty(slot_mask, slot_index))
+		if (XD3D12CBVRootDescManager::IsSlotNeedSet(slot_mask, slot_index))
 		{
-			D3D12_GPU_VIRTUAL_ADDRESS gpu_virtual_ptr = gpu_virtual_ptr_array->CurrentGPUVirtualAddress[shader_type][slot_index];
-			if (shader_type == SV_Compute)
+			D3D12_GPU_VIRTUAL_ADDRESS gpu_virtual_ptr = 
+				gpu_virtual_ptr_array->CurrentGPUVirtualAddress[EShaderType_Underlying(shader_type)][slot_index];
+			if (shader_type == EShaderType::SV_Compute)
 			{
 				(*direct_ctx->GetCmdList())->SetComputeRootConstantBufferView(base_index + slot_index, gpu_virtual_ptr);
 			}
@@ -154,10 +150,12 @@ void XD3D12PipelineCurrentDescArrayManager::SetRootDescCBVs(
 				(*direct_ctx->GetCmdList())->SetGraphicsRootConstantBufferView(base_index + slot_index, gpu_virtual_ptr);
 			}
 			
-			XD3D12CBVRootDescManager::CleanSlot(slot_mask, slot_index);
+			XD3D12CBVRootDescManager::SlotBitUnSet(slot_mask, slot_index);
 		}
 	}
 }
+
+#pragma warning( pop )
 
 
 

@@ -10,7 +10,7 @@ struct XShaderRegisterCounts
 	uint8 UnorderedAccessCount;
 };
 
-enum ERootParameterKeys
+enum class ERootParameterKeys
 {
 	VS_SRVs,
 	VS_CBVs,
@@ -33,7 +33,7 @@ enum ERootParameterKeys
 
 struct XPipelineRegisterBoundCount
 {
-	XShaderRegisterCounts register_count[EShaderType::SV_ShaderCount];
+	XShaderRegisterCounts register_count[EShaderType_Underlying(EShaderType::SV_ShaderCount)];
 };
 
 
@@ -45,7 +45,7 @@ struct XPipelineRegisterBoundCount
 class XD3D12RootSignature
 {
 private:
-	uint8 ShaderResourceBindSlotIndexArray[ERootParameterKeys::Count];
+	uint8 ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::Count];
 
 	D3D12_ROOT_PARAMETER  slot_array[PIPELINE_MAX_ROOT_PARAM_COUNT];
 	D3D12_DESCRIPTOR_RANGE  desc_range_array[PIPELINE_MAX_ROOT_PARAM_COUNT];
@@ -57,9 +57,7 @@ private:
 	XD3D12PhysicDevice* device;//TODO
 public:
 	XD3D12RootSignature() :device(nullptr), serializedRootSig(nullptr), root_signature(nullptr) {}
-	~XD3D12RootSignature() {
-		std::cout << "XD3D12RootSignature destruct" << std::endl;
-	}
+	~XD3D12RootSignature() {}
 	void Create(XD3D12PhysicDevice* device_in, XPipelineRegisterBoundCount& register_count);
 
 	uint32 GetSRVDescTableBindSlot(EShaderType shader_type)const;
@@ -67,13 +65,12 @@ public:
 	uint32 GetCBVDescTableBindSlot(EShaderType shader_type)const;
 	uint32 GetSampleDescTableBindSlot(EShaderType shader_type)const;
 	uint32 GetCBVRootDescBindSlot(EShaderType shader_type)const;
-	inline ID3D12RootSignature* GetDXRootSignature() { return root_signature.Get(); }
 
 	void SetSRVDescTableBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 	void SetCBVDescTableBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 	void SetSampleDescTableBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 	void SetUAVDescTableTBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
-
 	void SetCBVRootDescBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 
+	inline ID3D12RootSignature* GetDXRootSignature() { return root_signature.Get(); }
 };

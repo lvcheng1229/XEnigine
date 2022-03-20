@@ -17,7 +17,6 @@
 #include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
 #include "Runtime/D3D12RHI/D3D12Texture.h"
 
-#include "File/LoadTGATexture.h"
 
 #include  "Runtime/Engine/SceneView.h"
 #include "Runtime/Core/XMath.h"
@@ -57,7 +56,7 @@ struct BoundSphere
 class Camera
 {
 public:
-	void Camera::RotateY(float angle)
+	void RotateY(float angle)
 	{
 		// Rotate the basis vectors about the world y-axis.
 
@@ -67,7 +66,7 @@ public:
 		XMStoreFloat3(&mLook, XMVector3TransformNormal(XMLoadFloat3(&mLook), R));
 	}
 
-	void Camera::Pitch(float angle)
+	void Pitch(float angle)
 	{
 		// Rotate up and look vector about the right vector.
 		XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
@@ -492,8 +491,8 @@ BoundSphere CrateApp::BuildBoundSphere(float FoVAngleY, float WHRatio, float Spl
 	XMVECTOR FarVOffsetCom = XMLoadFloat3(&FarVOffset);
 	
 
-	XMVECTOR EyePosCom = XMLoadFloat3(&cam_ins.GetEyePosition());
-	XMVECTOR TargetPosCom = XMLoadFloat3(&cam_ins.GetTargetPosition());
+	XMVECTOR EyePosCom = XMLoadFloat3(GetRValuePtr(cam_ins.GetEyePosition()));
+	XMVECTOR TargetPosCom = XMLoadFloat3(GetRValuePtr(cam_ins.GetTargetPosition()));
 	XMVECTOR CameraDirection = DirectX::XMVector3Normalize(TargetPosCom - EyePosCom);
 	
 	XMVECTOR CascadeFrustumVerts[8];
@@ -559,10 +558,15 @@ void CrateApp::Renderer(const GameTimer& gt)
 	//std::wstring str = L"xx" + std::to_wstring(i) + L"xx\n";
 	//OutputDebugString(str.c_str());
 	
+	pass_state_manager->ResetDescHeapIndex();
+
 	//Pass1 DepthPrePass
 	{
 		direct_ctx->ResetCmdAlloc();
 		direct_ctx->OpenCmdList();
+
+		mCommandList->BeginEvent(1, "DepthPrePass", sizeof("DepthPrePass"));
+
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		mCommandList->SetPipelineState(mDepthOnlyPSO.Get());
 		pass_state_manager->SetRootSignature(&PrePassRootSig);
@@ -570,6 +574,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetRenderTargets(0, nullptr,
 			static_cast<XD3D12Texture2D*>(TextureDepthStencil.get())->GeDepthStencilView());
 		direct_ctx->RHIClearMRT(false, true, nullptr, 0.0f, 0);
+
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["PrePassVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["PrePassPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
 
 		for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
 		{
@@ -582,29 +590,29 @@ void CrateApp::Renderer(const GameTimer& gt)
 				mShaders["PrePassVS"].GetRHIGraphicsShader().get(), 1,
 				mFrameResource.get()->PassConstantBuffer.get());
 
-			mCommandList.Get()->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
-			mCommandList.Get()->IASetIndexBuffer(&ri->Geo->IndexBufferView());
+			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(ri->Geo->VertexBufferView()));
+			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
 			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 
 			direct_ctx->GetCmdList()->CmdListFlushBarrier();
 			mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 		}
 
-		direct_ctx->CloseCmdList();
-		
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 	}
 	
 	//Pass2 HZB Pass
 	{
-		direct_ctx->ResetCmdAlloc();
-		direct_ctx->OpenCmdList();
+
+		mCommandList->BeginEvent(1, "HZBPass", sizeof("HZBPass"));
 		mCommandList->SetPipelineState(HZBPSO.Get());
 		pass_state_manager->SetRootSignature(&HZBPassRootSig);
-	
+		
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(nullptr);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["HZBPassCS"]);
+
 		direct_ctx->RHISetShaderConstantBuffer(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 0, RHICbbHZB.get());
 
 		direct_ctx->RHISetShaderTexture(mShaders["HZBPassCS"].GetRHIComputeShader().get(), 0, TextureDepthStencil.get());
@@ -618,21 +626,24 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->GetCmdList()->CmdListFlushBarrier();
 		mCommandList.Get()->Dispatch(512 / 16, 512 / 16, 1);
 
-		
-		direct_ctx->CloseCmdList();
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 	}
 
 	//Pass2 SkyAtmosPhere PreCompute
 	{
 		{
-			direct_ctx->ResetCmdAlloc();
-			direct_ctx->OpenCmdList();
+			//direct_ctx->ResetCmdAlloc();
+			//direct_ctx->OpenCmdList();
+			//pass_state_manager->SetHeapDesc();
+
+			mCommandList->BeginEvent(1, "SkyAtmosPherePreCompute", sizeof("SkyAtmosPherePreCompute"));
 			mCommandList->SetPipelineState(RenderTransmittanceLutPSO.Get());
 			pass_state_manager->SetRootSignature(&RenderTransmittanceLutRootSig);
+
+			pass_state_manager->SetShader<EShaderType::SV_Vertex>(nullptr);
+			pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
+			pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["RenderTransmittanceLutCS"]);
 
 			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderTransmittanceLutCS"].GetRHIComputeShader().get(),
 				0, RHICbSkyAtmosphere.get());
@@ -649,6 +660,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 			//dont need change
 			mCommandList->SetPipelineState(MultiScatteredLuminanceLutPSO.Get());
 			pass_state_manager->SetRootSignature(&MultiScatteredLuminanceLutRootSig);
+			pass_state_manager->SetShader<EShaderType::SV_Vertex>(nullptr);
+			pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
+			pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["RenderMultiScatteredLuminanceLutCS"]);
+
 			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderMultiScatteredLuminanceLutCS"].GetRHIComputeShader().get(),
 				0, RHICbSkyAtmosphere.get());//NOTE: useless !!
 
@@ -667,6 +682,9 @@ void CrateApp::Renderer(const GameTimer& gt)
 		{
 			mCommandList->SetPipelineState(SkyViewLutPSO.Get());
 			pass_state_manager->SetRootSignature(&SkyViewLutRootSig);
+			pass_state_manager->SetShader<EShaderType::SV_Vertex>(nullptr);
+			pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
+			pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["RenderSkyViewLutCS"]);
 
 			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
 				0, ViewConstantBuffer.get());
@@ -689,8 +707,12 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 		//RenderCameraAerialPerspectiveVolumeCS
 		{
+
 			mCommandList->SetPipelineState(PerspectiveVolumePSO.Get());
 			pass_state_manager->SetRootSignature(&PerspectiveVolumeRootSig);
+			pass_state_manager->SetShader<EShaderType::SV_Vertex>(nullptr);
+			pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
+			pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["RenderCameraAerialPerspectiveVolumeCS"]);
 
 			XD3D12TextureBase* CameraAerialPerspectiveVolume = GetD3D12TextureFromRHITexture(CameraAerialPerspectiveVolumeUAV.get());
 			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
@@ -711,21 +733,21 @@ void CrateApp::Renderer(const GameTimer& gt)
 			mCommandList.Get()->Dispatch(32 / 8, 32 / 8, 16 / 8);
 		}
 
-		direct_ctx->CloseCmdList();
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
+
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 	}
 
 
 	//Pass3 ShadowPass
 	{
-		direct_ctx->ResetCmdAlloc();
-		direct_ctx->OpenCmdList();
-		
+		mCommandList->BeginEvent(1, "ShadowPass", sizeof("ShadowPass"));
 		mCommandList->SetPipelineState(ShadowPSO.Get());
 		pass_state_manager->SetRootSignature(&ShadowPassRootSig);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["ShadowPassVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["ShadowPassPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+
 		direct_ctx->RHISetRenderTargets(0, nullptr,
 			static_cast<XD3D12Texture2D*>(ShadowTexture0.get())->GeDepthStencilView());
 		direct_ctx->RHIClearMRT(false, true, nullptr, 0.0f, 0);
@@ -747,8 +769,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 					mShaders["ShadowPassVS"].GetRHIGraphicsShader().get(), 1,
 					ShadowPassConstantBuffer[CSMIndex].get());
 
-				mCommandList.Get()->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
-				mCommandList.Get()->IASetIndexBuffer(&ri->Geo->IndexBufferView());
+				mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr((ri->Geo->VertexBufferView())));
+				mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
 				pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 
 				direct_ctx->GetCmdList()->CmdListFlushBarrier();
@@ -756,23 +778,22 @@ void CrateApp::Renderer(const GameTimer& gt)
 			}
 
 		}
-
-		//direct_ctx->CloseCmdList();
-		//
-		//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		//direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 	}
 
 	//Pass4 GBufferPass BasePass
 	{
-		//direct_ctx->ResetCmdAlloc();
-		//direct_ctx->OpenCmdList();
-		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
+
+		mCommandList->BeginEvent(1, "GBufferPass BasePass", sizeof("GBufferPass BasePass"));
 
 		mCommandList->SetPipelineState(mOpaquePSO.Get());
 		pass_state_manager->SetRootSignature(&d3d12_root_signature);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["standardVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["opaquePS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+
+		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		//pass_state_manager->SetHeapDesc();
 
 		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureGBufferA.get())->GetRenderTargetView();
@@ -796,13 +817,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			direct_ctx->RHISetShaderConstantBuffer(
 				mShaders["standardVS"].GetRHIGraphicsShader().get(),1,
 				mFrameResource.get()->PassConstantBuffer.get());
-			
-			//direct_ctx->RHISetShaderTexture(mShaders["opaquePS"].GetRHIGraphicsShader().get(), 0,
-			//	TextureMetalBaseColor.get());
-			//direct_ctx->RHISetShaderTexture(mShaders["opaquePS"].GetRHIGraphicsShader().get(), 1,
-			//	TextureMetalNormal.get());
-			//direct_ctx->RHISetShaderTexture(mShaders["opaquePS"].GetRHIGraphicsShader().get(), 2,
-			//	TextureRoughness.get());
+		
 
 			direct_ctx->RHISetShaderTexture(mShaders["opaquePS"].GetRHIGraphicsShader().get(), 0, 
 				ri->Mat->TextureBaseColor.get());
@@ -817,30 +832,27 @@ void CrateApp::Renderer(const GameTimer& gt)
 				mFrameResource.get()->MaterialConstantBuffer[ri->Mat->MatCBIndex].get());
 
 
-			mCommandList.Get()->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
-			mCommandList.Get()->IASetIndexBuffer(&ri->Geo->IndexBufferView());
+			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(ri->Geo->VertexBufferView()));
+			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
 			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 
-			direct_ctx->GetCmdList()->CmdListFlushBarrier();
+			//direct_ctx->GetCmdList()->CmdListFlushBarrier();
 			mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 		}
-
-
-		
-		direct_ctx->CloseCmdList();
-
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 	}
 	
 	//Pass5 Shadow Mask Pass
 	{
-		direct_ctx->ResetCmdAlloc();
-		direct_ctx->OpenCmdList();
+		mCommandList->BeginEvent(1, "Shadow Mask Pass", sizeof("Shadow Mask Pass"));
+
 		mCommandList->SetPipelineState(ShadowMaskPSO.Get());
 		pass_state_manager->SetRootSignature(&ShadowMaskPassRootSig);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["ShadowMaskVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["ShadowMaskPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		RTViews[0] = static_cast<XD3D12Texture2D*>(ShadowMaskTexture.get())->GetRenderTargetView();
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);//TODO
@@ -872,8 +884,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 				1,
 				ShadowMaskNoCommonConstantBuffer[CSMindex].get());
 
-			mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
-			mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
+			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
 			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 			mCommandList.Get()->DrawIndexedInstanced(
 				fullScreenItem->IndexCount, 1,
@@ -881,20 +893,19 @@ void CrateApp::Renderer(const GameTimer& gt)
 				fullScreenItem->BaseVertexLocation, 0);
 		}
 
-		direct_ctx->CloseCmdList();
-
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 	}
 
 	//Pass6 LightPass
 	{
-		direct_ctx->ResetCmdAlloc();
-		direct_ctx->OpenCmdList();
+		mCommandList->BeginEvent(1, "LightPass", sizeof("LightPass"));
+
 		mCommandList->SetPipelineState(LightPassPso.Get());
 		pass_state_manager->SetRootSignature(&LightPassRootSig);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["LightPassVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["LightPassPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
 
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureSceneColorDeffered.get())->GetRenderTargetView();
@@ -923,30 +934,29 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 5,
 			ShadowMaskTexture.get());
 
-		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
-		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
+		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
 		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 		
-		direct_ctx->GetCmdList()->CmdListFlushBarrier();
+		//direct_ctx->GetCmdList()->CmdListFlushBarrier();
 		mCommandList.Get()->DrawIndexedInstanced(
 			fullScreenItem->IndexCount, 1,
 			fullScreenItem->StartIndexLocation,
 			fullScreenItem->BaseVertexLocation, 0);
 
-		direct_ctx->CloseCmdList();
-
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 	}
 
 	//Pass7 SSRPass
 	{
-		direct_ctx->ResetCmdAlloc();
-		direct_ctx->OpenCmdList();
+		mCommandList->BeginEvent(1, "SSRPass", sizeof("SSRPass"));
 		mCommandList->SetPipelineState(SSRPassPSO.Get());
 		pass_state_manager->SetRootSignature(&SSRPassRootSig);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["SSRPassVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["SSRPassPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		RTViews[0] = static_cast<XD3D12Texture2D*>(SSROutput.get())->GetRenderTargetView();
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);
@@ -966,59 +976,58 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetShaderConstantBuffer(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(),
 			1, RHIcbSSR.get());
 
-		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
-		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
+		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
 		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 		mCommandList.Get()->DrawIndexedInstanced(
 			fullScreenItem->IndexCount, 1,
 			fullScreenItem->StartIndexLocation,
 			fullScreenItem->BaseVertexLocation, 0);
 
-		direct_ctx->GetCmdList()->CmdListFlushBarrier();
-		direct_ctx->CloseCmdList();
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 
 	}
 
 	//Pass8 ReflectionEnvironment Pass
 	{
-		direct_ctx->ResetCmdAlloc();
-		direct_ctx->OpenCmdList();
+		mCommandList->BeginEvent(1, "ReflectionEnvironment Pass", sizeof("ReflectionEnvironment Pass"));
 		mCommandList->SetPipelineState(ReflectionEnvironmentPassPSO.Get());
 		pass_state_manager->SetRootSignature(&ReflectionEnvironmentRootSig);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["ReflectionEnvironmentVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["ReflectionEnvironmentPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		
 		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureSceneColorDeffered.get())->GetRenderTargetView();
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);
 		//direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
 
-		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 0, SSROutput.get());
+		direct_ctx->RHISetShaderTexture(mShaders["ReflectionEnvironmentPS"].GetRHIGraphicsShader().get(), 0, SSROutput.get());
 
-		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
-		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
+		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
 		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 		mCommandList.Get()->DrawIndexedInstanced(
 			fullScreenItem->IndexCount, 1,
 			fullScreenItem->StartIndexLocation,
 			fullScreenItem->BaseVertexLocation, 0);
 
-		direct_ctx->GetCmdList()->CmdListFlushBarrier();
-		direct_ctx->CloseCmdList();
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 	}
 
 	//Pass8 SkyAtmosphere Combine Pass
 	{
-		direct_ctx->ResetCmdAlloc();
-		direct_ctx->OpenCmdList();
+
+		mCommandList->BeginEvent(1, " SkyAtmosphere Combine Pass", sizeof(" SkyAtmosphere Combine Pass"));
 		mCommandList->SetPipelineState(SkyAtmosphereCombinePSO.Get());
 		pass_state_manager->SetRootSignature(&SkyAtmosphereCombineRootSig);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["RenderSkyAtmosphereRayMarchingVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["RenderSkyAtmosphereRayMarchingPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 
 		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureSceneColorDeffered.get())->GetRenderTargetView();
@@ -1038,29 +1047,28 @@ void CrateApp::Renderer(const GameTimer& gt)
 		//direct_ctx->RHISetShaderTexture(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(),
 		//	3, CameraAerialPerspectiveVolumeUAV.get());
 
-		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
-		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
+		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
 		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 		mCommandList.Get()->DrawIndexedInstanced(
 			fullScreenItem->IndexCount, 1,
 			fullScreenItem->StartIndexLocation,
 			fullScreenItem->BaseVertexLocation, 0);
 
-		direct_ctx->GetCmdList()->CmdListFlushBarrier();
-		direct_ctx->CloseCmdList();
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
 		pass_state_manager->ResetState();
+		mCommandList->EndEvent();
 
 	}
 
 	//Pass9 FinalPass ToneMapping
 	{
-		direct_ctx->ResetCmdAlloc();
-		direct_ctx->OpenCmdList();
+
+		mCommandList->BeginEvent(1, "FinalPass", sizeof("FinalPass"));
 		mCommandList->SetPipelineState(FullScreenPSO.Get());
 		pass_state_manager->SetRootSignature(&FullScreenRootSig);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["fullScreenVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["fullScreenPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
 
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		
@@ -1077,8 +1085,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 		//	, 0
 		//	, SkyViewLutUAV.get());
 		
-		mCommandList.Get()->IASetVertexBuffers(0, 1, &fullScreenItem->Geo->VertexBufferView());
-		mCommandList.Get()->IASetIndexBuffer(&fullScreenItem->Geo->IndexBufferView());
+		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
+		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
 		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 		mCommandList.Get()->DrawIndexedInstanced(
 			fullScreenItem->IndexCount, 1, 
@@ -1092,6 +1100,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 			D3D12_RESOURCE_STATE_PRESENT);
 
 		direct_ctx->GetCmdList()->CmdListFlushBarrier();
+		mCommandList->EndEvent();
+
 		direct_ctx->CloseCmdList();
 		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
@@ -1100,6 +1110,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		viewport.Present();
 
 		pass_state_manager->ResetState();
+		
 		
 	}
 
@@ -1359,11 +1370,11 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		XMFLOAT3 CametaTargetPos = cam_ins.GetTargetPosition();
 
 
-		XMVECTOR Forward = XMLoadFloat3(&XMFLOAT3(CametaTargetPos.x - CametaWorldOrigin.x,
-			CametaTargetPos.y - CametaWorldOrigin.y, CametaTargetPos.z - CametaWorldOrigin.z));
+		XMVECTOR Forward = XMLoadFloat3(GetRValuePtr(XMFLOAT3(CametaTargetPos.x - CametaWorldOrigin.x,
+			CametaTargetPos.y - CametaWorldOrigin.y, CametaTargetPos.z - CametaWorldOrigin.z)));
 
 		//XMVECTOR PlanetCenterKm = XMLoadFloat3(&XMFLOAT3(0, 0, -EarthBottomRadius));
-		XMVECTOR PlanetCenterKm = XMLoadFloat3(&XMFLOAT3(0, -EarthBottomRadius, 0));
+		XMVECTOR PlanetCenterKm = XMLoadFloat3(GetRValuePtr(XMFLOAT3(0, -EarthBottomRadius, 0)));
 		const float PlanetRadiusOffset = 0.005f;
 		const float Offset = PlanetRadiusOffset * SkyUnitToCm;
 		const float BottomRadiusWorld = EarthBottomRadius * SkyUnitToCm;
@@ -1408,8 +1419,8 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 			const float Sign = UpStore.z >= 0.0f ? 1.0f : -1.0f;
 			const float a = -1.0f / (Sign + UpStore.z);
 			const float b = UpStore.x * UpStore.y * a;
-			Forward = XMLoadFloat3(&XMFLOAT3(1 + Sign * a * pow(UpStore.x, 2.0f), Sign * b, -Sign * UpStore.x));
-			SkyLeft = XMLoadFloat3(&XMFLOAT3(b, Sign + a * pow(UpStore.y, 2.0f), -UpStore.y));
+			Forward = XMLoadFloat3(GetRValuePtr(XMFLOAT3(1 + Sign * a * pow(UpStore.x, 2.0f), Sign * b, -Sign * UpStore.x)));
+			SkyLeft = XMLoadFloat3(GetRValuePtr(XMFLOAT3(b, Sign + a * pow(UpStore.y, 2.0f), -UpStore.y)));
 		}
 		else
 		{
@@ -1667,7 +1678,7 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 		
-		pipeline_register_count.register_count[EShaderType::SV_Vertex].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Vertex)].ConstantBufferCount
 			= mShaders["PrePassVS"].GetCBVCount();
 		PrePassRootSig.Create(&Device, pipeline_register_count);
 	}
@@ -1676,11 +1687,11 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 
-		pipeline_register_count.register_count[EShaderType::SV_Compute].UnorderedAccessCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].UnorderedAccessCount
 			= mShaders["HZBPassCS"].GetUAVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ShaderResourceCount
 			= mShaders["HZBPassCS"].GetSRVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ConstantBufferCount
 			= mShaders["HZBPassCS"].GetCBVCount();
 		HZBPassRootSig.Create(&Device, pipeline_register_count);
 	}
@@ -1688,11 +1699,11 @@ void CrateApp::BuildRootSignature()
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
-		pipeline_register_count.register_count[EShaderType::SV_Compute].UnorderedAccessCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].UnorderedAccessCount
 			= mShaders["RenderTransmittanceLutCS"].GetUAVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ShaderResourceCount
 			= mShaders["RenderTransmittanceLutCS"].GetSRVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ConstantBufferCount
 			= mShaders["RenderTransmittanceLutCS"].GetCBVCount();
 		RenderTransmittanceLutRootSig.Create(&Device, pipeline_register_count);
 	}
@@ -1701,11 +1712,11 @@ void CrateApp::BuildRootSignature()
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
-		pipeline_register_count.register_count[EShaderType::SV_Compute].UnorderedAccessCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].UnorderedAccessCount
 			= mShaders["RenderMultiScatteredLuminanceLutCS"].GetUAVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ShaderResourceCount
 			= mShaders["RenderMultiScatteredLuminanceLutCS"].GetSRVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ConstantBufferCount
 			= mShaders["RenderMultiScatteredLuminanceLutCS"].GetCBVCount();
 		MultiScatteredLuminanceLutRootSig.Create(&Device, pipeline_register_count);
 	}
@@ -1713,11 +1724,11 @@ void CrateApp::BuildRootSignature()
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
-		pipeline_register_count.register_count[EShaderType::SV_Compute].UnorderedAccessCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].UnorderedAccessCount
 			= mShaders["RenderSkyViewLutCS"].GetUAVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ShaderResourceCount
 			= mShaders["RenderSkyViewLutCS"].GetSRVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ConstantBufferCount
 			= mShaders["RenderSkyViewLutCS"].GetCBVCount();
 		SkyViewLutRootSig.Create(&Device, pipeline_register_count);
 	}
@@ -1725,11 +1736,11 @@ void CrateApp::BuildRootSignature()
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
-		pipeline_register_count.register_count[EShaderType::SV_Compute].UnorderedAccessCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].UnorderedAccessCount
 			= mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetUAVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ShaderResourceCount
 			= mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetSRVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Compute].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Compute)].ConstantBufferCount
 			= mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetCBVCount();
 		PerspectiveVolumeRootSig.Create(&Device, pipeline_register_count);
 	}
@@ -1738,7 +1749,7 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 
-		pipeline_register_count.register_count[EShaderType::SV_Vertex].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Vertex)].ConstantBufferCount
 			= mShaders["ShadowPassVS"].GetCBVCount();
 
 		ShadowPassRootSig.Create(&Device, pipeline_register_count);
@@ -1749,13 +1760,13 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 
-		pipeline_register_count.register_count[EShaderType::SV_Vertex].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Vertex)].ConstantBufferCount
 			= mShaders["standardVS"].GetCBVCount();
 		
 		
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
 			= mShaders["opaquePS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
 			= mShaders["opaquePS"].GetSRVCount();
 
 		d3d12_root_signature.Create(&Device, pipeline_register_count);
@@ -1766,12 +1777,12 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 
-		pipeline_register_count.register_count[EShaderType::SV_Vertex].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Vertex)].ConstantBufferCount
 			= mShaders["ShadowMaskVS"].GetCBVCount();
 
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
 			= mShaders["ShadowMaskPS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
 			= mShaders["ShadowMaskPS"].GetSRVCount();
 
 		ShadowMaskPassRootSig.Create(&Device, pipeline_register_count);
@@ -1782,13 +1793,13 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 
-		pipeline_register_count.register_count[EShaderType::SV_Vertex].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Vertex)].ConstantBufferCount
 			= mShaders["LightPassVS"].GetCBVCount();
 
 
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
 			= mShaders["LightPassPS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
 			= mShaders["LightPassPS"].GetSRVCount();
 
 		LightPassRootSig.Create(&Device, pipeline_register_count);
@@ -1799,9 +1810,9 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
 			= mShaders["SSRPassPS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
 			= mShaders["SSRPassPS"].GetSRVCount();
 
 		SSRPassRootSig.Create(&Device, pipeline_register_count);
@@ -1812,9 +1823,9 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
 			= mShaders["ReflectionEnvironmentPS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
 			= mShaders["ReflectionEnvironmentPS"].GetSRVCount();
 
 		ReflectionEnvironmentRootSig.Create(&Device, pipeline_register_count);
@@ -1825,9 +1836,9 @@ void CrateApp::BuildRootSignature()
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
 
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ConstantBufferCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
 			= mShaders["RenderSkyAtmosphereRayMarchingPS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
 			= mShaders["RenderSkyAtmosphereRayMarchingPS"].GetSRVCount();
 
 		SkyAtmosphereCombineRootSig.Create(&Device, pipeline_register_count);
@@ -1837,7 +1848,7 @@ void CrateApp::BuildRootSignature()
 	{
 		XPipelineRegisterBoundCount pipeline_register_count;
 		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
-		pipeline_register_count.register_count[EShaderType::SV_Pixel].ShaderResourceCount
+		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
 			= mShaders["fullScreenPS"].GetSRVCount();
 
 		FullScreenRootSig.Create(&Device, pipeline_register_count);
@@ -1988,13 +1999,6 @@ void CrateApp::BuildShadersAndInputLayout()
 		mShaders["fullScreenPS"].ShaderReflect();
 	}
 
-	//LPCSTR SemanticName;
-	//UINT SemanticIndex;
-	//DXGI_FORMAT Format;
-	//UINT InputSlot;
-	//UINT AlignedByteOffset;
-	//D3D12_INPUT_CLASSIFICATION InputSlotClass;
-	//UINT InstanceDataStepRate;
 	mBasePassLayout =
 	{
 		{ "ATTRIBUTE", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -2664,18 +2668,13 @@ void CrateApp::BuildRenderItems()
 
 int main()
 {
-
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	//_CrtSetBreakAlloc(703);
 	int* a = new int(5);
 	try
 	{
 		CrateApp theApp;
-		if (!theApp.Initialize())
-			return 0;
-
-
-
+		if (!theApp.Initialize())return 0;
 		return theApp.Run();
 	}
 	catch (DxException& e)

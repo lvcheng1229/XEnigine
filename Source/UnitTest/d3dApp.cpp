@@ -304,6 +304,8 @@ bool D3DApp::InitMainWindow()
 
 bool D3DApp::InitDirect3D()
 {
+	RHIInit();
+
 	ComPtr<ID3D12Debug> debugController;
 	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
 	debugController->EnableDebugLayer();

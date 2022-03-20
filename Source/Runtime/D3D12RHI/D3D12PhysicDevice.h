@@ -16,8 +16,9 @@ class XD3D12DeviceChild
 {
 public:
 	explicit XD3D12DeviceChild() :p_device(nullptr) {};
-	inline void SetParentDevice(XD3D12PhysicDevice* p_device_in) { p_device = p_device_in; }
-	inline XD3D12PhysicDevice* GetParentDevice() { X_Assert((p_device != nullptr)); return p_device; };
+
+	inline void					SetParentDevice(XD3D12PhysicDevice* p_device_in) { p_device = p_device_in; }
+	inline XD3D12PhysicDevice*	GetParentDevice() { X_Assert((p_device != nullptr)); return p_device; };
 private:
 	XD3D12PhysicDevice* p_device;
 };

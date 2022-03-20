@@ -37,6 +37,8 @@ public:
 	
 	inline void Signal() { d3d12_fence.SignalGPU(this); }
 	inline void Signal(uint64 fence) { d3d12_fence.SignalGPU(this, fence); }
+	inline void Wait() { d3d12_fence.WaitCPU(); }
+
 	void ExecuteCommandListInteral(std::vector<XD3D12DirectCommandList>& Lists);
 	inline XD3D12Fence* GetFence() { return &d3d12_fence; }
 	inline ID3D12CommandQueue* GetDXCommandQueue() { return d3d12_cmd_queue.Get(); }

@@ -10,7 +10,6 @@ class XD3D12Context :public IRHIContext
 
 };
 
-
 class XD3D12AbstractDevice;
 class XD3DDirectContex :public XD3D12Context
 {
@@ -34,18 +33,14 @@ public:
 	void RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI);
 	void RHISetShaderConstantBuffer(XRHIComputeShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
 	void RHISetShaderResourceViewParameter(XRHIComputeShader* ComputeShaderRHI, uint32 TextureIndex, XRHIShaderResourceView* SRVRHI);
-
 	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);
-	
 	void RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
 	void RHISetShaderConstantBuffer(XRHIGraphicsShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
 	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
 	void RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue);
 	void RHIDrawFullScreenQuad();
-	//void RHISetScissorRect(uint32 MinX, uint32 MinY, uint32 MaxX, uint32 MaxY)override;
 
-	//TODO
-	//void RHIUpdateConstantBufferData(std::shared_ptr<XD3D12ConstantBuffer>CB, void* Data, uint32 size);
+	
 	void ResetCmdAlloc();
 private:
 public:

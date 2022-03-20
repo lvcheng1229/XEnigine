@@ -57,7 +57,7 @@ void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegiste
 	}
 
 	uint32 root_parameter_count = 0;
-	for (int i = 0; i < EShaderType::SV_ShaderCount; i++)
+	for (int i = 0; i < EShaderType_Underlying(EShaderType::SV_ShaderCount); i++)
 	{
 		const XShaderRegisterCounts& Shader = register_count.register_count[i];
 		D3D12_SHADER_VISIBILITY visibility = GetShaderVisibility(EShaderType(i));
@@ -106,7 +106,7 @@ void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegiste
 		}
 	}
 
-	for (int i = 0; i < EShaderType::SV_ShaderCount; i++)
+	for (int i = 0; i < EShaderType_Underlying(EShaderType::SV_ShaderCount); i++)
 	{
 		const XShaderRegisterCounts& Shader = register_count.register_count[i];
 
@@ -164,14 +164,14 @@ uint32 XD3D12RootSignature::GetSRVDescTableBindSlot(EShaderType shader_type)cons
 {
 	switch (shader_type)
 	{
-	case SV_Vertex:
-		return ShaderResourceBindSlotIndexArray[VS_SRVs];
+	case EShaderType::SV_Vertex:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::VS_SRVs];
 		break;
-	case SV_Pixel:
-		return ShaderResourceBindSlotIndexArray[PS_SRVs];
+	case EShaderType::SV_Pixel:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::PS_SRVs];
 		break;
-	case SV_Compute:
-		return ShaderResourceBindSlotIndexArray[ALL_SRVs];
+	case EShaderType::SV_Compute:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_SRVs];
 		break;
 	default:
 		X_Assert(false);
@@ -184,8 +184,8 @@ uint32 XD3D12RootSignature::GetUADescTableBindSlot(EShaderType shader_type) cons
 {
 	switch (shader_type)
 	{
-	case SV_Compute:
-		return ShaderResourceBindSlotIndexArray[ALL_UAVs];
+	case EShaderType::SV_Compute:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_UAVs];
 		break;
 	default:
 		X_Assert(false);
@@ -198,14 +198,14 @@ uint32 XD3D12RootSignature::GetCBVDescTableBindSlot(EShaderType shader_type)cons
 {
 	switch (shader_type)
 	{
-	case SV_Vertex:
-		return ShaderResourceBindSlotIndexArray[VS_CBVs];
+	case EShaderType::SV_Vertex:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::VS_CBVs];
 		break;
-	case SV_Pixel:
-		return ShaderResourceBindSlotIndexArray[PS_CBVs];
+	case EShaderType::SV_Pixel:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::PS_CBVs];
 		break;
-	case SV_Compute:
-		return ShaderResourceBindSlotIndexArray[ALL_CBVs];
+	case EShaderType::SV_Compute:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_CBVs];
 		break;
 	default:
 		X_Assert(false);
@@ -218,14 +218,14 @@ uint32 XD3D12RootSignature::GetSampleDescTableBindSlot(EShaderType shader_type)c
 {
 	switch (shader_type)
 	{
-	case SV_Vertex:
-		return ShaderResourceBindSlotIndexArray[VS_Samplers];
+	case EShaderType::SV_Vertex:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::VS_Samplers];
 		break;
-	case SV_Pixel:
-		return ShaderResourceBindSlotIndexArray[PS_Samplers];
+	case EShaderType::SV_Pixel:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::PS_Samplers];
 		break;
-	case SV_Compute:
-		return ShaderResourceBindSlotIndexArray[ALL_Samplers];
+	case EShaderType::SV_Compute:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_Samplers];
 		break;
 	default:
 		X_Assert(false);
@@ -238,14 +238,14 @@ uint32 XD3D12RootSignature::GetCBVRootDescBindSlot(EShaderType shader_type)const
 {
 	switch (shader_type)
 	{
-	case SV_Vertex:
-		return ShaderResourceBindSlotIndexArray[VS_RootCBVs];
+	case EShaderType::SV_Vertex:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::VS_RootCBVs];
 		break;
-	case SV_Pixel:
-		return ShaderResourceBindSlotIndexArray[PS_RootCBVs];
+	case EShaderType::SV_Pixel:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::PS_RootCBVs];
 		break;
-	case SV_Compute:
-		return ShaderResourceBindSlotIndexArray[ALL_RootCBVs];
+	case EShaderType::SV_Compute:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_RootCBVs];
 		break;
 	default:
 		X_Assert(false);
@@ -259,14 +259,14 @@ void XD3D12RootSignature::SetSRVDescTableBindSlot(EShaderType shader_type, uint8
 	uint8* pBindSlot = nullptr;
 	switch (shader_type)
 	{
-	case SV_Vertex:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[VS_SRVs];
+	case EShaderType::SV_Vertex:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::VS_SRVs];
 		break;
-	case SV_Pixel:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[PS_SRVs];
+	case EShaderType::SV_Pixel:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::PS_SRVs];
 		break;
-	case SV_Compute:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[ALL_SRVs];
+	case EShaderType::SV_Compute:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_SRVs];
 		break;
 	default:
 		X_Assert(false);
@@ -280,14 +280,14 @@ void XD3D12RootSignature::SetCBVDescTableBindSlot(EShaderType shader_type, uint8
 	uint8* pBindSlot = nullptr;
 	switch (shader_type)
 	{
-	case SV_Vertex:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[VS_CBVs];
+	case EShaderType::SV_Vertex:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::VS_CBVs];
 		break;
-	case SV_Pixel:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[PS_CBVs];
+	case EShaderType::SV_Pixel:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::PS_CBVs];
 		break;
-	case SV_Compute:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[ALL_CBVs];
+	case EShaderType::SV_Compute:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_CBVs];
 		break;
 	default:
 		X_Assert(false);
@@ -301,14 +301,14 @@ void XD3D12RootSignature::SetSampleDescTableBindSlot(EShaderType shader_type, ui
 	uint8* pBindSlot = nullptr;
 	switch (shader_type)
 	{
-	case SV_Vertex:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[VS_Samplers];
+	case EShaderType::SV_Vertex:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::VS_Samplers];
 		break;
-	case SV_Pixel:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[PS_Samplers];
+	case EShaderType::SV_Pixel:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::PS_Samplers];
 		break;
-	case SV_Compute:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[ALL_Samplers];
+	case EShaderType::SV_Compute:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_Samplers];
 		break;
 	default:
 		X_Assert(false);
@@ -322,8 +322,8 @@ void XD3D12RootSignature::SetUAVDescTableTBindSlot(EShaderType shader_type, uint
 	uint8* pBindSlot = nullptr;
 	switch (shader_type)
 	{
-	case SV_Compute:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[ERootParameterKeys::ALL_UAVs];
+	case EShaderType::SV_Compute:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_UAVs];
 		break;
 	default:
 		X_Assert(false);
@@ -337,14 +337,14 @@ void XD3D12RootSignature::SetCBVRootDescBindSlot(EShaderType shader_type, uint8 
 	uint8* pBindSlot = nullptr;
 	switch (shader_type)
 	{
-	case SV_Vertex:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[VS_RootCBVs];
+	case EShaderType::SV_Vertex:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::VS_RootCBVs];
 		break;
-	case SV_Pixel:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[PS_RootCBVs];
+	case EShaderType::SV_Pixel:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::PS_RootCBVs];
 		break;
-	case SV_Compute:
-		pBindSlot = &ShaderResourceBindSlotIndexArray[ALL_RootCBVs];
+	case EShaderType::SV_Compute:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_RootCBVs];
 		break;
 	default:
 		X_Assert(false);

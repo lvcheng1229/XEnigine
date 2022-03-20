@@ -11,7 +11,6 @@ protected:
         if (ptr_ != nullptr)
         {
             ptr_->AddRef();
-            std::cout << "addref" << std::endl;
         }
     }
 
@@ -24,18 +23,15 @@ protected:
         {
             ptr_ = nullptr;
             ref = temp->Release();
-            std::cout << "releaseref" << std::endl;
         }
 
         return ref;
     }
 public:
     XRefCountPtr() throw() : ptr_(nullptr) {
-        std::cout << "default" << std::endl;
     }
     
     XRefCountPtr(decltype(__nullptr)) throw() : ptr_(nullptr) {
-        std::cout << "nullptr" << std::endl;
     }
 
     template<class U>

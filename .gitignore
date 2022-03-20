@@ -36,3 +36,5 @@
 /bin-int/*
 /.vs/*
 /build/*
+/boost_1_78_0/*
+/packages/*
