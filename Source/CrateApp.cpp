@@ -21,6 +21,7 @@
 
 #include  "Runtime/Engine/SceneView.h"
 #include "Runtime/Core/XMath.h"
+#include "Runtime/Engine/ShaderCompiler/ShaderCompiler.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -31,6 +32,26 @@ using namespace DirectX::PackedVector;
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "File/stb_image.h"
+
+
+#include "Runtime/RenderCore/GlobalShader.h"
+class XLightPassVS :public XGloablShader
+{
+public:
+	static ShaderInfosUsedToCompile StaticShaderInfosUsedToCompile;
+};
+
+class XLightPassPS :public XGloablShader
+{
+public:
+	static ShaderInfosUsedToCompile StaticShaderInfosUsedToCompile;
+};
+
+XLightPassVS::ShaderInfosUsedToCompile XLightPassVS::StaticShaderInfosUsedToCompile(
+	L"XLightPassVS", L"DeferredLightVertexMain", L"LightPassVS", EShaderType::SV_Vertex);
+XLightPassPS::ShaderInfosUsedToCompile XLightPassPS::StaticShaderInfosUsedToCompile(
+	L"XLightPassPS", L"DeferredLightPixelMain", L"LightPassPS", EShaderType::SV_Pixel);
+
 
 struct RenderItem
 {
@@ -118,6 +139,7 @@ public:
     virtual bool Initialize()override;
 
 private:
+	void TempDelete()override;
     virtual void OnResize()override;
     virtual void Update(const GameTimer& gt)override;
     virtual void Renderer(const GameTimer& gt)override;
@@ -398,6 +420,7 @@ bool CrateApp::Initialize()
     if(!D3DApp::Initialize())
         return false;
 
+	CompileGlobalShaderMap();
 	
 
 	direct_ctx->OpenCmdList();
@@ -2678,11 +2701,18 @@ void CrateApp::BuildRenderItems()
 	
 }
 
+void CrateApp::TempDelete()
+{
+	if (GPlatformRHI)
+		delete GPlatformRHI;
+	if (GGlobalShaderMap)
+		delete GGlobalShaderMap;
+}
 
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(703);
+	//_CrtSetBreakAlloc(138);
 	int* a = new int(5);
 	try
 	{

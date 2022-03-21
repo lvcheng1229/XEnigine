@@ -52,8 +52,16 @@ class XRHIBlendState {};
 class XRHIDepthStencilState {};
 
 class XRHIVertexLayout {};
-class XRHIVertexShader: public XRHIGraphicsShader {};
-class XRHIPixelShader : public XRHIGraphicsShader {};
+class XRHIVertexShader: public XRHIGraphicsShader 
+{
+public:
+	XRHIVertexShader() :XRHIGraphicsShader(EShaderType::SV_Vertex) {}
+};
+class XRHIPixelShader : public XRHIGraphicsShader 
+{
+public:
+	XRHIPixelShader() :XRHIGraphicsShader(EShaderType::SV_Pixel) {}
+};
 
 struct XRHIBoundShaderStateInput
 {

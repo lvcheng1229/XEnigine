@@ -85,6 +85,7 @@ int D3DApp::Run()
         }
     }
 
+	TempDelete();
 	return (int)msg.wParam;
 }
 

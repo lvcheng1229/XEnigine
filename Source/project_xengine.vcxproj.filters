@@ -158,6 +158,8 @@
     <ClInclude Include="Runtime\RHI\RHIStaticStates.h" />
     <ClInclude Include="Runtime\Core\Template\XEngineTemplate.h" />
     <ClInclude Include="Runtime\RenderCore\RenderResource.h" />
+    <ClInclude Include="Runtime\RenderCore\GlobalShader.h" />
+    <ClInclude Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
@@ -237,5 +239,8 @@
     <ClCompile Include="Runtime\RHI\PlatformRHI.cpp" />
     <ClCompile Include="Runtime\RHI\Windows\WindowsRHI.cpp" />
     <ClCompile Include="Runtime\RenderCore\RenderResource.cpp" />
+    <ClCompile Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.cpp" />
+    <ClCompile Include="Runtime\RenderCore\GlobalShader.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Shaders.cpp" />
   </ItemGroup>
 </Project>

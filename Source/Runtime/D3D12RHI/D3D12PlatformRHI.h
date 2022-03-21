@@ -10,6 +10,9 @@ public:
 	inline void Init() override {};
 	std::shared_ptr<XRHIDepthStencilState> RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer)final override;
 	std::shared_ptr<XRHIBlendState> RHICreateBlendState(const XBlendStateInitializerRHI& Initializer)final override;
+	std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(std::string_view Code)final override;
+	std::shared_ptr<XRHIPixelShader> RHICreatePixelShader(std::string_view Code)final override;
+	
 public:
 	static inline void Base_TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,

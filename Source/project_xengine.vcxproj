@@ -124,8 +124,10 @@
     <ClInclude Include="Runtime\D3D12RHI\d3dx12.h" />
     <ClInclude Include="Runtime\DataStruct\XRefCountPtr.h" />
     <ClInclude Include="Runtime\Engine\SceneView.h" />
+    <ClInclude Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.h" />
     <ClInclude Include="Runtime\HAL\Mch.h" />
     <ClInclude Include="Runtime\HAL\PlatformTypes.h" />
+    <ClInclude Include="Runtime\RenderCore\GlobalShader.h" />
     <ClInclude Include="Runtime\RenderCore\RenderResource.h" />
     <ClInclude Include="Runtime\RenderCore\ShaderCore.h" />
     <ClInclude Include="Runtime\RHI\PlatformRHI.h" />
@@ -159,10 +161,13 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Resource.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Shaders.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12State.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\XD3D12CommandListManger.cpp" />
     <ClCompile Include="Runtime\Engine\SceneView.cpp" />
+    <ClCompile Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.cpp" />
+    <ClCompile Include="Runtime\RenderCore\GlobalShader.cpp" />
     <ClCompile Include="Runtime\RenderCore\RenderResource.cpp" />
     <ClCompile Include="Runtime\RenderCore\Shader.cpp" />
     <ClCompile Include="Runtime\RHI\PlatformRHI.cpp" />

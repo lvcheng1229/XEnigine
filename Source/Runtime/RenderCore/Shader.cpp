@@ -1,5 +1,35 @@
 #include "Shader.h"
 
+
+
+XShaderInfosUsedToCompile::XShaderInfosUsedToCompile(
+	EShaderTypeForDynamicCast InCastType,
+	const char* InShaderName,
+	const wchar_t* InSourceFileName,
+	const char* InEntryName,
+	EShaderType InShaderType):
+	CastType(InCastType),
+	ShaderName(InShaderName),
+	SourceFileName(InSourceFileName),
+	EntryName(InEntryName),
+	ShaderType(InShaderType)
+{
+	GetShaderInfosUsedToCompile_LinkedList().push_back(this);
+	HashedFileIndex = std::hash<std::wstring>{}(InSourceFileName);
+	HashedEntryIndex= std::hash<std::string>{}(InEntryName);
+}
+
+std::list<XShaderInfosUsedToCompile*>& XShaderInfosUsedToCompile::GetShaderInfosUsedToCompile_LinkedList()
+{
+	static std::list<XShaderInfosUsedToCompile*> GloablShaderInfosUsedToCompile_LinkedList;
+	return GloablShaderInfosUsedToCompile_LinkedList;
+}
+
+
+
+
+
+
 void XShader::CreateShader(EShaderType shader_type)
 {
 	if (shader_type == EShaderType::SV_Compute)
@@ -12,6 +42,45 @@ void XShader::CreateShader(EShaderType shader_type)
 	}
 	ShaderType = shader_type;
 }
+
+XXShader* XShaderMapStoreShadersInfoInFileUnit::FindOrAddShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)
+{
+	const std::size_t Index = HashedEntryIndex;
+	auto iter = MapFromHashedEntryIndexToShaderPtrArrayIndex.find(Index);
+	if (iter != MapFromHashedEntryIndexToShaderPtrArrayIndex.end())
+	{
+		return ShaderPtrArray[iter->second];
+	}
+	ShaderPtrArray.push_back(Shader);
+	MapFromHashedEntryIndexToShaderPtrArrayIndex[Index] = ShaderPtrArray.size() - 1;
+	return ShaderPtrArray.back();
+}
+
+XXShader* XShaderMapStoreShadersInfoInFileUnit::GetShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
+{
+	auto iter = MapFromHashedEntryIndexToShaderPtrArrayIndex.find(HashedEntryIndex);
+	X_Assert(iter != MapFromHashedEntryIndexToShaderPtrArrayIndex.end());
+	std::size_t ShaderPtrArrayIndex = iter->second;
+	return ShaderPtrArray[ShaderPtrArrayIndex];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void XShader::CompileShader(const std::wstring& filename, const D3D_SHADER_MACRO* defines, const std::string& entrypoint, const std::string& target)
 {
@@ -104,3 +173,8 @@ void XShader::ShaderReflect()
 
 	}
 }
+
+
+
+
+
