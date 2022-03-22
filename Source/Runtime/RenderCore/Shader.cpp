@@ -1,61 +1,64 @@
 #include "Shader.h"
 #include "Runtime/RHI/RHICommandList.h"
 
-//std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShaderFromCode(int32 ShaderIndex)
-//{
-//	const XShaderMapStoreCodesInFileUnit::XShaderEntry& ShaderEntry = Code->ShaderEntries[ShaderIndex];
-//	
-//	const EShaderType ShaderType = ShaderEntry.Shadertype;
-//	std::shared_ptr<XRHIShader> RHIShaderRef;
-//	std::string_view CodeView((char*)ShaderEntry.Code.data());
-//	
-//	switch (ShaderType)
-//	{
-//	case EShaderType::SV_Vertex:RHIShaderRef = RHICreateVertexShader(CodeView); break;
-//	case EShaderType::SV_Pixel:RHIShaderRef = RHICreatePixelShader(CodeView); break;
-//	default:X_Assert(false); break;
-//	}
-//	return RHIShaderRef;
-//}
-//
-
-//
-//
-//void XShaderMapStoreCodesInFileUnit::AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo)
-//{
-//	XShaderEntry ShaderEntry;
-//	ShaderEntry.Code = OutputInfo.ShaderCode;
-//	ShaderEntry.Shadertype = OutputInfo.Shadertype;
-//	ShaderEntries.push_back(std::move(ShaderEntry));
-//
-//	MapFromCodeHashToEntry[OutputInfo.SourceCodeHash] = ShaderEntries.size() - 1;
-//}
-//
-//XXShader* XShaderMapStoreShadersInfoInFileUnit::FindOrAddShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)
-//{
-//	const std::size_t Index = HashedEntryIndex;
-//	auto iter = MapFromHashedEntryIndexToShaderPtrArrayIndex.find(Index);
-//	if (iter != MapFromHashedEntryIndexToShaderPtrArrayIndex.end())
-//	{
-//		return ShaderPtrArray[iter->second].get();
-//	}
-//	ShaderPtrArray.push_back(std::make_shared<XXShader>(Shader));
-//	MapFromHashedEntryIndexToShaderPtrArrayIndex[Index] = ShaderPtrArray.size() - 1;
-//	return ShaderPtrArray.back().get();
-//}
-//
-//XXShader* XShaderMapStoreShadersInfoInFileUnit::GetShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
-//{
-//	auto iter = MapFromHashedEntryIndexToShaderPtrArrayIndex.find(HashedEntryIndex);
-//	X_Assert(iter != MapFromHashedEntryIndexToShaderPtrArrayIndex.end());
-//	std::size_t ShaderPtrArrayIndex = iter->second;
-//	return ShaderPtrArray[ShaderPtrArrayIndex].get();
-//}
+std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShaderFromCode(int32 ShaderIndex)
+{
+	const XShaderMapStoreCodesInFileUnit::XShaderEntry& ShaderEntry = Code->ShaderEntries[ShaderIndex];
+	
+	const EShaderType ShaderType = ShaderEntry.Shadertype;
+	std::shared_ptr<XRHIShader> RHIShaderRef;
+	XArrayView<uint8> CodeView(ShaderEntry.Code.data(), ShaderEntry.Code.size());
+	switch (ShaderType)
+	{
+	case EShaderType::SV_Vertex:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreateVertexShader(CodeView)); break;
+	case EShaderType::SV_Pixel:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreatePixelShader(CodeView)); break;
+	default:X_Assert(false); break;
+	}
+	return RHIShaderRef;
+}
 
 
+XShaderMapBase::~XShaderMapBase()
+{
+	delete ShadersInfosStored;
+}
 
 
-XShaderInfosUsedToCompile::XShaderInfosUsedToCompile(
+void XShaderMapStoreCodesInFileUnit::AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo)
+{
+	XShaderEntry ShaderEntry;
+	ShaderEntry.Code = OutputInfo.ShaderCode;
+	ShaderEntry.Shadertype = OutputInfo.Shadertype;
+	ShaderEntries.push_back(std::move(ShaderEntry));
+
+	MapFromCodeHashToEntry[OutputInfo.SourceCodeHash] = ShaderEntries.size() - 1;
+}
+
+XXShader* XShaderMapStoreShadersInfoInFileUnit::FindOrAddShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)
+{
+	const std::size_t Index = HashedEntryIndex;
+	auto iter = MapFromHashedEntryIndexToShaderPtrArrayIndex.find(Index);
+	if (iter != MapFromHashedEntryIndexToShaderPtrArrayIndex.end())
+	{
+		return ShaderPtrArray[iter->second].get();
+	}
+	ShaderPtrArray.push_back(std::shared_ptr<XXShader>(Shader));
+	MapFromHashedEntryIndexToShaderPtrArrayIndex[Index] = ShaderPtrArray.size() - 1;
+	return ShaderPtrArray.back().get();
+}
+
+XXShader* XShaderMapStoreShadersInfoInFileUnit::GetShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
+{
+	auto iter = MapFromHashedEntryIndexToShaderPtrArrayIndex.find(HashedEntryIndex);
+	X_Assert(iter != MapFromHashedEntryIndexToShaderPtrArrayIndex.end());
+	std::size_t ShaderPtrArrayIndex = iter->second;
+	return ShaderPtrArray[ShaderPtrArrayIndex].get();
+}
+
+
+
+
+XShaderInfos::XShaderInfos(
 	EShaderTypeForDynamicCast InCastType,
 	const char* InShaderName,
 	const wchar_t* InSourceFileName,
@@ -67,14 +70,14 @@ XShaderInfosUsedToCompile::XShaderInfosUsedToCompile(
 	EntryName(InEntryName),
 	ShaderType(InShaderType)
 {
-	GetShaderInfosUsedToCompile_LinkedList().push_back(this);
+	GetShaderInfos_LinkedList().push_back(this);
 	HashedFileIndex = std::hash<std::wstring>{}(InSourceFileName);
 	HashedEntryIndex = std::hash<std::string>{}(InEntryName);
 }
 
-std::list<XShaderInfosUsedToCompile*>& XShaderInfosUsedToCompile::GetShaderInfosUsedToCompile_LinkedList()
+std::list<XShaderInfos*>& XShaderInfos::GetShaderInfos_LinkedList()
 {
-	static std::list<XShaderInfosUsedToCompile*> GloablShaderInfosUsedToCompile_LinkedList;
+	static std::list<XShaderInfos*> GloablShaderInfosUsedToCompile_LinkedList;
 	return GloablShaderInfosUsedToCompile_LinkedList;
 }
 
@@ -201,5 +204,4 @@ void XShader::ShaderReflect()
 
 	}
 }
-
 
