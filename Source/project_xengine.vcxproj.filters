@@ -160,6 +160,7 @@
     <ClInclude Include="Runtime\RenderCore\RenderResource.h" />
     <ClInclude Include="Runtime\RenderCore\GlobalShader.h" />
     <ClInclude Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.h" />
+    <ClInclude Include="Runtime\RHI\RHICommandList.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />

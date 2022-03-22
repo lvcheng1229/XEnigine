@@ -31,12 +31,15 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 
 		if (Errors != nullptr)OutputDebugStringA((char*)Errors->GetBufferPointer()); ThrowIfFailed(hr);
 
+		Output.Shadertype = Input.Shadertype;
 		Output.ShaderCode.clear();
 		//https://stackoverflow.com/questions/259297/how-do-you-copy-the-contents-of-an-array-to-a-stdvector-in-c-without-looping
 		Output.ShaderCode.insert(
 			Output.ShaderCode.end(),
 			static_cast<uint8*>(CodeGened->GetBufferPointer()),
 			static_cast<uint8*>(CodeGened->GetBufferPointer()) + CodeGened->GetBufferSize());
+		Output.SourceCodeHash = std::hash<std::string>{}((char*)Output.ShaderCode.data());
+
 	}
 
 	//Reflect
@@ -68,7 +71,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		}
 		int32 TotalOptionalDataSize = 0;
 		XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount };
-		
+
 		int32 ResoucrCountSize = static_cast<int32>(sizeof(XShaderResourceCount));
 		Output.ShaderCode.push_back(XShaderResourceCount::Key);
 		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&ResoucrCountSize), (uint8*)(&ResoucrCountSize) + 4);
@@ -85,6 +88,8 @@ void CompileGlobalShaderMap()
 {
 	if (GGlobalShaderMap == nullptr)
 	{
+		//ShaderMapInFileUnit has three part , first : source code ,second : shaders info,third : RHIShader 
+
 		GGlobalShaderMap = new XGlobalShaderMapInProjectUnit();
 		std::list<XShaderInfosUsedToCompile*>& ShaderInfosUsedToCompile_LinkedList = XShaderInfosUsedToCompile::GetShaderInfosUsedToCompile_LinkedList();
 		for (auto iter = ShaderInfosUsedToCompile_LinkedList.begin(); iter != ShaderInfosUsedToCompile_LinkedList.end(); iter++)
@@ -92,13 +97,25 @@ void CompileGlobalShaderMap()
 			XShaderCompileInput Input;
 			Input.SourceFilePath = (*iter)->GetSourceFileName();
 			Input.EntryPointName = (*iter)->GetEntryName();
+			Input.Shadertype = (*iter)->GetShaderType();
 			XShaderCompileOutput Output;
 			CompileDX12Shader(Input, Output);
-			//FGlobalShaderMapSection* Section = GGlobalShaderMap->FindOrAddSection(ShaderType);
-			//Section->GetResourceCode()->AddShaderCompilerOutput(CurrentJob.Output);
-			GGlobalShaderMap->GlobalShaderMapFindOrAddShader(,0,)
-
-
+			XGlobalShaderMapInFileUnit* ShaderFileUnit = GGlobalShaderMap->FindOrAddShaderMapFileUnit((*iter));
+		//	
+		//	//first:store source code
+		//	ShaderFileUnit->GetResourceCode()->AddShaderCompilerOutput(Output);
+		//	std::size_t HashIndex = ShaderFileUnit->GetResourceCode()->GetEntryIndexByCodeHash(Output.SourceCodeHash);
+		//	//second: shaders info
+		//	XXShader* Shader = new XXShader(*iter, &Output);
+		//	Shader->SetRHIShaderIndex(HashIndex);
+		//	ShaderFileUnit->GetShaderInfo()->FindOrAddShader((*iter)->GetHashedEntryIndex(), Shader, 0);
+		//}
+		//
+		////third: RHIShader
+		//std::unordered_map<std::size_t, XGlobalShaderMapInFileUnit*>ShaderMapFileUnit = GGlobalShaderMap->GetGlobalShaderMap_HashMap();
+		//for (auto iter = ShaderMapFileUnit.begin(); iter != ShaderMapFileUnit.end(); iter++)
+		//{
+		//	iter->second->InitRHIShaders_InlineCode();
 		}
 	}
 }

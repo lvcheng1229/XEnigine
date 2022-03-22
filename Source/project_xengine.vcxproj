@@ -132,6 +132,7 @@
     <ClInclude Include="Runtime\RenderCore\ShaderCore.h" />
     <ClInclude Include="Runtime\RHI\PlatformRHI.h" />
     <ClInclude Include="Runtime\RHI\RHI.h" />
+    <ClInclude Include="Runtime\RHI\RHICommandList.h" />
     <ClInclude Include="Runtime\RHI\RHIContext.h" />
     <ClInclude Include="Runtime\RHI\RHIDefines.h" />
     <ClInclude Include="Runtime\RHI\RHIResource.h" />

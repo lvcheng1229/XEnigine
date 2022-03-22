@@ -14,11 +14,6 @@ public:
 	std::array<D3D12_INPUT_ELEMENT_DESC, VERTEX_LAYOUT_MAX>VertexElements;
 };
 
-//struct D3D12_SHADER_BYTECODE
-//{
-//    const void* pShaderBytecode;
-//    SIZE_T BytecodeLength;
-//};
 
 class XD3D12VertexShader :public XRHIVertexShader
 {

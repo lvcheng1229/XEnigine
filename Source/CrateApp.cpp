@@ -33,24 +33,25 @@ using namespace DirectX::PackedVector;
 #define STB_IMAGE_IMPLEMENTATION
 #include "File/stb_image.h"
 
-
+#include "Runtime/D3D12RHI/D3D12Shader.h"
 #include "Runtime/RenderCore/GlobalShader.h"
 class XLightPassVS :public XGloablShader
 {
 public:
 	static ShaderInfosUsedToCompile StaticShaderInfosUsedToCompile;
 };
-
-class XLightPassPS :public XGloablShader
-{
-public:
-	static ShaderInfosUsedToCompile StaticShaderInfosUsedToCompile;
-};
-
+//
+//class XLightPassPS :public XGloablShader
+//{
+//public:
+//	static ShaderInfosUsedToCompile StaticShaderInfosUsedToCompile;
+//};
+//
 XLightPassVS::ShaderInfosUsedToCompile XLightPassVS::StaticShaderInfosUsedToCompile(
-	L"XLightPassVS", L"DeferredLightVertexMain", L"LightPassVS", EShaderType::SV_Vertex);
-XLightPassPS::ShaderInfosUsedToCompile XLightPassPS::StaticShaderInfosUsedToCompile(
-	L"XLightPassPS", L"DeferredLightPixelMain", L"LightPassPS", EShaderType::SV_Pixel);
+	"XLightPassVS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightVertexShaders.hlsl", 
+	"DeferredLightVertexMain", EShaderType::SV_Vertex);
+//XLightPassPS::ShaderInfosUsedToCompile XLightPassPS::StaticShaderInfosUsedToCompile(
+//	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightVertexShaders.hlsl", EShaderType::SV_Pixel);
 
 
 struct RenderItem
@@ -420,7 +421,7 @@ bool CrateApp::Initialize()
     if(!D3DApp::Initialize())
         return false;
 
-	CompileGlobalShaderMap();
+	//CompileGlobalShaderMap();
 	
 
 	direct_ctx->OpenCmdList();
@@ -2200,7 +2201,13 @@ void CrateApp::BuildPSOs()
 	TestPSOInitializer.BlendState = TStaticBlendState<>::GetRHI();;
 	TestPSOInitializer.DepthStencilState= TStaticDepthStencilState<>::GetRHI();
 
-
+	CompileGlobalShaderMap();
+	//TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMap()->GetShader<XLightPassVS>();
+	//TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMap()->GetShader<XLightPassPS>();
+	//XRHIVertexShader* RHIVertexShader = VertexShader.GetVertexShader();
+	//XRHIPixelShader* RHIVPixelShader = PixelShader.GetPixelShader();
+	//XD3D12VertexShader* D3DVertexShader = static_cast<XD3D12VertexShader*>(RHIVertexShader);
+	//XD3D12PixelShader* D3DPixelShader = static_cast<XD3D12PixelShader*>(RHIVPixelShader);
 	//PrePass
 	{
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC DepthOnlyPSODesc;
@@ -2712,7 +2719,7 @@ void CrateApp::TempDelete()
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(138);
+	_CrtSetBreakAlloc(1425);
 	int* a = new int(5);
 	try
 	{
