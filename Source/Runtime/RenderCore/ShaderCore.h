@@ -1,26 +1,27 @@
 #pragma once
 #include "Runtime/HAL/PlatformTypes.h"
-#include "Runtime/Core/Template/XEngineTemplate.h"
+#include <string_view>
+
 class XShaderCodeReader
 {
-	XArrayView<uint8> ShaderCode;
+	std::string_view ShaderCode;
 public:
-	XShaderCodeReader(XArrayView<uint8> InShaderCode) :ShaderCode(InShaderCode) {}
+	XShaderCodeReader(std::string_view InShaderCode) :ShaderCode(InShaderCode) {}
 
 	size_t GetActualShaderCodeSize() const
 	{
 		return ShaderCode.size() - GetOptionalDataSize();
 	}
 
-	const uint8* FindOptionalData(uint8 InKey, uint8 ValueSize) const
+	const char* FindOptionalData(uint8 InKey, uint8 ValueSize) const
 	{
-		const uint8* End = ShaderCode.data() + ShaderCode.size();
+		const char* End = ShaderCode.data() + ShaderCode.size();
 
 		int32 LocalOptionalDataSize = GetOptionalDataSize();
 
-		const uint8* Start = End - LocalOptionalDataSize;
+		const char* Start = End - LocalOptionalDataSize;
 		End = End - sizeof(LocalOptionalDataSize);
-		const uint8* Current = Start;
+		const char* Current = Start;
 
 		while (Current < End)
 		{
@@ -41,7 +42,7 @@ public:
 
 	int32 GetOptionalDataSize()const
 	{
-		const uint8* End = ShaderCode.data() + ShaderCode.size();
+		const char* End = ShaderCode.data() + ShaderCode.size();
 		int32 OptionalDataSize = ((const int32*)End)[-1];
 		return OptionalDataSize;
 	}

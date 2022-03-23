@@ -3,14 +3,14 @@
 #include "D3D12Shader.h"
 
 
-std::shared_ptr<XRHIVertexShader> XD3D12PlatformRHI::RHICreateVertexShader(XArrayView<uint8> Code)
+std::shared_ptr<XRHIVertexShader> XD3D12PlatformRHI::RHICreateVertexShader(std::string_view Code)
 {
 	XD3D12VertexShader* VertexShader = new XD3D12VertexShader;
 	XShaderCodeReader ShaderCodeReader(Code);
 
-	const XShaderResourceCount* ResourceCount = (const XShaderResourceCount*)(ShaderCodeReader.FindOptionalData(
-		XShaderResourceCount::Key, sizeof(XShaderResourceCount)));
-	if (ResourceCount == 0) { X_Assert(false); return nullptr; }
+	const XShaderResourceCount* ResourceCount = (const XShaderResourceCount*)ShaderCodeReader.FindOptionalData(
+		XShaderResourceCount::Key, sizeof(XShaderResourceCount));
+	if (ResourceCount == 0) { return nullptr; }
 
 	//https://stackoverflow.com/questions/259297/how-do-you-copy-the-contents-of-an-array-to-a-stdvector-in-c-without-looping
 	//Finally, note that C-style arrays are perfectly valid containers for most STL algorithms
@@ -27,13 +27,13 @@ std::shared_ptr<XRHIVertexShader> XD3D12PlatformRHI::RHICreateVertexShader(XArra
 	return std::shared_ptr<XRHIVertexShader>(VertexShader);
 }
 
-std::shared_ptr<XRHIPixelShader> XD3D12PlatformRHI::RHICreatePixelShader(XArrayView<uint8> Code)
+std::shared_ptr<XRHIPixelShader> XD3D12PlatformRHI::RHICreatePixelShader(std::string_view Code)
 {
 	XD3D12PixelShader* PixelShader = new XD3D12PixelShader;
 	XShaderCodeReader ShaderCodeReader(Code);
 
-	const XShaderResourceCount* ResourceCount = (const XShaderResourceCount*)(ShaderCodeReader.FindOptionalData(
-		XShaderResourceCount::Key, sizeof(XShaderResourceCount)));
+	const XShaderResourceCount* ResourceCount = (const XShaderResourceCount*)ShaderCodeReader.FindOptionalData(
+		XShaderResourceCount::Key, sizeof(XShaderResourceCount));
 	if (ResourceCount == 0) { return nullptr; }
 
 	//https://stackoverflow.com/questions/259297/how-do-you-copy-the-contents-of-an-array-to-a-stdvector-in-c-without-looping

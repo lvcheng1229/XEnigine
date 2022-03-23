@@ -1,11 +1,11 @@
 #include "GlobalShader.h"
 
 XGlobalShaderMapInProjectUnit* GGlobalShaderMap = nullptr;
-XGlobalShaderMapInProjectUnit* GetGlobalShaderMap()
-{
-	return GGlobalShaderMap;
-}
-
+//XGlobalShaderMapInProjectUnit* GetGlobalShaderMap()
+//{
+//	return GGlobalShaderMap;
+//}
+//
 XGlobalShaderMapInProjectUnit::~XGlobalShaderMapInProjectUnit()
 {
 	for (auto iter = MapFromHashedFileIndexToPtr.begin(); iter != MapFromHashedFileIndexToPtr.end(); iter++)
@@ -15,7 +15,7 @@ XGlobalShaderMapInProjectUnit::~XGlobalShaderMapInProjectUnit()
 	MapFromHashedFileIndexToPtr.clear();
 }
 
-XGlobalShaderMapInFileUnit* XGlobalShaderMapInProjectUnit::FindOrAddShaderMapFileUnit(const XShaderInfos* ShaderInfoToCompile)
+XGlobalShaderMapInFileUnit* XGlobalShaderMapInProjectUnit::FindOrAddShaderMapFileUnit(const XShaderInfosUsedToCompile* ShaderInfoToCompile)
 {
 	std::size_t HashedFileIndex = ShaderInfoToCompile->GetHashedFileIndex();
 	auto iter = MapFromHashedFileIndexToPtr.find(HashedFileIndex);
@@ -31,6 +31,7 @@ XGlobalShaderMapInFileUnit* XGlobalShaderMapInProjectUnit::FindOrAddShaderMapFil
 	}
 	return ShaderMapInFileUnit;
 }
+<<<<<<< HEAD
 
 TShaderReference<XXShader> XGlobalShaderMapInProjectUnit::GetShader(XShaderInfos* ShaderInfo, int32 PermutationId) const
 {
@@ -44,6 +45,21 @@ TShaderReference<XXShader> XGlobalShaderMapInProjectUnit::GetShader(XShaderInfos
 	}
 	return TShaderReference<XXShader>();
 }
+=======
+//
+//TShaderReference<XXShader> XGlobalShaderMapInProjectUnit::GetShader(XShaderInfosUsedToCompile* ShaderInfo, int32 PermutationId) const
+//{
+//	auto iter = MapFromHashedFileIndexToPtr.find(ShaderInfo->GetHashedFileIndex());
+//	if (iter != MapFromHashedFileIndexToPtr.end())
+//	{
+//		XGlobalShaderMapInFileUnit* MapInFileUnit = iter->second;
+//		return TShaderReference<XXShader>(
+//			MapInFileUnit->GetShaderInfo()->GetShader(ShaderInfo->GetHashedEntryIndex(), 0),
+//			MapInFileUnit);
+//	}
+//	return TShaderReference<XXShader>();
+//}
+>>>>>>> parent of 13cbd5a (~~~)
 
 
 

@@ -27,38 +27,38 @@ class XGlobalShaderMapInProjectUnit
 {
 public:
 	~XGlobalShaderMapInProjectUnit();
-	XGlobalShaderMapInFileUnit* FindOrAddShaderMapFileUnit(const XShaderInfos* ShaderInfoToCompile);
-	
-	TShaderReference<XXShader> GetShader(XShaderInfos* ShaderInfo, int32 PermutationId = 0) const;
-	
-	template<typename XXShaderClass>
-	TShaderReference<XXShaderClass> GetShader(int32 PermutationId = 0)const
-	{
-		TShaderReference<XXShader> Shader = GetShader(&XXShaderClass::StaticShaderInfos, PermutationId);
-		return TShaderReference<XXShaderClass>::Cast(Shader);
-	}
-	
-	inline std::unordered_map<std::size_t, XGlobalShaderMapInFileUnit*>& GetGlobalShaderMap_HashMap()
-	{
-		return MapFromHashedFileIndexToPtr;
-	}
+	XGlobalShaderMapInFileUnit* FindOrAddShaderMapFileUnit(const XShaderInfosUsedToCompile* ShaderInfoToCompile);
+	//
+	//TShaderReference<XXShader> GetShader(XShaderInfosUsedToCompile* ShaderInfo, int32 PermutationId = 0) const;
+	//
+	//template<typename XXShaderClass>
+	//TShaderReference<XXShaderClass> GetShader(int32 PermutationId = 0)const
+	//{
+	//	TShaderReference<XXShader> Shader = GetShader(&XXShaderClass::StaticShaderInfosUsedToCompile, PermutationId);
+	//	return TShaderReference<XXShaderClass>::Cast(Shader);
+	//}
+	//
+	//inline std::unordered_map<std::size_t, XGlobalShaderMapInFileUnit*>& GetGlobalShaderMap_HashMap()
+	//{
+	//	return MapFromHashedFileIndexToPtr;
+	//}
 private:
 	std::unordered_map<std::size_t, XGlobalShaderMapInFileUnit*>MapFromHashedFileIndexToPtr;
 };
 
-extern XGlobalShaderMapInProjectUnit* GetGlobalShaderMap();
+//extern XGlobalShaderMapInProjectUnit* GetGlobalShaderMap();
 extern class XGlobalShaderMapInProjectUnit* GGlobalShaderMap;
 
 
-class XGloablShaderInfos : public XShaderInfos
+class XGloablShaderInfosUsedToCompile : public XShaderInfosUsedToCompile
 {
 public:
-	XGloablShaderInfos(
+	XGloablShaderInfosUsedToCompile(
 		const char* InShaderName,
 		const wchar_t* InSourceFileName,
 		const char* InEntryName,
 		EShaderType ShaderType) :
-		XShaderInfos(
+		XShaderInfosUsedToCompile(
 			EShaderTypeForDynamicCast::Global,
 			InShaderName,
 			InSourceFileName,
@@ -69,5 +69,5 @@ public:
 class XGloablShader : public XXShader
 {
 public:
-	using ShaderInfos = XGloablShaderInfos;
+	using ShaderInfosUsedToCompile = XGloablShaderInfosUsedToCompile;
 };
