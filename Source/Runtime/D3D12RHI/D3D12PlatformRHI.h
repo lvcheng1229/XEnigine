@@ -7,15 +7,14 @@
 class XD3D12PlatformRHI :public XPlatformRHI
 {
 public:
+	XD3D12PlatformRHI();
 	inline void Init() override {};
+	std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements) final override;
 	std::shared_ptr<XRHIDepthStencilState> RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer)final override;
 	std::shared_ptr<XRHIBlendState> RHICreateBlendState(const XBlendStateInitializerRHI& Initializer)final override;
 	std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8> Code)final override;
 	std::shared_ptr<XRHIPixelShader> RHICreatePixelShader(XArrayView<uint8> Code)final override;
-	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName)override
-	{
-
-	}
+	
 public:
 	static inline void Base_TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,

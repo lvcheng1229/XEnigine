@@ -22,11 +22,11 @@ public:
 	
 	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(
 		uint32 width, uint32 height, uint32 SizeZ,
-		bool bTextureArray, bool bCubeTexture, DXGI_FORMAT format,
+		bool bTextureArray, bool bCubeTexture, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
 	std::shared_ptr<XRHITexture3D> CreateD3D12Texture3D(
-		uint32 width, uint32 height, uint32 SizeZ, DXGI_FORMAT format,
+		uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
 	void RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override;
@@ -40,7 +40,15 @@ public:
 	void RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue);
 	void RHIDrawFullScreenQuad();
 
-	
+	void SetRenderTargetsAndViewPort(uint32 NumRTs,const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)override;
+	void SetRenderTargetsAndClear(const XRHISetRenderTargetsInfo& RTInfos);
+	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName)override
+	{
+		XRHISetRenderTargetsInfo OutRTInfo;
+		InInfo.ConvertToRenderTargetsInfo(OutRTInfo);
+		SetRenderTargetsAndClear(OutRTInfo);
+	}
+
 	void ResetCmdAlloc();
 private:
 public:

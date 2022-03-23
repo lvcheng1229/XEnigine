@@ -3,6 +3,7 @@
 #include "Runtime/Core/Template/XEngineTemplate.h"
 #include "RHIDefines.h"
 #include <array>
+#include "Runtime/Core/PixelFormat.h"
 enum class EShaderType
 {
 	SV_Vertex = 0,
@@ -12,7 +13,12 @@ enum class EShaderType
 };
 
 extern void RHIInit();
-
+struct FPixelFormatInfo
+{
+	const wchar_t* Name;
+	uint32 PlatformFormat;
+};
+extern FPixelFormatInfo GPixelFormats[(int)EPixelFormat::FT_MAX];
 
 using EShaderType_Underlying = std::underlying_type<EShaderType>::type;
 
@@ -57,4 +63,28 @@ public:
 	};
 	std::array<XRenderTarget, 8>RenderTargets;
 	XBlendStateInitializerRHI(std::array<XRenderTarget, 8>& InRenderTargets):RenderTargets(InRenderTargets) {}
+};
+
+
+struct XVertexElement
+{
+	uint32 SemanticIndex;
+	EVertexElementType Format;
+	uint32 InputSlot;
+	uint32 AlignedByteOffset;
+	XVertexElement()
+		: SemanticIndex(0),
+		Format(EVertexElementType::VET_None),
+		InputSlot(0),
+		AlignedByteOffset(0) {}
+
+	XVertexElement(
+		uint32 InSemanticIndex,
+		EVertexElementType InFormat,
+		uint32 InInputSlot,
+		uint32 InAlignedByteOffset)
+		:SemanticIndex(InSemanticIndex),
+		Format(InFormat),
+		InputSlot(InInputSlot),
+		AlignedByteOffset(InAlignedByteOffset) {}
 };

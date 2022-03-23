@@ -55,6 +55,56 @@ XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
 	"DeferredLightPixelMain",EShaderType::SV_Pixel);
 
 
+
+
+
+class XFullScreenQuadVertexLayout : public XRenderResource
+{
+public:
+	std::shared_ptr<XRHIVertexLayout> RHIVertexLayout;
+	virtual void InitRHI()override
+	{
+		XRHIVertexLayoutArray LayoutArray;
+		LayoutArray.push_back(XVertexElement(0, EVertexElementType::VET_Float2, 0, 0));
+		LayoutArray.push_back(XVertexElement(1, EVertexElementType::VET_Float2, 0, 0 + sizeof(XMFLOAT2)));
+		RHIVertexLayout = RHICreateVertexDeclaration(LayoutArray);
+	}
+
+	virtual void ReleaseRHI()override
+	{
+		RHIVertexLayout.reset();
+	}
+};
+
+TGlobalResource<XFullScreenQuadVertexLayout> GFullScreenLayout;
+
+
+class XSSRPassVS :public XGloablShader
+{
+public:
+	static ShaderInfos StaticShaderInfos;
+};
+
+class XSSRPassPS :public XGloablShader
+{
+public:
+	static ShaderInfos StaticShaderInfos;
+};
+XSSRPassVS::ShaderInfos XSSRPassVS::StaticShaderInfos(
+	"XSSRPassVS", L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl",
+	"VS", EShaderType::SV_Vertex);
+XSSRPassPS::ShaderInfos XSSRPassPS::StaticShaderInfos(
+	"XSSRPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl",
+	"PS", EShaderType::SV_Pixel);
+
+
+
+
+
+
+
+
+
 struct RenderItem
 {
 	RenderItem() = default; 
@@ -979,12 +1029,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	//Pass7 SSRPass
 	{
-		{
-			XRHITexture* SSRRTs = SSROutput.get();
-			XRHIRenderPassInfo RPInfos(1, &SSRRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
-			//TransitionRenderPassTargets(RHICmdList, RPInfo);
-		}
-
 		mCommandList->BeginEvent(1, "SSRPass", sizeof("SSRPass"));
 		mCommandList->SetPipelineState(SSRPassPSO.Get());
 		pass_state_manager->SetRootSignature(&SSRPassRootSig);
@@ -992,10 +1036,29 @@ void CrateApp::Renderer(const GameTimer& gt)
 		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["SSRPassPS"]);
 		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
 
-		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
-		RTViews[0] = static_cast<XD3D12Texture2D*>(SSROutput.get())->GetRenderTargetView();
-		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);
-		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
+		
+		{
+			XRHITexture* SSRRTs = SSROutput.get();
+			XRHIRenderPassInfo RPInfos(1, &SSRRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
+			direct_ctx->RHIBeginRenderPass(RPInfos, L"SSRPassPS");
+			RHICmdList.CacheActiveRenderTargets(RPInfos);
+
+
+
+			XGraphicsPSOInitializer GraphicsPSOInit;
+			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
+			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+
+			TShaderReference<XSSRPassVS> SSRVertexShader = GetGlobalShaderMap()->GetShader<XSSRPassVS>();
+			TShaderReference<XSSRPassPS> SSRPixelShader = GetGlobalShaderMap()->GetShader<XSSRPassPS>();
+			GraphicsPSOInit.BoundShaderState.RHIVertexShader= SSRVertexShader.GetVertexShader();
+			GraphicsPSOInit.BoundShaderState.RHIPixelShader= SSRPixelShader.GetPixelShader();
+			GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
+
+			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+			
+		}
+
 
 		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 0, TextureSceneColorDeffered.get());
 		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 1, TextureGBufferA.get());
@@ -1555,7 +1618,7 @@ void CrateApp::LoadTextures()
 		if (n == 3) { X_Assert(false); }
 		
 		TextureMetalBaseColor = direct_ctx->CreateD3D12Texture2D(w, h,1, false, false,
-			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+			EPixelFormat::FT_R8G8B8A8_UNORM_SRGB
 			,ETextureCreateFlags(TexCreate_SRGB),1
 			, BaseColorData);
 		stbi_image_free(BaseColorData);
@@ -1575,7 +1638,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 3] = 0b11111111;
 		}
 		TextureMetalNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n, 1, false, false,
-			DXGI_FORMAT_R8G8B8A8_UNORM
+			EPixelFormat::FT_R8G8B8A8_UNORM
 			,ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
 		stbi_image_free(NormalMapData);
@@ -1596,7 +1659,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 3] = 0b11111111;
 		}
 		TextureRoughness = direct_ctx->CreateD3D12Texture2D(w_r, h_r, 1, false, false,
-			DXGI_FORMAT_R8G8B8A8_UNORM
+			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
 		stbi_image_free(RoughnessMapData);
@@ -1609,7 +1672,7 @@ void CrateApp::LoadTextures()
 		if (n == 3) { X_Assert(false); }
 		
 		TextureWoodBaseColor = direct_ctx->CreateD3D12Texture2D(w, h, 1,false, false,
-			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+			EPixelFormat::FT_R8G8B8A8_UNORM_SRGB
 			, ETextureCreateFlags(TexCreate_SRGB), 1
 			, BaseColorData);
 		stbi_image_free(BaseColorData);
@@ -1629,7 +1692,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 3] = 0b11111111;
 		}
 		TextureWoodNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n, 1, false, false,
-			DXGI_FORMAT_R8G8B8A8_UNORM
+			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
 		stbi_image_free(NormalMapData);
@@ -1639,67 +1702,67 @@ void CrateApp::LoadTextures()
 
 	{
 		TextureGBufferA = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
-			DXGI_FORMAT_R32G32B32A32_FLOAT
+			EPixelFormat::FT_R16G16B16A16_FLOAT
 			,ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		TextureGBufferB = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
-			DXGI_FORMAT_R32G32B32A32_FLOAT
+			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		TextureGBufferC = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
-			DXGI_FORMAT_R32G32B32A32_FLOAT
+			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		TextureGBufferD = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
-			DXGI_FORMAT_R8G8B8A8_UNORM
+			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		TextureSceneColorDeffered = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
-			DXGI_FORMAT_R32G32B32A32_FLOAT
+			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
 		ShadowTexture0 = direct_ctx->CreateD3D12Texture2D(ShadowMapWidth, ShadowMapHeight, 1, false, false,
-			DXGI_FORMAT_R24G8_TYPELESS
+			EPixelFormat::FT_R24G8_TYPELESS
 			, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
 		ShadowMaskTexture = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
-			DXGI_FORMAT_R8G8B8A8_UNORM
+			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
 		FurthestHZBOutput0 = direct_ctx->CreateD3D12Texture2D(512, 512, 1, false, false,
-			DXGI_FORMAT_R16_FLOAT
+			EPixelFormat::FT_R16_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 5
 			, nullptr);
 
 		SSROutput = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
-			DXGI_FORMAT_R8G8B8A8_UNORM
+			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
 		TransmittanceLutUAV = direct_ctx->CreateD3D12Texture2D(256, 64, 1, false, false,
-			DXGI_FORMAT_R11G11B10_FLOAT
+			EPixelFormat::FT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
 		MultiScatteredLuminanceLutUAV = direct_ctx->CreateD3D12Texture2D(32, 32, 1, false, false,
-			DXGI_FORMAT_R11G11B10_FLOAT
+			EPixelFormat::FT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
 		SkyViewLutUAV = direct_ctx->CreateD3D12Texture2D(192, 104, 1, false, false,
-			DXGI_FORMAT_R11G11B10_FLOAT
+			EPixelFormat::FT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
 		CameraAerialPerspectiveVolumeUAV = direct_ctx->CreateD3D12Texture3D(32, 32, 16,
-			DXGI_FORMAT_R16G16B16A16_FLOAT
+			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 	}
@@ -2200,9 +2263,6 @@ void CrateApp::BuildShapeGeometry()
 
 void CrateApp::BuildPSOs()
 {
-	//RHIInit()
-	//XRenderResource::InitRHIForAllResources();
-
 	XRHIBlendState* TestBlend = TStaticBlendState<>::GetRHI();
 	XGraphicsPSOInitializer TestPSOInitializer;
 	TestPSOInitializer.BlendState = TStaticBlendState<>::GetRHI();;
@@ -2390,9 +2450,9 @@ void CrateApp::BuildPSOs()
 		opaquePsoDesc.SampleMask = UINT_MAX;
 		opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		opaquePsoDesc.NumRenderTargets = 4;
-		opaquePsoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		opaquePsoDesc.RTVFormats[1] = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		opaquePsoDesc.RTVFormats[2] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		opaquePsoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		opaquePsoDesc.RTVFormats[1] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		opaquePsoDesc.RTVFormats[2] = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		opaquePsoDesc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM;
 		opaquePsoDesc.SampleDesc.Count = 1;
 		opaquePsoDesc.SampleDesc.Quality = 0;
@@ -2459,7 +2519,7 @@ void CrateApp::BuildPSOs()
 		LightPassPsoDesc.SampleMask = UINT_MAX;
 		LightPassPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		LightPassPsoDesc.NumRenderTargets = 1;
-		LightPassPsoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		LightPassPsoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		LightPassPsoDesc.SampleDesc.Count = 1;
 		LightPassPsoDesc.SampleDesc.Quality = 0;
 		LightPassPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
@@ -2471,7 +2531,11 @@ void CrateApp::BuildPSOs()
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC SSRPsoDesc;
 
 		ZeroMemory(&SSRPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		SSRPsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
+
+		XD3D12VertexLayout* Layout = static_cast<XD3D12VertexLayout*>(GFullScreenLayout.RHIVertexLayout.get());
+		SSRPsoDesc.InputLayout = { Layout->VertexElements.data(), (UINT)Layout->VertexElements.size()};
+		//SSRPsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
+		
 		SSRPsoDesc.pRootSignature = SSRPassRootSig.GetDXRootSignature();
 		SSRPsoDesc.VS =
 		{
@@ -2532,7 +2596,7 @@ void CrateApp::BuildPSOs()
 		IBLPsoDesc.SampleMask = UINT_MAX;
 		IBLPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		IBLPsoDesc.NumRenderTargets = 1;
-		IBLPsoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		IBLPsoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		IBLPsoDesc.SampleDesc.Count = 1;
 		IBLPsoDesc.SampleDesc.Quality = 0;
 		IBLPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
@@ -2577,7 +2641,7 @@ void CrateApp::BuildPSOs()
 		SkyAtmosphereCombinePsoDesc.SampleMask = UINT_MAX;
 		SkyAtmosphereCombinePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		SkyAtmosphereCombinePsoDesc.NumRenderTargets = 1;
-		SkyAtmosphereCombinePsoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		SkyAtmosphereCombinePsoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		SkyAtmosphereCombinePsoDesc.SampleDesc.Count = 1;
 		SkyAtmosphereCombinePsoDesc.SampleDesc.Quality = 0;
 		SkyAtmosphereCombinePsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;

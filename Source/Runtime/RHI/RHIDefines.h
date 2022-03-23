@@ -9,6 +9,7 @@ enum ETextureCreateFlags
 	TexCreate_UAV = 1 << 4,
 };
 
+
 enum class EBlendOperation
 {
 	BO_Add,
@@ -38,4 +39,16 @@ enum class EDepthStencilLoadAction :uint8
 	ENoAction,
 	ELoad,
 	EClear,
+};
+
+enum class EVertexElementType
+{
+	VET_None,
+	VET_Float1,
+	VET_Float2,
+	VET_Float3,
+	VET_Float4,
+	VET_PackedNormal,	// FPackedNormal
+	VET_MAX,
+	VET_NumBits = 5,
 };

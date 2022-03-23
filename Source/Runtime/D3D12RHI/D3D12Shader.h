@@ -2,16 +2,19 @@
 
 #include "Runtime/RenderCore/ShaderCore.h"
 #include <vector>
-#include <array>
+
 #include <d3d12.h>
 #include "Runtime/RHI/RHIResource.h"
 #include "D3D12Rootsignature.h"
 
-#define VERTEX_LAYOUT_MAX 16
+
+using D3DVertexLayoutArray = std::vector<D3D12_INPUT_ELEMENT_DESC>;
 class XD3D12VertexLayout :public XRHIVertexLayout
 {
 public:
-	std::array<D3D12_INPUT_ELEMENT_DESC, VERTEX_LAYOUT_MAX>VertexElements;
+	D3DVertexLayoutArray VertexElements;
+	explicit XD3D12VertexLayout(const D3DVertexLayoutArray& InVertexElements) :
+		VertexElements(InVertexElements) {}
 };
 
 

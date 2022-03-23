@@ -116,7 +116,7 @@ void D3DApp::OnResize()
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
 	TextureDepthStencil = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight,1,false,false,
-		DXGI_FORMAT_R24G8_TYPELESS
+		EPixelFormat::FT_R24G8_TYPELESS
 		, ETextureCreateFlags(TexCreate_DepthStencilTargetable| TexCreate_ShaderResource)
 		,1
 		, nullptr);
@@ -333,6 +333,7 @@ bool D3DApp::InitDirect3D()
 
 	direct_ctx = abstrtact_device.GetDirectContex(0);
 	direct_ctx->OpenCmdList();
+	RHICmdList.SetContext(direct_ctx);
 
 	pass_state_manager = direct_ctx->GetPassStateManager();
 	//pass_state_manager.Create(&Device, direct_ctx);

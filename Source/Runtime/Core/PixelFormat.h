@@ -1,0 +1,12 @@
+#pragma once
+enum class EPixelFormat
+{
+	FT_Unknown = 0,
+	FT_R16G16B16A16_FLOAT = 1,
+	FT_R8G8B8A8_UNORM = 2,
+	FT_R8G8B8A8_UNORM_SRGB = 3,
+	FT_R24G8_TYPELESS = 4,
+	FT_R11G11B10_FLOAT = 5,
+	FT_R16_FLOAT = 6,
+	FT_MAX = 7,
+};

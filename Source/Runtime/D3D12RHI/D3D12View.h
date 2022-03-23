@@ -12,7 +12,8 @@ protected:
 public:
 	inline bool IsDsv() { return IsDSV; };
 	inline D3D12_CPU_DESCRIPTOR_HANDLE GetCPUPtr() { return cpu_ptr; }
-	inline XD3D12Resource* GetResource() { return pResource; };
+	inline XD3D12Resource* GetResource() { return pResource; }
+
 };
 
 

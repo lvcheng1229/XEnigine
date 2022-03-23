@@ -25,8 +25,8 @@ public:
 		ForAllResources([](XRenderResource* Resource) { Resource->InitRHI(); });
 	}
 
-	void InitResource();
-
+	virtual void InitResource();
+	virtual void ReleaseResource() {};
 	virtual void InitRHI() {}
 	virtual void ReleaseRHI() {}
 private:
@@ -35,3 +35,28 @@ private:
 };
 
 extern void BeginInitResource(XRenderResource* Resource);
+
+template<typename ResourceClass>
+class TGlobalResource : public ResourceClass
+{
+public:
+	TGlobalResource()
+	{
+		InitGlobalResource();
+	}
+private:
+private:
+
+
+	void InitGlobalResource()
+	{
+		//if (IsInRenderingThread())
+		//{
+		//	((ResourceType*)this)->InitResource();
+		//}
+		//else
+		{
+			BeginInitResource((ResourceClass*)this);
+		}
+	}
+};

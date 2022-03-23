@@ -29,16 +29,16 @@ void XD3DDirectContex::CloseCmdList()
 }
 
 std::shared_ptr<XRHITexture2D> XD3DDirectContex::CreateD3D12Texture2D(
-	uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, DXGI_FORMAT format,
+	uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, EPixelFormat Format,
 	ETextureCreateFlags flag, uint32 NumMipsIn,uint8* tex_data)
 {
 	return std::shared_ptr<XRHITexture2D>(
-		AbsDevice->CreateD3D12Texture2D(&cmd_dirrect_list, width, height, SizeZ, bTextureArray, bCubeTexture, format, flag, NumMipsIn, tex_data));
+		AbsDevice->CreateD3D12Texture2D(&cmd_dirrect_list, width, height, SizeZ, bTextureArray, bCubeTexture, Format, flag, NumMipsIn, tex_data));
 }
 
-std::shared_ptr<XRHITexture3D> XD3DDirectContex::CreateD3D12Texture3D(uint32 width, uint32 height, uint32 SizeZ, DXGI_FORMAT format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
+std::shared_ptr<XRHITexture3D> XD3DDirectContex::CreateD3D12Texture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
 {
-	return std::shared_ptr<XRHITexture3D>(AbsDevice->CreateD3D12Texture3D(&cmd_dirrect_list, width, height, SizeZ, format, flag, NumMipsIn, tex_data));
+	return std::shared_ptr<XRHITexture3D>(AbsDevice->CreateD3D12Texture3D(&cmd_dirrect_list, width, height, SizeZ, Format, flag, NumMipsIn, tex_data));
 }
 
 void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr)
@@ -183,6 +183,54 @@ void XD3DDirectContex::RHIDrawFullScreenQuad()
 	///mCommandList.Get()->IASetIndexBuffer(&ri->Geo->IndexBufferView());
 	///cmd_dirrect_list->IASetVertexBuffers(0, 1, );
 	///cmd_dirrect_list->DrawInstanced(3, 1, 0, 0);
+}
+
+void XD3DDirectContex::SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)
+{
+	if (DSView->Texture != nullptr)
+	{
+		XD3D12TextureBase* DSTex = GetD3D12TextureFromRHITexture(DSView->Texture);
+		DSVPtr = DSTex->GeDepthStencilView();
+	}
+	else
+	{
+		DSVPtr = nullptr;
+	}
+	
+	CurrentNumRT = NumRTs;
+
+	for (uint32 i = 0; i < CurrentNumRT; i++)
+	{
+		XD3D12TextureBase* RTTex = GetD3D12TextureFromRHITexture(RTViews[i].Texture);
+		RTPtrArrayPtr[i] = RTTex->GetRenderTargetView();
+	}
+
+	PassStateManager.SetRenderTarget(CurrentNumRT, RTPtrArrayPtr, DSVPtr);
+
+	if (RTPtrArrayPtr[0] != nullptr)
+	{
+		if (RTPtrArrayPtr[0]->GetDesc().ViewDimension == D3D12_RTV_DIMENSION_TEXTURE2D)
+		{
+			RHISetViewport(0.0f, 0.0f, 0.0f,
+				RTPtrArrayPtr[0]->GetResource()->GetResource()->GetDesc().Width,
+				RTPtrArrayPtr[0]->GetResource()->GetResource()->GetDesc().Height,
+				1.0f);
+		}
+		else
+		{
+			X_Assert(false);
+		}
+	}
+	else
+	{
+		X_Assert(false);
+	}
+}
+static float ClearColorBlack[4] = { 0,0,0,0 };
+void XD3DDirectContex::SetRenderTargetsAndClear(const XRHISetRenderTargetsInfo& RTInfos)
+{
+	this->SetRenderTargetsAndViewPort(RTInfos.NumColorRenderTargets, RTInfos.ColorRenderTarget, &RTInfos.DepthStencilRenderTarget);
+	this->RHIClearMRT(RTInfos.bClearColor, RTInfos.bClearDepth/*RTInfos.bClearStencil*/, ClearColorBlack, 0.0f, 0);
 }
 
 

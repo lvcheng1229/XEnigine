@@ -59,7 +59,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 	XD3D12DirectCommandList* x_cmd_list, 
 	uint32 width, uint32 height, uint32 SizeZ,
 	bool bTextureArray, bool bCubeTexture,
-	DXGI_FORMAT format, ETextureCreateFlags flag,uint32 NumMipsIn,uint8* tex_data)
+	EPixelFormat Format, ETextureCreateFlags flag,uint32 NumMipsIn,uint8* tex_data)
 {
 	bool bCreateShaderResource = true;
 	bool bCreateRTV = false;
@@ -75,6 +75,8 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 	XD3D12Resource* TextureResource = &ResourceManagerTempVec[TempResourceIndex];
 	TempResourceIndex++;
 
+	DXGI_FORMAT DX_Format = (DXGI_FORMAT)GPixelFormats[(int)Format].PlatformFormat;
+
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // If bCreateTexture2DArray
 	textureDesc.Alignment = MIN_PLACED_BUFFER_SIZE;
@@ -82,7 +84,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 	textureDesc.Height = height;
 	textureDesc.DepthOrArraySize = SizeZ;
 	textureDesc.MipLevels = NumMipsIn;
-	textureDesc.Format = format;
+	textureDesc.Format = DX_Format;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
 	//textureDesc.Layout = ;
@@ -112,8 +114,8 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 		bCreateUAV = true;
 	}
 
-	const DXGI_FORMAT PlatformShaderResourceFormat = FindShaderResourceDXGIFormat(format);
-	const DXGI_FORMAT PlatformDepthStencilFormat = FindDepthStencilDXGIFormat(format);
+	const DXGI_FORMAT PlatformShaderResourceFormat = FindShaderResourceDXGIFormat(DX_Format);
+	const DXGI_FORMAT PlatformDepthStencilFormat = FindDepthStencilDXGIFormat(DX_Format);
 
 	const XD3D12ResourceTypeHelper Type(textureDesc, D3D12_HEAP_TYPE_DEFAULT);
 	const D3D12_RESOURCE_STATES InitialState = Type.GetOptimalInitialState(false);
@@ -176,7 +178,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 		TextureResource->GetResource()->SetName(str.c_str());
 	}
 	
-	XD3D12Texture2D* TextureRet = new XD3D12Texture2D();
+	XD3D12Texture2D* TextureRet = new XD3D12Texture2D(Format);
 	
 	if (bCreateShaderResource)
 	{
@@ -307,7 +309,13 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 	return TextureRet;
 }
 
-XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ, DXGI_FORMAT format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
+XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
+	XD3D12DirectCommandList* x_cmd_list, 
+	uint32 width, uint32 height, uint32 SizeZ, 
+	EPixelFormat Format,
+	ETextureCreateFlags flag, 
+	uint32 NumMipsIn, 
+	uint8* tex_data)
 {
 	bool bCreateShaderResource = true;
 	bool bCreateRTV = false;
@@ -318,6 +326,8 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandL
 	XD3D12Resource* TextureResource = &ResourceManagerTempVec[TempResourceIndex];
 	TempResourceIndex++;
 
+	DXGI_FORMAT DX_Format = (DXGI_FORMAT)GPixelFormats[(int)Format].PlatformFormat;
+
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
 	textureDesc.Alignment = MIN_PLACED_BUFFER_SIZE;
@@ -325,7 +335,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandL
 	textureDesc.Height = height;
 	textureDesc.DepthOrArraySize = SizeZ;
 	textureDesc.MipLevels = NumMipsIn;
-	textureDesc.Format = format;
+	textureDesc.Format = DX_Format;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
@@ -341,8 +351,8 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandL
 		bCreateUAV = true;
 	}
 
-	const DXGI_FORMAT PlatformShaderResourceFormat = FindShaderResourceDXGIFormat(format);
-	const DXGI_FORMAT PlatformDepthStencilFormat = FindDepthStencilDXGIFormat(format);
+	const DXGI_FORMAT PlatformShaderResourceFormat = FindShaderResourceDXGIFormat(DX_Format);
+	const DXGI_FORMAT PlatformDepthStencilFormat = FindDepthStencilDXGIFormat(DX_Format);
 
 	const XD3D12ResourceTypeHelper Type(textureDesc, D3D12_HEAP_TYPE_DEFAULT);
 	const D3D12_RESOURCE_STATES InitialState = Type.GetOptimalInitialState(false);
@@ -388,7 +398,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(XD3D12DirectCommandL
 		TextureResource->GetResource()->SetName(str.c_str());
 	}
 
-	XD3D12Texture3D* TextureRet = new XD3D12Texture3D();
+	XD3D12Texture3D* TextureRet = new XD3D12Texture3D(Format);
 	if (bCreateShaderResource)
 	{
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

@@ -40,6 +40,7 @@ private:
 class XD3D12Texture2D :public XRHITexture2D, public XD3D12TextureBase
 {
 public:
+	XD3D12Texture2D(EPixelFormat FormatIn) :XRHITexture2D(FormatIn) {}
 	virtual void* GetTextureBaseRHI() final override
 	{
 		return static_cast<XD3D12TextureBase*>(this);
@@ -49,6 +50,7 @@ public:
 class XD3D12Texture3D :public XRHITexture3D, public XD3D12TextureBase
 {
 public:
+	XD3D12Texture3D(EPixelFormat FormatIn) :XRHITexture3D(FormatIn) {}
 	virtual void* GetTextureBaseRHI() final override
 	{
 		return static_cast<XD3D12TextureBase*>(this);

@@ -17,7 +17,7 @@
 #include "Runtime/D3D12RHI/D3D12View.h"
 #include "Runtime/D3D12RHI/D3D12PassStateManager.h"
 #include "Runtime/D3D12RHI/D3D12Viewport.h"
-
+#include "Runtime/RHI/RHICommandList.h"
 
 #include "d3dUtil.h"
 #include "GameTimer.h"
@@ -63,7 +63,7 @@ public:
 
     XD3D12CommandQueue* direct_cmd_queue;
     XD3DDirectContex* direct_ctx;
-
+    XRHICommandList RHICmdList;
 
 
     XD3D12DescArrayManager* RenderTargetDescArrayManager;
