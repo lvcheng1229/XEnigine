@@ -3,7 +3,7 @@
 
 std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShaderFromCode(int32 ShaderIndex)
 {
-	const XShaderMapStoreCodesInFileUnit::XShaderEntry& ShaderEntry = Code->ShaderEntries[ShaderIndex];
+	const XShaderMapStoreCodes::XShaderEntry& ShaderEntry = Code->ShaderEntries[ShaderIndex];
 	
 	const EShaderType ShaderType = ShaderEntry.Shadertype;
 	std::shared_ptr<XRHIShader> RHIShaderRef;
@@ -20,37 +20,37 @@ std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShade
 
 XShaderMapBase::~XShaderMapBase()
 {
-	delete ShadersInfosStored;
+	delete XShadersStored;
 }
 
 
-void XShaderMapStoreCodesInFileUnit::AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo)
+void XShaderMapStoreCodes::AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo)
 {
 	XShaderEntry ShaderEntry;
 	ShaderEntry.Code = OutputInfo.ShaderCode;
 	ShaderEntry.Shadertype = OutputInfo.Shadertype;
 	ShaderEntries.push_back(std::move(ShaderEntry));
 
-	MapFromCodeHashToEntry[OutputInfo.SourceCodeHash] = ShaderEntries.size() - 1;
+	MapFCodeHashToEntryIndex[OutputInfo.SourceCodeHash] = ShaderEntries.size() - 1;
 }
 
-XXShader* XShaderMapStoreShadersInfoInFileUnit::FindOrAddShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)
+XXShader* XShaderMapStoreXShaders::FindOrAddXShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)
 {
 	const std::size_t Index = HashedEntryIndex;
-	auto iter = MapFromHashedEntryIndexToShaderPtrArrayIndex.find(Index);
-	if (iter != MapFromHashedEntryIndexToShaderPtrArrayIndex.end())
+	auto iter = MapHashedEntryIndexToXShaderIndex.find(Index);
+	if (iter != MapHashedEntryIndexToXShaderIndex.end())
 	{
 		return ShaderPtrArray[iter->second].get();
 	}
 	ShaderPtrArray.push_back(std::shared_ptr<XXShader>(Shader));
-	MapFromHashedEntryIndexToShaderPtrArrayIndex[Index] = ShaderPtrArray.size() - 1;
+	MapHashedEntryIndexToXShaderIndex[Index] = ShaderPtrArray.size() - 1;
 	return ShaderPtrArray.back().get();
 }
 
-XXShader* XShaderMapStoreShadersInfoInFileUnit::GetShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
+XXShader* XShaderMapStoreXShaders::GetXShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
 {
-	auto iter = MapFromHashedEntryIndexToShaderPtrArrayIndex.find(HashedEntryIndex);
-	X_Assert(iter != MapFromHashedEntryIndexToShaderPtrArrayIndex.end());
+	auto iter = MapHashedEntryIndexToXShaderIndex.find(HashedEntryIndex);
+	X_Assert(iter != MapHashedEntryIndexToXShaderIndex.end());
 	std::size_t ShaderPtrArrayIndex = iter->second;
 	return ShaderPtrArray[ShaderPtrArrayIndex].get();
 }

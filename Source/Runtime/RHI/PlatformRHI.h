@@ -12,6 +12,7 @@ public:
 	virtual std::shared_ptr<XRHIBlendState> RHICreateBlendState(const XBlendStateInitializerRHI& Initializer) = 0;
 	virtual std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8> Code) = 0;
 	virtual std::shared_ptr<XRHIPixelShader> RHICreatePixelShader(XArrayView<uint8> Code) = 0;
+	virtual void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName) = 0;
 };
 
 extern XPlatformRHI* GPlatformRHI;

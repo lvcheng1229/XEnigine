@@ -77,3 +77,38 @@ public:
 	XRHIBlendState* BlendState;
 	XRHIDepthStencilState* DepthStencilState;
 };
+
+struct XRHIRenderPassInfo
+{
+	struct XColorTarget
+	{
+		XRHITexture* RenderTarget;
+		ERenderTargetLoadAction LoadAction;
+	};
+	XColorTarget RenderTargets[8];
+
+	struct EDepthStencilTarget
+	{
+		XRHITexture* DepthStencilTarget;
+		EDepthStencilLoadAction LoadAction;
+	};
+	EDepthStencilTarget DepthStencilRenderTarget;
+
+	explicit XRHIRenderPassInfo(
+		int NumColorRTs,
+		XRHITexture* ColorRTs[],
+		ERenderTargetLoadAction ColorLoadAction,
+		XRHITexture* DepthRT,
+		EDepthStencilLoadAction DSLoadAction)
+	{
+		for (int i = 0; i < NumColorRTs; i++)
+		{
+			RenderTargets[i].RenderTarget = ColorRTs[i];
+			RenderTargets[i].LoadAction = ColorLoadAction;
+		}
+		memset(&RenderTargets[NumColorRTs], 0, sizeof(XColorTarget) * (8 - NumColorRTs));
+
+		DepthStencilRenderTarget.DepthStencilTarget = DepthRT;
+		DepthStencilRenderTarget.LoadAction = DSLoadAction;
+	}
+};

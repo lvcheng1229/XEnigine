@@ -25,3 +25,17 @@ enum class ECompareFunction
 	CF_Greater,
 	CF_Always,
 };
+
+enum class ERenderTargetLoadAction :uint8
+{
+	ENoAction,
+	ELoad,
+	EClear,
+};
+
+enum class EDepthStencilLoadAction :uint8
+{
+	ENoAction,
+	ELoad,
+	EClear,
+};

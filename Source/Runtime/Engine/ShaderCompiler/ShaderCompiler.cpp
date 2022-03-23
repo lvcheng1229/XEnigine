@@ -33,7 +33,6 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 
 		Output.Shadertype = Input.Shadertype;
 		Output.ShaderCode.clear();
-		//https://stackoverflow.com/questions/259297/how-do-you-copy-the-contents-of-an-array-to-a-stdvector-in-c-without-looping
 		Output.ShaderCode.insert(
 			Output.ShaderCode.end(),
 			static_cast<uint8*>(CodeGened->GetBufferPointer()),
@@ -104,15 +103,15 @@ void CompileGlobalShaderMap()
 			XGlobalShaderMapInFileUnit* ShaderFileUnit = GGlobalShaderMap->FindOrAddShaderMapFileUnit((*iter));
 			
 			//first:store source code
-			ShaderFileUnit->GetResourceCode()->AddShaderCompilerOutput(Output);
-			std::size_t HashIndex = ShaderFileUnit->GetResourceCode()->GetEntryIndexByCodeHash(Output.SourceCodeHash);
+			ShaderFileUnit->GetShaderMapStoreCodes()->AddShaderCompilerOutput(Output);
+			std::size_t HashIndex = ShaderFileUnit->GetShaderMapStoreCodes()->GetEntryIndexByCodeHash(Output.SourceCodeHash);
 			//second: shaders info
 			XXShader* Shader = new XXShader(*iter, &Output);
 			Shader->SetRHIShaderIndex(HashIndex);
-			ShaderFileUnit->GetShaderInfo()->FindOrAddShader((*iter)->GetHashedEntryIndex(), Shader, 0);
+			ShaderFileUnit->GetShaderMapStoreXShaders()->FindOrAddXShader((*iter)->GetHashedEntryIndex(), Shader, 0);
 		}
-		//
-		////third: RHIShader
+		
+		//third: RHIShader
 		std::unordered_map<std::size_t, XGlobalShaderMapInFileUnit*>ShaderMapFileUnit = GGlobalShaderMap->GetGlobalShaderMap_HashMap();
 		for (auto iter = ShaderMapFileUnit.begin(); iter != ShaderMapFileUnit.end(); iter++)
 		{

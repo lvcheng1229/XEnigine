@@ -979,6 +979,12 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	//Pass7 SSRPass
 	{
+		{
+			XRHITexture* SSRRTs = SSROutput.get();
+			XRHIRenderPassInfo RPInfos(1, &SSRRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
+			//TransitionRenderPassTargets(RHICmdList, RPInfo);
+		}
+
 		mCommandList->BeginEvent(1, "SSRPass", sizeof("SSRPass"));
 		mCommandList->SetPipelineState(SSRPassPSO.Get());
 		pass_state_manager->SetRootSignature(&SSRPassRootSig);

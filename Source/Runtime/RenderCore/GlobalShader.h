@@ -3,7 +3,7 @@
 
 //#pragma region GloablShaderMap
 //
-class XGloablShaderMapStoreShadersInfoInFileUnit :public XShaderMapStoreShadersInfoInFileUnit
+class XGloablShaderMapStoreShadersInfoInFileUnit :public XShaderMapStoreXShaders
 {
 	friend class XGlobalShaderMapInFileUnit;
 public:
