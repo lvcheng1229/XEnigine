@@ -38,20 +38,21 @@ using namespace DirectX::PackedVector;
 class XLightPassVS :public XGloablShader
 {
 public:
-	static ShaderInfosUsedToCompile StaticShaderInfosUsedToCompile;
+	static ShaderInfos StaticShaderInfos;
 };
-//
-//class XLightPassPS :public XGloablShader
-//{
-//public:
-//	static ShaderInfosUsedToCompile StaticShaderInfosUsedToCompile;
-//};
-//
-XLightPassVS::ShaderInfosUsedToCompile XLightPassVS::StaticShaderInfosUsedToCompile(
+
+class XLightPassPS :public XGloablShader
+{
+public:
+	static ShaderInfos StaticShaderInfos;
+};
+
+XLightPassVS::ShaderInfos XLightPassVS::StaticShaderInfos(
 	"XLightPassVS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightVertexShaders.hlsl", 
 	"DeferredLightVertexMain", EShaderType::SV_Vertex);
-//XLightPassPS::ShaderInfosUsedToCompile XLightPassPS::StaticShaderInfosUsedToCompile(
-//	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightVertexShaders.hlsl", EShaderType::SV_Pixel);
+XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
+	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightPixelShaders.hlsl", 
+	"DeferredLightPixelMain",EShaderType::SV_Pixel);
 
 
 struct RenderItem
@@ -2208,12 +2209,13 @@ void CrateApp::BuildPSOs()
 	TestPSOInitializer.DepthStencilState= TStaticDepthStencilState<>::GetRHI();
 
 	CompileGlobalShaderMap();
-	//TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMap()->GetShader<XLightPassVS>();
-	//TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMap()->GetShader<XLightPassPS>();
-	//XRHIVertexShader* RHIVertexShader = VertexShader.GetVertexShader();
-	//XRHIPixelShader* RHIVPixelShader = PixelShader.GetPixelShader();
-	//XD3D12VertexShader* D3DVertexShader = static_cast<XD3D12VertexShader*>(RHIVertexShader);
-	//XD3D12PixelShader* D3DPixelShader = static_cast<XD3D12PixelShader*>(RHIVPixelShader);
+	TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMap() ->GetShader<XLightPassVS>();
+	TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMap()->GetShader<XLightPassPS>();
+	XRHIVertexShader* RHIVertexShader = VertexShader.GetVertexShader();
+	XRHIPixelShader* RHIVPixelShader = PixelShader.GetPixelShader();
+	XD3D12VertexShader* D3DVertexShader = static_cast<XD3D12VertexShader*>(RHIVertexShader);
+	XD3D12PixelShader* D3DPixelShader = static_cast<XD3D12PixelShader*>(RHIVPixelShader);
+
 	//PrePass
 	{
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC DepthOnlyPSODesc;
@@ -2438,16 +2440,17 @@ void CrateApp::BuildPSOs()
 		ZeroMemory(&LightPassPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 		LightPassPsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
 		LightPassPsoDesc.pRootSignature = LightPassRootSig.GetDXRootSignature();
-		LightPassPsoDesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["LightPassVS"].GetByteCode()->GetBufferPointer()),
-			mShaders["LightPassVS"].GetByteCode()->GetBufferSize()
-		};
-		LightPassPsoDesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["LightPassPS"].GetByteCode()->GetBufferPointer()),
-			mShaders["LightPassPS"].GetByteCode()->GetBufferSize()
-		};
+		LightPassPsoDesc.VS = D3DVertexShader->D3DByteCode;
+		//{
+		//	D3DVertexShader->D3DByteCode;
+		//	reinterpret_cast<BYTE*>(mShaders["LightPassVS"].GetByteCode()->GetBufferPointer()),
+		//	mShaders["LightPassVS"].GetByteCode()->GetBufferSize()
+		//};
+		LightPassPsoDesc.PS = D3DPixelShader->D3DByteCode;
+		//{
+		//	reinterpret_cast<BYTE*>(mShaders["LightPassPS"].GetByteCode()->GetBufferPointer()),
+		//	mShaders["LightPassPS"].GetByteCode()->GetBufferSize()
+		//};
 		LightPassPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		LightPassPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		LightPassPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -2725,7 +2728,7 @@ void CrateApp::TempDelete()
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	_CrtSetBreakAlloc(1425);
+	//_CrtSetBreakAlloc(1456);
 	int* a = new int(5);
 	try
 	{
