@@ -1,8 +1,21 @@
 #pragma once
 #include "Runtime/RHI/RHIResource.h"
-#include "D3D12Rootsignature.h"
+#include "Runtime/HAL/Mch.h"
+#include <d3d12.h>
+class XD3D12RootSignature;
 class XD3D12PSOStoreID3DPSO
 {
+public:
+	XD3D12PSOStoreID3DPSO() {};
+	
+	inline ID3D12PipelineState** GetID3DPSO_Address()
+	{
+		return ID3DPSO.GetAddressOf();
+	}
+	inline ID3D12PipelineState* GetID3DPSO()const
+	{
+		return ID3DPSO.Get();
+	}
 private:
 	XDxRefCount<ID3D12PipelineState>ID3DPSO;
 };

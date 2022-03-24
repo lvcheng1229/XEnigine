@@ -1,21 +1,26 @@
 #include "D3D12PassStateManager.h"
 #include "D3D12PlatformRHI.h"
 #include "D3D12Context.h"
+#include "D3D12PipelineState.h"
 
 template void XD3D12PassStateManager::ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 template void XD3D12PassStateManager::ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
+
+
 
 void XD3D12PassStateManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in)
 {
 	direct_ctx = direct_ctx_in;
 	pipe_curr_desc_array_manager.Create(device_in, direct_ctx_in);
 
+	bNeedSetPSO = false;
 	bNeedSetHeapDesc = true;
 	bNeedSetRT = false;
 	//bNeedSetSRV = false;
 	//bNeedSetUAV = false;
 	//bNeedSetCBV = false;
 	bNeedSetRootSig = false;
+	//bNeedSetRootSigNew = false;
 	bNeedClearMRT = false;
 
 	//CurrentDescHeapSlotIndex = 0;
@@ -30,11 +35,13 @@ void XD3D12PassStateManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectCon
 
 void XD3D12PassStateManager::ResetState()
 {
+	bNeedSetPSO = false;
 	bNeedSetRT = false;
 	//bNeedSetSRV = false;
 	//bNeedSetUAV = false;
 	//bNeedSetCBV = false;
 	bNeedSetRootSig = false;
+	//bNeedSetRootSigNew = false;
 	bNeedClearMRT = false;
 
 	//CurrentDescHeapSlotIndex = 0;
@@ -112,6 +119,32 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 		}
 	}
 
+
+	if (bNeedSetPSO)
+	{
+		if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
+		{
+			direct_cmd_list->GetDXCmdList()->SetPipelineState(PipelineState.Common.ID3DPSO);
+		}
+		else
+		{
+			X_Assert(false);
+		}
+		bNeedSetPSO = false;
+	}
+
+	//if (bNeedSetRootSigNew)
+	//{
+	//	if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
+	//	{
+	//		direct_cmd_list->GetDXCmdList()->SetGraphicsRootSignature(GetCurrentRootSig()->GetDXRootSignature());
+	//	}
+	//	else
+	//	{
+	//		X_Assert(false);
+	//	}
+	//	bNeedSetRootSigNew = false;
+	//}
 
 	if (bNeedSetRootSig)
 	{

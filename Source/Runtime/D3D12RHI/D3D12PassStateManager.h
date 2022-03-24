@@ -6,6 +6,7 @@
 #include "Runtime/RenderCore/Shader.h"
 //
 
+#include "D3D12PipelineState.h"
 #include <memory>
 
 enum class ED3D12PipelineType
@@ -17,12 +18,14 @@ class XD3D12PassStateManager
 {
 private:
 	XD3DDirectContex* direct_ctx;
+	bool bNeedSetPSO;
 	bool bNeedSetRT;
 	bool bNeedSetDS;
 	//bool bNeedSetSRV;
 	//bool bNeedSetUAV;
 	//bool bNeedSetCBV;
 	bool bNeedSetRootSig;
+	//bool bNeedSetRootSigNew;
 	bool bNeedClearMRT;
 	bool bNeedSetHeapDesc;
 	//uint32 CurrentDescHeapSlotIndex;
@@ -32,6 +35,7 @@ private:
 	{
 		struct
 		{
+			XD3DGraphicsPSO* D3DGraphicsPSO;
 			uint32						current_num_rendertarget;
 			XD3D12DepthStencilView*		depth_stencil;
 			XD3D12RenderTargetView*		render_target_array[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
@@ -40,7 +44,9 @@ private:
 
 		struct
 		{
-			XD3D12RootSignature*				RootSignature;
+			ID3D12PipelineState* ID3DPSO;
+
+			const XD3D12RootSignature*				RootSignature;
 			XD3D12PassShaderResourceManager		SRVManager;
 			XD3D12PassUnorderedAcessManager		UAVManager;
 			XD3D12CBVRootDescManager			CBVRootDescManager;
@@ -53,6 +59,38 @@ private:
 
 	XD3D12PipelineCurrentDescArrayManager pipe_curr_desc_array_manager;
 public:
+	inline const XD3D12RootSignature* GetCurrentRootSig()
+	{
+		//return PipelineState.Graphics.D3DGraphicsPSO.get() ? PipelineState.Graphics.D3DGraphicsPSO->RootSig : nullptr;
+		return PipelineState.Common.RootSignature;
+	}
+
+	inline void TempResetPSO(XD3DGraphicsPSO* ptrl)
+	{
+		if (PipelineState.Graphics.D3DGraphicsPSO)
+			PipelineState.Graphics.D3DGraphicsPSO = nullptr;
+	}
+
+	inline void SetGraphicsPipelineState(XD3DGraphicsPSO* GraphicsPipelineState)
+	{
+		if (PipelineState.Graphics.D3DGraphicsPSO != GraphicsPipelineState)
+		{
+			if (GetCurrentRootSig() != GraphicsPipelineState->RootSig)
+			{
+				bNeedSetRootSig = true;
+
+				//Temp
+				PipelineState.Common.RootSignature = GraphicsPipelineState->RootSig;
+			}
+
+			bNeedSetPSO = true;
+			PipelineState.Graphics.D3DGraphicsPSO = GraphicsPipelineState;
+			PipelineState.Common.ID3DPSO = GraphicsPipelineState->XID3DPSO->GetID3DPSO();
+			
+			
+		}
+	}
+
 	inline void ResetDescHeapIndex() { pipe_curr_desc_array_manager.GetCurrentDescArray()->ResetIndexToZero(); }
 
 	void ResetState();

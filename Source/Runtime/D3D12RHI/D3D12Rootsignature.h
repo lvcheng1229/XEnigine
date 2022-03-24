@@ -72,5 +72,5 @@ public:
 	void SetUAVDescTableTBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 	void SetCBVRootDescBindSlot(EShaderType shader_type, uint8 RootParameterIndex);
 
-	inline ID3D12RootSignature* GetDXRootSignature() { return root_signature.Get(); }
+	inline ID3D12RootSignature* GetDXRootSignature()const { return root_signature.Get(); }
 };

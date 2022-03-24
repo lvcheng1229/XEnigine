@@ -9,6 +9,8 @@ using Microsoft::WRL::ComPtr;
 using namespace std;
 using namespace DirectX;
 
+
+
 LRESULT CALLBACK
 MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -302,10 +304,16 @@ bool D3DApp::InitMainWindow()
 
 	return true;
 }
+XD3D12PhysicDevice* TempPhyDevice = nullptr;
+XPlatformRHI* PlatformCreateDynamicRHI() // In Crate.cpp
+{
+	return new XD3D12PlatformRHI(TempPhyDevice);
+}
+
 
 bool D3DApp::InitDirect3D()
 {
-	RHIInit();
+	
 
 	ComPtr<ID3D12Debug> debugController;
 	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
@@ -319,6 +327,8 @@ bool D3DApp::InitDirect3D()
 
 	Adapter.Create();
 	Device.Create(&Adapter);
+	TempPhyDevice = &Device;
+	RHIInit();
 
 	//mdxgiFactory = Adapter.GetDXFactory();
 	md3dDevice = Device.GetDXDevice();

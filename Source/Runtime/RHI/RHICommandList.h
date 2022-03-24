@@ -76,7 +76,7 @@ class XRHICommandList : public XRHIComputeCommandList
 public:
 	inline void SetGraphicsPipelineState(class XRHIGraphicsPSO* GraphicsPipelineState)
 	{
-		GetContext()->
+		GetContext()->RHISetGraphicsPipelineState(GraphicsPipelineState);
 	}
 };
 

@@ -3,6 +3,7 @@
 #include "Runtime/HAL/Mch.h"
 XPlatformRHI* GPlatformRHI = nullptr;
 bool GIsRHIInitialized = false;
+
 void RHIInit()
 {
 	if (GPlatformRHI == nullptr)

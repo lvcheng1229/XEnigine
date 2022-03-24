@@ -9,6 +9,7 @@
 #include <crtdbg.h>
 #endif
 
+#include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
 #include "Runtime/D3D12RHI/D3D12Adapter.h"
 #include "Runtime/D3D12RHI/D3D12PhysicDevice.h"
 #include "Runtime/D3D12RHI/D3D12AbstractDevice.h"
@@ -21,6 +22,7 @@
 
 #include "d3dUtil.h"
 #include "GameTimer.h"
+
 
 class D3DApp
 {

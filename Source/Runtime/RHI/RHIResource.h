@@ -3,6 +3,7 @@
 #include "Runtime/Core/PixelFormat.h"
 #include "RHI.h"
 #include <vector>
+#include <functional>
 class XRHIShader
 {
 public:
@@ -104,6 +105,23 @@ public:
 	uint32 RTNums;
 	std::array<EPixelFormat, 8>RT_Format;
 	EPixelFormat DS_Format;
+
+	inline std::size_t GetHashIndex()const
+	{
+		std::size_t seed = 42;
+		THashCombine(seed, BoundShaderState.RHIVertexLayout);
+		THashCombine(seed, BoundShaderState.RHIVertexShader);
+		THashCombine(seed, BoundShaderState.RHIPixelShader);
+		THashCombine(seed, BlendState);
+		THashCombine(seed, DepthStencilState);
+		THashCombine(seed, RTNums);
+		for (int i = 0; i < 8; i++)
+		{
+			THashCombine(seed, (int)RT_Format[i]);
+		}
+		THashCombine(seed, (int)DS_Format);
+		return seed;
+	}
 };
 
 class XRHIGraphicsPSO {};

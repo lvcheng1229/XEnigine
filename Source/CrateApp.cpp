@@ -33,8 +33,13 @@ using namespace DirectX::PackedVector;
 #define STB_IMAGE_IMPLEMENTATION
 #include "File/stb_image.h"
 
+#include "Runtime/RHI/PipelineStateCache.h"
 #include "Runtime/D3D12RHI/D3D12Shader.h"
 #include "Runtime/RenderCore/GlobalShader.h"
+
+
+
+
 class XLightPassVS :public XGloablShader
 {
 public:
@@ -54,7 +59,7 @@ XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
 	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightPixelShaders.hlsl", 
 	"DeferredLightPixelMain",EShaderType::SV_Pixel);
 
-
+//
 
 
 
@@ -631,6 +636,9 @@ void CrateApp::Update(const GameTimer& gt)
 	UpdateMainPassCB(gt);
 }
 
+static XGraphicsPSOInitializer static_RHIPSOINIT;
+static XD3DGraphicsPSO static_pso(static_RHIPSOINIT, nullptr, nullptr);
+
 void CrateApp::Renderer(const GameTimer& gt)
 {
 	//static int i = 0;
@@ -638,7 +646,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 	//OutputDebugString(str.c_str());
 	
 	pass_state_manager->ResetDescHeapIndex();
-
+	pass_state_manager->TempResetPSO(&static_pso);
 	//Pass1 DepthPrePass
 	{
 		direct_ctx->ResetCmdAlloc();
@@ -1030,8 +1038,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 	//Pass7 SSRPass
 	{
 		mCommandList->BeginEvent(1, "SSRPass", sizeof("SSRPass"));
-		mCommandList->SetPipelineState(SSRPassPSO.Get());
-		pass_state_manager->SetRootSignature(&SSRPassRootSig);
+		//mCommandList->SetPipelineState(SSRPassPSO.Get());
+		//pass_state_manager->SetRootSignature(&SSRPassRootSig);
 		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["SSRPassVS"]);
 		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["SSRPassPS"]);
 		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
@@ -1042,8 +1050,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 			XRHIRenderPassInfo RPInfos(1, &SSRRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
 			direct_ctx->RHIBeginRenderPass(RPInfos, L"SSRPassPS");
 			RHICmdList.CacheActiveRenderTargets(RPInfos);
-
-
 
 			XGraphicsPSOInitializer GraphicsPSOInit;
 			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
@@ -1056,7 +1062,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
 
 			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-			
+			SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
 		}
 
 

@@ -1,7 +1,7 @@
 #include "D3D12PlatformRHI.h"
-XD3D12PlatformRHI::XD3D12PlatformRHI()
+XD3D12PlatformRHI::XD3D12PlatformRHI(XD3D12PhysicDevice* InPhyDevice)
 {
-	
+	PhyDevice = InPhyDevice;
 	GPixelFormats[(int)EPixelFormat::FT_Unknown].PlatformFormat = DXGI_FORMAT_UNKNOWN;
 	GPixelFormats[(int)EPixelFormat::FT_R16G16B16A16_FLOAT].PlatformFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	GPixelFormats[(int)EPixelFormat::FT_R8G8B8A8_UNORM].PlatformFormat = DXGI_FORMAT_R8G8B8A8_UNORM;

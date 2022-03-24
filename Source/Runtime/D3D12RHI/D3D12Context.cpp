@@ -1,7 +1,10 @@
+#include "D3D12PipelineState.h"
 #include "D3D12Context.h"
 #include "D3D12Texture.h"
 #include "D3D12AbstractDevice.h"
 #include "D3D12PlatformRHI.h"
+
+
 void XD3DDirectContex::Create(XD3D12AbstractDevice* device_in)
 {
 	AbsDevice = device_in;
@@ -39,6 +42,12 @@ std::shared_ptr<XRHITexture2D> XD3DDirectContex::CreateD3D12Texture2D(
 std::shared_ptr<XRHITexture3D> XD3DDirectContex::CreateD3D12Texture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
 {
 	return std::shared_ptr<XRHITexture3D>(AbsDevice->CreateD3D12Texture3D(&cmd_dirrect_list, width, height, SizeZ, Format, flag, NumMipsIn, tex_data));
+}
+
+void XD3DDirectContex::RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)
+{
+	XD3DGraphicsPSO* D3DGraphicsPSO = static_cast<XD3DGraphicsPSO*>(GraphicsState);
+	PassStateManager.SetGraphicsPipelineState(D3DGraphicsPSO);
 }
 
 void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr)

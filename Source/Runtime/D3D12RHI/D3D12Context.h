@@ -9,7 +9,6 @@ class XD3D12Context :public IRHIContext
 {
 
 };
-
 class XD3D12AbstractDevice;
 class XD3DDirectContex :public XD3D12Context
 {
@@ -28,6 +27,8 @@ public:
 	std::shared_ptr<XRHITexture3D> CreateD3D12Texture3D(
 		uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
+
+	void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)override;
 
 	void RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override;
 	void RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI);
