@@ -193,6 +193,7 @@
     <ClInclude Include="xtrack_new.h" />
     <ClInclude Include="Runtime\Core\PixelFormat.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineState.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
@@ -297,5 +298,6 @@
     </ClCompile>
     <ClCompile Include="Runtime\RHI\RHI.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PlatformRHI.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineLibraryWindows.cpp" />
   </ItemGroup>
 </Project>

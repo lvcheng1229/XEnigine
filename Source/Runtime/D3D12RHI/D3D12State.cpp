@@ -4,7 +4,7 @@
 #include "D3D12Rootsignature.h"
 #include "D3D12PipelineState.h"
 #include "D3D12Shader.h"
-
+#include <string>
 static D3D12_COMPARISON_FUNC TranslateCompareFunction(ECompareFunction CompareFunction)
 {
 	switch (CompareFunction)
@@ -34,41 +34,17 @@ static D3D12_BLEND TranslateBlendFactor(EBlendFactor BlendFactor)
 	};
 }
 
-static std::vector<std::shared_ptr<XD3D12RootSignature>>TempRootSigVec;
-static std::vector<std::shared_ptr<XD3D12PSOStoreID3DPSO>>TempXID3D12Vec;
-
-std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
+static void GetPSODescAndHash(
+	const XGraphicsPSOInitializer& PSOInit, 
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc,
+	std::size_t& OutHash)
 {
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC PSODesc;
 	ZeroMemory(&PSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	const XRHIBoundShaderStateInput& BoundShaderState = PSOInit.BoundShaderState;
-	
+
 	//Layout
 	XD3D12VertexLayout* D3D12Layout = static_cast<XD3D12VertexLayout*>(BoundShaderState.RHIVertexLayout);
 	PSODesc.InputLayout = { D3D12Layout->VertexElements.data(),(UINT)D3D12Layout->VertexElements.size() };
-
-	//RootSiganture
-	XPipelineRegisterBoundCount RegisterBoundCount;
-	memset(&RegisterBoundCount, 0, sizeof(XPipelineRegisterBoundCount));
-
-	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].UnorderedAccessCount
-		= static_cast<XD3D12VertexShader*>(BoundShaderState.RHIVertexShader)->ResourceCount.NumUAV;
-	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].ShaderResourceCount
-		= static_cast<XD3D12VertexShader*>(BoundShaderState.RHIVertexShader)->ResourceCount.NumSRV;
-	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].ConstantBufferCount
-		= static_cast<XD3D12VertexShader*>(BoundShaderState.RHIVertexShader)->ResourceCount.NumCBV;
-	
-	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].UnorderedAccessCount
-		= static_cast<XD3D12PixelShader*>(BoundShaderState.RHIPixelShader)->ResourceCount.NumUAV;
-	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].ShaderResourceCount
-		= static_cast<XD3D12PixelShader*>(BoundShaderState.RHIPixelShader)->ResourceCount.NumSRV;
-	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].ConstantBufferCount
-		= static_cast<XD3D12PixelShader*>(BoundShaderState.RHIPixelShader)->ResourceCount.NumCBV;
-
-	TempRootSigVec.push_back(std::make_shared<XD3D12RootSignature>());
-	TempRootSigVec.back()->Create(PhyDevice, RegisterBoundCount);
-	PSODesc.pRootSignature = TempRootSigVec.back()->GetDXRootSignature();
 
 	//Shsader
 	PSODesc.VS = static_cast<XD3D12VertexShader*>(BoundShaderState.RHIVertexShader)->D3DByteCode;
@@ -77,7 +53,7 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 	//State
 	PSODesc.BlendState = static_cast<XD3D12BlendState*>(PSOInit.BlendState)->Desc;
 	PSODesc.DepthStencilState = static_cast<XD3D12DepthStencilState*>(PSOInit.DepthStencilState)->Desc;
-	
+
 	//RTV DSV
 	PSODesc.NumRenderTargets = PSOInit.RTNums;
 	for (int i = 0; i < PSOInit.RTNums; i++)
@@ -86,7 +62,6 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 	}
 	PSODesc.DSVFormat = (DXGI_FORMAT)GPixelFormats[(int)PSOInit.DS_Format].PlatformFormat;
 
-
 	//default
 	PSODesc.SampleMask = UINT_MAX;
 	PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -94,11 +69,89 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 	PSODesc.SampleDesc.Count = 1;
 	PSODesc.SampleDesc.Quality = 0;
 
-	TempXID3D12Vec.push_back(std::make_shared<XD3D12PSOStoreID3DPSO>());
-	ThrowIfFailed(PhyDevice->GetDXDevice()->
-		CreateGraphicsPipelineState(&PSODesc, IID_PPV_ARGS(TempXID3D12Vec.back()->GetID3DPSO_Address())));
+	//GetHash
+	OutHash = std::hash<std::string>{}(std::string(
+		(char*)(&PSODesc.StreamOutput),
+		(sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC) - sizeof(D3D12_SHADER_BYTECODE) * 5 - sizeof(ID3D12RootSignature*)))
+		);
+	THashCombine(OutHash, PSOInit.BoundShaderState.RHIVertexShader->GetHash());
+	THashCombine(OutHash, PSOInit.BoundShaderState.RHIPixelShader->GetHash());
+}
 
-	return std::make_shared<XD3DGraphicsPSO>(PSOInit, TempRootSigVec.back().get(), TempXID3D12Vec.back().get());
+static void GetBoundCountAndHash(
+	const XGraphicsPSOInitializer& PSOInit,
+	XPipelineRegisterBoundCount& RegisterBoundCount,
+	std::size_t& OutRootSigHash)
+{
+	const XRHIBoundShaderStateInput& BoundShaderState = PSOInit.BoundShaderState;
+
+	//RootSiganture
+	memset(&RegisterBoundCount, 0, sizeof(XPipelineRegisterBoundCount));
+
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].UnorderedAccessCount
+		= static_cast<XD3D12VertexShader*>(BoundShaderState.RHIVertexShader)->ResourceCount.NumUAV;
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].ShaderResourceCount
+		= static_cast<XD3D12VertexShader*>(BoundShaderState.RHIVertexShader)->ResourceCount.NumSRV;
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].ConstantBufferCount
+		= static_cast<XD3D12VertexShader*>(BoundShaderState.RHIVertexShader)->ResourceCount.NumCBV;
+
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].UnorderedAccessCount
+		= static_cast<XD3D12PixelShader*>(BoundShaderState.RHIPixelShader)->ResourceCount.NumUAV;
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].ShaderResourceCount
+		= static_cast<XD3D12PixelShader*>(BoundShaderState.RHIPixelShader)->ResourceCount.NumSRV;
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].ConstantBufferCount
+		= static_cast<XD3D12PixelShader*>(BoundShaderState.RHIPixelShader)->ResourceCount.NumCBV;
+
+	OutRootSigHash = std::hash<std::string>{}
+	(std::string((char*)&RegisterBoundCount, sizeof(XPipelineRegisterBoundCount)));
+	
+}
+static std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>HashToTempRootSig;
+static std::unordered_map<std::size_t, std::shared_ptr<XD3D12PSOStoreID3DPSO>>HashToID3D12;
+
+
+std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
+{
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC PSODesc;
+	std::size_t PSOHash;
+	GetPSODescAndHash(PSOInit, PSODesc, PSOHash);
+	
+	XPipelineRegisterBoundCount RegisterBoundCount;
+	std::size_t BoundHash;
+	GetBoundCountAndHash(PSOInit, RegisterBoundCount, BoundHash);
+
+	auto RootIter = HashToTempRootSig.find(BoundHash);
+	if (RootIter == HashToTempRootSig.end())
+	{
+		std::shared_ptr<XD3D12RootSignature>RootSigPtr = std::make_shared<XD3D12RootSignature>();
+		RootSigPtr->Create(PhyDevice, RegisterBoundCount);
+		HashToTempRootSig[BoundHash] = RootSigPtr;
+	}
+	else
+	{
+		PSODesc.pRootSignature = HashToTempRootSig[BoundHash]->GetDXRootSignature();
+	}
+
+	THashCombine(PSOHash, BoundHash);
+
+	auto PsoIter = HashToID3D12.find(PSOHash);
+	
+	if (PsoIter == HashToID3D12.end())
+	{
+		const std::wstring PSOCacheName = std::to_wstring(PSOHash);
+		XD3D12PSOStoreID3DPSO* IPSO = new XD3D12PSOStoreID3DPSO();
+		HRESULT hr = PhyDevice->GetD3D12PipelineLibrary()->GetID3D12PipelineLibrary()
+			->LoadGraphicsPipeline(PSOCacheName.data(), &PSODesc, IID_PPV_ARGS(IPSO->GetID3DPSO_Address()));
+
+		if (hr == E_INVALIDARG)
+		{
+			ThrowIfFailed(PhyDevice->GetDXDevice()->CreateGraphicsPipelineState(&PSODesc, IID_PPV_ARGS(IPSO->GetID3DPSO_Address())));
+			ThrowIfFailed(PhyDevice->GetD3D12PipelineLibrary()->GetID3D12PipelineLibrary()->StorePipeline(PSOCacheName.data(), IPSO->GetID3DPSO()));
+		}
+		HashToID3D12[PSOHash] = std::shared_ptr<XD3D12PSOStoreID3DPSO>(IPSO);
+	}
+	return std::make_shared<XD3DGraphicsPSO>(PSOInit, HashToTempRootSig[BoundHash].get(), HashToID3D12[PSOHash].get());
 }
 
 std::shared_ptr<XRHIDepthStencilState> XD3D12PlatformRHI::RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer)

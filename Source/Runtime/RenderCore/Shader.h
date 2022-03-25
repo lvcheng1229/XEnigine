@@ -54,15 +54,10 @@ public:
 		EShaderType Shadertype;
 	};
 
-	void AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo);
-
-	inline std::size_t GetEntryIndexByCodeHash(std::size_t CodeHash)
-	{
-		return MapFCodeHashToEntryIndex[CodeHash];
-	}
+	std::size_t AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo);
 
 	std::vector<XShaderEntry>ShaderEntries;
-	std::unordered_map<std::size_t, std::size_t>MapFCodeHashToEntryIndex;
+	std::vector<std::size_t>EntryCodeHash;
 };
 
 class XShaderMapStoreRHIShaders_InlineCode :public XShaderMapStoreRHIShaders

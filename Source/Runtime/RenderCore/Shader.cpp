@@ -5,6 +5,8 @@ std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShade
 {
 	const XShaderMapStoreCodes::XShaderEntry& ShaderEntry = Code->ShaderEntries[ShaderIndex];
 	
+	std::size_t CodeHash = Code->EntryCodeHash[ShaderIndex];
+
 	const EShaderType ShaderType = ShaderEntry.Shadertype;
 	std::shared_ptr<XRHIShader> RHIShaderRef;
 	XArrayView<uint8> CodeView(ShaderEntry.Code.data(), ShaderEntry.Code.size());
@@ -14,6 +16,7 @@ std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShade
 	case EShaderType::SV_Pixel:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreatePixelShader(CodeView)); break;
 	default:X_Assert(false); break;
 	}
+	RHIShaderRef->SetHash(CodeHash);
 	return RHIShaderRef;
 }
 
@@ -24,14 +27,14 @@ XShaderMapBase::~XShaderMapBase()
 }
 
 
-void XShaderMapStoreCodes::AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo)
+std::size_t XShaderMapStoreCodes::AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo)
 {
 	XShaderEntry ShaderEntry;
 	ShaderEntry.Code = OutputInfo.ShaderCode;
 	ShaderEntry.Shadertype = OutputInfo.Shadertype;
 	ShaderEntries.push_back(std::move(ShaderEntry));
-
-	MapFCodeHashToEntryIndex[OutputInfo.SourceCodeHash] = ShaderEntries.size() - 1;
+	EntryCodeHash.push_back(OutputInfo.SourceCodeHash);
+	return ShaderEntries.size() - 1;
 }
 
 XXShader* XShaderMapStoreXShaders::FindOrAddXShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)

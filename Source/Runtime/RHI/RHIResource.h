@@ -9,8 +9,11 @@ class XRHIShader
 public:
 	explicit XRHIShader(EShaderType ShaderTypeIn) :ShaderType(ShaderTypeIn) {}
 	inline EShaderType GetShaderType() { return ShaderType; }
+	inline void SetHash(std::size_t Hahs) { CodeHash = Hahs; }
+	inline std::size_t GetHash()const { return CodeHash; }
 private:
 	EShaderType ShaderType;
+	std::size_t CodeHash;
 };
 
 class XRHIGraphicsShader :public XRHIShader

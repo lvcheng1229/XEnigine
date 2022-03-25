@@ -1038,8 +1038,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 	//Pass7 SSRPass
 	{
 		mCommandList->BeginEvent(1, "SSRPass", sizeof("SSRPass"));
-		//mCommandList->SetPipelineState(SSRPassPSO.Get());
-		//pass_state_manager->SetRootSignature(&SSRPassRootSig);
+		
 		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["SSRPassVS"]);
 		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["SSRPassPS"]);
 		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);

@@ -37,7 +37,9 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 			Output.ShaderCode.end(),
 			static_cast<uint8*>(CodeGened->GetBufferPointer()),
 			static_cast<uint8*>(CodeGened->GetBufferPointer()) + CodeGened->GetBufferSize());
-		Output.SourceCodeHash = std::hash<std::string>{}((char*)Output.ShaderCode.data());
+		Output.SourceCodeHash = std::hash<std::string>{}(
+			std::string((const char*)Output.ShaderCode.data(), Output.ShaderCode.size()));
+
 
 	}
 
@@ -83,7 +85,6 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&TotalOptionalDataSize), (uint8*)(&TotalOptionalDataSize) + 4);
 	}
 }
-
 void CompileGlobalShaderMap()
 {
 	if (GGlobalShaderMap == nullptr)
@@ -103,8 +104,7 @@ void CompileGlobalShaderMap()
 			XGlobalShaderMapInFileUnit* ShaderFileUnit = GGlobalShaderMap->FindOrAddShaderMapFileUnit((*iter));
 			
 			//first:store source code
-			ShaderFileUnit->GetShaderMapStoreCodes()->AddShaderCompilerOutput(Output);
-			std::size_t HashIndex = ShaderFileUnit->GetShaderMapStoreCodes()->GetEntryIndexByCodeHash(Output.SourceCodeHash);
+			std::size_t HashIndex = ShaderFileUnit->GetShaderMapStoreCodes()->AddShaderCompilerOutput(Output);
 			//second: shaders info
 			XXShader* Shader = new XXShader(*iter, &Output);
 			Shader->SetRHIShaderIndex(HashIndex);

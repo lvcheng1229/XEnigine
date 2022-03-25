@@ -49,6 +49,7 @@ namespace PipelineStateCache
 		bool bFound = GPipelineStateMap.find(HashIndex, PSOOut);
 		if (bFound == false)
 		{
+			//FPipelineFileCache::CacheGraphicsPSO(GetTypeHash(*Initializer), *Initializer);
 			PSOOut = RHICreateGraphicsPipelineState(OriginalInitializer);
 			GPipelineStateMap.Add(HashIndex, PSOOut);
 		}

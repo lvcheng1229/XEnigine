@@ -113,6 +113,7 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12PhysicDevice.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineLibrary.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineState.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PlatformRHI.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Resource.h" />
@@ -163,6 +164,7 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12PhysicDevice.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineLibraryWindows.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PlatformRHI.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Resource.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp" />
