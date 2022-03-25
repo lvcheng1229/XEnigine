@@ -1,12 +1,13 @@
 #pragma once
 #include <vector>
-#include <string>
 #include "Runtime/RHI/RHI.h"
+#include "Runtime/RenderCore/ShaderCore.h"
 struct XShaderCompileInput
 {
 	EShaderType Shadertype;
 	std::wstring SourceFilePath;
 	std::string EntryPointName;
+	std::string ShaderName;
 };
 
 struct XShaderCompileOutput
@@ -15,6 +16,8 @@ struct XShaderCompileOutput
 	std::vector<uint8>ShaderCode;
 
 	std::size_t SourceCodeHash;
+
+	XShaderParameterMap ShaderParameterMap;
 };
 
 extern void CompileGlobalShaderMap();

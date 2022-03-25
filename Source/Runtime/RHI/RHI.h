@@ -4,13 +4,7 @@
 #include "RHIDefines.h"
 #include <array>
 #include "Runtime/Core/PixelFormat.h"
-enum class EShaderType
-{
-	SV_Vertex = 0,
-	SV_Pixel,
-	SV_Compute,
-	SV_ShaderCount
-};
+
 
 extern void RHIInit();
 struct FPixelFormatInfo

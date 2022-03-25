@@ -1,6 +1,10 @@
 #pragma once
 #include "Runtime/HAL/PlatformTypes.h"
 #include "Runtime/Core/Template/XEngineTemplate.h"
+#include "Runtime/RHI/RHIDefines.h"
+#include "Runtime/RHI/RHIResource.h"
+#include <map>
+#include <string>
 class XShaderCodeReader
 {
 	XArrayView<uint8> ShaderCode;
@@ -54,4 +58,27 @@ struct XShaderResourceCount
 	uint8 NumSRV;
 	uint8 NumCBV;
 	uint8 NumUAV;
+};
+
+enum class EShaderParametertype
+{
+	None=0,
+	SRV,
+	UAV,
+	CBV,
+	Sampler,
+};
+struct XShaderParameterInfo
+{
+	uint32 BufferIndex;
+	uint32 VariableOffsetInBuffer;
+	uint32 VariableSize;
+	uint32 ResourceCount;
+	EShaderParametertype Parametertype;
+};
+
+class XShaderParameterMap
+{
+public:
+	std::map<std::string, XShaderParameterInfo>MapNameToParameter;
 };

@@ -78,6 +78,11 @@ public:
 	{
 		GetContext()->RHISetGraphicsPipelineState(GraphicsPipelineState);
 	}
+
+	inline void SetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* Texture)
+	{
+		GetContext()->RHISetShaderTexture(ShaderType, TextureIndex, Texture);
+	}
 };
 
 

@@ -66,12 +66,14 @@ XShaderInfos::XShaderInfos(
 	const char* InShaderName,
 	const wchar_t* InSourceFileName,
 	const char* InEntryName,
-	EShaderType InShaderType) :
+	EShaderType InShaderType,
+	XShaderCustomConstructFunctionPtr InCtorPtr) :
 	CastType(InCastType),
 	ShaderName(InShaderName),
 	SourceFileName(InSourceFileName),
 	EntryName(InEntryName),
-	ShaderType(InShaderType)
+	ShaderType(InShaderType),
+	CtorPtr(InCtorPtr)
 {
 	GetShaderInfos_LinkedList().push_back(this);
 	HashedFileIndex = std::hash<std::wstring>{}(InSourceFileName);

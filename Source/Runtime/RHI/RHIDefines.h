@@ -1,4 +1,12 @@
 #pragma once
+enum class EShaderType
+{
+	SV_Vertex = 0,
+	SV_Pixel,
+	SV_Compute,
+	SV_ShaderCount
+};
+
 enum ETextureCreateFlags
 {
 	TexCreate_None = 0,

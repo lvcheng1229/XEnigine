@@ -36,28 +36,52 @@ using namespace DirectX::PackedVector;
 #include "Runtime/RHI/PipelineStateCache.h"
 #include "Runtime/D3D12RHI/D3D12Shader.h"
 #include "Runtime/RenderCore/GlobalShader.h"
-
+#include "Runtime/RenderCore/ShaderParameter.h"
 
 
 
 class XLightPassVS :public XGloablShader
 {
 public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new XLightPassVS(Initializer);
+	}
 	static ShaderInfos StaticShaderInfos;
+
+public:
+	XLightPassVS(const XShaderInitlizer& Initializer)
+		:XGloablShader(Initializer)
+	{
+
+	}
 };
 
 class XLightPassPS :public XGloablShader
 {
 public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new XLightPassPS(Initializer);
+	}
 	static ShaderInfos StaticShaderInfos;
+public:
+	XLightPassPS(const XShaderInitlizer& Initializer)
+		:XGloablShader(Initializer)
+	{
+
+	}
+
+	
+
 };
 
 XLightPassVS::ShaderInfos XLightPassVS::StaticShaderInfos(
 	"XLightPassVS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightVertexShaders.hlsl", 
-	"DeferredLightVertexMain", EShaderType::SV_Vertex);
+	"DeferredLightVertexMain", EShaderType::SV_Vertex, XLightPassVS::CustomConstrucFunc);
 XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
 	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightPixelShaders.hlsl", 
-	"DeferredLightPixelMain",EShaderType::SV_Pixel);
+	"DeferredLightPixelMain",EShaderType::SV_Pixel, XLightPassPS::CustomConstrucFunc);
 
 //
 
@@ -87,20 +111,73 @@ TGlobalResource<XFullScreenQuadVertexLayout> GFullScreenLayout;
 class XSSRPassVS :public XGloablShader
 {
 public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new XSSRPassVS(Initializer);
+	}
 	static ShaderInfos StaticShaderInfos;
+public:
+	XSSRPassVS(const XShaderInitlizer& Initializer):XGloablShader(Initializer)
+	{
+
+	}
+
 };
 
 class XSSRPassPS :public XGloablShader
 {
 public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new XSSRPassPS(Initializer);
+	}
 	static ShaderInfos StaticShaderInfos;
+public:
+	XSSRPassPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		SceneColor.Bind(Initializer.ShaderParameterMap, "SceneColor");
+		GBufferATexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferATexture");
+		GBufferBTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferBTexture");
+		GBufferCTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferCTexture");
+		GBufferDTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferDTexture");
+		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
+		HZBTexture.Bind(Initializer.ShaderParameterMap, "HZBTexture");
+	}
+
+	void SetParameter(
+		XRHICommandList& RHICommandList,
+		XRHITexture* InSceneColor,
+		XRHITexture* InGBufferATexture,
+		XRHITexture* InGBufferBTexture,
+		XRHITexture* InGBufferCTexture,
+		XRHITexture* InGBufferDTexture,
+		XRHITexture* InSceneDepthTexture,
+		XRHITexture* InHZBTexture)
+	{
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneColor, InSceneColor);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferATexture, InGBufferATexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferBTexture, InGBufferBTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferCTexture, InGBufferCTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferDTexture, InGBufferDTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, HZBTexture, InHZBTexture);
+	}
+
+	XSRVParameter SceneColor;
+	XSRVParameter GBufferATexture;
+	XSRVParameter GBufferBTexture;
+	XSRVParameter GBufferCTexture;
+	XSRVParameter GBufferDTexture;
+	XSRVParameter SceneDepthTexture;
+	XSRVParameter HZBTexture;
 };
+
 XSSRPassVS::ShaderInfos XSSRPassVS::StaticShaderInfos(
 	"XSSRPassVS", L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl",
-	"VS", EShaderType::SV_Vertex);
+	"VS", EShaderType::SV_Vertex, XSSRPassVS::CustomConstrucFunc);
 XSSRPassPS::ShaderInfos XSSRPassPS::StaticShaderInfos(
 	"XSSRPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl",
-	"PS", EShaderType::SV_Pixel);
+	"PS", EShaderType::SV_Pixel, XSSRPassPS::CustomConstrucFunc);
 
 
 
@@ -1039,11 +1116,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 	{
 		mCommandList->BeginEvent(1, "SSRPass", sizeof("SSRPass"));
 		
-		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["SSRPassVS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["SSRPassPS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
-
-		
 		{
 			XRHITexture* SSRRTs = SSROutput.get();
 			XRHIRenderPassInfo RPInfos(1, &SSRRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
@@ -1062,16 +1134,15 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 			SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
+			SSRPixelShader->SetParameter(RHICmdList,
+				TextureSceneColorDeffered.get(),
+				TextureGBufferA.get(),
+				TextureGBufferB.get(),
+				TextureGBufferC.get(),
+				TextureGBufferD.get(),
+				TextureDepthStencil.get(),
+				FurthestHZBOutput0.get());
 		}
-
-
-		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 0, TextureSceneColorDeffered.get());
-		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 1, TextureGBufferA.get());
-		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 2, TextureGBufferB.get());
-		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 3, TextureGBufferC.get());
-		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 4, TextureGBufferD.get());
-		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 5, TextureDepthStencil.get());
-		direct_ctx->RHISetShaderTexture(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(), 6, FurthestHZBOutput0.get());
 
 		direct_ctx->RHISetShaderConstantBuffer(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(),
 			0, RHISSRViewCB.get());

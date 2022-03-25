@@ -130,6 +130,7 @@
     <ClInclude Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.h" />
     <ClInclude Include="Runtime\HAL\Mch.h" />
     <ClInclude Include="Runtime\HAL\PlatformTypes.h" />
+    <ClInclude Include="Runtime\RenderCore\ShaderParameter.h" />
     <ClInclude Include="Runtime\RHI\PipelineStateCache.h" />
     <ClInclude Include="Runtime\RHI\PlatformRHI.h" />
     <ClInclude Include="Runtime\RHI\RHI.h" />
@@ -175,6 +176,7 @@
     <ClCompile Include="Runtime\D3D12RHI\XD3D12CommandListManger.cpp" />
     <ClCompile Include="Runtime\Engine\SceneView.cpp" />
     <ClCompile Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.cpp" />
+    <ClCompile Include="Runtime\RenderCore\ShaderParameter.cpp" />
     <ClCompile Include="Runtime\RHI\PipelineStateCache.cpp" />
     <ClCompile Include="Runtime\RHI\PlatformRHI.cpp" />
     <ClCompile Include="Runtime\RHI\RHI.cpp" />

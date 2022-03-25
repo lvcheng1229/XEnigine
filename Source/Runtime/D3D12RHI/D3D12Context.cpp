@@ -89,6 +89,27 @@ void XD3DDirectContex::RHISetShaderResourceViewParameter(XRHIComputeShader* Comp
 	PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
 }
 
+void XD3DDirectContex::RHISetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* NewTextureRHI)
+{
+	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
+	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
+	switch (ShaderType)
+	{
+	case EShaderType::SV_Vertex:
+		PassStateManager.SetShaderResourceView<EShaderType::SV_Vertex>(D3DSRVPtr, TextureIndex);
+		break;
+	case EShaderType::SV_Pixel:
+		PassStateManager.SetShaderResourceView<EShaderType::SV_Pixel>(D3DSRVPtr, TextureIndex);
+		break;
+	case EShaderType::SV_Compute:
+		PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
+		break;
+	default:
+		X_Assert(false);
+		break;
+	}
+}
+
 void XD3DDirectContex::RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
 {
 	EShaderType ShaderType = ShaderRHI->GetShaderType();

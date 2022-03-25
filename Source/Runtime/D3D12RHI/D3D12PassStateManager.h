@@ -5,7 +5,7 @@
 //
 #include "Runtime/RenderCore/Shader.h"
 //
-
+#include "D3D12Shader.h"
 #include "D3D12PipelineState.h"
 #include <memory>
 
@@ -61,7 +61,6 @@ private:
 public:
 	inline const XD3D12RootSignature* GetCurrentRootSig()
 	{
-		//return PipelineState.Graphics.D3DGraphicsPSO.get() ? PipelineState.Graphics.D3DGraphicsPSO->RootSig : nullptr;
 		return PipelineState.Common.RootSignature;
 	}
 
@@ -71,23 +70,49 @@ public:
 			PipelineState.Graphics.D3DGraphicsPSO = nullptr;
 	}
 
+	inline XD3D12VertexShader* GetXD3D12VertexShader(XD3DGraphicsPSO* GraphicsPipelineState)
+	{
+		return static_cast<XD3D12VertexShader*>(GraphicsPipelineState->GraphicsPSOInitializer.BoundShaderState.RHIVertexShader);
+	}
+
+	inline XD3D12PixelShader* GetXD3D12PixelShader(XD3DGraphicsPSO* GraphicsPipelineState)
+	{
+		return static_cast<XD3D12PixelShader*>(GraphicsPipelineState->GraphicsPSOInitializer.BoundShaderState.RHIPixelShader);
+	}
+
+	inline void SetVertexShaderResource(XD3DGraphicsPSO* GraphicsPipelineState)
+	{
+		XD3D12VertexShader* Shader = GetXD3D12VertexShader(GraphicsPipelineState);
+		PipelineState.Common.NumSRVs[(int)EShaderType::SV_Vertex] = Shader != nullptr ? Shader->ResourceCount.NumSRV : 0;
+		PipelineState.Common.NumUAVs[(int)EShaderType::SV_Vertex] = Shader != nullptr ? Shader->ResourceCount.NumUAV : 0;
+	}
+
+	inline void SetPixelShaderResource(XD3DGraphicsPSO* GraphicsPipelineState)
+	{
+		XD3D12PixelShader* Shader = GetXD3D12PixelShader(GraphicsPipelineState);
+		PipelineState.Common.NumSRVs[(int)EShaderType::SV_Pixel] = Shader != nullptr ? Shader->ResourceCount.NumSRV : 0;
+		PipelineState.Common.NumUAVs[(int)EShaderType::SV_Pixel] = Shader != nullptr ? Shader->ResourceCount.NumUAV : 0;
+	}
+
 	inline void SetGraphicsPipelineState(XD3DGraphicsPSO* GraphicsPipelineState)
 	{
 		if (PipelineState.Graphics.D3DGraphicsPSO != GraphicsPipelineState)
 		{
+			SetVertexShaderResource(GraphicsPipelineState);
+			SetPixelShaderResource(GraphicsPipelineState);
+			PipelineState.Common.NumSRVs[(int)EShaderType::SV_Compute] = 0;
+			PipelineState.Common.NumUAVs[(int)EShaderType::SV_Pixel] = 0;
+
 			if (GetCurrentRootSig() != GraphicsPipelineState->RootSig)
 			{
-				bNeedSetRootSig = true;
-
 				//Temp
 				PipelineState.Common.RootSignature = GraphicsPipelineState->RootSig;
+				bNeedSetRootSig = true;
 			}
 
 			bNeedSetPSO = true;
 			PipelineState.Graphics.D3DGraphicsPSO = GraphicsPipelineState;
 			PipelineState.Common.ID3DPSO = GraphicsPipelineState->XID3DPSO->GetID3DPSO();
-			
-			
 		}
 	}
 

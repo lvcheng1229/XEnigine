@@ -1,6 +1,21 @@
 #include "Runtime/RenderCore/ShaderCore.h"
 #include "ShaderCompiler.h"
 #include "Runtime/RenderCore/GlobalShader.h"
+#include <filesystem>
+static const const std::filesystem::path ShaderASMPath("E:\\XEngine\\XEnigine\\Cache");
+//static const char* FXC_PATH = "C:/Program Files(x86)/Windows Kits/10/bin/10.0.19041.0/x86/fxc.exe";
+//
+////https://docs.microsoft.com/en-us/windows/win32/direct3dtools/dx-graphics-tools-fxc-syntax
+//class FCX_Arguments
+//{
+//public:
+//	std::string SourceFile;
+//	std::string ShadingModel;// /T
+//	std::string ShadingEntry;// /E
+//	std::string OutputProjectFile;// /Fo .cso load later 
+//	std::string OutputAssemblyFile;// Fx .asm
+//	std::string DifineMacro;// /D
+//};
 
 static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& Output)
 {
@@ -9,9 +24,33 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 #else
 	UINT compileFlags = 0;
 #endif
-
+	
 	XDxRefCount<ID3DBlob> CodeGened;
 	XDxRefCount<ID3DBlob> Errors;
+	
+	const std::filesystem::path  FilePath = (ShaderASMPath / (Input.ShaderName + ".cso"));
+	if (std::filesystem::exists(FilePath))
+	{
+		std::ifstream fin(FilePath, std::ios::binary);
+		fin.seekg(0, std::ios_base::end);
+		std::ifstream::pos_type size = (int)fin.tellg();
+		fin.seekg(0, std::ios_base::beg);
+
+		ThrowIfFailed(D3DCreateBlob(size, CodeGened.GetAddressOf()));
+
+		fin.read((char*)CodeGened->GetBufferPointer(), size);
+		fin.close();
+
+		Output.Shadertype = Input.Shadertype;
+		Output.ShaderCode.clear();
+		Output.ShaderCode.insert(
+			Output.ShaderCode.end(),
+			static_cast<uint8*>(CodeGened->GetBufferPointer()),
+			static_cast<uint8*>(CodeGened->GetBufferPointer()) + CodeGened->GetBufferSize());
+		Output.SourceCodeHash = std::hash<std::string>{}(
+			std::string((const char*)Output.ShaderCode.data(), Output.ShaderCode.size()));
+	}
+	else
 	{
 		std::string Target;
 		switch (Input.Shadertype)
@@ -40,8 +79,10 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		Output.SourceCodeHash = std::hash<std::string>{}(
 			std::string((const char*)Output.ShaderCode.data(), Output.ShaderCode.size()));
 
-
+		std::ofstream fCodeOut(FilePath, std::ios::binary);
+		fCodeOut.write((const char*)Output.ShaderCode.data(), Output.ShaderCode.size());
 	}
+
 
 	//Reflect
 	{
@@ -61,14 +102,53 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 			Reflection->GetResourceBindingDesc(i, &ResourceDesc);
 			D3D_SHADER_INPUT_TYPE ResourceType = ResourceDesc.Type;
 
-			switch (ResourceType)
+			XShaderParameterInfo ParameterInfo;
+			ParameterInfo.BufferIndex = ResourceDesc.BindPoint;
+			ParameterInfo.ResourceCount = ResourceDesc.BindCount;
+			
+			if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_TEXTURE)
 			{
-			case D3D_SHADER_INPUT_TYPE::D3D_SIT_TEXTURE:NumSRVCount++; break;
-			case D3D_SHADER_INPUT_TYPE::D3D_SIT_CBUFFER:NumCBVCount++; break;
-			case D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWSTRUCTURED:NumUAVCount++; break;
-			case D3D_SHADER_INPUT_TYPE::D3D_SIT_SAMPLER:NumSamplerCount++; break;
-			default:X_Assert(false); break;
+				NumSRVCount++;
+				ParameterInfo.Parametertype = EShaderParametertype::SRV;
+				Output.ShaderParameterMap.MapNameToParameter[ResourceDesc.Name] = ParameterInfo;
 			}
+			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_CBUFFER)
+			{
+				NumCBVCount++;
+				ParameterInfo.Parametertype = EShaderParametertype::CBV;
+				Output.ShaderParameterMap.MapNameToParameter[ResourceDesc.Name] = ParameterInfo;
+
+				ID3D12ShaderReflectionConstantBuffer* ConstantBuffer = Reflection->GetConstantBufferByName(ResourceDesc.Name);
+				D3D12_SHADER_BUFFER_DESC CBDesc;
+				ConstantBuffer->GetDesc(&CBDesc);
+				for (uint32 ConstantIndex = 0; ConstantIndex < CBDesc.Variables; ConstantIndex++)
+				{
+					ID3D12ShaderReflectionVariable* Variable = ConstantBuffer->GetVariableByIndex(ConstantIndex);
+					D3D12_SHADER_VARIABLE_DESC VariableDesc;
+					Variable->GetDesc(&VariableDesc);
+					ParameterInfo.VariableOffsetInBuffer = VariableDesc.StartOffset;
+					ParameterInfo.VariableSize = VariableDesc.Size;
+					Output.ShaderParameterMap.MapNameToParameter[VariableDesc.Name] = ParameterInfo;
+				}
+			}
+			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWSTRUCTURED)
+			{
+				NumUAVCount++;
+				ParameterInfo.Parametertype = EShaderParametertype::UAV;
+				Output.ShaderParameterMap.MapNameToParameter[ResourceDesc.Name] = ParameterInfo;
+			}
+			else if(ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_SAMPLER)
+			{
+				NumSamplerCount++;
+				ParameterInfo.Parametertype = EShaderParametertype::Sampler;
+				Output.ShaderParameterMap.MapNameToParameter[ResourceDesc.Name] = ParameterInfo;
+			}
+			else
+			{
+				X_Assert(false);
+			}
+			
+			
 		}
 		int32 TotalOptionalDataSize = 0;
 		XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount };
@@ -99,6 +179,7 @@ void CompileGlobalShaderMap()
 			Input.SourceFilePath = (*iter)->GetSourceFileName();
 			Input.EntryPointName = (*iter)->GetEntryName();
 			Input.Shadertype = (*iter)->GetShaderType();
+			Input.ShaderName = (*iter)->GetShaderName();
 			XShaderCompileOutput Output;
 			CompileDX12Shader(Input, Output);
 			XGlobalShaderMapInFileUnit* ShaderFileUnit = GGlobalShaderMap->FindOrAddShaderMapFileUnit((*iter));
@@ -106,8 +187,8 @@ void CompileGlobalShaderMap()
 			//first:store source code
 			std::size_t HashIndex = ShaderFileUnit->GetShaderMapStoreCodes()->AddShaderCompilerOutput(Output);
 			//second: shaders info
-			XXShader* Shader = new XXShader(*iter, &Output);
-			Shader->SetRHIShaderIndex(HashIndex);
+			
+			XXShader* Shader = (*iter)->CtorPtr(XShaderInitlizer(*iter, Output, HashIndex));
 			ShaderFileUnit->GetShaderMapStoreXShaders()->FindOrAddXShader((*iter)->GetHashedEntryIndex(), Shader, 0);
 		}
 		

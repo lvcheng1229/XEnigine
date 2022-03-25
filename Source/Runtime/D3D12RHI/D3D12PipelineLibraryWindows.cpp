@@ -1,45 +1,164 @@
 #include "D3D12PipelineLibrary.h"
 #include "D3D12PhysicDevice.h"
-void XD3D12PipelineLibrary::DeserializingPSOLibrary(XD3D12PhysicDevice* PhyDevice)
+
+//https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12PipelineStateCache/src/MemoryMappedPipelineLibrary.cpp
+static const std::wstring FileName = L"E:/XEngine/XEnigine/Cache/graphics_pso_cache.cache";
+
+void XD3D12PipelineLibrary::DeserializingPSOLibrary(XD3D12PhysicDevice* InPhyDevice)
 {
-		//step 1
-	std::wstring FileName = L"E:/XEngine/XEnigine/graphics_pso_cache.cache";
-	
-	WIN32_FIND_DATA FIndFileData;
-	HANDLE handle = FindFirstFileEx(FileName.c_str(), FindExInfoBasic, &FIndFileData, FindExSearchNameMatch, nullptr, 0);
-	bool found = handle != INVALID_HANDLE_VALUE;
+	PhyDevice = InPhyDevice;
+	MMappedFile.Init(FileName);
+    PhyDevice->GetDXDevice1()->CreatePipelineLibrary(MMappedFile.GetData(), MMappedFile.GetSize(), IID_PPV_ARGS(&m_pipelineLibrary));
+	Changed = false;
+}
 
-	if (found)
+XD3D12PipelineLibrary::~XD3D12PipelineLibrary()
+{
+    SerializingPSOLibrary();
+}
+
+void XD3D12PipelineLibrary::SerializingPSOLibrary()
+{
+	const UINT librarySize = static_cast<UINT>(m_pipelineLibrary->GetSerializedSize());
+	if (librarySize > 0)
 	{
-		FindClose(handle);
+		const size_t neededSize = sizeof(UINT) + librarySize;
+		if (Changed)
+		{
+			void* pTempData = new BYTE[librarySize];
+			if (pTempData)
+			{
+				ThrowIfFailed(m_pipelineLibrary->Serialize(pTempData, librarySize));
+                MMappedFile.GrowMapping(librarySize);
+			
+				memcpy(MMappedFile.GetData(), pTempData, librarySize);
+                MMappedFile.SetSize(librarySize);
+				delete[] pTempData;
+				pTempData = nullptr;
+			}
+            else
+            {
+                ThrowIfFailed(m_pipelineLibrary->Serialize(MMappedFile.GetData(), librarySize));
+                MMappedFile.SetSize(librarySize);
+            }
+		}
 	}
+    MMappedFile.Destroy(false);
+}
 
-	
-	HANDLE M_File = CreateFile2(FileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, (found) ? OPEN_EXISTING : CREATE_NEW, nullptr);
-	X_Assert(M_File != INVALID_HANDLE_VALUE);
-	
-	LARGE_INTEGER RealFileSize = {};
-	BOOL flag = GetFileSizeEx(M_File, &RealFileSize);
-	unsigned int m_currentFileSize = RealFileSize.LowPart;
-	
-	if (m_currentFileSize == 0)
+bool XD3D12PipelineLibrary::LoadPSOFromLibrary(
+	LPCWSTR pName,
+	const D3D12_GRAPHICS_PIPELINE_STATE_DESC* pDesc,
+	ID3D12PipelineState** PtrAddress)
+{
+	HRESULT hr = m_pipelineLibrary->LoadGraphicsPipeline(pName, pDesc, IID_PPV_ARGS(PtrAddress));
+	if (hr == E_INVALIDARG)
 	{
-		m_currentFileSize = 64U;// File mapping files with a size of 0 produces an error.
+		return false;
 	}
-	else if (64U > m_currentFileSize)
-	{
-		m_currentFileSize = 64U;// Grow to the specified size.
-	}
+	return true;
+}
 
-	HANDLE m_mapFile = CreateFileMapping(M_File, nullptr, PAGE_READWRITE, 0, m_currentFileSize, nullptr); X_Assert(m_mapFile != nullptr);
-	void* m_mapAddress = MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0, 0, m_currentFileSize); X_Assert(m_mapAddress != nullptr);
-	
-	//https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12PipelineStateCache/src/MemoryMappedPipelineLibrary.cpp
-	PhyDevice->GetDXDevice1()->CreatePipelineLibrary(
-		,
-		,
-		IID_PPV_ARGS(&m_pipelineLibrary));
+void XD3D12PipelineLibrary::StorePSOToLibrary(
+	LPCWSTR pName,
+	ID3D12PipelineState* pPipeline)
+{
+	Changed = true;
+	ThrowIfFailed(m_pipelineLibrary->StorePipeline(pName, pPipeline));
+}
 
-	ThrowIfFailed(device1->CreatePipelineLibrary(&static_cast<UINT*>(m_mapAddress)[1], static_cast<UINT*>(m_mapAddress)[0], IID_PPV_ARGS(&m_pipelineLibrary)));
 
+
+
+
+
+
+
+
+
+
+
+MemoryMappedFile::MemoryMappedFile() :
+    m_mapFile(INVALID_HANDLE_VALUE),
+    m_file(INVALID_HANDLE_VALUE),
+    m_mapAddress(nullptr),
+    m_currentFileSize(0)
+{
+}
+
+MemoryMappedFile::~MemoryMappedFile()
+{
+}
+
+void MemoryMappedFile::Init(std::wstring filename, UINT fileSize)
+{
+    m_filename = filename;
+    WIN32_FIND_DATA findFileData;
+    HANDLE handle = FindFirstFileEx(filename.c_str(), FindExInfoBasic, &findFileData, FindExSearchNameMatch, nullptr, 0);
+    bool found = handle != INVALID_HANDLE_VALUE;
+
+    if (found)
+    {
+        FindClose(handle);
+    }
+
+    m_file = CreateFile2(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, (found) ? OPEN_EXISTING : CREATE_NEW, nullptr);
+    X_Assert(m_file != INVALID_HANDLE_VALUE);
+
+    LARGE_INTEGER realFileSize = {};
+    BOOL flag = GetFileSizeEx(m_file, &realFileSize); 
+    X_Assert(flag == true);
+    X_Assert(realFileSize.HighPart == 0);
+    
+    m_currentFileSize = realFileSize.LowPart;
+
+    if (fileSize > m_currentFileSize)
+    {
+        m_currentFileSize = fileSize;// Grow to the specified size.
+    }
+
+    m_mapFile = CreateFileMapping(m_file, nullptr, PAGE_READWRITE, 0, m_currentFileSize, nullptr);
+    X_Assert(m_mapFile != nullptr);
+
+    m_mapAddress = MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0, 0, m_currentFileSize);
+    X_Assert(m_mapAddress != nullptr);
+}
+
+void MemoryMappedFile::Destroy(bool deleteFile)
+{
+    if (m_mapAddress)
+    {
+        BOOL flag = UnmapViewOfFile(m_mapAddress); X_Assert(flag == true);
+        m_mapAddress = nullptr;
+        flag = CloseHandle(m_mapFile); X_Assert(flag == true);   // Close the file mapping object.
+        flag = CloseHandle(m_file); X_Assert(flag == true);       // Close the file itself.
+    }
+
+    if (deleteFile)
+    {
+        DeleteFile(m_filename.c_str());
+    }
+}
+
+void MemoryMappedFile::GrowMapping(UINT size)
+{
+    // Add space for the extra size at the beginning of the file.
+    size += sizeof(UINT);
+
+    // Check the size.
+    if (size <= m_currentFileSize)
+    {
+        return;// Don't shrink.
+    }
+
+    // Flush.
+    BOOL flag = FlushViewOfFile(m_mapAddress, 0);
+	X_Assert(flag == true);
+
+    // Close the current mapping.
+    Destroy(false);
+
+    // Update the size and create a new mapping.
+    m_currentFileSize = size;
+    Init(m_filename, m_currentFileSize);
 }

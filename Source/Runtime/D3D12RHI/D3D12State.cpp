@@ -70,10 +70,17 @@ static void GetPSODescAndHash(
 	PSODesc.SampleDesc.Quality = 0;
 
 	//GetHash
-	OutHash = std::hash<std::string>{}(std::string(
-		(char*)(&PSODesc.StreamOutput),
-		(sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC) - sizeof(D3D12_SHADER_BYTECODE) * 5 - sizeof(ID3D12RootSignature*)))
-		);
+	OutHash = 42;
+	std::size_t StateHash = std::hash<std::string>{}(std::string(
+		(char*)(&PSODesc.BlendState),
+		(sizeof(D3D12_BLEND_DESC) + sizeof(UINT) + sizeof(D3D12_RASTERIZER_DESC) + sizeof(D3D12_DEPTH_STENCIL_DESC))
+	));
+	std::size_t RT_DS_HAHS = std::hash<std::string>{}(std::string(
+		(char*)(&PSODesc.NumRenderTargets),
+		(sizeof(UINT) + sizeof(DXGI_FORMAT) * 9 + sizeof(DXGI_SAMPLE_DESC) + sizeof(UINT))
+	));
+	THashCombine(OutHash, StateHash);
+	THashCombine(OutHash, RT_DS_HAHS);
 	THashCombine(OutHash, PSOInit.BoundShaderState.RHIVertexShader->GetHash());
 	THashCombine(OutHash, PSOInit.BoundShaderState.RHIPixelShader->GetHash());
 }
@@ -128,10 +135,8 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 		RootSigPtr->Create(PhyDevice, RegisterBoundCount);
 		HashToTempRootSig[BoundHash] = RootSigPtr;
 	}
-	else
-	{
-		PSODesc.pRootSignature = HashToTempRootSig[BoundHash]->GetDXRootSignature();
-	}
+	PSODesc.pRootSignature = HashToTempRootSig[BoundHash]->GetDXRootSignature();
+	
 
 	THashCombine(PSOHash, BoundHash);
 
@@ -141,13 +146,12 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 	{
 		const std::wstring PSOCacheName = std::to_wstring(PSOHash);
 		XD3D12PSOStoreID3DPSO* IPSO = new XD3D12PSOStoreID3DPSO();
-		HRESULT hr = PhyDevice->GetD3D12PipelineLibrary()->GetID3D12PipelineLibrary()
-			->LoadGraphicsPipeline(PSOCacheName.data(), &PSODesc, IID_PPV_ARGS(IPSO->GetID3DPSO_Address()));
+		bool loaded = PhyDevice->GetD3D12PipelineLibrary()->LoadPSOFromLibrary(PSOCacheName.data(), &PSODesc, IPSO->GetID3DPSO_Address());
 
-		if (hr == E_INVALIDARG)
+		if (!loaded)
 		{
 			ThrowIfFailed(PhyDevice->GetDXDevice()->CreateGraphicsPipelineState(&PSODesc, IID_PPV_ARGS(IPSO->GetID3DPSO_Address())));
-			ThrowIfFailed(PhyDevice->GetD3D12PipelineLibrary()->GetID3D12PipelineLibrary()->StorePipeline(PSOCacheName.data(), IPSO->GetID3DPSO()));
+			PhyDevice->GetD3D12PipelineLibrary()->StorePSOToLibrary(PSOCacheName.data(), IPSO->GetID3DPSO());
 		}
 		HashToID3D12[PSOHash] = std::shared_ptr<XD3D12PSOStoreID3DPSO>(IPSO);
 	}

@@ -20,6 +20,7 @@
 /////////////////////
 
 class XXShader;
+class XShaderInfos;
 
 #pragma region ShaderMap
 
@@ -134,7 +135,22 @@ public:
 };
 
 
+struct XShaderInitlizer
+{
+	XShaderInitlizer(XShaderInfos* InShadersInfoPtr, XShaderCompileOutput& Output,std::size_t InRHIShaderIndex) :
+		ShadersInfoPtr(InShadersInfoPtr),
+		ShaderParameterMap(Output.ShaderParameterMap),
+		CodeHash(Output.SourceCodeHash),
+		RHIShaderIndex(InRHIShaderIndex) {}
+
+	const XShaderParameterMap& ShaderParameterMap;
+	XShaderInfos* ShadersInfoPtr;
+	std::size_t CodeHash;
+	std::size_t RHIShaderIndex;
+};
+
 ////class FShaderType
+
 class XShaderInfos
 {
 public:
@@ -145,12 +161,15 @@ public:
 		MeshMaterial
 	};
 
+	typedef XXShader* (*XShaderCustomConstructFunctionPtr)(const XShaderInitlizer& Initializer);
+
 	XShaderInfos(
 		EShaderTypeForDynamicCast InCastType,
 		const char* InShaderName,
 		const wchar_t* InSourceFileName,
 		const char* InEntryName,
-		EShaderType InShaderType
+		EShaderType InShaderType,
+		XShaderCustomConstructFunctionPtr InCtorPtr
 		);
 	static std::list<XShaderInfos*>& GetShaderInfos_LinkedList();
 
@@ -159,7 +178,12 @@ public:
 	inline std::size_t GetHashedFileIndex()const { return HashedFileIndex; }
 	inline std::size_t GetHashedEntryIndex()const { return HashedEntryIndex; }
 	inline EShaderType GetShaderType()const { return ShaderType; }
+	inline const char* GetShaderName()const { return ShaderName; };
+	
+public:
+	XShaderCustomConstructFunctionPtr CtorPtr;
 private:
+
 	std::size_t HashedFileIndex;
 	std::size_t HashedEntryIndex;
 
@@ -190,6 +214,8 @@ public:
 	inline XXShaderClass* GetShader()const { return ShaderPtr; }
 	inline const XShaderMapBase* GetShaderMapFileUnit()const { return ShaderMapFileUnitPtr; }
 	
+	inline XXShaderClass* operator->() const { return ShaderPtr; }
+
 	inline XRHIShader* GetOrCreateRHIShaderFromMap(EShaderType ShaderType) const
 	{
 		return ShaderMapFileUnitPtr->GetShaderMapStoreRHIShaders()->GetRHIShader(ShaderPtr->GetRHIShaderIndex());
@@ -215,15 +241,19 @@ private:
 class XXShader
 {
 public:
-	XXShader(XShaderInfos* InShadersInfoPtr, XShaderCompileOutput* Output) :
-		ShadersInfoPtr(InShadersInfoPtr),
-		CodeHash(Output->SourceCodeHash),
-		RHIShaderIndex(0) {}
+	XXShader(const XShaderInitlizer& Initializer)
+		:ShadersInfoPtr(Initializer.ShadersInfoPtr),
+		CodeHash(Initializer.CodeHash),
+		RHIShaderIndex(Initializer.RHIShaderIndex) {}
+	//XXShader(XShaderInfos* InShadersInfoPtr, XShaderCompileOutput* Output) :
+	//	ShadersInfoPtr(InShadersInfoPtr),
+	//	CodeHash(Output->SourceCodeHash),
+	//	RHIShaderIndex(0) {}
 	
-	inline void SetRHIShaderIndex(std::size_t Index)
-	{
-		RHIShaderIndex = Index;
-	}
+	//inline void SetRHIShaderIndex(std::size_t Index)
+	//{
+	//	RHIShaderIndex = Index;
+	//}
 	inline std::size_t GetCodeHash()const { return CodeHash; };
 	inline std::size_t GetRHIShaderIndex()const { return RHIShaderIndex; };
 private:
