@@ -31,6 +31,11 @@ struct FullScreenVertex
     DirectX::XMFLOAT2 TexC;
 };
 
+struct FullScreenVertexOnlyPos
+{
+    DirectX::XMFLOAT2 Pos;
+};
+
 struct FrameResource
 {
 public:

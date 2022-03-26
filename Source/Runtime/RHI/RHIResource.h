@@ -53,6 +53,11 @@ public:
 	XRHITexture3D(EPixelFormat FormatIn) :XRHITexture(FormatIn) {}
 };
 
+class XRHIIndexBuffer
+{
+public:
+};
+
 class XRHIRenderTargetView 
 {
 public:

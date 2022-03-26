@@ -116,7 +116,7 @@ static void GetBoundCountAndHash(
 static std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>HashToTempRootSig;
 static std::unordered_map<std::size_t, std::shared_ptr<XD3D12PSOStoreID3DPSO>>HashToID3D12;
 
-#define USE_PIPELINE_LIBRARY 1
+#define USE_PIPELINE_LIBRARY 0
 
 std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
 {

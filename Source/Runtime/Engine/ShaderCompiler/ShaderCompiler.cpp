@@ -5,6 +5,7 @@
 static const const std::filesystem::path ShaderASMPath("E:\\XEngine\\XEnigine\\Cache");
 //https://docs.microsoft.com/en-us/windows/win32/direct3dtools/dx-graphics-tools-fxc-syntax
 
+#define CACHE_SHADER 0
 
 static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& Output)
 {
@@ -17,6 +18,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 	XDxRefCount<ID3DBlob> CodeGened;
 	XDxRefCount<ID3DBlob> Errors;
 	
+#if CACHE_SHADER
 	const std::filesystem::path  FilePath = (ShaderASMPath / (Input.ShaderName + ".cso"));
 	if (std::filesystem::exists(FilePath))
 	{
@@ -40,6 +42,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 			std::string((const char*)Output.ShaderCode.data(), Output.ShaderCode.size()));
 	}
 	else
+#endif
 	{
 		std::string Target;
 		switch (Input.Shadertype)
@@ -67,9 +70,10 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 			static_cast<uint8*>(CodeGened->GetBufferPointer()) + CodeGened->GetBufferSize());
 		Output.SourceCodeHash = std::hash<std::string>{}(
 			std::string((const char*)Output.ShaderCode.data(), Output.ShaderCode.size()));
-
+#if CACHE_SHADER
 		std::ofstream fCodeOut(FilePath, std::ios::binary);
 		fCodeOut.write((const char*)Output.ShaderCode.data(), Output.ShaderCode.size());
+#endif
 	}
 
 

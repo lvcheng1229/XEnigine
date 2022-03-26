@@ -39,6 +39,8 @@ using namespace DirectX::PackedVector;
 #include "Runtime/RenderCore/ShaderParameter.h"
 #include "Runtime/Render/SceneRendering.h"
 
+#include "Runtime/RenderCore/CommonRenderRresource.h"
+
 
 class XLightPassVS :public XGloablShader
 {
@@ -53,8 +55,16 @@ public:
 	XLightPassVS(const XShaderInitlizer& Initializer)
 		:XGloablShader(Initializer)
 	{
-
+		CBV_View.Bind(Initializer.ShaderParameterMap, "cbView");
 	}
+
+	void SetParameter(
+		XRHICommandList& RHICommandList,
+		XRHIConstantBuffer* ViewCB)
+	{
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Vertex, CBV_View, ViewCB);
+	}
+	CBVParameterType CBV_View;
 };
 
 class XLightPassPS :public XGloablShader
@@ -69,10 +79,49 @@ public:
 	XLightPassPS(const XShaderInitlizer& Initializer)
 		:XGloablShader(Initializer)
 	{
+		CBV_View.Bind(Initializer.ShaderParameterMap, "cbView");
+		CBV_DefferedLight.Bind(Initializer.ShaderParameterMap, "cbLightPass");
 
+		GBufferATexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferATexture");
+		GBufferBTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferBTexture");
+		GBufferCTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferCTexture");
+		GBufferDTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferDTexture");
+		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
+		LightAttenuationTexture.Bind(Initializer.ShaderParameterMap, "LightAttenuationTexture");
 	}
 
-	
+	void SetParameter(
+		XRHICommandList& RHICommandList,
+		XRHIConstantBuffer* InCBV_View,
+		XRHIConstantBuffer* InCBV_DefferedLight,
+		
+		XRHITexture* InGBufferATexture, 
+		XRHITexture* InGBufferBTexture, 
+		XRHITexture* InGBufferCTexture, 
+		XRHITexture* InGBufferDTexture,
+		XRHITexture* InSceneDepthTexture,
+		XRHITexture* InLightAttenuationTexture)
+	{
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, CBV_View, InCBV_View);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, CBV_DefferedLight, InCBV_DefferedLight);
+
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferATexture, InGBufferATexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferBTexture, InGBufferBTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferCTexture, InGBufferCTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferDTexture, InGBufferDTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, LightAttenuationTexture, InLightAttenuationTexture);
+	}
+
+	CBVParameterType CBV_View;
+	CBVParameterType CBV_DefferedLight;
+
+	TextureParameterType GBufferATexture;
+	TextureParameterType GBufferBTexture;
+	TextureParameterType GBufferCTexture;
+	TextureParameterType GBufferDTexture;
+	TextureParameterType SceneDepthTexture;
+	TextureParameterType LightAttenuationTexture;
 
 };
 
@@ -83,46 +132,70 @@ XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
 	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightPixelShaders.hlsl", 
 	"DeferredLightPixelMain",EShaderType::SV_Pixel, XLightPassPS::CustomConstrucFunc);
 
-//
 
 
 
-class XFullScreenQuadVertexLayout : public XRenderResource
-{
-public:
-	std::shared_ptr<XRHIVertexLayout> RHIVertexLayout;
-	virtual void InitRHI()override
-	{
-		XRHIVertexLayoutArray LayoutArray;
-		LayoutArray.push_back(XVertexElement(0, EVertexElementType::VET_Float2, 0, 0));
-		LayoutArray.push_back(XVertexElement(1, EVertexElementType::VET_Float2, 0, 0 + sizeof(XMFLOAT2)));
-		RHIVertexLayout = RHICreateVertexDeclaration(LayoutArray);
-	}
-
-	virtual void ReleaseRHI()override
-	{
-		RHIVertexLayout.reset();
-	}
-};
-
-TGlobalResource<XFullScreenQuadVertexLayout> GFullScreenLayout;
 
 
-class XSSRPassVS :public XGloablShader
+
+
+
+
+class XShadowMaskPassPS :public XGloablShader
 {
 public:
 	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
 	{
-		return new XSSRPassVS(Initializer);
+		return new XShadowMaskPassPS(Initializer);
 	}
 	static ShaderInfos StaticShaderInfos;
 public:
-	XSSRPassVS(const XShaderInitlizer& Initializer):XGloablShader(Initializer)
+	XShadowMaskPassPS(const XShaderInitlizer& Initializer)
+		:XGloablShader(Initializer)
 	{
+		ShadowMatrixBuffer.Bind(Initializer.ShaderParameterMap, "cbShadowMaskNoCommon");
 
+		ShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "ShadowDepthTexture");
+		GBufferATexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferATexture");
+		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
 	}
 
+	void SetParameter(
+		XRHICommandList& RHICommandList,
+		XRHITexture* InShadowDepthTexture,
+		XRHITexture* InGBufferATexture,
+		XRHITexture* InSceneDepthTexture
+	)
+	{
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, ShadowDepthTexture, InShadowDepthTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferATexture, InGBufferATexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
+	}
+
+
+	void SetShaderShadowMatrixBuffer(
+		XRHICommandList& RHICommandList,
+		XRHIConstantBuffer* InShadowMatrixBuffer)
+	{
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, ShadowMatrixBuffer, InShadowMatrixBuffer);
+	}
+
+	CBVParameterType ShadowMatrixBuffer;
+
+	TextureParameterType ShadowDepthTexture;
+	TextureParameterType GBufferATexture;
+	TextureParameterType SceneDepthTexture;
 };
+XShadowMaskPassPS::ShaderInfos XShadowMaskPassPS::StaticShaderInfos(
+	"XShadowMaskPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowProjectionShader.hlsl",
+	"PS", EShaderType::SV_Pixel, XShadowMaskPassPS::CustomConstrucFunc);
+
+
+
+
+
+
+
 
 class XSSRPassPS :public XGloablShader
 {
@@ -135,6 +208,7 @@ public:
 public:
 	XSSRPassPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
 	{
+
 		SSRParams.Bind(Initializer.ShaderParameterMap, "cbSSR_SSRParams");
 		CBV_View.Bind(Initializer.ShaderParameterMap, "cbView");
 
@@ -170,6 +244,7 @@ public:
 		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, HZBTexture, InHZBTexture);
 	}
 
+
 	XShaderVariableParameter SSRParams;
 
 	CBVParameterType CBV_View;
@@ -182,10 +257,6 @@ public:
 	TextureParameterType SceneDepthTexture;
 	TextureParameterType HZBTexture;
 };
-
-XSSRPassVS::ShaderInfos XSSRPassVS::StaticShaderInfos(
-	"XSSRPassVS", L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl",
-	"VS", EShaderType::SV_Vertex, XSSRPassVS::CustomConstrucFunc);
 XSSRPassPS::ShaderInfos XSSRPassPS::StaticShaderInfos(
 	"XSSRPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl",
 	"PS", EShaderType::SV_Pixel, XSSRPassPS::CustomConstrucFunc);
@@ -354,6 +425,7 @@ private:
 	XD3D12RootSignature FullScreenRootSig;
 	ComPtr<ID3D12PipelineState>FullScreenPSO = nullptr;
 	std::unique_ptr<RenderItem> fullScreenItem;
+	std::unique_ptr<RenderItem> fullScreenItemOnlyPos;
 	XViewMatrices ViewMatrix;
 //Shadow Pass
 private:
@@ -449,7 +521,6 @@ private:
 private:
 	ComPtr<ID3D12PipelineState> ShadowMaskPSO = nullptr;
 	XD3D12RootSignature ShadowMaskPassRootSig;
-	//std::shared_ptr<XRHIConstantBuffer>ShadowMaskPassViewConstantBuffer;
 	struct cbShadowMaskNoCommonBuffer
 	{
 		XMFLOAT4X4 ScreenToShadowMatrix;
@@ -467,17 +538,11 @@ private:
 	
 	//std::shared_ptr<XRHIConstantBuffer>ViewConstantBuffer;
 	std::unique_ptr<RenderItem> LightPassItem;
-	ComPtr<ID3D12PipelineState>LightPassPso = nullptr;
+	//ComPtr<ID3D12PipelineState>LightPassPso = nullptr;
 	XD3D12RootSignature LightPassRootSig;
 	std::shared_ptr<XRHITexture2D> SSROutput;
 	//SSR Pass
 private:
-
-	
-	//std::shared_ptr<XRHIConstantBuffer>RHISSRViewCB;
-
-	XD3D12RootSignature SSRPassRootSig;
-	ComPtr<ID3D12PipelineState>SSRPassPSO = nullptr;
 	
 private:
 	XD3D12RootSignature ReflectionEnvironmentRootSig;
@@ -983,48 +1048,76 @@ void CrateApp::Renderer(const GameTimer& gt)
 	
 	//Pass5 Shadow Mask Pass
 	{
-		mCommandList->BeginEvent(1, "Shadow Mask Pass", sizeof("Shadow Mask Pass"));
+		XRHITexture* SceneColorRTs = ShadowMaskTexture.get();
+		XRHIRenderPassInfo RPInfos(1, &SceneColorRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
+		RHICmdList.RHIBeginRenderPass(RPInfos, L"ShadowMaskPass");
+		RHICmdList.CacheActiveRenderTargets(RPInfos);
 
-		mCommandList->SetPipelineState(ShadowMaskPSO.Get());
-		pass_state_manager->SetRootSignature(&ShadowMaskPassRootSig);
-		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["ShadowMaskVS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["ShadowMaskPS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+		XGraphicsPSOInitializer GraphicsPSOInit;
+		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
+		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 
-		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
-		RTViews[0] = static_cast<XD3D12Texture2D*>(ShadowMaskTexture.get())->GetRenderTargetView();
-		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);//TODO
-		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
+		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMap()->GetShader<RFullScreenQuadVS>();
+		TShaderReference<XShadowMaskPassPS> PixelShader = GetGlobalShaderMap()->GetShader<XShadowMaskPassPS>();
+		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
+		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
+		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
 
-		direct_ctx->RHISetShaderConstantBuffer(
-			mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get(),
-			0,
-			RViewInfo.ViewConstantBuffer.get());
+		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
 
-		direct_ctx->RHISetShaderTexture(
-			mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get()
-			, 0
-			, ShadowTexture0.get());
+		PixelShader->SetParameter(RHICmdList,
+			ShadowTexture0.get(),
+			TextureGBufferA.get(),
+			TextureDepthStencil.get());
 
-		direct_ctx->RHISetShaderTexture(
-			mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get()
-			, 1
-			, TextureGBufferA.get());
+		
 
-		direct_ctx->RHISetShaderTexture(
-			mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get()
-			, 2
-			, TextureDepthStencil.get());
+		//mCommandList->BeginEvent(1, "Shadow Mask Pass", sizeof("Shadow Mask Pass"));
+		//
+		//mCommandList->SetPipelineState(ShadowMaskPSO.Get());
+		//pass_state_manager->SetRootSignature(&ShadowMaskPassRootSig);
+		//pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["ShadowMaskVS"]);
+		//pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["ShadowMaskPS"]);
+		//pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+		//
+		//direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
+		//RTViews[0] = static_cast<XD3D12Texture2D*>(ShadowMaskTexture.get())->GetRenderTargetView();
+		//direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);//TODO
+		//direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
+		//
+		//direct_ctx->RHISetShaderConstantBuffer(
+		//	mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get(),
+		//	0,
+		//	RViewInfo.ViewConstantBuffer.get());
+		//
+		//direct_ctx->RHISetShaderTexture(
+		//	mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get()
+		//	, 0
+		//	, ShadowTexture0.get());
+		//
+		//direct_ctx->RHISetShaderTexture(
+		//	mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get()
+		//	, 1
+		//	, TextureGBufferA.get());
+		//
+		//direct_ctx->RHISetShaderTexture(
+		//	mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get()
+		//	, 2
+		//	, TextureDepthStencil.get());
 		for (int CSMindex = 3; CSMindex >= 0; CSMindex--)
 		{
-			direct_ctx->RHISetShaderConstantBuffer(
-				mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get(),
-				1,
+			PixelShader->SetShaderShadowMatrixBuffer(RHICmdList,
 				ShadowMaskNoCommonConstantBuffer[CSMindex].get());
-
+			//direct_ctx->RHISetShaderConstantBuffer(
+			//	mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get(),
+			//	1,
+			//	ShadowMaskNoCommonConstantBuffer[CSMindex].get());
+			RHICmdList.RHIDrawIndexedPrimitive();
+			
 			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
 			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
+			//pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 			mCommandList.Get()->DrawIndexedInstanced(
 				fullScreenItem->IndexCount, 1,
 				fullScreenItem->StartIndexLocation,
@@ -1037,46 +1130,42 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	//Pass6 LightPass
 	{
-		mCommandList->BeginEvent(1, "LightPass", sizeof("LightPass"));
+		{
+			XRHITexture* SceneColorRTs = TextureSceneColorDeffered.get();
+			XRHIRenderPassInfo RPInfos(1, &SceneColorRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
+			RHICmdList.RHIBeginRenderPass(RPInfos, L"LightPass");
+			RHICmdList.CacheActiveRenderTargets(RPInfos);
 
-		mCommandList->SetPipelineState(LightPassPso.Get());
-		pass_state_manager->SetRootSignature(&LightPassRootSig);
-		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["LightPassVS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["LightPassPS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+			XGraphicsPSOInitializer GraphicsPSOInit;
+			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
+			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 
-		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
-		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureSceneColorDeffered.get())->GetRenderTargetView();
-		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);//TODO
-		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
+			TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMap()->GetShader<XLightPassVS>();
+			TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMap()->GetShader<XLightPassPS>();
+			GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
+			GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
+			GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
 
-		direct_ctx->RHISetShaderConstantBuffer(
-			mShaders["LightPassVS"].GetRHIGraphicsShader().get(),
-			0, RViewInfo.ViewConstantBuffer.get());
+			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+			SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
 
-		direct_ctx->RHISetShaderConstantBuffer(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 
-			0, RViewInfo.ViewConstantBuffer.get());
-		direct_ctx->RHISetShaderConstantBuffer(mShaders["LightPassPS"].GetRHIGraphicsShader().get(),
-			1, RHIcbDefferedLight.get());
-		
-		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 0,
-			TextureGBufferA.get());
-		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 1,
-			TextureGBufferB.get());
-		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 2,
-			TextureGBufferC.get());
-		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 3,
-			TextureGBufferD.get());
-		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 4,
-			TextureDepthStencil.get());
-		direct_ctx->RHISetShaderTexture(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 5,
-			ShadowMaskTexture.get());
+			VertexShader->SetParameter(RHICmdList, RViewInfo.ViewConstantBuffer.get());
+			PixelShader->SetParameter(RHICmdList,
+				RViewInfo.ViewConstantBuffer.get(),
+				RHIcbDefferedLight.get(),
+				TextureGBufferA.get(),
+				TextureGBufferB.get(),
+				TextureGBufferC.get(),
+				TextureGBufferD.get(),
+				TextureDepthStencil.get(),
+				ShadowMaskTexture.get());
+
+			RHICmdList.RHIDrawIndexedPrimitive();
+		}
 
 		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
 		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 		
-		//direct_ctx->GetCmdList()->CmdListFlushBarrier();
 		mCommandList.Get()->DrawIndexedInstanced(
 			fullScreenItem->IndexCount, 1,
 			fullScreenItem->StartIndexLocation,
@@ -1098,7 +1187,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
 			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 			
-			TShaderReference<XSSRPassVS> SSRVertexShader = GetGlobalShaderMap()->GetShader<XSSRPassVS>();
+			TShaderReference<RFullScreenQuadVS> SSRVertexShader = GetGlobalShaderMap()->GetShader<RFullScreenQuadVS>();
 			TShaderReference<XSSRPassPS> SSRPixelShader = GetGlobalShaderMap()->GetShader<XSSRPassPS>();
 			GraphicsPSOInit.BoundShaderState.RHIVertexShader= SSRVertexShader.GetVertexShader();
 			GraphicsPSOInit.BoundShaderState.RHIPixelShader= SSRPixelShader.GetPixelShader();
@@ -1902,21 +1991,6 @@ void CrateApp::BuildRootSignature()
 		d3d12_root_signature.Create(&Device, pipeline_register_count);
 	}
 
-	//ShadowMaskPass
-	{
-		XPipelineRegisterBoundCount pipeline_register_count;
-		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
-
-		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Vertex)].ConstantBufferCount
-			= mShaders["ShadowMaskVS"].GetCBVCount();
-
-		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
-			= mShaders["ShadowMaskPS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
-			= mShaders["ShadowMaskPS"].GetSRVCount();
-
-		ShadowMaskPassRootSig.Create(&Device, pipeline_register_count);
-	}
 
 	//LightPass
 	{
@@ -1935,18 +2009,6 @@ void CrateApp::BuildRootSignature()
 		LightPassRootSig.Create(&Device, pipeline_register_count);
 	}
 
-	//SSR Pass
-	{
-		XPipelineRegisterBoundCount pipeline_register_count;
-		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
-
-		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
-			= mShaders["SSRPassPS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
-			= mShaders["SSRPassPS"].GetSRVCount();
-
-		SSRPassRootSig.Create(&Device, pipeline_register_count);
-	}
 	
 	//Reflection Environment Pass
 	{
@@ -2059,15 +2121,7 @@ void CrateApp::BuildShadersAndInputLayout()
 		mShaders["opaquePS"].ShaderReflect();
 	}
 
-	{
-		mShaders["ShadowMaskVS"].CreateShader(EShaderType::SV_Vertex);
-		mShaders["ShadowMaskVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowProjectionShader.hlsl", nullptr, "VS", "vs_5_1");
-		mShaders["ShadowMaskVS"].ShaderReflect();
 
-		mShaders["ShadowMaskPS"].CreateShader(EShaderType::SV_Pixel);
-		mShaders["ShadowMaskPS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowProjectionShader.hlsl", nullptr, "PS", "ps_5_1");
-		mShaders["ShadowMaskPS"].ShaderReflect();
-	}
 
 	{
 		mShaders["LightPassVS"].CreateShader(EShaderType::SV_Vertex);
@@ -2290,6 +2344,49 @@ void CrateApp::BuildShapeGeometry()
 		geo->DrawArgs["quad"] = fullScreenQuadSubmesh;
 		mGeometries[geo->Name] = std::move(geo);
 	}
+
+	{
+		GeometryGenerator::MeshData fullScreenQuad = geoGen.CreateFullScreenQuad();
+		SubmeshGeometry fullScreenQuadSubmesh;
+		fullScreenQuadSubmesh.IndexCount = (UINT)fullScreenQuad.Indices32.size();
+		fullScreenQuadSubmesh.StartIndexLocation = 0;
+		fullScreenQuadSubmesh.BaseVertexLocation = 0;
+
+		std::vector<FullScreenVertexOnlyPos> quadVertices(fullScreenQuad.Vertices.size());
+		for (size_t i = 0; i < fullScreenQuad.Vertices.size(); ++i)
+		{
+			quadVertices[i].Pos = DirectX::XMFLOAT2(
+				fullScreenQuad.Vertices[i].Position.x,
+				fullScreenQuad.Vertices[i].Position.y);
+		}
+		std::vector<std::uint16_t> quadindices;
+		quadindices.insert(quadindices.end(), std::begin(fullScreenQuad.GetIndices16()), std::end(fullScreenQuad.GetIndices16()));
+		const UINT vbByteSize = (UINT)quadVertices.size() * sizeof(FullScreenVertexOnlyPos);
+		const UINT ibByteSize = (UINT)quadindices.size() * sizeof(std::uint16_t);
+
+		auto geo = std::make_unique<MeshGeometry>();
+		geo->Name = "fullScreenQuad";
+
+		ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+		CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), quadVertices.data(), vbByteSize);
+
+		ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+		CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), quadindices.data(), ibByteSize);
+
+		geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+			mCommandList.Get(), quadVertices.data(), vbByteSize, geo->VertexBufferUploader);
+
+		geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+			mCommandList.Get(), quadindices.data(), ibByteSize, geo->IndexBufferUploader);
+
+		geo->VertexByteStride = sizeof(FullScreenVertexOnlyPos);
+		geo->VertexBufferByteSize = vbByteSize;
+		geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+		geo->IndexBufferByteSize = ibByteSize;
+
+		geo->DrawArgs["fullScreenQuad"] = fullScreenQuadSubmesh;
+		mGeometries[geo->Name] = std::move(geo);
+	}
 	
 }
 
@@ -2492,109 +2589,8 @@ void CrateApp::BuildPSOs()
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mOpaquePSO)));
 	}
 	
-	{
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC ShadowMaskPsoDesc;
-
-		ZeroMemory(&ShadowMaskPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		ShadowMaskPsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
-		ShadowMaskPsoDesc.pRootSignature = ShadowMaskPassRootSig.GetDXRootSignature();
-		ShadowMaskPsoDesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["ShadowMaskVS"].GetByteCode()->GetBufferPointer()),
-			mShaders["ShadowMaskVS"].GetByteCode()->GetBufferSize()
-		};
-		ShadowMaskPsoDesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["ShadowMaskPS"].GetByteCode()->GetBufferPointer()),
-			mShaders["ShadowMaskPS"].GetByteCode()->GetBufferSize()
-		};
-		ShadowMaskPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		ShadowMaskPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		ShadowMaskPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		ShadowMaskPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		ShadowMaskPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
 
-		ShadowMaskPsoDesc.SampleMask = UINT_MAX;
-		ShadowMaskPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		ShadowMaskPsoDesc.NumRenderTargets = 1;
-		ShadowMaskPsoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		ShadowMaskPsoDesc.SampleDesc.Count = 1;
-		ShadowMaskPsoDesc.SampleDesc.Quality = 0;
-		ShadowMaskPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowMaskPsoDesc, IID_PPV_ARGS(&ShadowMaskPSO)));
-		
-	}
-	//LightPass
-	{
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC LightPassPsoDesc;
-
-		ZeroMemory(&LightPassPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		LightPassPsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
-		LightPassPsoDesc.pRootSignature = LightPassRootSig.GetDXRootSignature();
-		LightPassPsoDesc.VS = D3DVertexShader->D3DByteCode;
-		//{
-		//	D3DVertexShader->D3DByteCode;
-		//	reinterpret_cast<BYTE*>(mShaders["LightPassVS"].GetByteCode()->GetBufferPointer()),
-		//	mShaders["LightPassVS"].GetByteCode()->GetBufferSize()
-		//};
-		LightPassPsoDesc.PS = D3DPixelShader->D3DByteCode;
-		//{
-		//	reinterpret_cast<BYTE*>(mShaders["LightPassPS"].GetByteCode()->GetBufferPointer()),
-		//	mShaders["LightPassPS"].GetByteCode()->GetBufferSize()
-		//};
-		LightPassPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		LightPassPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		LightPassPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		LightPassPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-
-		LightPassPsoDesc.SampleMask = UINT_MAX;
-		LightPassPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		LightPassPsoDesc.NumRenderTargets = 1;
-		LightPassPsoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		LightPassPsoDesc.SampleDesc.Count = 1;
-		LightPassPsoDesc.SampleDesc.Quality = 0;
-		LightPassPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&LightPassPsoDesc, IID_PPV_ARGS(&LightPassPso)));
-	}
-
-	//SSRPass
-	{
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC SSRPsoDesc;
-
-		ZeroMemory(&SSRPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-
-		XD3D12VertexLayout* Layout = static_cast<XD3D12VertexLayout*>(GFullScreenLayout.RHIVertexLayout.get());
-		SSRPsoDesc.InputLayout = { Layout->VertexElements.data(), (UINT)Layout->VertexElements.size()};
-		//SSRPsoDesc.InputLayout = { mFullScreenInputLayout.data(), (UINT)mFullScreenInputLayout.size() };
-		
-		SSRPsoDesc.pRootSignature = SSRPassRootSig.GetDXRootSignature();
-		SSRPsoDesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["SSRPassVS"].GetByteCode()->GetBufferPointer()),
-			mShaders["SSRPassVS"].GetByteCode()->GetBufferSize()
-		};
-		SSRPsoDesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["SSRPassPS"].GetByteCode()->GetBufferPointer()),
-			mShaders["SSRPassPS"].GetByteCode()->GetBufferSize()
-		};
-		SSRPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		SSRPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		SSRPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		SSRPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		SSRPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-
-
-		SSRPsoDesc.SampleMask = UINT_MAX;
-		SSRPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		SSRPsoDesc.NumRenderTargets = 1;
-		SSRPsoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		SSRPsoDesc.SampleDesc.Count = 1;
-		SSRPsoDesc.SampleDesc.Quality = 0;
-		SSRPsoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&SSRPsoDesc, IID_PPV_ARGS(&SSRPassPSO)));
-	}
 
 	//Reflection Environment Pass
 	{
@@ -2810,6 +2806,15 @@ void CrateApp::BuildRenderItems()
 		fullScreenItem->BaseVertexLocation = fullScreenItem->Geo->DrawArgs["quad"].BaseVertexLocation;
 	}
 	
+	{
+		fullScreenItemOnlyPos = std::make_unique<RenderItem>();
+		fullScreenItemOnlyPos->ObjCBIndex = 0;//No  Use
+		fullScreenItemOnlyPos->Geo = mGeometries["fullScreenQuad"].get();
+		fullScreenItemOnlyPos->IndexCount = fullScreenItemOnlyPos->Geo->DrawArgs["fullScreenQuad"].IndexCount;
+		fullScreenItemOnlyPos->StartIndexLocation = fullScreenItemOnlyPos->Geo->DrawArgs["fullScreenQuad"].StartIndexLocation;
+		fullScreenItemOnlyPos->BaseVertexLocation = fullScreenItemOnlyPos->Geo->DrawArgs["fullScreenQuad"].BaseVertexLocation;
+		
+	}
 	
 }
 

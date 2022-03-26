@@ -27,6 +27,9 @@ public:
 
 	std::shared_ptr<XD3D12ConstantBuffer>CreateUniformBuffer(uint32 size);
 
+	//template<typename BufferType>
+	//BufferType* CreateRHIBuffer(XD3D12DirectCommandList* x_cmd_list,);
+
 	XD3D12Texture2D* CreateD3D12Texture2D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,
 		bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 

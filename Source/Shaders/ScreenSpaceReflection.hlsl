@@ -16,7 +16,6 @@ cbuffer cbSSR
 struct VertexIn
 {
 	float2 PosIn    : ATTRIBUTE0;
-	float2 TexC    : ATTRIBUTE1;
 };
 
 void VS(VertexIn vin,

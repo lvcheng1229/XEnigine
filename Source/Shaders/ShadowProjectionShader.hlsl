@@ -1,18 +1,3 @@
-struct VertexIn
-{
-	float2 PosIn    : POSITION;
-	float2 TexC    : TEXCOORD;
-};
-
-void VS(
-	VertexIn Input,//TODO:
-	out float4 OutPosition : SV_POSITION
-	)
-{
-    OutPosition = float4(Input.PosIn.xy,0.0f,1.0f);
-}
-
-
 #include "Common.hlsl"
 cbuffer cbShadowMaskNoCommon
 {
