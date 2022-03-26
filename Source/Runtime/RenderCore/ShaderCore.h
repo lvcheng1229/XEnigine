@@ -51,6 +51,15 @@ public:
 	}
 };
 
+struct XShaderDefines
+{
+	inline void SetDefines(const char* Name,const char* Value)
+	{
+		Defines[Name] = Value;
+	}
+	std::map<std::string, std::string>Defines;
+};
+
 struct XShaderResourceCount
 {
 	static const uint8 Key = 'p';

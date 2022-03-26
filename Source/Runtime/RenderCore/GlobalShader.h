@@ -58,14 +58,16 @@ public:
 		const wchar_t* InSourceFileName,
 		const char* InEntryName,
 		EShaderType ShaderType,
-		XShaderCustomConstructFunctionPtr InCtorPtr) :
+		XShaderCustomConstructFunctionPtr InCtorPtr,
+		ModifyShaderCompileDefinesFunctionPtr InModifyDefinesPtr) :
 		XShaderInfos(
 			EShaderTypeForDynamicCast::Global,
 			InShaderName,
 			InSourceFileName,
 			InEntryName,
 			ShaderType,
-			InCtorPtr) {}
+			InCtorPtr,
+			InModifyDefinesPtr) {}
 };
 
 class XGloablShader : public XXShader

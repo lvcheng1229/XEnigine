@@ -161,6 +161,7 @@ public:
 		MeshMaterial
 	};
 
+	typedef void (*ModifyShaderCompileDefinesFunctionPtr) (XShaderDefines& OutDefines);
 	typedef XXShader* (*XShaderCustomConstructFunctionPtr)(const XShaderInitlizer& Initializer);
 
 	XShaderInfos(
@@ -169,7 +170,8 @@ public:
 		const wchar_t* InSourceFileName,
 		const char* InEntryName,
 		EShaderType InShaderType,
-		XShaderCustomConstructFunctionPtr InCtorPtr
+		XShaderCustomConstructFunctionPtr InCtorPtr,
+		ModifyShaderCompileDefinesFunctionPtr InModifyDefinesPtr
 		);
 	static std::list<XShaderInfos*>& GetShaderInfos_LinkedList();
 
@@ -181,6 +183,7 @@ public:
 	inline const char* GetShaderName()const { return ShaderName; };
 	
 public:
+	ModifyShaderCompileDefinesFunctionPtr ModifyDefinesPtr;
 	XShaderCustomConstructFunctionPtr CtorPtr;
 private:
 

@@ -3,4 +3,5 @@ TGlobalResource<RFullScreenQuadVertexLayout> GFullScreenLayout;
 
 RFullScreenQuadVS::ShaderInfos RFullScreenQuadVS::StaticShaderInfos(
 	"RFullScreenQuadVS", L"E:/XEngine/XEnigine/Source/Shaders/FullScreenVertexShader.hlsl",
-	"VS", EShaderType::SV_Vertex, RFullScreenQuadVS::CustomConstrucFunc);
+	"VS", EShaderType::SV_Vertex, RFullScreenQuadVS::CustomConstrucFunc,
+	RFullScreenQuadVS::ModifyShaderCompileDefines);

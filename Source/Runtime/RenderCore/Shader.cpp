@@ -67,13 +67,15 @@ XShaderInfos::XShaderInfos(
 	const wchar_t* InSourceFileName,
 	const char* InEntryName,
 	EShaderType InShaderType,
-	XShaderCustomConstructFunctionPtr InCtorPtr) :
+	XShaderCustomConstructFunctionPtr InCtorPtr,
+	ModifyShaderCompileDefinesFunctionPtr InModifyDefinesPtr) :
 	CastType(InCastType),
 	ShaderName(InShaderName),
 	SourceFileName(InSourceFileName),
 	EntryName(InEntryName),
 	ShaderType(InShaderType),
-	CtorPtr(InCtorPtr)
+	CtorPtr(InCtorPtr),
+	ModifyDefinesPtr(InModifyDefinesPtr)
 {
 	GetShaderInfos_LinkedList().push_back(this);
 	HashedFileIndex = std::hash<std::wstring>{}(InSourceFileName);
@@ -109,7 +111,7 @@ void XShader::CreateShader(EShaderType shader_type)
 {
 	if (shader_type == EShaderType::SV_Compute)
 	{
-		RHIComputeShader = std::make_shared<XRHIComputeShader>(shader_type);
+		RHIComputeShader = std::make_shared<XRHIComputeShader>();
 	}
 	else
 	{

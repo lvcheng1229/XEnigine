@@ -8,6 +8,7 @@ struct XShaderCompileInput
 	std::wstring SourceFilePath;
 	std::string EntryPointName;
 	std::string ShaderName;
+	XShaderDefines ShaderDefines;
 };
 
 struct XShaderCompileOutput

@@ -25,7 +25,7 @@ public:
 class XRHIComputeShader :public XRHIShader
 {
 public:
-	explicit XRHIComputeShader(EShaderType ShaderTypeIn) :XRHIShader(ShaderTypeIn) {}
+	XRHIComputeShader() :XRHIShader(EShaderType::SV_Compute) {}
 };
 
 class XRHITexture
@@ -96,6 +96,8 @@ class XRHIPixelShader : public XRHIGraphicsShader
 public:
 	XRHIPixelShader() :XRHIGraphicsShader(EShaderType::SV_Pixel) {}
 };
+
+
 
 struct XRHIBoundShaderStateInput
 {

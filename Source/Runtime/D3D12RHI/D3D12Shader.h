@@ -21,7 +21,6 @@ public:
 class XD3D12VertexShader :public XRHIVertexShader
 {
 public:
-	//EShaderType ShaderType; ?? XRHIShader
 	std::vector<uint8>BinaryCode;
 	D3D12_SHADER_BYTECODE D3DByteCode;
 	XShaderResourceCount ResourceCount;
@@ -30,10 +29,18 @@ public:
 class XD3D12PixelShader : public XRHIPixelShader
 {
 public:
-	//EShaderType ShaderType; ?? XRHIShader
 	std::vector<uint8>BinaryCode;
 	D3D12_SHADER_BYTECODE D3DByteCode;
 	XShaderResourceCount ResourceCount;
+};
+
+class XD3D12ComputeShader :public XRHIComputeShader
+{
+public:
+	std::vector<uint8>BinaryCode;
+	D3D12_SHADER_BYTECODE D3DByteCode;
+	XShaderResourceCount ResourceCount;
+	const XD3D12RootSignature* RootSignature;
 };
 
 class XD3D12BoundShaderState

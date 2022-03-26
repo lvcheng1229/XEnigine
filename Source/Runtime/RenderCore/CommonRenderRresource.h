@@ -32,6 +32,7 @@ public:
 	}
 	static ShaderInfos StaticShaderInfos;
 
+	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines) {}
 public:
 	RFullScreenQuadVS(const XShaderInitlizer& Initializer)
 		:XGloablShader(Initializer)

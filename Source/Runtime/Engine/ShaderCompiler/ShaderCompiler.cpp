@@ -53,6 +53,17 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		default:X_Assert(false); break;
 		}
 
+		std::vector<std::string>Macro;
+		if (Input.ShaderDefines.Defines.size() > 0)
+		{
+			for (auto iter = Input.ShaderDefines.Defines.begin(); iter != Input.ShaderDefines.Defines.end(); iter++)
+			{
+				Macro.push_back(iter->first);
+				Macro.push_back(iter->second);
+			}
+		}
+		Macro.push_back("NULL");
+		Macro.push_back("NULL");
 		HRESULT hr = D3DCompileFromFile(
 			Input.SourceFilePath.data(),
 			nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -126,7 +137,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 					}
 				}
 			}
-			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWSTRUCTURED)
+			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWTYPED)
 			{
 				NumUAVCount++;
 				ParameterInfo.Parametertype = EShaderParametertype::UAV;
@@ -175,6 +186,8 @@ void CompileGlobalShaderMap()
 			Input.EntryPointName = (*iter)->GetEntryName();
 			Input.Shadertype = (*iter)->GetShaderType();
 			Input.ShaderName = (*iter)->GetShaderName();
+			(*iter)->ModifyDefinesPtr(Input.ShaderDefines);
+
 			XShaderCompileOutput Output;
 			CompileDX12Shader(Input, Output);
 			XGlobalShaderMapInFileUnit* ShaderFileUnit = GGlobalShaderMap->FindOrAddShaderMapFileUnit((*iter));
