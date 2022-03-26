@@ -13,6 +13,10 @@ class XD3D12AbstractDevice;
 class XD3DDirectContex :public XD3D12Context
 {
 public:
+	std::shared_ptr<XD3D12GlobalConstantBuffer>VSGlobalConstantBuffer;
+	std::shared_ptr<XD3D12GlobalConstantBuffer>PSGlobalConstantBuffer;
+	std::shared_ptr<XD3D12GlobalConstantBuffer>CSGlobalConstantBuffer;
+
 	XD3DDirectContex(){};
 	void Create(XD3D12AbstractDevice* device_in);
 	
@@ -38,16 +42,24 @@ public:
 	
 	void RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
 	void RHISetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
+	void SetShaderValue(EShaderType ShaderType, uint32 BufferIndex, uint32 VariableOffsetInBuffer, uint32 NumBytes, const void* NewValue)override;
 
 	void RHISetShaderConstantBuffer(XRHIGraphicsShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
+	void RHISetShaderConstantBuffer(EShaderType ShaderType, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer)override;
+
+
 	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
+
+
 	void RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue);
-	void RHIDrawFullScreenQuad();
+	//void RHIDrawFullScreenQuad();
+	void RHIDrawIndexedPrimitive() final override;
 
 	void SetRenderTargetsAndViewPort(uint32 NumRTs,const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)override;
 	void SetRenderTargetsAndClear(const XRHISetRenderTargetsInfo& RTInfos);
 	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName)override
 	{
+		cmd_dirrect_list->BeginEvent(1, InName,sizeof(InName));
 		XRHISetRenderTargetsInfo OutRTInfo;
 		InInfo.ConvertToRenderTargetsInfo(OutRTInfo);
 		SetRenderTargetsAndClear(OutRTInfo);

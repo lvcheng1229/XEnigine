@@ -37,7 +37,7 @@ using namespace DirectX::PackedVector;
 #include "Runtime/D3D12RHI/D3D12Shader.h"
 #include "Runtime/RenderCore/GlobalShader.h"
 #include "Runtime/RenderCore/ShaderParameter.h"
-
+#include "Runtime/Render/SceneRendering.h"
 
 
 class XLightPassVS :public XGloablShader
@@ -135,6 +135,9 @@ public:
 public:
 	XSSRPassPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
 	{
+		SSRParams.Bind(Initializer.ShaderParameterMap, "cbSSR_SSRParams");
+		CBV_View.Bind(Initializer.ShaderParameterMap, "cbView");
+
 		SceneColor.Bind(Initializer.ShaderParameterMap, "SceneColor");
 		GBufferATexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferATexture");
 		GBufferBTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferBTexture");
@@ -146,6 +149,8 @@ public:
 
 	void SetParameter(
 		XRHICommandList& RHICommandList,
+		XMFLOAT4 InSSRParams,
+		XRHIConstantBuffer* ViewCB,
 		XRHITexture* InSceneColor,
 		XRHITexture* InGBufferATexture,
 		XRHITexture* InGBufferBTexture,
@@ -154,6 +159,8 @@ public:
 		XRHITexture* InSceneDepthTexture,
 		XRHITexture* InHZBTexture)
 	{
+		SetShaderValue(RHICommandList, EShaderType::SV_Pixel, SSRParams, InSSRParams);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, CBV_View, ViewCB);
 		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneColor, InSceneColor);
 		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferATexture, InGBufferATexture);
 		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferBTexture, InGBufferBTexture);
@@ -163,13 +170,17 @@ public:
 		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, HZBTexture, InHZBTexture);
 	}
 
-	XSRVParameter SceneColor;
-	XSRVParameter GBufferATexture;
-	XSRVParameter GBufferBTexture;
-	XSRVParameter GBufferCTexture;
-	XSRVParameter GBufferDTexture;
-	XSRVParameter SceneDepthTexture;
-	XSRVParameter HZBTexture;
+	XShaderVariableParameter SSRParams;
+
+	CBVParameterType CBV_View;
+
+	TextureParameterType SceneColor;
+	TextureParameterType GBufferATexture;
+	TextureParameterType GBufferBTexture;
+	TextureParameterType GBufferCTexture;
+	TextureParameterType GBufferDTexture;
+	TextureParameterType SceneDepthTexture;
+	TextureParameterType HZBTexture;
 };
 
 XSSRPassVS::ShaderInfos XSSRPassVS::StaticShaderInfos(
@@ -301,6 +312,7 @@ private:
 	BoundSphere BuildBoundSphere(float FoVAngleY, float WHRatio, float SplirNear, float SplitFar);
 	
 	Camera cam_ins;
+	RendererViewInfo RViewInfo;
 
 	XMFLOAT3 LightDir = { -1,1,1 };
 	XMFLOAT3 LightColor = { 1,1,1 };
@@ -338,36 +350,11 @@ private:
 	cbDefferedLight cbDefferedLightIns;
 	std::shared_ptr<XRHIConstantBuffer> RHIcbDefferedLight;
 private:
-	struct ViewConstantBufferTable
-	{
-		DirectX::XMFLOAT4X4 TranslatedViewProjectionMatrix;
-		DirectX::XMFLOAT4X4 ScreenToTranslatedWorld;
-		DirectX::XMFLOAT4X4 ViewToClip;
-		DirectX::XMFLOAT4X4 ScreenToWorld;
-
-		DirectX::XMFLOAT4 InvDeviceZToWorldZTransform;
-		DirectX::XMFLOAT3 WorldCameraOrigin;
-		uint32 StateFrameIndexMod8 = 0;
-
-		DirectX::XMFLOAT4 BufferSizeAndInvSize;
-		DirectX::XMFLOAT4 AtmosphereLightDirection;
-
-		XMFLOAT3 SkyWorldCameraOrigin;
-		float padding1 = 0.0;
-
-		XMFLOAT4 SkyPlanetCenterAndViewHeight;
-		DirectX::XMFLOAT4X4 SkyViewLutReferential;
-
-		XMFLOAT4 ViewSizeAndInvSize;;
-	};
-
 	//Full Screen Pass
 	XD3D12RootSignature FullScreenRootSig;
 	ComPtr<ID3D12PipelineState>FullScreenPSO = nullptr;
 	std::unique_ptr<RenderItem> fullScreenItem;
 	XViewMatrices ViewMatrix;
-	
-	ViewConstantBufferTable ViewCB;
 //Shadow Pass
 private:
 	struct ShadowPassConstants
@@ -383,13 +370,11 @@ private:
 	ComPtr<ID3D12PipelineState> ShadowPSO = nullptr;
 	XD3D12RootSignature ShadowPassRootSig;
 	std::shared_ptr<XRHIConstantBuffer>ShadowPassConstantBuffer[4];
-	ViewConstantBufferTable ShadowCB;
 	std::shared_ptr<XRHITexture2D>ShadowTexture0;
 	
 	float ShadowMapHeight = 1024;
 	float ShadowMapWidth = 1024 * 4;
 	float ShadowViewportWidth = 1024;
-	//float ShadowRadius = 256;
 
 	//HZBPass 
 private:
@@ -464,7 +449,7 @@ private:
 private:
 	ComPtr<ID3D12PipelineState> ShadowMaskPSO = nullptr;
 	XD3D12RootSignature ShadowMaskPassRootSig;
-	std::shared_ptr<XRHIConstantBuffer>ShadowMaskPassViewConstantBuffer;
+	//std::shared_ptr<XRHIConstantBuffer>ShadowMaskPassViewConstantBuffer;
 	struct cbShadowMaskNoCommonBuffer
 	{
 		XMFLOAT4X4 ScreenToShadowMatrix;
@@ -480,21 +465,16 @@ private:
 	ComPtr<ID3D12PipelineState> mDepthOnlyPSO = nullptr;
 private:
 	
-	std::shared_ptr<XRHIConstantBuffer>ViewConstantBuffer;
+	//std::shared_ptr<XRHIConstantBuffer>ViewConstantBuffer;
 	std::unique_ptr<RenderItem> LightPassItem;
 	ComPtr<ID3D12PipelineState>LightPassPso = nullptr;
 	XD3D12RootSignature LightPassRootSig;
 	std::shared_ptr<XRHITexture2D> SSROutput;
 	//SSR Pass
 private:
-	struct cbSSR
-	{
-		XMFLOAT4  SSRParams;
-	};
-	cbSSR cbSSRIns;
-	std::shared_ptr<XRHIConstantBuffer>RHIcbSSR;
+
 	
-	std::shared_ptr<XRHIConstantBuffer>RHISSRViewCB;
+	//std::shared_ptr<XRHIConstantBuffer>RHISSRViewCB;
 
 	XD3D12RootSignature SSRPassRootSig;
 	ComPtr<ID3D12PipelineState>SSRPassPSO = nullptr;
@@ -582,20 +562,18 @@ bool CrateApp::Initialize()
 		mFrameResource.get()->ObjectConstantBuffer.push_back(
 			abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants))));
 	}
-	ViewConstantBuffer = 
-		abstrtact_device.CreateUniformBuffer(
-			d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferTable)));
+
+	RViewInfo.ViewConstantBuffer = abstrtact_device.CreateUniformBuffer(
+		d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferData)));
+
 
 	for (uint32 i = 0; i < 4; i++)
 	{
 		ShadowPassConstantBuffer[i] =
 			abstrtact_device.CreateUniformBuffer(
-				d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferTable)));
+				d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
 	}
 
-	ShadowMaskPassViewConstantBuffer =
-		abstrtact_device.CreateUniformBuffer(
-			d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferTable)));
 
 	for (uint32 i = 0; i < 4; i++)
 	{
@@ -606,12 +584,6 @@ bool CrateApp::Initialize()
 
 	RHICbbHZB= abstrtact_device.CreateUniformBuffer(
 		d3dUtil::CalcConstantBufferByteSize(sizeof(cbHZB)));
-
-	RHIcbSSR = abstrtact_device.CreateUniformBuffer(
-		d3dUtil::CalcConstantBufferByteSize(sizeof(cbSSR)));
-
-	RHISSRViewCB = abstrtact_device.CreateUniformBuffer(
-		d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferTable)));
 
 	RHICbSkyAtmosphere = abstrtact_device.CreateUniformBuffer(
 		d3dUtil::CalcConstantBufferByteSize(sizeof(cbSkyAtmosphere)));
@@ -850,8 +822,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 			pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
 			pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["RenderSkyViewLutCS"]);
 
+			//direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
+			//	0, ViewConstantBuffer.get());
 			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
-				0, ViewConstantBuffer.get());
+				0, RViewInfo.ViewConstantBuffer.get());
 			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
 				1, RHICbSkyAtmosphere.get());
 
@@ -880,7 +854,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 			XD3D12TextureBase* CameraAerialPerspectiveVolume = GetD3D12TextureFromRHITexture(CameraAerialPerspectiveVolumeUAV.get());
 			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
-				0, ViewConstantBuffer.get());
+				0, RViewInfo.ViewConstantBuffer.get());
 			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderCameraAerialPerspectiveVolumeCS"].GetRHIComputeShader().get(),
 				1, RHICbSkyAtmosphere.get());
 			
@@ -1025,7 +999,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetShaderConstantBuffer(
 			mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get(),
 			0,
-			ShadowMaskPassViewConstantBuffer.get());
+			RViewInfo.ViewConstantBuffer.get());
 
 		direct_ctx->RHISetShaderTexture(
 			mShaders["ShadowMaskPS"].GetRHIGraphicsShader().get()
@@ -1078,10 +1052,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 		direct_ctx->RHISetShaderConstantBuffer(
 			mShaders["LightPassVS"].GetRHIGraphicsShader().get(),
-			0,ViewConstantBuffer.get());
+			0, RViewInfo.ViewConstantBuffer.get());
 
 		direct_ctx->RHISetShaderConstantBuffer(mShaders["LightPassPS"].GetRHIGraphicsShader().get(), 
-			0,ViewConstantBuffer.get());
+			0, RViewInfo.ViewConstantBuffer.get());
 		direct_ctx->RHISetShaderConstantBuffer(mShaders["LightPassPS"].GetRHIGraphicsShader().get(),
 			1, RHIcbDefferedLight.get());
 		
@@ -1114,27 +1088,27 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	//Pass7 SSRPass
 	{
-		mCommandList->BeginEvent(1, "SSRPass", sizeof("SSRPass"));
-		
 		{
 			XRHITexture* SSRRTs = SSROutput.get();
 			XRHIRenderPassInfo RPInfos(1, &SSRRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
-			direct_ctx->RHIBeginRenderPass(RPInfos, L"SSRPassPS");
+			RHICmdList.RHIBeginRenderPass(RPInfos, L"SSRPassPS");
 			RHICmdList.CacheActiveRenderTargets(RPInfos);
-
+			
 			XGraphicsPSOInitializer GraphicsPSOInit;
 			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
 			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-
+			
 			TShaderReference<XSSRPassVS> SSRVertexShader = GetGlobalShaderMap()->GetShader<XSSRPassVS>();
 			TShaderReference<XSSRPassPS> SSRPixelShader = GetGlobalShaderMap()->GetShader<XSSRPassPS>();
 			GraphicsPSOInit.BoundShaderState.RHIVertexShader= SSRVertexShader.GetVertexShader();
 			GraphicsPSOInit.BoundShaderState.RHIPixelShader= SSRPixelShader.GetPixelShader();
 			GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
-
+			
 			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 			SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
 			SSRPixelShader->SetParameter(RHICmdList,
+				XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+				RViewInfo.ViewConstantBuffer.get(),
 				TextureSceneColorDeffered.get(),
 				TextureGBufferA.get(),
 				TextureGBufferB.get(),
@@ -1144,15 +1118,9 @@ void CrateApp::Renderer(const GameTimer& gt)
 				FurthestHZBOutput0.get());
 		}
 
-		direct_ctx->RHISetShaderConstantBuffer(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(),
-			0, RHISSRViewCB.get());
-
-		direct_ctx->RHISetShaderConstantBuffer(mShaders["SSRPassPS"].GetRHIGraphicsShader().get(),
-			1, RHIcbSSR.get());
-
+		RHICmdList.RHIDrawIndexedPrimitive();
 		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
 		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 		mCommandList.Get()->DrawIndexedInstanced(
 			fullScreenItem->IndexCount, 1,
 			fullScreenItem->StartIndexLocation,
@@ -1208,7 +1176,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);
 
 		direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(),
-			0, ViewConstantBuffer.get());
+			0, RViewInfo.ViewConstantBuffer.get());
 		direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyAtmosphereRayMarchingPS"].GetRHIGraphicsShader().get(),
 			1, RHICbSkyAtmosphere.get());
 
@@ -1445,22 +1413,20 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	mFrameResource->PassConstantBuffer.get()->UpdateData(&mMainPassCB, sizeof(PassConstants), 0);
 	
 	FrameNum++;
-	ViewCB.StateFrameIndexMod8 = FrameNum % 8;
+	RViewInfo.ViewCBCPUData.StateFrameIndexMod8 = FrameNum % 8;
 
 	//Current For LightPass , will combine to BasePass for future
-	ViewCB.ViewSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0 / mClientWidth, 1.0 / mClientHeight);
+	RViewInfo.ViewCBCPUData.ViewSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0 / mClientWidth, 1.0 / mClientHeight);
 	float LenSqrt = sqrt(LightDir.x * LightDir.x + LightDir.y * LightDir.y + LightDir.z * LightDir.z);
-	ViewCB.AtmosphereLightDirection = XMFLOAT4(LightDir.x / LenSqrt, LightDir.y / LenSqrt, LightDir.z / LenSqrt, 1.0f);
-	ViewCB.ViewToClip = ViewMatrix.GetProjectionMatrixTranspose();
+	RViewInfo.ViewCBCPUData.AtmosphereLightDirection = XMFLOAT4(LightDir.x / LenSqrt, LightDir.y / LenSqrt, LightDir.z / LenSqrt, 1.0f);
+	RViewInfo.ViewCBCPUData.ViewToClip = ViewMatrix.GetProjectionMatrixTranspose();
 	
-	ViewCB.TranslatedViewProjectionMatrix = ViewMatrix.GetTranslatedViewProjectionMatrixTranspose();
-	ViewCB.ScreenToWorld = ViewMatrix.GetScreenToWorldTranPose();
-	ViewCB.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorldTranPose();
-	ViewCB.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(ViewMatrix.GetProjectionMatrix());
-	ViewCB.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
-	//ViewConstantBuffer.get()->UpdateData(
-	//	&ViewCB,
-	//	sizeof(ViewConstantBufferTable), 0);
+	RViewInfo.ViewCBCPUData.TranslatedViewProjectionMatrix = ViewMatrix.GetTranslatedViewProjectionMatrixTranspose();
+	RViewInfo.ViewCBCPUData.ScreenToWorld = ViewMatrix.GetScreenToWorldTranPose();
+	RViewInfo.ViewCBCPUData.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorldTranPose();
+	RViewInfo.ViewCBCPUData.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(ViewMatrix.GetProjectionMatrix());
+	RViewInfo.ViewCBCPUData.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
+
 	
 	cbHZBins.DispatchThreadIdToBufferUV = XMFLOAT4(1.0 / 512.0, 1.0 / 512.0, 1.0, 1.0);
 	RHICbbHZB.get()->UpdateData(&cbHZBins, sizeof(cbHZB), 0);
@@ -1474,15 +1440,12 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	}
 
 
-	//ShadowMaskPass
-	//TODO combine ShadowMaskPassViewConstantBuffer with ViewConstantBuffer
-	ViewCB.BufferSizeAndInvSize =
+
+	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize =
 		XMFLOAT4(mClientWidth, mClientHeight,
 			1.0f / mClientWidth, 1.0f / mClientHeight);
-	ShadowMaskPassViewConstantBuffer.get()->UpdateData(&ViewCB, sizeof(ViewConstantBufferTable), 0);
 
 	XMFLOAT4X4 TempProject = ViewMatrix.GetProjectionMatrix();
-	//XMFLOAT4X4 TempView = ViewMatrix.GetViewMatrix();
 	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
 	ScreenToClip.m[2][2] = TempProject.m[2][2];
 	ScreenToClip.m[3][2] = TempProject.m[3][2];
@@ -1498,11 +1461,6 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		cbShadowMaskNoCommon[i].x_offset = 0.25 * i;
 		ShadowMaskNoCommonConstantBuffer[i].get()->UpdateData(&cbShadowMaskNoCommon[i], sizeof(cbShadowMaskNoCommonBuffer), 0);
 	}
-
-	//SSR Pass
-	RHISSRViewCB->UpdateData(&ViewCB, sizeof(ViewConstantBufferTable), 0);
-	cbSSRIns.SSRParams = XMFLOAT4(1.0, 1.0, 1.0, 1.0);
-	RHIcbSSR->UpdateData(&cbSSRIns, sizeof(cbSSR), 0);
 
 	
 	// All distance here are in kilometer and scattering/absorptions coefficient in 1/kilometers.
@@ -1574,8 +1532,8 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		XMFLOAT3 SkyPlanetCenter; XMStoreFloat3(&SkyPlanetCenter, PlanetCenterWorld);
 		XMFLOAT3 SkyViewHeight; XMStoreFloat3(&SkyViewHeight, XMVector3Length(SkyWorldCameraOrigin - PlanetCenterWorld));
 
-		XMStoreFloat3(&ViewCB.SkyWorldCameraOrigin, SkyWorldCameraOrigin);
-		ViewCB.SkyPlanetCenterAndViewHeight = XMFLOAT4(SkyPlanetCenter.x, SkyPlanetCenter.y, SkyPlanetCenter.z, SkyViewHeight.x);
+		XMStoreFloat3(&RViewInfo.ViewCBCPUData.SkyWorldCameraOrigin, SkyWorldCameraOrigin);
+		RViewInfo.ViewCBCPUData.SkyPlanetCenterAndViewHeight = XMFLOAT4(SkyPlanetCenter.x, SkyPlanetCenter.y, SkyPlanetCenter.z, SkyViewHeight.x);
 
 		XMVECTOR SkyUp = (SkyWorldCameraOrigin - PlanetCenterWorld) * CmToSkyUnit;
 		SkyUp = XMVector3Normalize(SkyUp);
@@ -1620,7 +1578,7 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 			SkyViewRow0.z, SkyViewRow1.z, SkyViewRow2.z, 0,
 			0, 0, 0, 0);
 
-		ViewCB.SkyViewLutReferential = SkyViewLutReferentialTransposed;
+		RViewInfo.ViewCBCPUData.SkyViewLutReferential = SkyViewLutReferentialTransposed;
 	//}
 	
 	//SkyAtmosphere Precompute
@@ -1678,10 +1636,8 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 
 
-
-	ViewConstantBuffer.get()->UpdateData(
-		&ViewCB,
-		sizeof(ViewConstantBufferTable), 0);
+	
+	RViewInfo.ViewConstantBuffer.get()->UpdateData(&RViewInfo.ViewCBCPUData, sizeof(ViewConstantBufferData), 0);
 
 }
 

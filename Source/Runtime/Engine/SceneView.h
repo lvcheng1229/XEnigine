@@ -1,6 +1,6 @@
 #pragma once
 #include "Runtime/Core/XMath.h"
-
+#include "Runtime/RHI/RHIResource.h"
 DirectX::XMFLOAT4 CreateInvDeviceZToWorldZTransform(const DirectX::XMFLOAT4X4 ProjMatrix);
 
 struct XViewMatrices
@@ -78,5 +78,35 @@ public:
 	//misc
 	DirectX::XMFLOAT4X4 GetScreenToTranslatedWorldTranPose();
 	DirectX::XMFLOAT4X4 GetScreenToWorldTranPose();
-	
+};
+
+struct ViewConstantBufferData
+{
+	DirectX::XMFLOAT4X4 TranslatedViewProjectionMatrix;
+	DirectX::XMFLOAT4X4 ScreenToTranslatedWorld;
+	DirectX::XMFLOAT4X4 ViewToClip;
+	DirectX::XMFLOAT4X4 ScreenToWorld;
+
+	DirectX::XMFLOAT4 InvDeviceZToWorldZTransform;
+	DirectX::XMFLOAT3 WorldCameraOrigin;
+	uint32 StateFrameIndexMod8 = 0;
+
+	DirectX::XMFLOAT4 BufferSizeAndInvSize;
+	DirectX::XMFLOAT4 AtmosphereLightDirection;
+
+	DirectX::XMFLOAT3 SkyWorldCameraOrigin;
+	float padding1 = 0.0;
+
+	DirectX::XMFLOAT4 SkyPlanetCenterAndViewHeight;
+	DirectX::XMFLOAT4X4 SkyViewLutReferential;
+
+	DirectX::XMFLOAT4 ViewSizeAndInvSize;;
+};
+
+class XSceneView
+{
+public:
+	std::shared_ptr<XRHIConstantBuffer>ViewConstantBuffer;
+	ViewConstantBufferData ViewCBCPUData;
+	XViewMatrices ViewMat;
 };

@@ -132,15 +132,52 @@ public:
 	inline BuddyAllocatorData& GetBuddyAllocData() { return buddy_alloc_data; };
 };
 
+#define MAX_GLOBAL_CONSTANT_BUFFER_SIZE		4096
+
+
 class XD3D12ConstantBuffer :public XRHIConstantBuffer
 {
 public:
 	XD3D12ResourceLocation ResourceLocation;
-	inline void UpdateData(const void* data, uint32 size,uint32 offset_byte)override
+	
+	virtual void UpdateData(const void* data, uint32 size,uint32 offset_byte)override
 	{
 		void* data_ptr = ResourceLocation.GetMappedCPUResourcePtr();
 		data_ptr = static_cast<uint8*>(data_ptr) + offset_byte;
 		memcpy(data_ptr, data, size);
+	}
+};
+
+class XD3D12GlobalConstantBuffer :public XD3D12ConstantBuffer
+{
+public:
+	uint32 BindSlotIndex;
+	bool HasValueBind;
+public:
+	//~XD3D12GlobalConstantBuffer() { X_Assert(false); }
+	XD3D12GlobalConstantBuffer() :BindSlotIndex(0), HasValueBind(false) {}
+	inline void ResetState()
+	{
+		HasValueBind = false;
+	}
+
+	inline void SetSlotIndex(uint32 BufferIndex)
+	{
+		if (HasValueBind && (BufferIndex != BindSlotIndex)) 
+		{ 
+			X_Assert(false);
+		}
+
+		if (HasValueBind == false)
+		{
+			BindSlotIndex = BufferIndex;
+			HasValueBind = true;
+		}
+	}
+
+	inline void UpdateData(const void* data, uint32 size, uint32 offset_byte)override
+	{
+		XD3D12ConstantBuffer::UpdateData(data, size, offset_byte);
 	}
 };
 

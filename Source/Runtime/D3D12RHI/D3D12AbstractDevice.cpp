@@ -22,12 +22,7 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	DirectxCmdQueue->Create(PhysicalDeviceIn);
 	ComputeCmdQueue->Create(PhysicalDeviceIn);
 
-	uint32 temp_thread_num = 2;
-	DirectCtxs.resize(temp_thread_num);
-	for (uint32 i = 0; i < temp_thread_num; ++i)
-	{
-		DirectCtxs[i].Create(this);
-	}
+
 
 	RenderTargetDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128);
 	DepthStencilDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 128);
@@ -44,6 +39,13 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	UploadHeapAlloc.Create(PhysicalDevice, upload_cfg, 512 * (1 << 20), (64 * 1024), AllocStrategy::ManualSubAllocation);
 
 	ConstantBufferUploadHeapAlloc.Create(PhysicalDevice, upload_cfg, 128 * (1 << 20), 256, AllocStrategy::ManualSubAllocation);
+
+	uint32 temp_thread_num = 2;
+	DirectCtxs.resize(temp_thread_num);
+	for (uint32 i = 0; i < temp_thread_num; ++i)
+	{
+		DirectCtxs[i].Create(this);
+	}
 }
 
 std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(uint32 size)

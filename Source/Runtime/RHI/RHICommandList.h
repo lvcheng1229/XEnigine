@@ -74,9 +74,33 @@ public:
 class XRHICommandList : public XRHIComputeCommandList
 {
 public:
+	inline void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName)
+	{
+		GetContext()->RHIBeginRenderPass(InInfo, InName);
+	}
+	inline void RHIDrawIndexedPrimitive()
+	{
+		GetContext()->RHIDrawIndexedPrimitive();
+	}
+
 	inline void SetGraphicsPipelineState(class XRHIGraphicsPSO* GraphicsPipelineState)
 	{
 		GetContext()->RHISetGraphicsPipelineState(GraphicsPipelineState);
+	}
+
+	inline void SetConstantBuffer(EShaderType ShaderType, uint32 BufferIndex, XRHIConstantBuffer* RHICBV)
+	{
+		GetContext()->RHISetShaderConstantBuffer(ShaderType, BufferIndex, RHICBV);
+	}
+
+	inline void SetShaderValue(
+		EShaderType ShaderType, 
+		uint32 BufferIndex,
+		uint32 VariableOffsetInBuffer, 
+		uint32 NumBytes, 
+		const void* NewValue)
+	{
+		GetContext()->SetShaderValue(ShaderType, BufferIndex, VariableOffsetInBuffer, NumBytes, NewValue);
 	}
 
 	inline void SetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* Texture)

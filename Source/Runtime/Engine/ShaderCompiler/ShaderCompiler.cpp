@@ -3,19 +3,8 @@
 #include "Runtime/RenderCore/GlobalShader.h"
 #include <filesystem>
 static const const std::filesystem::path ShaderASMPath("E:\\XEngine\\XEnigine\\Cache");
-//static const char* FXC_PATH = "C:/Program Files(x86)/Windows Kits/10/bin/10.0.19041.0/x86/fxc.exe";
-//
-////https://docs.microsoft.com/en-us/windows/win32/direct3dtools/dx-graphics-tools-fxc-syntax
-//class FCX_Arguments
-//{
-//public:
-//	std::string SourceFile;
-//	std::string ShadingModel;// /T
-//	std::string ShadingEntry;// /E
-//	std::string OutputProjectFile;// /Fo .cso load later 
-//	std::string OutputAssemblyFile;// Fx .asm
-//	std::string DifineMacro;// /D
-//};
+//https://docs.microsoft.com/en-us/windows/win32/direct3dtools/dx-graphics-tools-fxc-syntax
+
 
 static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& Output)
 {
@@ -117,18 +106,20 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 				NumCBVCount++;
 				ParameterInfo.Parametertype = EShaderParametertype::CBV;
 				Output.ShaderParameterMap.MapNameToParameter[ResourceDesc.Name] = ParameterInfo;
-
-				ID3D12ShaderReflectionConstantBuffer* ConstantBuffer = Reflection->GetConstantBufferByName(ResourceDesc.Name);
-				D3D12_SHADER_BUFFER_DESC CBDesc;
-				ConstantBuffer->GetDesc(&CBDesc);
-				for (uint32 ConstantIndex = 0; ConstantIndex < CBDesc.Variables; ConstantIndex++)
+				if (strncmp(ResourceDesc.Name, "cbView", 64) != 0)
 				{
-					ID3D12ShaderReflectionVariable* Variable = ConstantBuffer->GetVariableByIndex(ConstantIndex);
-					D3D12_SHADER_VARIABLE_DESC VariableDesc;
-					Variable->GetDesc(&VariableDesc);
-					ParameterInfo.VariableOffsetInBuffer = VariableDesc.StartOffset;
-					ParameterInfo.VariableSize = VariableDesc.Size;
-					Output.ShaderParameterMap.MapNameToParameter[VariableDesc.Name] = ParameterInfo;
+					ID3D12ShaderReflectionConstantBuffer* ConstantBuffer = Reflection->GetConstantBufferByName(ResourceDesc.Name);
+					D3D12_SHADER_BUFFER_DESC CBDesc;
+					ConstantBuffer->GetDesc(&CBDesc);
+					for (uint32 ConstantIndex = 0; ConstantIndex < CBDesc.Variables; ConstantIndex++)
+					{
+						ID3D12ShaderReflectionVariable* Variable = ConstantBuffer->GetVariableByIndex(ConstantIndex);
+						D3D12_SHADER_VARIABLE_DESC VariableDesc;
+						Variable->GetDesc(&VariableDesc);
+						ParameterInfo.VariableOffsetInBuffer = VariableDesc.StartOffset;
+						ParameterInfo.VariableSize = VariableDesc.Size;
+						Output.ShaderParameterMap.MapNameToParameter[VariableDesc.Name] = ParameterInfo;
+					}
 				}
 			}
 			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWSTRUCTURED)

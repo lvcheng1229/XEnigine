@@ -38,9 +38,13 @@ public:
 
 	inline XD3D12PhysicDevice* GetPhysicalDevice() { return PhysicalDevice; }
 	inline XD3DDirectContex* GetDirectContex(uint32 index_thread) { return &DirectCtxs[index_thread]; }
+	
 	inline XD3D12DescArrayManager* GetRenderTargetDescArrayManager() { return &RenderTargetDescArrayManager; }
 	inline XD3D12DescArrayManager* GetDepthStencilDescArrayManager() { return &DepthStencilDescArrayManager; }
 	inline XD3D12DescArrayManager* GetShaderResourceDescArrayManager() { return &ShaderResourceDescArrayManager; }
+
+	inline XD3DBuddyAllocator* GetConstantBufferUploadHeapAlloc() { return &ConstantBufferUploadHeapAlloc; }
+
 private:
 	uint64 TempResourceIndex;
 	std::vector<XD3D12Resource>ResourceManagerTempVec;

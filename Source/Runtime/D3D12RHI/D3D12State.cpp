@@ -116,6 +116,7 @@ static void GetBoundCountAndHash(
 static std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>HashToTempRootSig;
 static std::unordered_map<std::size_t, std::shared_ptr<XD3D12PSOStoreID3DPSO>>HashToID3D12;
 
+#define USE_PIPELINE_LIBRARY 1
 
 std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
 {
@@ -146,13 +147,17 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 	{
 		const std::wstring PSOCacheName = std::to_wstring(PSOHash);
 		XD3D12PSOStoreID3DPSO* IPSO = new XD3D12PSOStoreID3DPSO();
-		bool loaded = PhyDevice->GetD3D12PipelineLibrary()->LoadPSOFromLibrary(PSOCacheName.data(), &PSODesc, IPSO->GetID3DPSO_Address());
 
+#if USE_PIPELINE_LIBRARY
+		bool loaded = PhyDevice->GetD3D12PipelineLibrary()->LoadPSOFromLibrary(PSOCacheName.data(), &PSODesc, IPSO->GetID3DPSO_Address());		
 		if (!loaded)
 		{
+#endif
 			ThrowIfFailed(PhyDevice->GetDXDevice()->CreateGraphicsPipelineState(&PSODesc, IID_PPV_ARGS(IPSO->GetID3DPSO_Address())));
+#if USE_PIPELINE_LIBRARY
 			PhyDevice->GetD3D12PipelineLibrary()->StorePSOToLibrary(PSOCacheName.data(), IPSO->GetID3DPSO());
 		}
+#endif
 		HashToID3D12[PSOHash] = std::shared_ptr<XD3D12PSOStoreID3DPSO>(IPSO);
 	}
 	return std::make_shared<XD3DGraphicsPSO>(PSOInit, HashToTempRootSig[BoundHash].get(), HashToID3D12[PSOHash].get());
