@@ -8,14 +8,10 @@ protected:
 	struct FPSOContext
 	{
 		uint32 CachedNumRTs = 0;
-		std::array<XRHIRenderTargetView, 8>CachedRenderTargets;
 		XRHIDepthStencilView CachedDepthStencilTarget;
+		std::array<XRHIRenderTargetView, 8>CachedRenderTargets;
 	} PSOContext;
 public:
-	void CacheActiveRenderTargets()
-	{
-
-	}
 
 	void SetContext(IRHIContext* InContext)
 	{
@@ -114,12 +110,11 @@ public:
 	{
 		GetContext()->RHIBeginRenderPass(InInfo, InName);
 	}
+
 	inline void RHIDrawIndexedPrimitive()
 	{
 		GetContext()->RHIDrawIndexedPrimitive();
 	}
-
-
 
 	inline void SetGraphicsPipelineState(class XRHIGraphicsPSO* GraphicsPipelineState)
 	{
@@ -131,12 +126,7 @@ public:
 		GetContext()->RHISetShaderConstantBuffer(ShaderType, BufferIndex, RHICBV);
 	}
 
-	inline void SetShaderValue(
-		EShaderType ShaderType, 
-		uint32 BufferIndex,
-		uint32 VariableOffsetInBuffer, 
-		uint32 NumBytes, 
-		const void* NewValue)
+	inline void SetShaderValue(EShaderType ShaderType, uint32 BufferIndex,uint32 VariableOffsetInBuffer, uint32 NumBytes, const void* NewValue)
 	{
 		GetContext()->SetShaderValue(ShaderType, BufferIndex, VariableOffsetInBuffer, NumBytes, NewValue);
 	}

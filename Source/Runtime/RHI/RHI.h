@@ -1,19 +1,18 @@
 #pragma once
+#include <array>
+#include "RHIDefines.h"
 #include "Runtime/DataStruct/XRefCountPtr.h"
 #include "Runtime/Core/Template/XEngineTemplate.h"
-#include "RHIDefines.h"
-#include <array>
 #include "Runtime/Core/PixelFormat.h"
 
-
-extern void RHIInit();
 struct FPixelFormatInfo
 {
 	const wchar_t* Name;
 	uint32 PlatformFormat;
 };
-extern FPixelFormatInfo GPixelFormats[(int)EPixelFormat::FT_MAX];
 
+extern void RHIInit();
+extern FPixelFormatInfo GPixelFormats[(int)EPixelFormat::FT_MAX];
 using EShaderType_Underlying = std::underlying_type<EShaderType>::type;
 
 struct XDepthStencilStateInitializerRHI

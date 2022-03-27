@@ -726,17 +726,17 @@ void SkyViewLutParamsToUv(
     UV = FromUnitToSubUvs(UV, SkyViewLutSizeAndInvSize);
 }
 
-struct VertexIn
-{
-    float2 PosIn : POSITION;
-    float2 TexC : TEXCOORD;
-};
-
-float4 VS(VertexIn vin) : SV_POSITION
-{
-    float4 PosH = float4(vin.PosIn, 0.0f, 1.0f);
-    return PosH;
-}
+//struct VertexIn
+//{
+//    float2 PosIn : POSITION;
+//    float2 TexC : TEXCOORD;
+//};
+//
+//float4 VS(VertexIn vin) : SV_POSITION
+//{
+//    float4 PosH = float4(vin.PosIn, 0.0f, 1.0f);
+//    return PosH;
+//}
 
 
 

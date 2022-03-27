@@ -11,18 +11,27 @@ class XD3D12PlatformRHI :public XPlatformRHI
 public:
 	XD3D12PlatformRHI(XD3D12AbstractDevice* InPhyDevice);
 	inline void Init() override {};
+
+	//CreateVertexLayout
 	std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements) final override;
+	
+	//Create State
 	std::shared_ptr<XRHIDepthStencilState> RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer)final override;
 	std::shared_ptr<XRHIBlendState> RHICreateBlendState(const XBlendStateInitializerRHI& Initializer)final override;
+	
+	//Create Shader
 	std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8> Code)final override;
 	std::shared_ptr<XRHIPixelShader> RHICreatePixelShader(XArrayView<uint8> Code)final override;
 	std::shared_ptr<XRHIComputeShader> RHICreateComputeShader(XArrayView<uint8> Code)final override;
+	
+	//CreatePSO
 	std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)final override;
 	std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)final override;
 	
 public:
 	XD3D12PhysicDevice* PhyDevice;
 	XD3D12AbstractDevice* AbsDevice;
+	
 	static inline void Base_TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,
 		XD3D12Resource* pResource,
@@ -32,8 +41,8 @@ public:
 		D3D12_RESOURCE_STATES before = resource_state.GetResourceState();
 		direct_cmd_list.CmdListAddTransition(pResource, before, after);
 		resource_state.SetResourceState(after);
-
 	}
+
 	static inline void TransitionResource(
 		XD3D12DirectCommandList& hCommandList, 
 		XD3D12UnorderedAcessView* pView, 
@@ -42,6 +51,7 @@ public:
 		XD3D12Resource* pResource = pView->GetResource();
 		Base_TransitionResource(hCommandList, pResource, after);
 	}
+	
 	static inline void TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,
 		XD3D12ShaderResourceView* sr_view,

@@ -35,14 +35,14 @@ enum class ECompareFunction
 	CF_Always,
 };
 
-enum class ERenderTargetLoadAction :uint8
+enum class ERenderTargetLoadAction
 {
 	ENoAction,
 	ELoad,
 	EClear,
 };
 
-enum class EDepthStencilLoadAction :uint8
+enum class EDepthStencilLoadAction
 {
 	ENoAction,
 	ELoad,

@@ -59,6 +59,8 @@ void XD3DDirectContex::RHISetComputePipelineState(XRHIComputePSO* ComputeState)
 	VSGlobalConstantBuffer->ResetState();
 	PSGlobalConstantBuffer->ResetState();
 	CSGlobalConstantBuffer->ResetState();
+
+	cmd_dirrect_list.CmdListFlushBarrier();
 }
 
 void XD3DDirectContex::RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)
@@ -68,6 +70,8 @@ void XD3DDirectContex::RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsStat
 	VSGlobalConstantBuffer->ResetState();
 	PSGlobalConstantBuffer->ResetState();
 	CSGlobalConstantBuffer->ResetState();
+
+	cmd_dirrect_list.CmdListFlushBarrier();
 }
 
 void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr)
@@ -90,18 +94,18 @@ void XD3DDirectContex::RHISetShaderUAV(EShaderType ShaderType, uint32 TextureInd
 	PassStateManager.SetUAV<EShaderType::SV_Compute>(D3DUAVPtr, TextureIndex);
 }
 
-void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)
-{
-	XD3D12UnorderedAcessView* D3DUAVPtr = static_cast<XD3D12UnorderedAcessView*>(UAV);
-	PassStateManager.SetUAV<EShaderType::SV_Compute>(D3DUAVPtr, TextureIndex);
-}
+//void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)
+//{
+//	XD3D12UnorderedAcessView* D3DUAVPtr = static_cast<XD3D12UnorderedAcessView*>(UAV);
+//	PassStateManager.SetUAV<EShaderType::SV_Compute>(D3DUAVPtr, TextureIndex);
+//}
 
-void XD3DDirectContex::RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
-{
-	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
-	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
-	PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
-}
+//void XD3DDirectContex::RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
+//{
+//	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
+//	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
+//	PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
+//}
 
 void XD3DDirectContex::RHISetShaderConstantBuffer(XRHIComputeShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer)
 {
@@ -109,11 +113,11 @@ void XD3DDirectContex::RHISetShaderConstantBuffer(XRHIComputeShader* ShaderRHI, 
 	PassStateManager.SetCBV<EShaderType::SV_Compute>(ConstantBuffer, BufferIndex);
 }
 
-void XD3DDirectContex::RHISetShaderResourceViewParameter(XRHIComputeShader* ComputeShaderRHI, uint32 TextureIndex, XRHIShaderResourceView* SRVRHI)
-{
-	XD3D12ShaderResourceView* D3DSRVPtr = static_cast<XD3D12ShaderResourceView*>(SRVRHI);
-	PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
-}
+//void XD3DDirectContex::RHISetShaderResourceViewParameter(XRHIComputeShader* ComputeShaderRHI, uint32 TextureIndex, XRHIShaderResourceView* SRVRHI)
+//{
+//	XD3D12ShaderResourceView* D3DSRVPtr = static_cast<XD3D12ShaderResourceView*>(SRVRHI);
+//	PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
+//}
 
 void XD3DDirectContex::RHISetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* NewTextureRHI)
 {
@@ -157,27 +161,27 @@ void XD3DDirectContex::SetShaderValue(EShaderType ShaderType, uint32 BufferIndex
 	
 }
 
-void XD3DDirectContex::RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
-{
-	EShaderType ShaderType = ShaderRHI->GetShaderType();
-	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
-	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
-	switch (ShaderType)
-	{
-	case EShaderType::SV_Vertex:
-		PassStateManager.SetShaderResourceView<EShaderType::SV_Vertex>(D3DSRVPtr, TextureIndex);
-		break;
-	case EShaderType::SV_Pixel:
-		PassStateManager.SetShaderResourceView<EShaderType::SV_Pixel>(D3DSRVPtr, TextureIndex);
-		break;
-	case EShaderType::SV_Compute:
-		PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
-		break;
-	default:
-		X_Assert(false);
-		break;
-	}
-}
+//void XD3DDirectContex::RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
+//{
+//	EShaderType ShaderType = ShaderRHI->GetShaderType();
+//	XD3D12TextureBase* D3DTexturePtr = GetD3D12TextureFromRHITexture(NewTextureRHI);
+//	XD3D12ShaderResourceView* D3DSRVPtr = D3DTexturePtr->GetShaderResourceView();
+//	switch (ShaderType)
+//	{
+//	case EShaderType::SV_Vertex:
+//		PassStateManager.SetShaderResourceView<EShaderType::SV_Vertex>(D3DSRVPtr, TextureIndex);
+//		break;
+//	case EShaderType::SV_Pixel:
+//		PassStateManager.SetShaderResourceView<EShaderType::SV_Pixel>(D3DSRVPtr, TextureIndex);
+//		break;
+//	case EShaderType::SV_Compute:
+//		PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
+//		break;
+//	default:
+//		X_Assert(false);
+//		break;
+//	}
+//}
 
 void XD3DDirectContex::RHISetShaderConstantBuffer(XRHIGraphicsShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer)
 {
@@ -276,8 +280,24 @@ void XD3DDirectContex::RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray
 
 void XD3DDirectContex::RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ)
 {
+	if (VSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Vertex, VSGlobalConstantBuffer->BindSlotIndex, VSGlobalConstantBuffer.get());
+		VSGlobalConstantBuffer->ResetState();
+	}
+	if (PSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Pixel, PSGlobalConstantBuffer->BindSlotIndex, PSGlobalConstantBuffer.get());
+		PSGlobalConstantBuffer->ResetState();
+	}
+	if (CSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Compute, CSGlobalConstantBuffer->BindSlotIndex, CSGlobalConstantBuffer.get());
+		CSGlobalConstantBuffer->ResetState();
+	}
+
 	PassStateManager.ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
-	cmd_dirrect_list->Dispatch(256 / 8, 64 / 8, 1);
+	cmd_dirrect_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
 void XD3DDirectContex::RHIDrawIndexedPrimitive()
