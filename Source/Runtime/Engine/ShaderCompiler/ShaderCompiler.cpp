@@ -53,20 +53,22 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		default:X_Assert(false); break;
 		}
 
-		std::vector<std::string>Macro;
+		std::vector<D3D_SHADER_MACRO>Macro;
 		if (Input.ShaderDefines.Defines.size() > 0)
 		{
-			for (auto iter = Input.ShaderDefines.Defines.begin(); iter != Input.ShaderDefines.Defines.end(); iter++)
+			Macro.resize(Input.ShaderDefines.Defines.size() + 1);
+			Macro[Input.ShaderDefines.Defines.size()].Name = NULL;
+			Macro[Input.ShaderDefines.Defines.size()].Definition = NULL;
+			int index = 0;
+			for (auto iter = Input.ShaderDefines.Defines.begin(); iter != Input.ShaderDefines.Defines.end(); iter++, index++)
 			{
-				Macro.push_back(iter->first);
-				Macro.push_back(iter->second);
-			}
+				Macro[index].Name = iter->first.c_str();
+				Macro[index].Definition = iter->second.c_str();
+			};
 		}
-		Macro.push_back("NULL");
-		Macro.push_back("NULL");
 		HRESULT hr = D3DCompileFromFile(
 			Input.SourceFilePath.data(),
-			nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			Macro.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
 			Input.EntryPointName.data(),
 			Target.data(), compileFlags, 0,
 			&CodeGened, &Errors);

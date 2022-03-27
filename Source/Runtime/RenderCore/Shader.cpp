@@ -14,6 +14,7 @@ std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShade
 	{
 	case EShaderType::SV_Vertex:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreateVertexShader(CodeView)); break;
 	case EShaderType::SV_Pixel:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreatePixelShader(CodeView)); break;
+	case EShaderType::SV_Compute:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreateComputeShader(CodeView)); break;
 	default:X_Assert(false); break;
 	}
 	RHIShaderRef->SetHash(CodeHash);

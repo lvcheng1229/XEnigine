@@ -128,7 +128,8 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 		}
 		else
 		{
-			X_Assert(false);
+			//TODO
+			direct_cmd_list->GetDXCmdList()->SetPipelineState(PipelineState.Common.ID3DPSO);
 		}
 		bNeedSetPSO = false;
 	}

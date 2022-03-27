@@ -59,6 +59,7 @@ public:
 	
     //ID3D12PipelineLibrary::LoadGraphics/ComputePipeline
     bool LoadPSOFromLibrary(LPCWSTR pName, const D3D12_GRAPHICS_PIPELINE_STATE_DESC* pDesc, ID3D12PipelineState** PtrAddress);
+    bool LoadPSOFromLibrary(LPCWSTR pName, const D3D12_COMPUTE_PIPELINE_STATE_DESC* pDesc, ID3D12PipelineState** PtrAddress);
 	void StorePSOToLibrary(LPCWSTR pName,ID3D12PipelineState* pPipeline);//ID3D12PipelineLibrary::StorePipeline
 	void SerializingPSOLibrary();//ID3D12PipelineLibrary::Serialize			
 	void DeserializingPSOLibrary(XD3D12PhysicDevice* PhyDevice);//ID3D12Device1::CreatePipelineLibrary

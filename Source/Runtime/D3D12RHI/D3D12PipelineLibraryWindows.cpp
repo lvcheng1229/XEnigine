@@ -59,6 +59,16 @@ bool XD3D12PipelineLibrary::LoadPSOFromLibrary(
 	return true;
 }
 
+bool XD3D12PipelineLibrary::LoadPSOFromLibrary(LPCWSTR pName, const D3D12_COMPUTE_PIPELINE_STATE_DESC* pDesc, ID3D12PipelineState** PtrAddress)
+{
+    HRESULT hr = m_pipelineLibrary->LoadComputePipeline(pName, pDesc, IID_PPV_ARGS(PtrAddress));
+    if (hr == E_INVALIDARG)
+    {
+        return false;
+    }
+    return true;
+}
+
 void XD3D12PipelineLibrary::StorePSOToLibrary(
 	LPCWSTR pName,
 	ID3D12PipelineState* pPipeline)

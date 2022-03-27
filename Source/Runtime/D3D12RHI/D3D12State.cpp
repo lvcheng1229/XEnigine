@@ -4,6 +4,7 @@
 #include "D3D12Rootsignature.h"
 #include "D3D12PipelineState.h"
 #include "D3D12Shader.h"
+#include "D3D12AbstractDevice.h"
 #include <string>
 static D3D12_COMPARISON_FUNC TranslateCompareFunction(ECompareFunction CompareFunction)
 {
@@ -113,11 +114,44 @@ static void GetBoundCountAndHash(
 	(std::string((char*)&RegisterBoundCount, sizeof(XPipelineRegisterBoundCount)));
 	
 }
-static std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>HashToTempRootSig;
 static std::unordered_map<std::size_t, std::shared_ptr<XD3D12PSOStoreID3DPSO>>HashToID3D12;
 
 #define USE_PIPELINE_LIBRARY 0
 
+std::shared_ptr<XRHIComputePSO> XD3D12PlatformRHI::RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)
+{
+	std::size_t PSOHash = RHIComputeShader->GetHash();
+	auto iter = HashToID3D12.find(PSOHash);
+
+	const XD3D12ComputeShader* D3DCSShader = static_cast<const XD3D12ComputeShader*>(RHIComputeShader);
+	if (iter == HashToID3D12.end())
+	{
+		XD3D12PSOStoreID3DPSO* IPSO = new XD3D12PSOStoreID3DPSO();
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC PSODesc;
+		ZeroMemory(&PSODesc, sizeof(D3D12_COMPUTE_PIPELINE_STATE_DESC));
+		PSODesc.pRootSignature = D3DCSShader->RootSignature->GetDXRootSignature();
+		PSODesc.CS = D3DCSShader->D3DByteCode;
+		PSODesc.NodeMask = 0;
+		PSODesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+
+		const std::wstring PSOCacheName = std::to_wstring(PSOHash);
+#if USE_PIPELINE_LIBRARY
+		bool loaded = PhyDevice->GetD3D12PipelineLibrary()->LoadPSOFromLibrary(PSOCacheName.data(), &PSODesc, IPSO->GetID3DPSO_Address());
+		if (!loaded)
+		{
+#endif
+			ThrowIfFailed(PhyDevice->GetDXDevice()->CreateComputePipelineState(&PSODesc, IID_PPV_ARGS(IPSO->GetID3DPSO_Address())));
+#if USE_PIPELINE_LIBRARY
+			PhyDevice->GetD3D12PipelineLibrary()->StorePSOToLibrary(PSOCacheName.data(), IPSO->GetID3DPSO());
+		}
+#endif
+		HashToID3D12[PSOHash] = std::shared_ptr<XD3D12PSOStoreID3DPSO>(IPSO);
+	}
+	return std::make_shared<XD3DComputePSO>(D3DCSShader, HashToID3D12[PSOHash].get());
+
+}
 std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
 {
 
@@ -129,14 +163,15 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 	std::size_t BoundHash;
 	GetBoundCountAndHash(PSOInit, RegisterBoundCount, BoundHash);
 
-	auto RootIter = HashToTempRootSig.find(BoundHash);
-	if (RootIter == HashToTempRootSig.end())
+	
+	auto RootIter = AbsDevice->GetRootSigMap().find(BoundHash);
+	if (RootIter == AbsDevice->GetRootSigMap().end())
 	{
 		std::shared_ptr<XD3D12RootSignature>RootSigPtr = std::make_shared<XD3D12RootSignature>();
 		RootSigPtr->Create(PhyDevice, RegisterBoundCount);
-		HashToTempRootSig[BoundHash] = RootSigPtr;
+		AbsDevice->GetRootSigMap()[BoundHash] = RootSigPtr;
 	}
-	PSODesc.pRootSignature = HashToTempRootSig[BoundHash]->GetDXRootSignature();
+	PSODesc.pRootSignature = AbsDevice->GetRootSigMap()[BoundHash]->GetDXRootSignature();
 	
 
 	THashCombine(PSOHash, BoundHash);
@@ -160,7 +195,7 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 #endif
 		HashToID3D12[PSOHash] = std::shared_ptr<XD3D12PSOStoreID3DPSO>(IPSO);
 	}
-	return std::make_shared<XD3DGraphicsPSO>(PSOInit, HashToTempRootSig[BoundHash].get(), HashToID3D12[PSOHash].get());
+	return std::make_shared<XD3DGraphicsPSO>(PSOInit, AbsDevice->GetRootSigMap()[BoundHash].get(), HashToID3D12[PSOHash].get());
 }
 
 std::shared_ptr<XRHIDepthStencilState> XD3D12PlatformRHI::RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer)

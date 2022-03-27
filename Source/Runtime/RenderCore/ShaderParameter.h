@@ -97,3 +97,16 @@ inline void SetTextureParameter(
 	X_Assert(TextureParameter.GetResourceNum() > 0);
 	RHICmdList.SetShaderTexture(ShaderType, TextureParameter.GetResourceIndex() + ElementIndex, TextureRHI);
 }
+
+template<typename TRHICmdList>
+inline void SetShaderUAVParameter(
+	TRHICmdList& RHICmdList,
+	EShaderType ShaderType,
+	const UAVParameterType& UAVParameter,
+	XRHIUnorderedAcessView* InUAV,
+	uint32 ElementIndex = 0
+)
+{
+	X_Assert(UAVParameter.GetResourceNum() > 0);
+	RHICmdList.SetShaderUAV(ShaderType, UAVParameter.GetResourceIndex() + ElementIndex, InUAV);
+}

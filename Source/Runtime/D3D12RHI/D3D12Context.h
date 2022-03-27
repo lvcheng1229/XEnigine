@@ -32,11 +32,17 @@ public:
 		uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
+	void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) final override;
+
 	void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)override;
+	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override;
 
 	void RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override;
+	void RHISetShaderUAV(EShaderType ShaderType, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override;
+
 	void RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI);
 	void RHISetShaderConstantBuffer(XRHIComputeShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
+
 	void RHISetShaderResourceViewParameter(XRHIComputeShader* ComputeShaderRHI, uint32 TextureIndex, XRHIShaderResourceView* SRVRHI);
 	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);
 	

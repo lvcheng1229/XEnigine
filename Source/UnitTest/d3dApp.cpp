@@ -304,10 +304,11 @@ bool D3DApp::InitMainWindow()
 
 	return true;
 }
+XD3D12AbstractDevice* TempAbsDevice = nullptr;
 XD3D12PhysicDevice* TempPhyDevice = nullptr;
 XPlatformRHI* PlatformCreateDynamicRHI() // In Crate.cpp
 {
-	return new XD3D12PlatformRHI(TempPhyDevice);
+	return new XD3D12PlatformRHI(TempAbsDevice);
 }
 
 
@@ -328,11 +329,13 @@ bool D3DApp::InitDirect3D()
 	Adapter.Create();
 	Device.Create(&Adapter);
 	TempPhyDevice = &Device;
-	RHIInit();
+	
 
 	//mdxgiFactory = Adapter.GetDXFactory();
 	md3dDevice = Device.GetDXDevice();
 	abstrtact_device.Create(&Device);
+	TempAbsDevice = &abstrtact_device;
+	RHIInit();
 	viewport.Create(&abstrtact_device, mClientWidth, mClientHeight, mBackBufferFormat, mhMainWnd);
 	
 	DepthStencilDescArrayManager = abstrtact_device.GetDepthStencilDescArrayManager();

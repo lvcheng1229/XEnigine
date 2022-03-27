@@ -52,6 +52,15 @@ std::shared_ptr<XRHITexture3D> XD3DDirectContex::CreateD3D12Texture3D(uint32 wid
 	return std::shared_ptr<XRHITexture3D>(AbsDevice->CreateD3D12Texture3D(&cmd_dirrect_list, width, height, SizeZ, Format, flag, NumMipsIn, tex_data));
 }
 
+void XD3DDirectContex::RHISetComputePipelineState(XRHIComputePSO* ComputeState)
+{
+	XD3DComputePSO* D3DComputePSO = static_cast<XD3DComputePSO*>(ComputeState);
+	PassStateManager.SetComputePipelineState(D3DComputePSO);
+	VSGlobalConstantBuffer->ResetState();
+	PSGlobalConstantBuffer->ResetState();
+	CSGlobalConstantBuffer->ResetState();
+}
+
 void XD3DDirectContex::RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)
 {
 	XD3DGraphicsPSO* D3DGraphicsPSO = static_cast<XD3DGraphicsPSO*>(GraphicsState);
@@ -74,7 +83,13 @@ void XD3DDirectContex::RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView**
 	PassStateManager.SetRenderTarget(num_rt, RTPtrArrayPtr, DSVPtr);
 }
 
-//void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)
+void XD3DDirectContex::RHISetShaderUAV(EShaderType ShaderType, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)
+{
+	X_Assert(ShaderType == EShaderType::SV_Compute);
+	XD3D12UnorderedAcessView* D3DUAVPtr = static_cast<XD3D12UnorderedAcessView*>(UAV);
+	PassStateManager.SetUAV<EShaderType::SV_Compute>(D3DUAVPtr, TextureIndex);
+}
+
 void XD3DDirectContex::RHISetShaderUAV(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)
 {
 	XD3D12UnorderedAcessView* D3DUAVPtr = static_cast<XD3D12UnorderedAcessView*>(UAV);
@@ -257,6 +272,12 @@ void XD3DDirectContex::RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray
 			0,
 			nullptr);
 	}
+}
+
+void XD3DDirectContex::RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ)
+{
+	PassStateManager.ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
+	cmd_dirrect_list->Dispatch(256 / 8, 64 / 8, 1);
 }
 
 void XD3DDirectContex::RHIDrawIndexedPrimitive()

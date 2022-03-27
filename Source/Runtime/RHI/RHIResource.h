@@ -135,7 +135,7 @@ public:
 };
 
 class XRHIGraphicsPSO {};
-
+class XRHIComputePSO{};
 class XRHISetRenderTargetsInfo
 {
 public:

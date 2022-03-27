@@ -20,11 +20,22 @@ public:
 	void SetContext(IRHIContext* InContext)
 	{
 		Context = InContext;
+		ComputeContext = InContext;
 	}
 	IRHIContext* GetContext()const
 	{
 		return Context;
 	}
+
+	inline void SetComputeContext(IRHIContext* Context)
+	{
+		ComputeContext = Context;
+	}
+	IRHIContext* GetComputeContext()const
+	{
+		return ComputeContext;
+	}
+
 	void CacheActiveRenderTargets(
 		uint32 NewNumRTs,
 		const XRHIRenderTargetView* NewRenderTargetsRHI,
@@ -64,11 +75,36 @@ public:
 	}
 private:
 	IRHIContext* Context;
+	IRHIContext* ComputeContext;
 };
 
 class XRHIComputeCommandList :public XRHICommandListBase
 {
 public:
+	inline void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ)
+	{
+		GetComputeContext()->RHIDispatchComputeShader(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+	}
+
+	inline void SetComputePipelineState(class XRHIComputePSO* ComputesPipelineState)
+	{
+		GetComputeContext()->RHISetComputePipelineState(ComputesPipelineState);
+	}
+
+	inline void SetConstantBuffer(EShaderType ShaderType, uint32 BufferIndex, XRHIConstantBuffer* RHICBV)
+	{
+		GetComputeContext()->RHISetShaderConstantBuffer(ShaderType, BufferIndex, RHICBV);
+	}
+
+	inline void SetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* Texture)
+	{
+		GetComputeContext()->RHISetShaderTexture(ShaderType, TextureIndex, Texture);
+	}
+
+	inline void SetShaderUAV(EShaderType ShaderType, uint32 TextureIndex, XRHIUnorderedAcessView* RHIUAV)
+	{
+		GetComputeContext()->RHISetShaderUAV(ShaderType, TextureIndex, RHIUAV);
+	}
 };
 
 class XRHICommandList : public XRHIComputeCommandList
@@ -82,6 +118,8 @@ public:
 	{
 		GetContext()->RHIDrawIndexedPrimitive();
 	}
+
+
 
 	inline void SetGraphicsPipelineState(class XRHIGraphicsPSO* GraphicsPipelineState)
 	{
@@ -118,4 +156,9 @@ inline std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8>
 inline std::shared_ptr<XRHIPixelShader> RHICreatePixelShader(XArrayView<uint8> Code)
 {
 	return GPlatformRHI->RHICreatePixelShader(Code);
+}
+
+inline std::shared_ptr<XRHIComputeShader> RHICreateComputeShader(XArrayView<uint8> Code)
+{
+	return GPlatformRHI->RHICreateComputeShader(Code);
 }

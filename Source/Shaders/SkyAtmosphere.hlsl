@@ -761,7 +761,7 @@ float3 GetLightDiskLuminance(float3 WorldPos, float3 WorldDir)
             float2 TransmittanceLutUv;
             getTransmittanceLutUvs(PHeight, LightZenithCosAngle, Atmosphere_BottomRadiusKm, Atmosphere_TopRadiusKm, TransmittanceLutUv);
             LightDiskLuminance = TransmittanceLutTexture_Combine.Sample(gsamLinearClamp, TransmittanceLutUv, 0.0f).rgb;
-            LightDiskLuminance *= Atmosphere_Light0Illuminance;
+            LightDiskLuminance *= Atmosphere_Light0Illuminance.xyz;
         }
         const float3 MaxLightLuminance = 6400.0f;
         LightDiskLuminance = min(LightDiskLuminance, MaxLightLuminance);

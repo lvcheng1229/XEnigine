@@ -41,7 +41,7 @@ using namespace DirectX::PackedVector;
 
 #include "Runtime/RenderCore/CommonRenderRresource.h"
 
-
+//XLightPass
 class XLightPassVS :public XGloablShader
 {
 public:
@@ -141,13 +141,7 @@ XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
 
 
 
-
-
-
-
-
-
-
+//XShadowMaskPassPS
 class XShadowMaskPassPS :public XGloablShader
 {
 public:
@@ -206,18 +200,14 @@ XShadowMaskPassPS::ShaderInfos XShadowMaskPassPS::StaticShaderInfos(
 	XShadowMaskPassPS::ModifyShaderCompileDefines);
 
 
-//const D3D_SHADER_MACRO Macro[] = { "THREADGROUP_SIZE","8",NULL,NULL };
-//mShaders["RenderTransmittanceLutCS"].CreateShader(EShaderType::SV_Compute);
-//mShaders["RenderTransmittanceLutCS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
-//	Macro, "RenderTransmittanceLutCS", "cs_5_1");
-//mShaders["RenderTransmittanceLutCS"].ShaderReflect();
 
-class RenderTransmittanceLutCS :public XGloablShader
+//XRenderTransmittanceLutCS
+class XRenderTransmittanceLutCS :public XGloablShader
 {
 public:
 	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
 	{
-		return new RenderTransmittanceLutCS(Initializer);
+		return new XRenderTransmittanceLutCS(Initializer);
 	}
 	static ShaderInfos StaticShaderInfos;
 
@@ -227,13 +217,134 @@ public:
 	}
 public:
 
-	RenderTransmittanceLutCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer){}
+	XRenderTransmittanceLutCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		TransmittanceLutUAV.Bind(Initializer.ShaderParameterMap, "TransmittanceLutUAV");
+		cbSkyAtmosphere.Bind(Initializer.ShaderParameterMap, "SkyAtmosphere");
+	}
+
+	void SetParameters(
+		XRHICommandList& RHICommandList,
+		XRHIUnorderedAcessView* InUAV,
+		XRHIConstantBuffer* IncbSkyAtmosphere)
+	{
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, TransmittanceLutUAV, InUAV);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbSkyAtmosphere, IncbSkyAtmosphere);
+	}
+
+	CBVParameterType cbSkyAtmosphere;
+	TextureParameterType TransmittanceLutUAV;
 };
 
-RenderTransmittanceLutCS::ShaderInfos RenderTransmittanceLutCS::StaticShaderInfos(
+XRenderTransmittanceLutCS::ShaderInfos XRenderTransmittanceLutCS::StaticShaderInfos(
 	"RenderTransmittanceLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
-	"RenderTransmittanceLutCS", EShaderType::SV_Compute, RenderTransmittanceLutCS::CustomConstrucFunc,
-	RenderTransmittanceLutCS::ModifyShaderCompileDefines);
+	"RenderTransmittanceLutCS", EShaderType::SV_Compute, XRenderTransmittanceLutCS::CustomConstrucFunc,
+	XRenderTransmittanceLutCS::ModifyShaderCompileDefines);
+
+
+//XRenderMultiScatteredLuminanceLutCS
+class XRenderMultiScatteredLuminanceLutCS : public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new XRenderMultiScatteredLuminanceLutCS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+
+	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines)
+	{
+		OutDefines.SetDefines("THREADGROUP_SIZE", "8");
+	}
+public:
+	XRenderMultiScatteredLuminanceLutCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		MultiScatteredLuminanceLutUAV.Bind(Initializer.ShaderParameterMap, "MultiScatteredLuminanceLutUAV");
+		TransmittanceLutTexture.Bind(Initializer.ShaderParameterMap, "TransmittanceLutTexture");
+		cbSkyAtmosphere.Bind(Initializer.ShaderParameterMap, "SkyAtmosphere");
+	}
+
+	void SetParameters(
+		XRHICommandList& RHICommandList,
+		XRHIUnorderedAcessView* InUAV,
+		XRHIConstantBuffer* IncbSkyAtmosphere,
+		XRHITexture* InTransmittanceLutTexture)
+	{
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, MultiScatteredLuminanceLutUAV, InUAV);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbSkyAtmosphere, IncbSkyAtmosphere);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Compute, TransmittanceLutTexture, InTransmittanceLutTexture);
+	}
+
+	UAVParameterType MultiScatteredLuminanceLutUAV;
+	CBVParameterType cbSkyAtmosphere;
+	TextureParameterType TransmittanceLutTexture;
+};
+
+XRenderMultiScatteredLuminanceLutCS::ShaderInfos XRenderMultiScatteredLuminanceLutCS::StaticShaderInfos(
+	"RenderMultiScatteredLuminanceLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
+	"RenderMultiScatteredLuminanceLutCS", EShaderType::SV_Compute, XRenderMultiScatteredLuminanceLutCS::CustomConstrucFunc,
+	XRenderMultiScatteredLuminanceLutCS::ModifyShaderCompileDefines);
+
+
+//XRenderSkyViewLutCS
+class XRenderSkyViewLutCS :public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new XRenderSkyViewLutCS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+
+	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines)
+	{
+		OutDefines.SetDefines("THREADGROUP_SIZE", "8");
+	}
+public:
+	XRenderSkyViewLutCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
+		cbSkyAtmosphere.Bind(Initializer.ShaderParameterMap, "SkyAtmosphere");
+
+		SkyViewLutUAV.Bind(Initializer.ShaderParameterMap, "SkyViewLutUAV");
+
+		MultiScatteredLuminanceLutTexture.Bind(Initializer.ShaderParameterMap, "MultiScatteredLuminanceLutTexture");
+		TransmittanceLutTexture.Bind(Initializer.ShaderParameterMap, "TransmittanceLutTexture");
+	}
+
+	void SetParameters(
+		XRHICommandList& RHICommandList,
+		XRHIConstantBuffer* IncbView,
+		XRHIConstantBuffer* IncbSkyAtmosphere,
+
+		XRHIUnorderedAcessView* InSkyViewLutUAV,
+		XRHITexture* InTransmittanceLutTexture,
+		XRHITexture* InMultiScatteredLuminanceLutTexture
+		)
+	{
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbView, IncbView);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbSkyAtmosphere, IncbSkyAtmosphere);
+
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, SkyViewLutUAV, InSkyViewLutUAV);
+
+		SetTextureParameter(RHICommandList, EShaderType::SV_Compute, TransmittanceLutTexture, InTransmittanceLutTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Compute, MultiScatteredLuminanceLutTexture, InMultiScatteredLuminanceLutTexture);
+	}
+	
+	CBVParameterType cbView;
+	CBVParameterType cbSkyAtmosphere;
+
+	UAVParameterType SkyViewLutUAV;
+
+	TextureParameterType MultiScatteredLuminanceLutTexture;
+	TextureParameterType TransmittanceLutTexture;
+};
+
+XRenderSkyViewLutCS::ShaderInfos XRenderSkyViewLutCS::StaticShaderInfos(
+	"RenderSkyViewLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
+	"RenderSkyViewLutCS", EShaderType::SV_Compute, XRenderSkyViewLutCS::CustomConstrucFunc,
+	XRenderSkyViewLutCS::ModifyShaderCompileDefines);
+
 
 
 class XSSRPassPS :public XGloablShader
@@ -840,7 +951,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 		}
 
-		pass_state_manager->ResetState();
+		//pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 	}
 	
@@ -867,81 +978,49 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->GetCmdList()->CmdListFlushBarrier();
 		mCommandList.Get()->Dispatch(512 / 16, 512 / 16, 1);
 
-		pass_state_manager->ResetState();
+		//pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 	}
 
-	//Pass2 SkyAtmosPhere PreCompute
+	//Pass2.5 SkyAtmosPhere PreCompute
 	{
 		{
-			mCommandList->BeginEvent(1, "SkyAtmosPherePreCompute", sizeof("SkyAtmosPherePreCompute"));
-			mCommandList->SetPipelineState(RenderTransmittanceLutPSO.Get());
-			pass_state_manager->SetRootSignature(&RenderTransmittanceLutRootSig);
+			TShaderReference<XRenderTransmittanceLutCS> Shader = GetGlobalShaderMap()->GetShader<XRenderTransmittanceLutCS>();
+			XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 
-			pass_state_manager->SetShader<EShaderType::SV_Vertex>(nullptr);
-			pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
-			pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["RenderTransmittanceLutCS"]);
-
-			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderTransmittanceLutCS"].GetRHIComputeShader().get(),
-				0, RHICbSkyAtmosphere.get());
 			XD3D12Texture2D* TransmittanceLutUAVTex = static_cast<XD3D12Texture2D*>(TransmittanceLutUAV.get());
-			direct_ctx->RHISetShaderUAV(mShaders["RenderTransmittanceLutCS"].GetRHIComputeShader().get(), 0,
-				TransmittanceLutUAVTex->GeUnorderedAcessView(0));
-			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
-			direct_ctx->GetCmdList()->CmdListFlushBarrier();
-			mCommandList.Get()->Dispatch(256 / 8, 64 / 8, 1);
-			pass_state_manager->ResetState();
+			Shader->SetParameters(RHICmdList, TransmittanceLutUAVTex->GeUnorderedAcessView(), RHICbSkyAtmosphere.get());
+			RHICmdList.RHIDispatchComputeShader(256 / 8, 64 / 8, 1);
 		}
 
 		{
-			//dont need change
-			mCommandList->SetPipelineState(MultiScatteredLuminanceLutPSO.Get());
-			pass_state_manager->SetRootSignature(&MultiScatteredLuminanceLutRootSig);
-			pass_state_manager->SetShader<EShaderType::SV_Vertex>(nullptr);
-			pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
-			pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["RenderMultiScatteredLuminanceLutCS"]);
-
-			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderMultiScatteredLuminanceLutCS"].GetRHIComputeShader().get(),
-				0, RHICbSkyAtmosphere.get());//NOTE: useless !!
-
+			TShaderReference<XRenderMultiScatteredLuminanceLutCS> Shader = GetGlobalShaderMap()->GetShader<XRenderMultiScatteredLuminanceLutCS>();
+			XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
+			
 			XD3D12Texture2D* MultiScatteredLuminanceLutUAVTex = static_cast<XD3D12Texture2D*>(MultiScatteredLuminanceLutUAV.get());
-			direct_ctx->RHISetShaderUAV(mShaders["RenderMultiScatteredLuminanceLutCS"].GetRHIComputeShader().get(),
-				0, MultiScatteredLuminanceLutUAVTex->GeUnorderedAcessView(0));
-			direct_ctx->RHISetShaderTexture(mShaders["RenderMultiScatteredLuminanceLutCS"].GetRHIComputeShader().get(),
-				0, TransmittanceLutUAV.get());
-
-			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
-			direct_ctx->GetCmdList()->CmdListFlushBarrier();
-			mCommandList.Get()->Dispatch(32 / 8, 32 / 8, 1);
+			Shader->SetParameters(RHICmdList, 
+				MultiScatteredLuminanceLutUAVTex->GeUnorderedAcessView(), 
+				RHICbSkyAtmosphere.get(),
+				TransmittanceLutUAV.get());
+			RHICmdList.RHIDispatchComputeShader(32 / 8, 32 / 8, 1);
 		}
 
 		//RenderSkyViewLutCS
 		{
-			mCommandList->SetPipelineState(SkyViewLutPSO.Get());
-			pass_state_manager->SetRootSignature(&SkyViewLutRootSig);
-			pass_state_manager->SetShader<EShaderType::SV_Vertex>(nullptr);
-			pass_state_manager->SetShader<EShaderType::SV_Pixel>(nullptr);
-			pass_state_manager->SetShader<EShaderType::SV_Compute>(&mShaders["RenderSkyViewLutCS"]);
-
-			//direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
-			//	0, ViewConstantBuffer.get());
-			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
-				0, RViewInfo.ViewConstantBuffer.get());
-			direct_ctx->RHISetShaderConstantBuffer(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
-				1, RHICbSkyAtmosphere.get());
+			TShaderReference<XRenderSkyViewLutCS> Shader = GetGlobalShaderMap()->GetShader<XRenderSkyViewLutCS>();
+			XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 
 			XD3D12Texture2D* SkyViewLutUAVTex = static_cast<XD3D12Texture2D*>(SkyViewLutUAV.get());
-			direct_ctx->RHISetShaderUAV(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
-				0, SkyViewLutUAVTex->GeUnorderedAcessView(0));
-			
-			direct_ctx->RHISetShaderTexture(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
-				0, TransmittanceLutUAV.get());
-			direct_ctx->RHISetShaderTexture(mShaders["RenderSkyViewLutCS"].GetRHIComputeShader().get(),
-				1, MultiScatteredLuminanceLutUAV.get());
-
-			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
-			direct_ctx->GetCmdList()->CmdListFlushBarrier();
-			mCommandList.Get()->Dispatch(192 / 8, 104 / 8, 1);
+			Shader->SetParameters(RHICmdList,
+				RViewInfo.ViewConstantBuffer.get(),
+				RHICbSkyAtmosphere.get(),
+				SkyViewLutUAVTex->GeUnorderedAcessView(),
+				TransmittanceLutUAV.get(),
+				MultiScatteredLuminanceLutUAV.get());
+			RHICmdList.RHIDispatchComputeShader(192 / 8, 104 / 8, 1);
 		}
 
 		//RenderCameraAerialPerspectiveVolumeCS
@@ -968,13 +1047,9 @@ void CrateApp::Renderer(const GameTimer& gt)
 				1, MultiScatteredLuminanceLutUAV.get());
 
 			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
-			direct_ctx->GetCmdList()->CmdListFlushBarrier();
 			mCommandList.Get()->Dispatch(32 / 8, 32 / 8, 16 / 8);
 		}
 
-
-		pass_state_manager->ResetState();
-		mCommandList->EndEvent();
 	}
 
 
@@ -1011,13 +1086,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 				mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr((ri->Geo->VertexBufferView())));
 				mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
 				pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-
-				direct_ctx->GetCmdList()->CmdListFlushBarrier();
 				mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 			}
 
 		}
-		pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 	}
 
@@ -1121,7 +1193,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 				fullScreenItem->BaseVertexLocation, 0);
 		}
 
-		pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 	}
 
@@ -1168,7 +1239,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 			fullScreenItem->StartIndexLocation,
 			fullScreenItem->BaseVertexLocation, 0);
 
-		pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 	}
 
@@ -1212,7 +1282,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 			fullScreenItem->StartIndexLocation,
 			fullScreenItem->BaseVertexLocation, 0);
 
-		pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 
 	}
@@ -1242,7 +1311,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 			fullScreenItem->StartIndexLocation,
 			fullScreenItem->BaseVertexLocation, 0);
 
-		pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 	}
 
@@ -1281,7 +1349,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 			fullScreenItem->StartIndexLocation,
 			fullScreenItem->BaseVertexLocation, 0);
 
-		pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 
 	}
@@ -1305,10 +1372,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 			mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
 			,0
 			, TextureSceneColorDeffered.get());
-		//direct_ctx->RHISetShaderTexture(
-		//	mShaders["fullScreenPS"].GetRHIGraphicsShader().get()
-		//	, 0
-		//	, SkyViewLutUAV.get());
 		
 		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
 		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
@@ -1333,10 +1396,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_cmd_queue->CommandQueueWaitFlush();
 
 		viewport.Present();
-
-		pass_state_manager->ResetState();
-		
-		
 	}
 
 	{
@@ -2386,18 +2445,8 @@ void CrateApp::BuildShapeGeometry()
 
 void CrateApp::BuildPSOs()
 {
-	XRHIBlendState* TestBlend = TStaticBlendState<>::GetRHI();
-	XGraphicsPSOInitializer TestPSOInitializer;
-	TestPSOInitializer.BlendState = TStaticBlendState<>::GetRHI();;
-	TestPSOInitializer.DepthStencilState= TStaticDepthStencilState<>::GetRHI();
-
 	CompileGlobalShaderMap();
-	TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMap() ->GetShader<XLightPassVS>();
-	TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMap()->GetShader<XLightPassPS>();
-	XRHIVertexShader* RHIVertexShader = VertexShader.GetVertexShader();
-	XRHIPixelShader* RHIVPixelShader = PixelShader.GetPixelShader();
-	XD3D12VertexShader* D3DVertexShader = static_cast<XD3D12VertexShader*>(RHIVertexShader);
-	XD3D12PixelShader* D3DPixelShader = static_cast<XD3D12PixelShader*>(RHIVPixelShader);
+
 
 	//PrePass
 	{
@@ -2449,6 +2498,10 @@ void CrateApp::BuildPSOs()
 		ThrowIfFailed(md3dDevice->CreateComputePipelineState(&HZBPassPSODesc, IID_PPV_ARGS(&HZBPSO)));
 	}
 
+	TShaderReference<XRenderTransmittanceLutCS> ComputeShader = GetGlobalShaderMap()->GetShader<XRenderTransmittanceLutCS>();
+	XRHIComputeShader* RHICSShader = ComputeShader.GetComputeShader();
+	XD3D12ComputeShader* D3DCSShader = static_cast<XD3D12ComputeShader*>(RHICSShader);
+
 	//Sky Atmosphere COmpute
 	{
 		D3D12_COMPUTE_PIPELINE_STATE_DESC SkyAtmospherePSODesc;
@@ -2458,10 +2511,8 @@ void CrateApp::BuildPSOs()
 
 
 		SkyAtmospherePSODesc.pRootSignature = RenderTransmittanceLutRootSig.GetDXRootSignature();
-		SkyAtmospherePSODesc.CS = {
-			reinterpret_cast<BYTE*>(mShaders["RenderTransmittanceLutCS"].GetByteCode()->GetBufferPointer()),
-			mShaders["RenderTransmittanceLutCS"].GetByteCode()->GetBufferSize()
-		};
+		SkyAtmospherePSODesc.CS = D3DCSShader->D3DByteCode;
+
 		ThrowIfFailed(md3dDevice->CreateComputePipelineState(&SkyAtmospherePSODesc, IID_PPV_ARGS(&RenderTransmittanceLutPSO)));
 	}
 

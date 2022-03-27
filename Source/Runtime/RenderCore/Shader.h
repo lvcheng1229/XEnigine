@@ -219,20 +219,26 @@ public:
 	
 	inline XXShaderClass* operator->() const { return ShaderPtr; }
 
-	inline XRHIShader* GetOrCreateRHIShaderFromMap(EShaderType ShaderType) const
+	inline XRHIShader* GetOrCreateRHIShaderFromMap(/*EShaderType ShaderType*/ ) const
 	{
 		return ShaderMapFileUnitPtr->GetShaderMapStoreRHIShaders()->GetRHIShader(ShaderPtr->GetRHIShaderIndex());
 	}
 	
 	inline XRHIVertexShader* GetVertexShader() const
 	{
-		return static_cast<XRHIVertexShader*>(GetOrCreateRHIShaderFromMap(EShaderType::SV_Vertex));
+		return static_cast<XRHIVertexShader*>(GetOrCreateRHIShaderFromMap());
 	}
 
 	inline XRHIPixelShader* GetPixelShader() const
 	{
-		return static_cast<XRHIPixelShader*>(GetOrCreateRHIShaderFromMap(EShaderType::SV_Pixel));
+		return static_cast<XRHIPixelShader*>(GetOrCreateRHIShaderFromMap());
 	}
+
+	inline XRHIComputeShader* GetComputeShader() const
+	{
+		return static_cast<XRHIComputeShader*>(GetOrCreateRHIShaderFromMap());
+	}
+
 private:
 	XXShaderClass* ShaderPtr;
 	const XShaderMapBase* ShaderMapFileUnitPtr;

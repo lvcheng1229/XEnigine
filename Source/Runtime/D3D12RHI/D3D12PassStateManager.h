@@ -44,9 +44,14 @@ private:
 
 		struct
 		{
+			XD3DComputePSO* D3DComputePSO;
+		}Compute;
+
+		struct
+		{
 			ID3D12PipelineState* ID3DPSO;
 
-			const XD3D12RootSignature*				RootSignature;
+			const XD3D12RootSignature*			RootSignature;
 			XD3D12PassShaderResourceManager		SRVManager;
 			XD3D12PassUnorderedAcessManager		UAVManager;
 			XD3D12CBVRootDescManager			CBVRootDescManager;
@@ -68,6 +73,8 @@ public:
 	{
 		if (PipelineState.Graphics.D3DGraphicsPSO)
 			PipelineState.Graphics.D3DGraphicsPSO = nullptr;
+		if (PipelineState.Compute.D3DComputePSO)
+			PipelineState.Compute.D3DComputePSO = nullptr;
 	}
 
 	inline XD3D12VertexShader* GetXD3D12VertexShader(XD3DGraphicsPSO* GraphicsPipelineState)
@@ -94,6 +101,31 @@ public:
 		PipelineState.Common.NumUAVs[(int)EShaderType::SV_Pixel] = Shader != nullptr ? Shader->ResourceCount.NumUAV : 0;
 	}
 
+	inline void SetComputePipelineState(XD3DComputePSO* ComputePipelineState)
+	{
+		if (PipelineState.Compute.D3DComputePSO != ComputePipelineState)
+		{
+			PipelineState.Common.NumSRVs[(int)EShaderType::SV_Vertex] = 0;
+			PipelineState.Common.NumUAVs[(int)EShaderType::SV_Vertex] = 0;
+			PipelineState.Common.NumSRVs[(int)EShaderType::SV_Pixel] = 0;
+			PipelineState.Common.NumUAVs[(int)EShaderType::SV_Pixel] = 0;
+
+			const XD3D12ComputeShader* ComputeShader = ComputePipelineState->ComputeShader;
+			PipelineState.Common.NumSRVs[(int)EShaderType::SV_Compute] = ComputeShader->ResourceCount.NumSRV;
+			PipelineState.Common.NumUAVs[(int)EShaderType::SV_Compute] = ComputeShader->ResourceCount.NumUAV;
+
+			if (PipelineState.Common.RootSignature != ComputePipelineState->ComputeShader->RootSignature)
+			{
+				PipelineState.Common.RootSignature = ComputePipelineState->ComputeShader->RootSignature;
+				bNeedSetRootSig = true;
+			}
+
+			bNeedSetPSO = true;
+			PipelineState.Compute.D3DComputePSO = ComputePipelineState;
+			PipelineState.Common.ID3DPSO = ComputePipelineState->XID3DPSO->GetID3DPSO();
+		}
+	}
+
 	inline void SetGraphicsPipelineState(XD3DGraphicsPSO* GraphicsPipelineState)
 	{
 		if (PipelineState.Graphics.D3DGraphicsPSO != GraphicsPipelineState)
@@ -101,7 +133,7 @@ public:
 			SetVertexShaderResource(GraphicsPipelineState);
 			SetPixelShaderResource(GraphicsPipelineState);
 			PipelineState.Common.NumSRVs[(int)EShaderType::SV_Compute] = 0;
-			PipelineState.Common.NumUAVs[(int)EShaderType::SV_Pixel] = 0;
+			PipelineState.Common.NumUAVs[(int)EShaderType::SV_Compute] = 0;
 
 			if (GetCurrentRootSig() != GraphicsPipelineState->RootSig)
 			{

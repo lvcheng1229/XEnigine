@@ -48,9 +48,12 @@ public:
 
 	inline XD3DBuddyAllocator* GetConstantBufferUploadHeapAlloc() { return &ConstantBufferUploadHeapAlloc; }
 
+	inline std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>& GetRootSigMap() { return RootSignatureMap; }
 private:
 	uint64 TempResourceIndex;
 	std::vector<XD3D12Resource>ResourceManagerTempVec;
+
+	std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>RootSignatureMap;
 
 	XD3D12PhysicDevice* PhysicalDevice;
 
