@@ -1,36 +1,31 @@
 #pragma once
+#include <memory>
 #include "D3D12View.h"
-#include "D3D12PipelineCurrentDescArrayManager.h"
-
-//
-#include "Runtime/RenderCore/Shader.h"
-//
 #include "D3D12Shader.h"
 #include "D3D12PipelineState.h"
-#include <memory>
+#include "D3D12OnlineDescArrayManager.h"
+
+
+//TODO : Remove
+#include "Runtime/RenderCore/Shader.h"
 
 enum class ED3D12PipelineType
 {
 	D3D12PT_Graphics,
 	D3D12PT_Compute,
 };
+
 class XD3D12PassStateManager
 {
 private:
+	XD3D12OnlineDescArrayManager pipe_curr_desc_array_manager;
 	XD3DDirectContex* direct_ctx;
 	bool bNeedSetPSO;
 	bool bNeedSetRT;
-	bool bNeedSetDS;
-	//bool bNeedSetSRV;
-	//bool bNeedSetUAV;
-	//bool bNeedSetCBV;
 	bool bNeedSetRootSig;
-	//bool bNeedSetRootSigNew;
 	bool bNeedClearMRT;
 	bool bNeedSetHeapDesc;
-	//uint32 CurrentDescHeapSlotIndex;
-	//uint32 NumSRVs[EShaderType::SV_ShaderCount];
-	//uint32 NumCBVs[EShaderType::SV_ShaderCount];
+
 	struct
 	{
 		struct
@@ -62,8 +57,16 @@ private:
 
 	}PipelineState;
 
-	XD3D12PipelineCurrentDescArrayManager pipe_curr_desc_array_manager;
+	
 public:
+	
+	void ResetState();
+	void Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in);
+	void SetRenderTarget(uint32 num_rt, XD3D12RenderTargetView** rt_array_ptr, XD3D12DepthStencilView* ds_ptr);
+
+	template<ED3D12PipelineType PipelineType>
+	void ApplyCurrentStateToPipeline();
+
 	inline const XD3D12RootSignature* GetCurrentRootSig()
 	{
 		return PipelineState.Common.RootSignature;
@@ -137,7 +140,6 @@ public:
 
 			if (GetCurrentRootSig() != GraphicsPipelineState->RootSig)
 			{
-				//Temp
 				PipelineState.Common.RootSignature = GraphicsPipelineState->RootSig;
 				bNeedSetRootSig = true;
 			}
@@ -149,10 +151,6 @@ public:
 	}
 
 	inline void ResetDescHeapIndex() { pipe_curr_desc_array_manager.GetCurrentDescArray()->ResetIndexToZero(); }
-
-	void ResetState();
-	void Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in);
-	void SetRenderTarget(uint32 num_rt, XD3D12RenderTargetView** rt_array_ptr, XD3D12DepthStencilView* ds_ptr);
 	
 	template<EShaderType ShaderType>
 	inline void SetShader(XShader* ShaderIn)
@@ -161,7 +159,11 @@ public:
 		PipelineState.Common.NumUAVs[EShaderType_Underlying(ShaderType)] = ShaderIn != nullptr ? ShaderIn->GetUAVCount() : 0;
 	}
 
-	inline void SetHeapDesc() { bNeedSetHeapDesc = true; }
+	inline void SetHeapDesc() 
+	{
+		bNeedSetHeapDesc = true; 
+	}
+
 	inline void SetRootSignature(XD3D12RootSignature* root_sig) { 
 		if (PipelineState.Common.RootSignature != root_sig)
 		{
@@ -177,7 +179,6 @@ public:
 		if (View != UAV)
 		{
 			View = UAV;
-			//bNeedSetUAV = true;
 			XD3D12PassUnorderedAcessManager::SetSlotNeedSetBit(PipelineState.Common.UAVManager.Mask[EShaderType_Underlying(ShaderType)], UAVIndex);
 		}
 	}
@@ -189,9 +190,7 @@ public:
 		if (View != SRV)
 		{
 			View = SRV;
-			//bNeedSetSRV = true;
 			XD3D12PassShaderResourceManager::SetSlotNeedSetBit(PipelineState.Common.SRVManager.Mask[EShaderType_Underlying(ShaderType)], resource_index);
-			//NumSRVs[ShaderType]++;
 		}
 	}
 
@@ -202,12 +201,7 @@ public:
 		if (GpuVirtualPtr != CBuffer->ResourceLocation.GetGPUVirtualPtr())
 		{
 			GpuVirtualPtr = CBuffer->ResourceLocation.GetGPUVirtualPtr();
-			//bNeedSetCBV = true;
 			XD3D12CBVRootDescManager::SetSlotNeedSetBit(PipelineState.Common.CBVRootDescManager.Mask[EShaderType_Underlying(ShaderType)], resource_index);
-			//NumCBVs[ShaderType]++;
 		}
 	}
-
-	template<ED3D12PipelineType PipelineType>
-	void ApplyCurrentStateToPipeline();
 };

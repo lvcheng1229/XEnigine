@@ -4,7 +4,6 @@ void XD3D12DescArrayManager::Create(XD3D12PhysicDevice* device_in, D3D12_DESCRIP
 {
 	device = device_in;
 	desc_per_heap = num;
-	//heap_type = type;
 
 	desc.Type = type;
 	desc.NumDescriptors = num;

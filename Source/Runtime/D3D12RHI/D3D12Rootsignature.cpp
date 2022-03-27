@@ -16,32 +16,6 @@ static const D3D12_STATIC_SAMPLER_DESC StaticSamplerDescs[] =
 
 void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegisterBoundCount& register_count)
 {
-	//struct D3D12_DESCRIPTOR_RANGE
-	//{
-	//	D3D12_DESCRIPTOR_RANGE_TYPE RangeType;
-	//	UINT NumDescriptors;
-	//	UINT BaseShaderRegister;
-	//	UINT RegisterSpace;
-	//	UINT OffsetInDescriptorsFromTableStart;
-	//}
-
-	//struct D3D12_ROOT_PARAMETER
-	//{
-	//	D3D12_ROOT_PARAMETER_TYPE ParameterType;
-	//	union
-	//	{
-	//		D3D12_ROOT_DESCRIPTOR_TABLE DescriptorTable;
-	//		D3D12_ROOT_CONSTANTS Constants;
-	//		D3D12_ROOT_DESCRIPTOR Descriptor;
-	//	};
-	//	D3D12_SHADER_VISIBILITY ShaderVisibility;
-	//};
-
-	//struct D3D12_ROOT_DESCRIPTOR_TABLE
-	//{
-	//	UINT NumDescriptorRanges;
-	//	_Field_size_full_(NumDescriptorRanges)  const D3D12_DESCRIPTOR_RANGE* pDescriptorRanges;
-	//};
 	device = device_in;
 	memset(ShaderResourceBindSlotIndexArray, 0xFF, sizeof(ShaderResourceBindSlotIndexArray));
 
@@ -124,26 +98,15 @@ void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegiste
 		}
 	}
 
-	//struct D3D12_ROOT_SIGNATURE_DESC
-	//{
-	//	UINT NumParameters;
-	//	const D3D12_ROOT_PARAMETER* pParameters;
-	//	UINT NumStaticSamplers;
-	//	const D3D12_STATIC_SAMPLER_DESC* pStaticSamplers;
-	//	D3D12_ROOT_SIGNATURE_FLAGS Flags;
-	//}
 
 	root_signature_info.NumParameters = root_parameter_count;
 	root_signature_info.pParameters = slot_array;
 	root_signature_info.NumStaticSamplers = 6;
 	root_signature_info.pStaticSamplers = StaticSamplerDescs;
 
-	//TODO
 	//The value in denying access to shader stages is a minor optimization on some hardware.
-	//root_signature_info.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 	root_signature_info.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-	//SerializeRootSignature
 	XDxRefCount<ID3DBlob> errorBlob = nullptr;
 	HRESULT hr = D3D12SerializeRootSignature(&root_signature_info, D3D_ROOT_SIGNATURE_VERSION_1,
 		serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
@@ -154,11 +117,8 @@ void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegiste
 	}
 	ThrowIfFailed(hr);
 
-	ThrowIfFailed(device->GetDXDevice()->CreateRootSignature(
-		0,
-		serializedRootSig->GetBufferPointer(),
-		serializedRootSig->GetBufferSize(),
-		IID_PPV_ARGS(root_signature.GetAddressOf())));
+	ThrowIfFailed(device->GetDXDevice()->CreateRootSignature(0, serializedRootSig->GetBufferPointer(),
+		serializedRootSig->GetBufferSize(), IID_PPV_ARGS(root_signature.GetAddressOf())));
 }
 uint32 XD3D12RootSignature::GetSRVDescTableBindSlot(EShaderType shader_type)const
 {

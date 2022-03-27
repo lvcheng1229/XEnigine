@@ -1,10 +1,14 @@
 #pragma once
 #include "Runtime/HAL/PlatformTypes.h"
 #include <functional>
-//https://zhuanlan.zhihu.com/p/21722362
-//template<typename T>
-//using UnderlyingType = std::underlying_type<T>::type;
 
+#include <type_traits>
+template <typename T>
+inline constexpr T AlignArbitrary(T Val, uint64 Alignment)
+{
+	static_assert(std::is_integral_v<T> || std::is_pointer_v<T>, "AlignArbitrary expects an integer or pointer type");
+	return (T)((((uint64)Val + Alignment - 1) / Alignment) * Alignment);
+}
 
 template<typename T>
 class XArrayView

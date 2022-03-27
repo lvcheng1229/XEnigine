@@ -95,8 +95,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Core\AlignmentTemplates.h" />
-    <ClInclude Include="File\stb_image.h" />
+    <ClInclude Include="ThirdParty\stb_image.h" />
     <ClInclude Include="FrameResource.h" />
     <ClInclude Include="Runtime\Core\PixelFormat.h" />
     <ClInclude Include="Runtime\Core\Template\XEngineTemplate.h" />
@@ -111,8 +110,8 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12DescriptorArray.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PassStateManager.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PhysicDevice.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12OnlineDescArray.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12OnlineDescArrayManager.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineLibrary.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineState.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PlatformRHI.h" />
@@ -123,7 +122,6 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12Texture.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12View.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Viewport.h" />
-    <ClInclude Include="Runtime\D3D12RHI\XD3D12CommandListManger.h" />
     <ClInclude Include="Runtime\D3D12RHI\d3dx12.h" />
     <ClInclude Include="Runtime\DataStruct\XRefCountPtr.h" />
     <ClInclude Include="Runtime\Engine\SceneView.h" />
@@ -150,12 +148,10 @@
     <ClInclude Include="UnitTest\MathHelper.h" />
     <ClInclude Include="UnitTest\d3dApp.h" />
     <ClInclude Include="UnitTest\d3dUtil.h" />
-    <ClInclude Include="xtrack_new.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
     <ClCompile Include="Runtime\Core\XMath.cpp" />
-    <ClCompile Include="Runtime\Core\XMathcpp.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12AbstractDevice.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Adapter.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Allocation.cpp" />
@@ -165,17 +161,16 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12DescriptorArray.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PassStateManager.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PhysicDevice.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12OnlineDescArray.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12OnlineDescArrayManager.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineLibraryWindows.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PlatformRHI.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Resource.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12Shaders.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Shader.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12State.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12VertexDeclaration.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\XD3D12CommandListManger.cpp" />
     <ClCompile Include="Runtime\Engine\SceneView.cpp" />
     <ClCompile Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.cpp" />
     <ClCompile Include="Runtime\RenderCore\CommonRenderRresource.cpp" />

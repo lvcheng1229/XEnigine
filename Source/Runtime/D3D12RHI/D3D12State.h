@@ -1,9 +1,6 @@
 #pragma once
-#include "Runtime/RHI/RHIResource.h"
 #include <d3d12.h>
-
-//class FD3D12SamplerState
-//class FD3D12RasterizerState
+#include "Runtime/RHI/RHIResource.h"
 
 class XD3D12DepthStencilState :public XRHIDepthStencilState
 {

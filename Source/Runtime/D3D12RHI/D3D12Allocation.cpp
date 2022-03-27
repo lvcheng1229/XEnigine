@@ -1,6 +1,6 @@
 #include "D3D12Allocation.h"
 #include "d3dx12.h"
-#include "Core/AlignmentTemplates.h"
+#include "Runtime/Core/Template/XEngineTemplate.h"
 #include <iostream>
 
 

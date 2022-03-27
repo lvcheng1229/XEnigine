@@ -2,44 +2,41 @@
 // CrateApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
 //***************************************************************************************
 
-
+#include <memory>
+#include <windows.h>
 #include "UnitTest/d3dApp.h"
 #include "UnitTest/MathHelper.h"
 #include "UnitTest/GeometryGenerator.h"
 #include "FrameResource.h"
-#include <memory>
 
-#include <windows.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "ThirdParty/stb_image.h"
+
+#include "Runtime/RenderCore/GlobalShader.h"
+#include "Runtime/RenderCore/ShaderParameter.h"
+#include "Runtime/RenderCore/CommonRenderRresource.h"
 #include "Runtime/RenderCore/Shader.h"
-#include "Runtime/D3D12RHI/D3D12PipelineCurrentDescArray.h"
-#include "Runtime/D3D12RHI/D3D12PipelineCurrentDescArrayManager.h"
-#include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
-#include "Runtime/D3D12RHI/D3D12Texture.h"
 
+#include "Runtime/Core/XMath.h"
+#include "Runtime/Render/SceneRendering.h"
+
+#include "Runtime/Engine/SceneView.h"
+#include "Runtime/Engine/ShaderCompiler/ShaderCompiler.h"
+
+#include "Runtime/RHI/PipelineStateCache.h"
 #include "Runtime/RHI/RHIStaticStates.h"
 
-#include  "Runtime/Engine/SceneView.h"
-#include "Runtime/Core/XMath.h"
-#include "Runtime/Engine/ShaderCompiler/ShaderCompiler.h"
+#include "Runtime/D3D12RHI/D3D12Shader.h"
+#include "Runtime/D3D12RHI/D3D12OnlineDescArray.h"
+#include "Runtime/D3D12RHI/D3D12OnlineDescArrayManager.h"
+#include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
+#include "Runtime/D3D12RHI/D3D12Texture.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 
-#pragma comment(lib, "d3dcompiler.lib")
-#pragma comment(lib, "D3D12.lib")
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "File/stb_image.h"
-
-#include "Runtime/RHI/PipelineStateCache.h"
-#include "Runtime/D3D12RHI/D3D12Shader.h"
-#include "Runtime/RenderCore/GlobalShader.h"
-#include "Runtime/RenderCore/ShaderParameter.h"
-#include "Runtime/Render/SceneRendering.h"
-
-#include "Runtime/RenderCore/CommonRenderRresource.h"
 
 //XLightPass
 class XLightPassVS :public XGloablShader
@@ -767,24 +764,28 @@ private:
 
 	XRHIRenderTargetView* RTViews[8];
 
-//deffered light pass
-private:
+
+private://deffered light pass
+
 	struct cbDefferedLight
 	{
 		XMFLOAT3 LightDir;
 		float padding0 = 0;
 		XMFLOAT4 LightColorAndIntensityInLux;
 	};
+
 	cbDefferedLight cbDefferedLightIns;
 	std::shared_ptr<XRHIConstantBuffer> RHIcbDefferedLight;
+
 private:
 	//Full Screen Pass
 	XD3D12RootSignature FullScreenRootSig;
 	ComPtr<ID3D12PipelineState>FullScreenPSO = nullptr;
 	std::unique_ptr<RenderItem> fullScreenItem;
 	XViewMatrices ViewMatrix;
-//Shadow Pass
-private:
+
+private://Shadow Pass
+
 	struct ShadowPassConstants
 	{
 		DirectX::XMFLOAT4X4 View = MathHelper::Identity4x4();
@@ -804,20 +805,11 @@ private:
 	float ShadowMapWidth = 1024 * 4;
 	float ShadowViewportWidth = 1024;
 
-	//HZBPass 
-private:
-	ComPtr<ID3D12PipelineState> HZBPSO = nullptr;
-	XD3D12RootSignature HZBPassRootSig;
-	//struct cbHZB
-	//{
-	//	DirectX::XMFLOAT4 DispatchThreadIdToBufferUV;
-	//};
-	//cbHZB cbHZBins;
-	//std::shared_ptr<XRHIConstantBuffer>RHICbbHZB;
+private: //HZBPass 
+
 	std::shared_ptr<XRHITexture2D> FurthestHZBOutput0;
 
-//sky atmosphere PreCompute
-private:
+private://sky atmosphere PreCompute
 	
 	struct cbSkyAtmosphere
 	{
@@ -852,31 +844,14 @@ private:
 	};
 	cbSkyAtmosphere cbSkyAtmosphereIns;
 	std::shared_ptr<XRHIConstantBuffer>RHICbSkyAtmosphere;
-
-	ComPtr<ID3D12PipelineState> RenderTransmittanceLutPSO = nullptr;
-	XD3D12RootSignature RenderTransmittanceLutRootSig;
+	
 	std::shared_ptr <XRHITexture2D> TransmittanceLutUAV;
-
-	ComPtr<ID3D12PipelineState>  MultiScatteredLuminanceLutPSO = nullptr;
-	XD3D12RootSignature  MultiScatteredLuminanceLutRootSig;
 	std::shared_ptr <XRHITexture2D> MultiScatteredLuminanceLutUAV;
-
-	ComPtr<ID3D12PipelineState>  SkyViewLutPSO = nullptr;
-	XD3D12RootSignature  SkyViewLutRootSig;
 	std::shared_ptr <XRHITexture2D> SkyViewLutUAV;
-
-	ComPtr<ID3D12PipelineState>  PerspectiveVolumePSO = nullptr;
-	XD3D12RootSignature  PerspectiveVolumeRootSig;
 	std::shared_ptr <XRHITexture3D> CameraAerialPerspectiveVolumeUAV;
 
-private:
-	ComPtr<ID3D12PipelineState>  SkyAtmosphereCombinePSO = nullptr;
-	XD3D12RootSignature  SkyAtmosphereCombineRootSig;
 
-//Shadow Mask Pass 
-private:
-	ComPtr<ID3D12PipelineState> ShadowMaskPSO = nullptr;
-	XD3D12RootSignature ShadowMaskPassRootSig;
+private://Shadow Mask Pass 
 	struct cbShadowMaskNoCommonBuffer
 	{
 		XMFLOAT4X4 ScreenToShadowMatrix;
@@ -886,19 +861,14 @@ private:
 	cbShadowMaskNoCommonBuffer cbShadowMaskNoCommon[4];
 	std::shared_ptr<XRHIConstantBuffer>ShadowMaskNoCommonConstantBuffer[4];
 	std::shared_ptr<XRHITexture2D>ShadowMaskTexture;
-//Depth Only
-private:
+
+private://Depth Only
 	XD3D12RootSignature PrePassRootSig;
 	ComPtr<ID3D12PipelineState> mDepthOnlyPSO = nullptr;
+
 private:
-	
-	//std::shared_ptr<XRHIConstantBuffer>ViewConstantBuffer;
 	std::unique_ptr<RenderItem> LightPassItem;
-	//ComPtr<ID3D12PipelineState>LightPassPso = nullptr;
-	XD3D12RootSignature LightPassRootSig;
 	std::shared_ptr<XRHITexture2D> SSROutput;
-	//SSR Pass
-private:
 	
 private:
 	XD3D12RootSignature ReflectionEnvironmentRootSig;
@@ -915,26 +885,12 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mBasePassLayout;
 
     ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
- 
-	// List of all the render items.
+
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
-	
-
-	// Render items divided by PSO.
 	std::vector<RenderItem*> mOpaqueRitems;
-
     PassConstants mMainPassCB;
-
-	//XMFLOAT3 mEyePos = { 0.0f, 0.0f, 0.0f };
-	//XMFLOAT3 mTargetPos = { 0.0f, 1.0f, 0.0f };
-	
-	//XMFLOAT4X4 mView = MathHelper::Identity4x4();
 	XMFLOAT4X4 mProj = MathHelper::Identity4x4();
 	XMFLOAT4X4 mLightProj = MathHelper::Identity4x4();
-	//float mTheta = 1.3f*XM_PI;
-	//float mPhi = 0.4f*XM_PI;
-	//float mRadius = 2.5f;
-
     POINT mLastMousePos;
 };
 
@@ -944,8 +900,7 @@ CrateApp::CrateApp()
 
 CrateApp::~CrateApp()
 {
-    if(md3dDevice != nullptr)
-		direct_cmd_queue->CommandQueueWaitFlush();
+    if(md3dDevice != nullptr)direct_cmd_queue->CommandQueueWaitFlush();
 }
 
 //-------------------
@@ -955,11 +910,7 @@ bool CrateApp::Initialize()
     if(!D3DApp::Initialize())
         return false;
 
-	//CompileGlobalShaderMap();
-	
-
 	direct_ctx->OpenCmdList();
-	
 
 	LoadTextures();
     BuildShadersAndInputLayout();
@@ -967,50 +918,37 @@ bool CrateApp::Initialize()
     BuildShapeGeometry();
 	BuildMaterials();
     BuildRenderItems();
+
 	mFrameResource = std::make_unique<FrameResource>();
 	
-	mFrameResource.get()->PassConstantBuffer =
-		abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants)));
+	mFrameResource.get()->PassConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants)));
 	
 	for (int i = 0; i < mMaterials.size();i++)
 	{
-		mFrameResource.get()->MaterialConstantBuffer.push_back(
-			abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants))));
+		mFrameResource.get()->MaterialConstantBuffer.push_back(abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants))));
 	}
 
 	for (uint32 i = 0; i < mAllRitems.size();++i)
 	{
-		mFrameResource.get()->ObjectConstantBuffer.push_back(
-			abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants))));
+		mFrameResource.get()->ObjectConstantBuffer.push_back(abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants))));
 	}
 
-	RViewInfo.ViewConstantBuffer = abstrtact_device.CreateUniformBuffer(
-		d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferData)));
+	RViewInfo.ViewConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferData)));
 
 
 	for (uint32 i = 0; i < 4; i++)
 	{
-		ShadowPassConstantBuffer[i] =
-			abstrtact_device.CreateUniformBuffer(
-				d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
+		ShadowPassConstantBuffer[i] =abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
 	}
 
 
 	for (uint32 i = 0; i < 4; i++)
 	{
-		ShadowMaskNoCommonConstantBuffer[i] =
-			abstrtact_device.CreateUniformBuffer(
-				d3dUtil::CalcConstantBufferByteSize(sizeof(cbShadowMaskNoCommonBuffer)));
+		ShadowMaskNoCommonConstantBuffer[i] =abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbShadowMaskNoCommonBuffer)));
 	}
 
-	//RHICbbHZB= abstrtact_device.CreateUniformBuffer(
-	//	d3dUtil::CalcConstantBufferByteSize(sizeof(cbHZB)));
-
-	RHICbSkyAtmosphere = abstrtact_device.CreateUniformBuffer(
-		d3dUtil::CalcConstantBufferByteSize(sizeof(cbSkyAtmosphere)));
-
-	RHIcbDefferedLight = abstrtact_device.CreateUniformBuffer(
-		d3dUtil::CalcConstantBufferByteSize(sizeof(cbDefferedLight)));
+	RHICbSkyAtmosphere = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbSkyAtmosphere)));
+	RHIcbDefferedLight = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbDefferedLight)));
 
 	BuildPSOs();
 

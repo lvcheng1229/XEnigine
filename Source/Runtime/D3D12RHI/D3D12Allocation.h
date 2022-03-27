@@ -1,9 +1,10 @@
 #pragma once
+
+#include <set>
+#include <vector>
 #include "D3D12PhysicDevice.h"
 #include "D3D12Resource.h"
 
-#include <vector>
-#include <set>
 //64KB
 #define MIN_PLACED_BUFFER_SIZE (64*1024)
 

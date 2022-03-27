@@ -1,7 +1,9 @@
-#include "D3D12PlatformRHI.h"
-#include "D3D12Shader.h"
 #include <functional>
 #include <unordered_map>
+
+#include "D3D12PlatformRHI.h"
+#include "D3D12Shader.h"
+
 struct XD3D12VertexDeclarationKey
 {
 	D3DVertexLayoutArray VertexLayoutArray;
@@ -34,25 +36,15 @@ struct XD3D12VertexDeclarationKey
 	}
 };
 
-struct XVertexDeclarationCache
-{
-	std::shared_ptr<XRHIVertexLayout> FindOrAdd(const XD3D12VertexDeclarationKey& Key)
-	{
-		auto iter = MapHashToLayout.find(Key.Hash);
-		if (iter == MapHashToLayout.end())
-		{
-			MapHashToLayout[Key.Hash] = std::make_shared<XD3D12VertexLayout>(Key.VertexLayoutArray);
-			return MapHashToLayout[Key.Hash];
-		}
-		return iter->second;
-	}
-	std::unordered_map<std::size_t, std::shared_ptr<XRHIVertexLayout>>MapHashToLayout;
-};
-
-XVertexDeclarationCache GVertexLayoutCache;
+static std::unordered_map<std::size_t, std::shared_ptr<XRHIVertexLayout>>MapHashToLayout;
 
 std::shared_ptr<XRHIVertexLayout> XD3D12PlatformRHI::RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements)
 {
 	XD3D12VertexDeclarationKey Key(Elements);
-	return GVertexLayoutCache.FindOrAdd(Key);
+	auto iter = MapHashToLayout.find(Key.Hash);
+	if (iter == MapHashToLayout.end())
+	{
+		MapHashToLayout[Key.Hash] = std::make_shared<XD3D12VertexLayout>(Key.VertexLayoutArray);
+	}
+	return MapHashToLayout[Key.Hash];
 }

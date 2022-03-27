@@ -36,6 +36,7 @@ public:
 			static_cast<UINT64>(index_of_desc_in_heap) * static_cast<UINT64>(element_size) };
 		return ret_ptr;
 	}
+
 	inline D3D12_GPU_DESCRIPTOR_HANDLE compute_gpu_ptr(const uint32 index_of_desc_in_heap, const  uint32 index_of_heap)
 	{
 		D3D12_GPU_DESCRIPTOR_HANDLE ret_ptr = {

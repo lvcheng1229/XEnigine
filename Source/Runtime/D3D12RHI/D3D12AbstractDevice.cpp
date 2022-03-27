@@ -1,8 +1,10 @@
+#include <string>
+#include "D3D12Common.h"
 #include "D3D12AbstractDevice.h"
 #include "Runtime/D3D12RHI/d3dx12.h"
-#include "Core/AlignmentTemplates.h"
-#include "D3D12Common.h"
-#include <string>
+#include "Runtime/Core/Template/XEngineTemplate.h"
+
+
 XD3D12AbstractDevice::~XD3D12AbstractDevice()
 {
 	delete ComputeCmdQueue;
@@ -21,8 +23,6 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	ComputeCmdQueue = new XD3D12CommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COMPUTE);
 	DirectxCmdQueue->Create(PhysicalDeviceIn);
 	ComputeCmdQueue->Create(PhysicalDeviceIn);
-
-
 
 	RenderTargetDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128);
 	DepthStencilDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 128);

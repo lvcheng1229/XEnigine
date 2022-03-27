@@ -45,10 +45,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\AlignmentTemplates.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="File\stb_image.h">
+    <ClInclude Include="ThirdParty\stb_image.h">
       <Filter>File</Filter>
     </ClInclude>
     <ClInclude Include="FrameResource.h" />
@@ -88,10 +85,10 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12PhysicDevice.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.h">
+    <ClInclude Include="Runtime\D3D12RHI\D3D12OnlineDescArray.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.h">
+    <ClInclude Include="Runtime\D3D12RHI\D3D12OnlineDescArrayManager.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12PlatformRHI.h">
@@ -116,9 +113,6 @@
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\D3D12Viewport.h">
-      <Filter>Runtime\D3D12RHI</Filter>
-    </ClInclude>
-    <ClInclude Include="Runtime\D3D12RHI\XD3D12CommandListManger.h">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\D3D12RHI\d3dx12.h">
@@ -190,7 +184,6 @@
     <ClInclude Include="UnitTest\d3dUtil.h">
       <Filter>UnitTest</Filter>
     </ClInclude>
-    <ClInclude Include="xtrack_new.h" />
     <ClInclude Include="Runtime\Core\PixelFormat.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineState.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineLibrary.h" />
@@ -201,9 +194,6 @@
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
     <ClCompile Include="Runtime\Core\XMath.cpp">
-      <Filter>Runtime\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Runtime\Core\XMathcpp.cpp">
       <Filter>Runtime\Core</Filter>
     </ClCompile>
     <ClCompile Include="Runtime\D3D12RHI\D3D12AbstractDevice.cpp">
@@ -233,10 +223,10 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12PhysicDevice.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArray.cpp">
+    <ClCompile Include="Runtime\D3D12RHI\D3D12OnlineDescArray.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineCurrentDescArrayManager.cpp">
+    <ClCompile Include="Runtime\D3D12RHI\D3D12OnlineDescArrayManager.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
     <ClCompile Include="Runtime\D3D12RHI\D3D12Resource.cpp">
@@ -245,7 +235,7 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
-    <ClCompile Include="Runtime\D3D12RHI\D3D12Shaders.cpp">
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Shader.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
     <ClCompile Include="Runtime\D3D12RHI\D3D12State.cpp">
@@ -255,9 +245,6 @@
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
     <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp">
-      <Filter>Runtime\D3D12RHI</Filter>
-    </ClCompile>
-    <ClCompile Include="Runtime\D3D12RHI\XD3D12CommandListManger.cpp">
       <Filter>Runtime\D3D12RHI</Filter>
     </ClCompile>
     <ClCompile Include="Runtime\Engine\SceneView.cpp">

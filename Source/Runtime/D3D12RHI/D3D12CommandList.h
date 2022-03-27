@@ -40,13 +40,10 @@ public:
 	{
 		return d3d12_cmd_list.Get();
 	}
-private:
-public:
 
 	inline void CmdListFlushBarrier() { resource_barrier_manager.Flush(d3d12_cmd_list.Get()); }
-	inline ID3D12GraphicsCommandList* GetDXCmdList() { return d3d12_cmd_list.Get(); }
 	inline std::vector<XD3D12PendingResourceBarrier>& GetPendingResourceBarrier() { return pending_resource_state_array; }
-
+	
 	inline void CmdListAddTransition(XD3D12Resource* pResource, D3D12_RESOURCE_STATES Before, D3D12_RESOURCE_STATES After)
 	{
 		if (Before != After)
@@ -54,10 +51,17 @@ public:
 			resource_barrier_manager.AddTransition(pResource, Before, After);
 		}
 	}
-	inline void CmdListAddPendingState(XD3D12Resource* pResource,D3D12_RESOURCE_STATES After)
+
+	inline void CmdListAddPendingState(XD3D12Resource* pResource, D3D12_RESOURCE_STATES After)
 	{
 		pending_resource_state_array.push_back({ pResource ,After });
 	}
+
+private:
+public:
+	
+	inline ID3D12GraphicsCommandList* GetDXCmdList() { return d3d12_cmd_list.Get(); }
+
 private:
 	std::vector<XD3D12PendingResourceBarrier>pending_resource_state_array;
 	XD3D12ResourceBarrierManager resource_barrier_manager;

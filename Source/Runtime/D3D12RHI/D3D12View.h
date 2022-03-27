@@ -1,7 +1,6 @@
 #pragma once
-#include "D3D12Resource.h"
-
 #include <memory>
+#include "D3D12Resource.h"
 
 class XD3D12View
 {
@@ -10,10 +9,9 @@ protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE cpu_ptr;
 	bool IsDSV;
 public:
-	inline bool IsDsv() { return IsDSV; };
-	inline D3D12_CPU_DESCRIPTOR_HANDLE GetCPUPtr() { return cpu_ptr; }
-	inline XD3D12Resource* GetResource() { return pResource; }
-
+	inline bool							IsDsv()			{ return IsDSV; };
+	inline D3D12_CPU_DESCRIPTOR_HANDLE	GetCPUPtr()		{ return cpu_ptr; }
+	inline XD3D12Resource*				GetResource()	{ return pResource; }
 };
 
 

@@ -2,8 +2,6 @@
 #include "ShaderCore.h"
 #include "Runtime/HAL/Mch.h"
 
-
-
 class XShaderVariableParameter
 {
 public:
@@ -27,7 +25,6 @@ private:
 	uint16 VariableOffsetInBuffer;
 	uint16 NumBytes;
 };
-
 
 
 class XSRVCBVUAVParameter

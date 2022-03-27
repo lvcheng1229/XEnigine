@@ -8,7 +8,6 @@ void XD3D12PhysicDevice::Create(XD3D12Adapter* adapter_in)
 	d3d12_device->QueryInterface(ID3D12Device1Ptr.GetAddressOf());
 
 	D3D12PipelineLibrary.DeserializingPSOLibrary(this);
-	
 }
 
 

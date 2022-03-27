@@ -2,10 +2,7 @@
 
 void XD3D12CommandAllocator::Create(XD3D12PhysicDevice* device, D3D12_COMMAND_LIST_TYPE type)
 {
-	ThrowIfFailed(
-		device->GetDXDevice()->CreateCommandAllocator(
-			type,
-			IID_PPV_ARGS(&DxCmdAlloc)));
+	ThrowIfFailed(device->GetDXDevice()->CreateCommandAllocator(type, IID_PPV_ARGS(&DxCmdAlloc)));
 	DxCmdAlloc->SetName(L"cmd allocator");
 }
 

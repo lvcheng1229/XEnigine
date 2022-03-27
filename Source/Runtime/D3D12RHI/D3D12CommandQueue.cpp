@@ -78,8 +78,6 @@ void XD3D12CommandQueue::ExecuteCommandListInteral(std::vector<XD3D12DirectComma
 	}
 	
 	d3d12_cmd_queue->ExecuteCommandLists(static_cast<UINT>(Lists.size()), execute_cmd_queue.data());
-
-
 }
 
 

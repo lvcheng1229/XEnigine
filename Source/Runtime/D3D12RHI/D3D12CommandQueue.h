@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "D3D12PhysicDevice.h"
 #include "D3D12CommandList.h"
 
@@ -18,14 +17,10 @@ public:
 	inline uint64 CurrentCPUFence() { return curr_cpu_fence; }
 	inline uint64 CurrentGPUFence() { return curr_gpu_fence; }
 private:
-
-	//HANDLE eventHandle;
 	XDxRefCount<ID3D12Fence>d3d12_fence;
 	uint64 curr_gpu_fence;
 	uint64 curr_cpu_fence;
 };
-
-
 
 
 class XD3D12CommandQueue
@@ -39,10 +34,11 @@ public:
 	inline void Signal(uint64 fence) { d3d12_fence.SignalGPU(this, fence); }
 	inline void Wait() { d3d12_fence.WaitCPU(); }
 
-	void ExecuteCommandListInteral(std::vector<XD3D12DirectCommandList>& Lists);
 	inline XD3D12Fence* GetFence() { return &d3d12_fence; }
 	inline ID3D12CommandQueue* GetDXCommandQueue() { return d3d12_cmd_queue.Get(); }
 private:
+	void ExecuteCommandListInteral(std::vector<XD3D12DirectCommandList>& Lists);
+
 	D3D12_COMMAND_LIST_TYPE d3d12_queue_type;
 	XD3D12Fence d3d12_fence;
 	XDxRefCount<ID3D12CommandQueue>d3d12_cmd_queue;

@@ -17,7 +17,6 @@ enum ETextureCreateFlags
 	TexCreate_UAV = 1 << 4,
 };
 
-
 enum class EBlendOperation
 {
 	BO_Add,

@@ -1,11 +1,9 @@
 #pragma once
 
-#include "Runtime/RenderCore/ShaderCore.h"
-#include <vector>
-
 #include <d3d12.h>
-#include "Runtime/RHI/RHIResource.h"
 #include "D3D12Rootsignature.h"
+#include "Runtime/RHI/RHIResource.h"
+#include "Runtime/RenderCore/ShaderCore.h"
 
 
 using D3DVertexLayoutArray = std::vector<D3D12_INPUT_ELEMENT_DESC>;
@@ -48,7 +46,6 @@ class XD3D12BoundShaderState
 public:
 	const XD3D12RootSignature* RootSignature;
 	
-	//CacheLink
 	XD3D12VertexLayout* VertexLayout;
 	XD3D12VertexShader* VertexShader;
 	XD3D12PixelShader* PiexlShader;

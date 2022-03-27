@@ -16,7 +16,7 @@ void XD3D12Adapter::Create()
 			if (PreferredVendor == AdapterDesc.VendorId) { break; }
 		}
 	}
-
+	
 	X_Assert(((&dxgi_adapter) != nullptr));
 }
 

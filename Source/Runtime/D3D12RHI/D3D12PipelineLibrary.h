@@ -14,7 +14,7 @@ public:
     void Destroy(bool deleteFile);
     void GrowMapping(UINT size);
 
-    void SetSize(UINT size)
+    inline void SetSize(UINT size)
     {
         if (m_mapAddress)
         {
@@ -22,7 +22,7 @@ public:
         }
     }
 
-    UINT GetSize() const
+    inline UINT GetSize() const
     {
         if (m_mapAddress)
         {
@@ -31,25 +31,27 @@ public:
         return 0;
     }
 
-    void* GetData()
+    inline void* GetData()
     {
         if (m_mapAddress)
         {
-            return &static_cast<UINT*>(m_mapAddress)[1];// The actual data comes after the length.
+            return &static_cast<UINT*>(m_mapAddress)[1];
         }
         return nullptr;
     }
 
-public:
-    bool IsMapped() const { return m_mapAddress != nullptr; }
+    inline bool IsMapped() const 
+    { 
+        return m_mapAddress != nullptr; 
+    }
 
 protected:
     HANDLE m_mapFile;
     HANDLE m_file;
     LPVOID m_mapAddress;
-    std::wstring m_filename;
-
     UINT m_currentFileSize;
+
+    std::wstring m_filename;
 };
 
 class XD3D12PipelineLibrary
@@ -60,14 +62,15 @@ public:
     //ID3D12PipelineLibrary::LoadGraphics/ComputePipeline
     bool LoadPSOFromLibrary(LPCWSTR pName, const D3D12_GRAPHICS_PIPELINE_STATE_DESC* pDesc, ID3D12PipelineState** PtrAddress);
     bool LoadPSOFromLibrary(LPCWSTR pName, const D3D12_COMPUTE_PIPELINE_STATE_DESC* pDesc, ID3D12PipelineState** PtrAddress);
-	void StorePSOToLibrary(LPCWSTR pName,ID3D12PipelineState* pPipeline);//ID3D12PipelineLibrary::StorePipeline
-	void SerializingPSOLibrary();//ID3D12PipelineLibrary::Serialize			
-	void DeserializingPSOLibrary(XD3D12PhysicDevice* PhyDevice);//ID3D12Device1::CreatePipelineLibrary
+	
+    void StorePSOToLibrary(LPCWSTR pName,ID3D12PipelineState* pPipeline);   //ID3D12PipelineLibrary::StorePipeline
+	void SerializingPSOLibrary();                                           //ID3D12PipelineLibrary::Serialize			
+	void DeserializingPSOLibrary(XD3D12PhysicDevice* PhyDevice);            //ID3D12Device1::CreatePipelineLibrary
 
 	inline ID3D12PipelineLibrary* GetID3D12PipelineLibrary() { return m_pipelineLibrary.Get(); }
 private:
-    MemoryMappedFile MMappedFile;
-	XDxRefCount<ID3D12PipelineLibrary> m_pipelineLibrary;
-	XD3D12PhysicDevice* PhyDevice;
 	bool Changed;
+    MemoryMappedFile MMappedFile;
+	XD3D12PhysicDevice* PhyDevice;
+	XDxRefCount<ID3D12PipelineLibrary> m_pipelineLibrary;
 };

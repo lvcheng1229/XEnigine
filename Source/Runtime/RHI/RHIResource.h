@@ -1,16 +1,20 @@
 #pragma once
-#include "Runtime/HAL/PlatformTypes.h"
-#include "Runtime/Core/PixelFormat.h"
+
 #include "RHI.h"
 #include <vector>
 #include <functional>
+#include "Runtime/HAL/PlatformTypes.h"
+#include "Runtime/Core/PixelFormat.h"
+
 class XRHIShader
 {
 public:
-	explicit XRHIShader(EShaderType ShaderTypeIn) :ShaderType(ShaderTypeIn) {}
-	inline EShaderType GetShaderType() { return ShaderType; }
-	inline void SetHash(std::size_t Hahs) { CodeHash = Hahs; }
-	inline std::size_t GetHash()const { return CodeHash; }
+	explicit XRHIShader(EShaderType ShaderTypeIn) :ShaderType(ShaderTypeIn), CodeHash(0) {}
+
+	inline EShaderType		GetShaderType()				{ return ShaderType; }
+	inline std::size_t		GetHash()const				{ return CodeHash; }
+	inline void				SetHash(std::size_t Hahs)	{ CodeHash = Hahs; }
+
 private:
 	EShaderType ShaderType;
 	std::size_t CodeHash;
@@ -32,11 +36,11 @@ class XRHITexture
 {
 public:
 	XRHITexture(EPixelFormat FormatIn) :Format(FormatIn) {}
+	inline EPixelFormat GetFormat()const { return Format; }
 	virtual void* GetTextureBaseRHI()
 	{
-		return nullptr;// Override this in derived classes to expose access to the native texture resource
+		return nullptr;
 	}
-	inline EPixelFormat GetFormat()const { return Format; }
 private:
 	EPixelFormat Format;
 };
@@ -53,19 +57,18 @@ public:
 	XRHITexture3D(EPixelFormat FormatIn) :XRHITexture(FormatIn) {}
 };
 
-class XRHIIndexBuffer
-{
-public:
-};
+class XRHIIndexBuffer {};
 
 class XRHIRenderTargetView 
 {
 public:
+	XRHIRenderTargetView():Texture(nullptr){}
 	XRHITexture* Texture;
 };
 class XRHIDepthStencilView 
 {
 public:
+	XRHIDepthStencilView():Texture(nullptr){}
 	XRHITexture* Texture;
 };
 class XRHIShaderResourceView {};
@@ -96,8 +99,6 @@ class XRHIPixelShader : public XRHIGraphicsShader
 public:
 	XRHIPixelShader() :XRHIGraphicsShader(EShaderType::SV_Pixel) {}
 };
-
-
 
 struct XRHIBoundShaderStateInput
 {
@@ -144,11 +145,11 @@ public:
 	int32 NumColorRenderTargets;
 	bool bClearColor;
 
-
 	// Depth/Stencil Render Target Info
 	XRHIDepthStencilView DepthStencilRenderTarget;
 	bool bClearDepth;
 	bool bClearStencil;
+
 	XRHISetRenderTargetsInfo()
 		:NumColorRenderTargets(0),
 		bClearColor(false),

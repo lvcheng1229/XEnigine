@@ -1,11 +1,12 @@
-#include "D3D12PlatformRHI.h"
-#include "D3D12State.h"
+#include <string>
 #include "d3dx12.h"
+#include "D3D12State.h"
+#include "D3D12Shader.h"
+#include "D3D12PlatformRHI.h"
 #include "D3D12Rootsignature.h"
 #include "D3D12PipelineState.h"
-#include "D3D12Shader.h"
 #include "D3D12AbstractDevice.h"
-#include <string>
+
 static D3D12_COMPARISON_FUNC TranslateCompareFunction(ECompareFunction CompareFunction)
 {
 	switch (CompareFunction)

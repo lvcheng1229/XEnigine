@@ -154,8 +154,8 @@ public:
 	uint32 BindSlotIndex;
 	bool HasValueBind;
 public:
-	//~XD3D12GlobalConstantBuffer() { X_Assert(false); }
 	XD3D12GlobalConstantBuffer() :BindSlotIndex(0), HasValueBind(false) {}
+
 	inline void ResetState()
 	{
 		HasValueBind = false;

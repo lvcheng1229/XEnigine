@@ -57,11 +57,8 @@ void XD3D12Viewport::Resize(
             back_buffer_resources[i].GetResource()->Release();
     }
 
-    ThrowIfFailed(mSwapChain->ResizeBuffers(
-        BACK_BUFFER_COUNT_DX12,
-        size_x, size_y,
-        format,
-        DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
+    ThrowIfFailed(mSwapChain->ResizeBuffers(BACK_BUFFER_COUNT_DX12, size_x, size_y,
+        format, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
     
     current_back_buffer = 0;
 
@@ -80,10 +77,7 @@ void XD3D12Viewport::Resize(
         ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(back_buffer_resources[i].GetPtrToResourceAdress())));
         back_buffer_resources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON);
         back_buffer_resources[i].GetResource()->SetName(L"BackBuffer");
-        back_rt_views[i].Create(
-            PhysicalDevice,
-            &back_buffer_resources[i], 
-            rt_desc,
+        back_rt_views[i].Create(PhysicalDevice,&back_buffer_resources[i], rt_desc,
             device->GetRenderTargetDescArrayManager()->compute_cpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt));
     }
 

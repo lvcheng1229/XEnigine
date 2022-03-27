@@ -23,7 +23,33 @@ public:
 	
 	void OpenCmdList()override;
 	void CloseCmdList()override;
+
+	//SetShaderParameter
+	void RHISetShaderUAV(EShaderType ShaderType, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override;
+	void RHISetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
+	void RHISetShaderConstantBuffer(EShaderType ShaderType, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer)override;
+	void SetShaderValue(EShaderType ShaderType, uint32 BufferIndex, uint32 VariableOffsetInBuffer, uint32 NumBytes, const void* NewValue)override;
 	
+	//SetPSO
+	void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)override;
+	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override;
+	
+	//DrawCall/DisPatch
+	void RHIDrawIndexedPrimitive() final override;
+	void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) final override;
+	
+	//Misc
+	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
+	void SetRenderTargetsAndViewPort(uint32 NumRTs,const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)override;
+	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName)override
+	{
+		cmd_dirrect_list->BeginEvent(1, InName,sizeof(InName));
+		XRHISetRenderTargetsInfo OutRTInfo;
+		InInfo.ConvertToRenderTargetsInfo(OutRTInfo);
+		SetRenderTargetsAndClear(OutRTInfo);
+	}
+
+	//Resource Create
 	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(
 		uint32 width, uint32 height, uint32 SizeZ,
 		bool bTextureArray, bool bCubeTexture, EPixelFormat Format,
@@ -33,46 +59,10 @@ public:
 		uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
-	void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) final override;
-
-	void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)override;
-	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override;
-
-	//SetShaderParameter
-	void RHISetShaderUAV(EShaderType ShaderType, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override;
-	void RHISetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
-	void RHISetShaderConstantBuffer(XRHIComputeShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
-	void SetShaderValue(EShaderType ShaderType, uint32 BufferIndex, uint32 VariableOffsetInBuffer, uint32 NumBytes, const void* NewValue)override;
-	
-	//void RHISetShaderResourceViewParameter(XRHIComputeShader* ComputeShaderRHI, uint32 TextureIndex, XRHIShaderResourceView* SRVRHI);
-	//void RHISetShaderTexture(XRHIComputeShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI);
-	
-	
+	//Deprecated in the future
 	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);
-	
-	//void RHISetShaderTexture(XRHIGraphicsShader* ShaderRHI, uint32 TextureIndex, XRHITexture* NewTextureRHI)override;
-
-	void RHISetShaderConstantBuffer(XRHIGraphicsShader* ShaderRHI, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer);
-	void RHISetShaderConstantBuffer(EShaderType ShaderType, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer)override;
-
-
-	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
-
-
 	void RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue);
-	//void RHIDrawFullScreenQuad();
-	void RHIDrawIndexedPrimitive() final override;
-
-	void SetRenderTargetsAndViewPort(uint32 NumRTs,const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)override;
 	void SetRenderTargetsAndClear(const XRHISetRenderTargetsInfo& RTInfos);
-	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName)override
-	{
-		cmd_dirrect_list->BeginEvent(1, InName,sizeof(InName));
-		XRHISetRenderTargetsInfo OutRTInfo;
-		InInfo.ConvertToRenderTargetsInfo(OutRTInfo);
-		SetRenderTargetsAndClear(OutRTInfo);
-	}
-
 	void ResetCmdAlloc();
 private:
 public:

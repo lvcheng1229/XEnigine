@@ -6,15 +6,12 @@
 #include "D3D12Texture.h"
 
 #include <memory>
-class ResourceManager_Temp
-{
-	
-};
+
 
 class XD3D12AbstractDevice
 {
-	
 public:
+
 	XD3D12AbstractDevice():
 		TempResourceIndex(0),
 		PhysicalDevice(nullptr),
@@ -25,10 +22,19 @@ public:
 	~XD3D12AbstractDevice();
 	void Create(XD3D12PhysicDevice* PhysicalDeviceIn);
 
-	std::shared_ptr<XD3D12ConstantBuffer>CreateUniformBuffer(uint32 size);
+	inline XD3D12PhysicDevice*		GetPhysicalDevice()						{ return PhysicalDevice; }
+	inline XD3DDirectContex*		GetDirectContex(uint32 index_thread)	{ return &DirectCtxs[index_thread]; }
+	inline XD3DBuddyAllocator*		GetConstantBufferUploadHeapAlloc()		{ return &ConstantBufferUploadHeapAlloc; }
+	
+	inline XD3D12DescArrayManager*	GetRenderTargetDescArrayManager()		{ return &RenderTargetDescArrayManager; }
+	inline XD3D12DescArrayManager*	GetDepthStencilDescArrayManager()		{ return &DepthStencilDescArrayManager; }
+	inline XD3D12DescArrayManager*	GetShaderResourceDescArrayManager()		{ return &ShaderResourceDescArrayManager; }
 
-	//template<typename BufferType>
-	//BufferType* CreateRHIBuffer(XD3D12DirectCommandList* x_cmd_list,);
+	inline std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>& GetRootSigMap() { return RootSignatureMap; }
+
+	XD3D12CommandQueue* GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE cmd_type);
+
+	std::shared_ptr<XD3D12ConstantBuffer>CreateUniformBuffer(uint32 size);
 
 	XD3D12Texture2D* CreateD3D12Texture2D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,
 		bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
@@ -36,19 +42,6 @@ public:
 	XD3D12Texture3D* CreateD3D12Texture3D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,
 		EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
-	XD3D12CommandQueue* GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE cmd_type);
-
-
-	inline XD3D12PhysicDevice* GetPhysicalDevice() { return PhysicalDevice; }
-	inline XD3DDirectContex* GetDirectContex(uint32 index_thread) { return &DirectCtxs[index_thread]; }
-	
-	inline XD3D12DescArrayManager* GetRenderTargetDescArrayManager() { return &RenderTargetDescArrayManager; }
-	inline XD3D12DescArrayManager* GetDepthStencilDescArrayManager() { return &DepthStencilDescArrayManager; }
-	inline XD3D12DescArrayManager* GetShaderResourceDescArrayManager() { return &ShaderResourceDescArrayManager; }
-
-	inline XD3DBuddyAllocator* GetConstantBufferUploadHeapAlloc() { return &ConstantBufferUploadHeapAlloc; }
-
-	inline std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>& GetRootSigMap() { return RootSignatureMap; }
 private:
 	uint64 TempResourceIndex;
 	std::vector<XD3D12Resource>ResourceManagerTempVec;

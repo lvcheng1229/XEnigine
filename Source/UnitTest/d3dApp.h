@@ -9,6 +9,7 @@
 #include <crtdbg.h>
 #endif
 
+#include "Runtime/RHI/RHICommandList.h"
 #include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
 #include "Runtime/D3D12RHI/D3D12Adapter.h"
 #include "Runtime/D3D12RHI/D3D12PhysicDevice.h"
@@ -18,7 +19,6 @@
 #include "Runtime/D3D12RHI/D3D12View.h"
 #include "Runtime/D3D12RHI/D3D12PassStateManager.h"
 #include "Runtime/D3D12RHI/D3D12Viewport.h"
-#include "Runtime/RHI/RHICommandList.h"
 
 #include "d3dUtil.h"
 #include "GameTimer.h"
