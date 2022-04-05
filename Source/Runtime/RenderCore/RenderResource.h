@@ -1,6 +1,8 @@
 #pragma once
-#include "Runtime/HAL/PlatformTypes.h"
 #include <vector>
+#include <memory>
+#include "Runtime/RHI/RHIResource.h"
+#include "Runtime/HAL/PlatformTypes.h"
 class XRenderResource
 {
 public:
@@ -45,9 +47,6 @@ public:
 		InitGlobalResource();
 	}
 private:
-private:
-
-
 	void InitGlobalResource()
 	{
 		//if (IsInRenderingThread())
@@ -59,4 +58,16 @@ private:
 			BeginInitResource((ResourceClass*)this);
 		}
 	}
+};
+
+class RVertexBuffer :public XRenderResource
+{
+public:
+	std::shared_ptr<XRHIVertexBuffer>RHIVertexBuffer;
+};
+
+class RIndexBuffer :public XRenderResource
+{
+public:
+	std::shared_ptr<XRHIIndexBuffer>RHIIndedxBuffer;
 };

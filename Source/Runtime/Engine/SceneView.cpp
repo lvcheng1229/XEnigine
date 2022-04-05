@@ -2,7 +2,7 @@
 
 using namespace DirectX;
 
-DirectX::XMFLOAT4 CreateInvDeviceZToWorldZTransform(const DirectX::XMFLOAT4X4 ProjMatrix)
+XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix)
 {
 	// DeviceZ = A + B / WorldZ
 
@@ -43,13 +43,13 @@ static void StoreMat_Transpose_Inverse(
 	XMStoreFloat4x4(Inverse, XMMatrixInverse(&Determinant, MatrixIn));
 }
 
-void XViewMatrices::Create(const DirectX::XMFLOAT4X4& ProjectionMatrixIn, const DirectX::XMFLOAT3& ViewLocation, const DirectX::XMFLOAT3& ViewTargetPosition)
+void XViewMatrices::Create(const XMatrix& ProjectionMatrixIn, const XVector3& ViewLocation, const XVector3& ViewTargetPosition)
 {
 	ProjectionMatrix = ProjectionMatrixIn;
 	UpdateViewMatrix(ViewLocation, ViewTargetPosition);
 }
 
-void XViewMatrices::UpdateViewMatrix(const DirectX::XMFLOAT3& ViewLocation, const DirectX::XMFLOAT3& ViewTargetPosition)
+void XViewMatrices::UpdateViewMatrix(const XVector3& ViewLocation, const XVector3& ViewTargetPosition)
 {
 	ViewOrigin = ViewLocation;
 	PreViewTranslation = XMFLOAT3(-ViewOrigin.x, -ViewOrigin.y, -ViewOrigin.z);
@@ -114,7 +114,7 @@ void XViewMatrices::UpdateViewMatrix(const DirectX::XMFLOAT3& ViewLocation, cons
 	);
 }
 
-DirectX::XMFLOAT4X4 XViewMatrices::GetScreenToTranslatedWorldTranPose()
+XMatrix XViewMatrices::GetScreenToTranslatedWorldTranPose()
 {
 	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
 	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
@@ -130,7 +130,7 @@ DirectX::XMFLOAT4X4 XViewMatrices::GetScreenToTranslatedWorldTranPose()
 	return Ret;
 }
 
-DirectX::XMFLOAT4X4 XViewMatrices::GetScreenToWorldTranPose()
+XMatrix XViewMatrices::GetScreenToWorldTranPose()
 {
 	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
 	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];

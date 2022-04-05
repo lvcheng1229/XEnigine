@@ -190,6 +190,10 @@
     <ClInclude Include="Runtime\RenderCore\ShaderParameter.h" />
     <ClInclude Include="Runtime\Render\SceneRendering.h" />
     <ClInclude Include="Runtime\RenderCore\CommonRenderRresource.h" />
+    <ClInclude Include="Runtime\Core\Math\SimpleMath.h" />
+    <ClInclude Include="Runtime\Core\Math\Math.h" />
+    <ClInclude Include="Runtime\Core\Math\Matrix.h" />
+    <ClInclude Include="Runtime\Engine\MaterialShared.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
@@ -291,5 +295,14 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineLibraryWindows.cpp" />
     <ClCompile Include="Runtime\RenderCore\ShaderParameter.cpp" />
     <ClCompile Include="Runtime\RenderCore\CommonRenderRresource.cpp" />
+    <ClCompile Include="Runtime\Core\Math\SimpleMath.cpp" />
+    <ClCompile Include="Runtime\Core\Math\Math.cpp" />
+    <ClCompile Include="Runtime\Engine\MaterialShared.cpp" />
+    <ClCompile Include="Runtime\Engine\Material\MaterialShader.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12VertexBuffer.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Buffer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Runtime\Core\Math\SimpleMath.inl" />
   </ItemGroup>
 </Project>

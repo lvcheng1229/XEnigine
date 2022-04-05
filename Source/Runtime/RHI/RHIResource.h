@@ -1,10 +1,30 @@
 #pragma once
 
-#include "RHI.h"
 #include <vector>
 #include <functional>
+#include "RHI.h"
 #include "Runtime/HAL/PlatformTypes.h"
 #include "Runtime/Core/PixelFormat.h"
+
+class XRHIVertexBuffer
+{
+public:
+	XRHIVertexBuffer(uint32 SizeIn) :
+		Size(SizeIn) {}
+private:
+	uint32 Size;
+};
+
+class XRHIIndexBuffer
+{
+public:
+	XRHIIndexBuffer(uint32 StrideIn, uint32 SizeIn)
+		:Size(SizeIn),
+		Stride(StrideIn) {}
+private:
+	uint32 Size;
+	uint32 Stride;
+};
 
 class XRHIShader
 {
@@ -57,7 +77,6 @@ public:
 	XRHITexture3D(EPixelFormat FormatIn) :XRHITexture(FormatIn) {}
 };
 
-class XRHIIndexBuffer {};
 
 class XRHIRenderTargetView 
 {

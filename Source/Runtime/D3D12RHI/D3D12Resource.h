@@ -2,6 +2,15 @@
 #include "D3D12PhysicDevice.h"
 #include "Runtime/RHI/RHIResource.h"
 
+class XD3D12VertexBuffer :public XRHIVertexBuffer
+{
+public:
+};
+
+class XD3D12IndexBuffer :public XRHIIndexBuffer
+{
+public:
+};
 
 class XD3D12ResourceTypeHelper
 {
@@ -105,7 +114,7 @@ struct BuddyAllocatorData
 	uint32 order;
 };
 
-class XD3D12ResourceLocation
+class XD3D12ResourcePtr_CPUGPU
 {
 private:
 	BuddyAllocatorData buddy_alloc_data;
@@ -138,7 +147,7 @@ public:
 class XD3D12ConstantBuffer :public XRHIConstantBuffer
 {
 public:
-	XD3D12ResourceLocation ResourceLocation;
+	XD3D12ResourcePtr_CPUGPU ResourceLocation;
 	
 	virtual void UpdateData(const void* data, uint32 size,uint32 offset_byte)override
 	{

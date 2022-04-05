@@ -33,6 +33,14 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	default_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
 	DefaultNonRtDsTextureHeapAlloc.Create(PhysicalDevice, default_cfg, 512 * (1 << 20), (64 * 1024), AllocStrategy::PlacedResource);
 
+
+	XAllocConfig BufferTypeAlloc_HeapDefault;
+	BufferTypeAlloc_HeapDefault.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
+	BufferTypeAlloc_HeapDefault.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
+	BufferTypeAlloc_HeapDefault.d3d12_resource_states = D3D12_RESOURCE_STATE_COMMON;
+	VIBufferBufferAllocDefault.Create(PhysicalDevice, BufferTypeAlloc_HeapDefault, 512 * (1 << 20), (64 * 1024), AllocStrategy::ManualSubAllocation);
+
+
 	XAllocConfig upload_cfg;
 	upload_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_UPLOAD;
 	upload_cfg.d3d12_resource_states = D3D12_RESOURCE_STATE_GENERIC_READ;
@@ -51,7 +59,7 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(uint32 size)
 {
 	std::shared_ptr<XD3D12ConstantBuffer> ContantBuffer= std::make_shared<XD3D12ConstantBuffer>();
-	XD3D12ResourceLocation& Location = ContantBuffer.get()->ResourceLocation;
+	XD3D12ResourcePtr_CPUGPU& Location = ContantBuffer.get()->ResourceLocation;
 	ConstantBufferUploadHeapAlloc.Allocate(size, 256, Location);
 	return ContantBuffer;
 }
@@ -123,7 +131,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 	const D3D12_RESOURCE_STATES InitialState = Type.GetOptimalInitialState(false);
 
 	const D3D12_RESOURCE_ALLOCATION_INFO Info = PhysicalDevice->GetDXDevice()->GetResourceAllocationInfo(0, 1, &textureDesc);
-	XD3D12ResourceLocation default_location;
+	XD3D12ResourcePtr_CPUGPU default_location;
 
 	if (bCreateRTV || bCreateDSV)
 	{
@@ -291,7 +299,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 	{
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(TextureResource->GetResource(), 0, 1);
 
-		XD3D12ResourceLocation upload_location;
+		XD3D12ResourcePtr_CPUGPU upload_location;
 		bool res = UploadHeapAlloc.Allocate(static_cast<uint32>(uploadBufferSize), D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
 		X_Assert(res == true);
 
@@ -360,7 +368,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 	const D3D12_RESOURCE_STATES InitialState = Type.GetOptimalInitialState(false);
 
 	const D3D12_RESOURCE_ALLOCATION_INFO Info = PhysicalDevice->GetDXDevice()->GetResourceAllocationInfo(0, 1, &textureDesc);
-	XD3D12ResourceLocation default_location;
+	XD3D12ResourcePtr_CPUGPU default_location;
 
 	if (bCreateRTV)
 	{
@@ -466,7 +474,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 	{
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(TextureResource->GetResource(), 0, 1);
 
-		XD3D12ResourceLocation upload_location;
+		XD3D12ResourcePtr_CPUGPU upload_location;
 		bool res = UploadHeapAlloc.Allocate(static_cast<uint32>(uploadBufferSize), D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
 		X_Assert(res == true);
 

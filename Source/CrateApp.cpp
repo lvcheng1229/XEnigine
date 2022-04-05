@@ -33,6 +33,8 @@
 #include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
 #include "Runtime/D3D12RHI/D3D12Texture.h"
 
+#include "Runtime/Core/Math/Math.h"
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
@@ -224,7 +226,7 @@ public:
 
 	void SetParameters(
 		XRHICommandList& RHICommandList,
-		DirectX::XMFLOAT4 InDispatchThreadIdToBufferUV,
+		XVector4 InDispatchThreadIdToBufferUV,
 
 		XRHITexture* InTextureSampledInput,
 		XRHIUnorderedAcessView* InFurthestHZBOutput_0,
@@ -626,8 +628,10 @@ XRenderSkyAtmosphereRayMarchingPS::ShaderInfos XRenderSkyAtmosphereRayMarchingPS
 struct RenderItem
 {
 	RenderItem() = default; 
-    XMFLOAT4X4 World = MathHelper::Identity4x4();
-	XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
+	XMatrix World = XMatrix::Identity;
+	XMatrix TexTransform = XMatrix::Identity;
+	//XMFLOAT4X4 World = MathHelper::Identity4x4();
+	//XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
 	UINT ObjCBIndex = -1;
 
 	Material* Mat = nullptr;
@@ -641,7 +645,7 @@ struct RenderItem
 
 struct BoundSphere
 {
-	DirectX::XMFLOAT3 Center;
+	XVector3 Center;
 	float Radius;
 };
 
@@ -682,20 +686,21 @@ public:
 		XMStoreFloat3(&mPosition, XMVectorMultiplyAdd(s, l, p));
 	}
 
-	DirectX::XMFLOAT3 GetEyePosition()
+	XVector3 GetEyePosition()
 	{
 		return mPosition;
 	}
 
-	DirectX::XMFLOAT3 GetTargetPosition()
+	XVector3 GetTargetPosition()
 	{
-		return XMFLOAT3(mPosition.x + mLook.x, mPosition.y + mLook.y, mPosition.z + mLook.z);
+		//return XVector3(mPosition.x + mLook.x, mPosition.y + mLook.y, mPosition.z + mLook.z);
+		return mPosition + mLook;
 	}
 private:
-	DirectX::XMFLOAT3 mPosition = { 0.0f, 3.0f, -3.0f };
-	DirectX::XMFLOAT3 mRight = { 1.0f, 0.0f, 0.0f };
-	DirectX::XMFLOAT3 mUp = { 0.0f, 1.0f, 0.0f };
-	DirectX::XMFLOAT3 mLook = { 0.0f, 0.0f, 1.0f };
+	XVector3 mPosition = { 0.0f, 3.0f, -3.0f };
+	XVector3 mRight = { 1.0f, 0.0f, 0.0f };
+	XVector3 mUp = { 0.0f, 1.0f, 0.0f };
+	XVector3 mLook = { 0.0f, 0.0f, 1.0f };
 };
 
 class CrateApp : public D3DApp
@@ -739,8 +744,8 @@ private:
 	Camera cam_ins;
 	RendererViewInfo RViewInfo;
 
-	XMFLOAT3 LightDir = { -1,1,1 };
-	XMFLOAT3 LightColor = { 1,1,1 };
+	XVector3 LightDir = { -1,1,1 };
+	XVector3 LightColor = { 1,1,1 };
 	float LightIntensity = 7.0f;
 private:
 	uint64 FrameNum = 0;
@@ -769,7 +774,7 @@ private://deffered light pass
 
 	struct cbDefferedLight
 	{
-		XMFLOAT3 LightDir;
+		XVector3 LightDir;
 		float padding0 = 0;
 		XMFLOAT4 LightColorAndIntensityInLux;
 	};
@@ -813,17 +818,17 @@ private://sky atmosphere PreCompute
 	
 	struct cbSkyAtmosphere
 	{
-		XMFLOAT4 TransmittanceLutSizeAndInvSize;
-		XMFLOAT4 MultiScatteredLuminanceLutSizeAndInvSize;
-		XMFLOAT4 SkyViewLutSizeAndInvSize;
-		XMFLOAT4 CameraAerialPerspectiveVolumeSizeAndInvSize;
+		XVector4 TransmittanceLutSizeAndInvSize;
+		XVector4 MultiScatteredLuminanceLutSizeAndInvSize;
+		XVector4 SkyViewLutSizeAndInvSize;
+		XVector4 CameraAerialPerspectiveVolumeSizeAndInvSize;
 
-		XMFLOAT4 RayleighScattering;
-		XMFLOAT4 MieScattering;
-		XMFLOAT4 MieAbsorption;
-		XMFLOAT4 MieExtinction;
+		XVector4 RayleighScattering;
+		XVector4 MieScattering;
+		XVector4 MieAbsorption;
+		XVector4 MieExtinction;
 
-		XMFLOAT4 GroundAlbedo;
+		XVector4 GroundAlbedo;
 		
 		float TopRadiusKm;
 		float BottomRadiusKm;
@@ -835,7 +840,7 @@ private://sky atmosphere PreCompute
 		float MiePhaseG;
 		float padding0 = 0;
 
-		XMFLOAT4 Light0Illuminance;
+		XVector4 Light0Illuminance;
 
 		float CameraAerialPerspectiveVolumeDepthResolution;
 		float CameraAerialPerspectiveVolumeDepthResolutionInv;
@@ -856,7 +861,7 @@ private://Shadow Mask Pass
 	{
 		XMFLOAT4X4 ScreenToShadowMatrix;
 		float x_offset;
-		XMFLOAT3 padding0;
+		XVector3 padding0;
 	};
 	cbShadowMaskNoCommonBuffer cbShadowMaskNoCommon[4];
 	std::shared_ptr<XRHIConstantBuffer>ShadowMaskNoCommonConstantBuffer[4];
@@ -889,8 +894,8 @@ private:
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
 	std::vector<RenderItem*> mOpaqueRitems;
     PassConstants mMainPassCB;
-	XMFLOAT4X4 mProj = MathHelper::Identity4x4();
-	XMFLOAT4X4 mLightProj = MathHelper::Identity4x4();
+	XMatrix mProj = XMatrix::Identity;
+	XMatrix mLightProj = XMatrix::Identity;
     POINT mLastMousePos;
 };
 
@@ -973,10 +978,11 @@ BoundSphere CrateApp::BuildBoundSphere(float FoVAngleY, float WHRatio, float Spl
 	float ViewFarHeight = SplitFar * TanVDiv2;
 	float ViewFarWidth = AspectRatio() * ViewFarHeight;
 
-	XMFLOAT3 NearHOffset = { 0,ViewNearHeight,0 };
-	XMFLOAT3 NearVOffset = { ViewNearWidth,0,0 };
-	XMFLOAT3 FarHOffset = { 0,ViewFarHeight,0 };
-	XMFLOAT3 FarVOffset = { ViewFarWidth,0,0 };
+	XVector3 NearHOffset = { 0,ViewNearHeight,0 };
+	XVector3 NearVOffset = { ViewNearWidth,0,0 };
+	XVector3 FarHOffset = { 0,ViewFarHeight,0 };
+	XVector3 FarVOffset = { ViewFarWidth,0,0 };
+
 	XMVECTOR NearHOffsetCom = XMLoadFloat3(&NearHOffset);
 	XMVECTOR NearVOffsetCom = XMLoadFloat3(&NearVOffset);
 	XMVECTOR FarHOffsetCom = XMLoadFloat3(&FarHOffset);
@@ -1005,12 +1011,12 @@ BoundSphere CrateApp::BuildBoundSphere(float FoVAngleY, float WHRatio, float Spl
 	CentreZ = min(max(CentreZ, SplitNear), SplitFar);
 	
 	
-	XMFLOAT3 Center;
+	XVector3 Center;
 	XMVECTOR CenterCom = EyePosCom + CameraDirection * CentreZ;
 	XMStoreFloat3(&Center, CenterCom);
 	BoundSphere BoundSphereRet = { Center ,0 };
 	
-	XMFLOAT3 Temp;
+	XVector3 Temp;
 	for (uint32 i = 0; i < 8; i++)
 	{
 		XMStoreFloat3(&Temp, XMVector3Length(CascadeFrustumVerts[i] - CenterCom));
@@ -1077,7 +1083,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
 		{
 			auto& ri = mOpaqueRitems[i];
-			direct_ctx->RHISetShaderConstantBuffer(EShaderType::SV_Pixel,
+			direct_ctx->RHISetShaderConstantBuffer(EShaderType::SV_Vertex,
 				 0,
 				mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
 
@@ -1627,7 +1633,7 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 		//Compute Light Pos
 		XMVECTOR LightDirCom = DirectX::XMVector3Normalize(XMLoadFloat3(&LightDir));
 		XMVECTOR lightPos = XMLoadFloat3(&BoundSphere0.Center) + LightDirCom * BoundSphere0.Radius * 1.1;
-		XMFLOAT3 lightPosStore; XMStoreFloat3(&lightPosStore, lightPos);
+		XVector3 lightPosStore; XMStoreFloat3(&lightPosStore, lightPos);
 		LightMatrix[i].Create(mLightProj, lightPosStore, BoundSphere0.Center);
 	}
 
@@ -1705,16 +1711,16 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	//Shadow Pass
 	for (uint32 i = 0; i < 4; i++)
 	{
-		memcpy(&ShadowPassConstant[i].View, &LightMatrix[i].GetViewMatrixTranspose(), sizeof(DirectX::XMFLOAT4X4));
-		memcpy(&ShadowPassConstant[i].Proj, &LightMatrix[i].GetProjectionMatrixTranspose(), sizeof(DirectX::XMFLOAT4X4));
+		memcpy(&ShadowPassConstant[i].View, &LightMatrix[i].GetViewMatrixTranspose(), sizeof(XMatrix));
+		memcpy(&ShadowPassConstant[i].Proj, &LightMatrix[i].GetProjectionMatrixTranspose(), sizeof(XMatrix));
 		ShadowPassConstantBuffer[i].get()->UpdateData(&ShadowPassConstant[i], sizeof(ShadowPassConstants), 0);
 	}
 
 
 	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0f / mClientWidth, 1.0f / mClientHeight);
 
-	XMFLOAT4X4 TempProject = ViewMatrix.GetProjectionMatrix();
-	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
+	XMatrix TempProject = ViewMatrix.GetProjectionMatrix();
+	XMatrix ScreenToClip = XMatrix::Identity;
 	ScreenToClip.m[2][2] = TempProject.m[2][2];
 	ScreenToClip.m[3][2] = TempProject.m[3][2];
 	ScreenToClip.m[2][3] = 1.0f;
@@ -1760,14 +1766,14 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		const float CmToSkyUnit = 0.00001f;			// Centimeters to Kilometers
 		const float SkyUnitToCm = 1.0f / 0.00001f;	// Kilometers to Centimeters
 
-		XMFLOAT3 CametaWorldOrigin = cam_ins.GetEyePosition();
-		XMFLOAT3 CametaTargetPos = cam_ins.GetTargetPosition();
+		XVector3 CametaWorldOrigin = cam_ins.GetEyePosition();
+		XVector3 CametaTargetPos = cam_ins.GetTargetPosition();
 
 
-		XMVECTOR Forward = XMLoadFloat3(GetRValuePtr(XMFLOAT3(CametaTargetPos.x - CametaWorldOrigin.x,
+		XMVECTOR Forward = XMLoadFloat3(GetRValuePtr(XVector3(CametaTargetPos.x - CametaWorldOrigin.x,
 			CametaTargetPos.y - CametaWorldOrigin.y, CametaTargetPos.z - CametaWorldOrigin.z)));
 
-		XMVECTOR PlanetCenterKm = XMLoadFloat3(GetRValuePtr(XMFLOAT3(0, -EarthBottomRadius, 0)));
+		XMVECTOR PlanetCenterKm = XMLoadFloat3(GetRValuePtr(XVector3(0, -EarthBottomRadius, 0)));
 		const float PlanetRadiusOffset = 0.005f;
 		const float Offset = PlanetRadiusOffset * SkyUnitToCm;
 		const float BottomRadiusWorld = EarthBottomRadius * SkyUnitToCm;
@@ -1801,16 +1807,16 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		XMVECTOR SkyLeft = XMVector3Cross(SkyUp, Forward);
 		SkyLeft = XMVector3Normalize(SkyLeft);
 
-		XMFLOAT3 DotMainDir;
+		XVector3 DotMainDir;
 		XMStoreFloat3(&DotMainDir, XMVectorAbs(XMVector3Dot(SkyUp, Forward)));
 		if (DotMainDir.x > 0.999f)
 		{
-			XMFLOAT3 UpStore; XMStoreFloat3(&UpStore, SkyUp);
+			XVector3 UpStore; XMStoreFloat3(&UpStore, SkyUp);
 			const float Sign = UpStore.z >= 0.0f ? 1.0f : -1.0f;
 			const float a = -1.0f / (Sign + UpStore.z);
 			const float b = UpStore.x * UpStore.y * a;
-			Forward = XMLoadFloat3(GetRValuePtr(XMFLOAT3(1 + Sign * a * pow(UpStore.x, 2.0f), Sign * b, -Sign * UpStore.x)));
-			SkyLeft = XMLoadFloat3(GetRValuePtr(XMFLOAT3(b, Sign + a * pow(UpStore.y, 2.0f), -UpStore.y)));
+			Forward = XMLoadFloat3(GetRValuePtr(XVector3(1 + Sign * a * pow(UpStore.x, 2.0f), Sign * b, -Sign * UpStore.x)));
+			SkyLeft = XMLoadFloat3(GetRValuePtr(XVector3(b, Sign + a * pow(UpStore.y, 2.0f), -UpStore.y)));
 		}
 		else
 		{

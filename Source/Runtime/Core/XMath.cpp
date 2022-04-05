@@ -9,6 +9,7 @@ static DirectX::XMFLOAT4X4 IdentityMatrix(
 
 DirectX::XMFLOAT4X4 XDirectx::GetIdentityMatrix()
 {
+
     return IdentityMatrix;
 }
 

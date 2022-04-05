@@ -1,7 +1,8 @@
 #pragma once
 #include "Runtime/Core/XMath.h"
+#include "Runtime/Core/Math/Math.h"
 #include "Runtime/RHI/RHIResource.h"
-DirectX::XMFLOAT4 CreateInvDeviceZToWorldZTransform(const DirectX::XMFLOAT4X4 ProjMatrix);
+XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix);
 
 struct XViewMatrices
 {
@@ -14,39 +15,39 @@ struct XViewMatrices
 	//View -> Clip ProjectionMatrix
 public:
 	void Create(
-		const DirectX::XMFLOAT4X4& ProjectionMatrixIn,
-		const DirectX::XMFLOAT3& ViewLocation,
-		const DirectX::XMFLOAT3& ViewTargetPosition);
+		const XMatrix& ProjectionMatrixIn,
+		const XVector3& ViewLocation,
+		const XVector3& ViewTargetPosition);
 private:
 	//TODO Align
-	DirectX::XMFLOAT3		ViewOrigin;
-	DirectX::XMFLOAT3		PreViewTranslation;
+	XVector3		ViewOrigin;
+	XVector3		PreViewTranslation;
 
-	DirectX::XMFLOAT4X4		ProjectionMatrix;
-	DirectX::XMFLOAT4X4		ViewMatrix;
-	DirectX::XMFLOAT4X4		ViewProjectionMatrix;
-	DirectX::XMFLOAT4X4		TranslatedViewMatrix;
-	DirectX::XMFLOAT4X4		TranslatedViewProjectionMatrix;
-	DirectX::XMFLOAT4X4		TranslatedWorldToClip;
+	XMatrix		ProjectionMatrix;
+	XMatrix		ViewMatrix;
+	XMatrix		ViewProjectionMatrix;
+	XMatrix		TranslatedViewMatrix;
+	XMatrix		TranslatedViewProjectionMatrix;
+	XMatrix		TranslatedWorldToClip;
 
 	//Transpose
-	DirectX::XMFLOAT4X4		ProjectionMatrixTranspose;
-	DirectX::XMFLOAT4X4		ViewMatrixTranspose;
-	DirectX::XMFLOAT4X4		ViewProjectionMatrixTranspose;
-	DirectX::XMFLOAT4X4		TranslatedViewMatrixTranspose;
-	DirectX::XMFLOAT4X4		TranslatedViewProjectionMatrixTranspose;
+	XMatrix		ProjectionMatrixTranspose;
+	XMatrix		ViewMatrixTranspose;
+	XMatrix		ViewProjectionMatrixTranspose;
+	XMatrix		TranslatedViewMatrixTranspose;
+	XMatrix		TranslatedViewProjectionMatrixTranspose;
 
 	//Inverse
 	//DirectX::XMFLOAT4X4		ProjectionMatrixInverse;
 	//DirectX::XMFLOAT4X4		ViewMatrixInverse;
-	DirectX::XMFLOAT4X4		ViewProjectionMatrixInverse;
+	XMatrix		ViewProjectionMatrixInverse;
 	//DirectX::XMFLOAT4X4		TranslatedViewMatrixInverse;
-	DirectX::XMFLOAT4X4		TranslatedViewProjectionMatrixInverse;
+	XMatrix		TranslatedViewProjectionMatrixInverse;
 
 	//misc
 	//DirectX::XMFLOAT4X4		ScreenToTranslatedWorld;
 public:
-	void UpdateViewMatrix(const DirectX::XMFLOAT3& ViewLocation, const DirectX::XMFLOAT3& ViewTargetPosition);
+	void UpdateViewMatrix(const XVector3& ViewLocation, const XVector3& ViewTargetPosition);
 
 //TODO
 //#define GetMatrix_COMMON_TRANSPOSE_INVERSE(MAT_NAME)\
@@ -54,53 +55,53 @@ public:
 //	inline const DirectX::XMFLOAT4X4& GetMAT_NAMETranspose()const { return MAT_NAMETranspose; };\
 //	inline const DirectX::XMFLOAT4X4& GetMAT_NAMEInverse()const { return MAT_NAMEInverse; };\
 
-	inline const DirectX::XMFLOAT3& GetViewOrigin()const { return ViewOrigin; };
-	inline const DirectX::XMFLOAT3& GetPreViewTranslation()const { return PreViewTranslation; };
+	inline const XVector3& GetViewOrigin()const { return ViewOrigin; };
+	inline const XVector3& GetPreViewTranslation()const { return PreViewTranslation; };
 
 	//common
-	inline const DirectX::XMFLOAT4X4& GetProjectionMatrix()const				{ return ProjectionMatrix; };
-	inline const DirectX::XMFLOAT4X4& GetViewMatrix()const						{ return ViewMatrix; };
-	inline const DirectX::XMFLOAT4X4& GetViewProjectionMatrix()const			{ return ViewProjectionMatrix; };
-	inline const DirectX::XMFLOAT4X4& GetTranslatedViewMatrix()const			{ return TranslatedViewMatrix; };
-	inline const DirectX::XMFLOAT4X4& GetTranslatedViewProjectionMatrix()const	{ return TranslatedViewProjectionMatrix; };
+	inline const XMatrix& GetProjectionMatrix()const				{ return ProjectionMatrix; };
+	inline const XMatrix& GetViewMatrix()const						{ return ViewMatrix; };
+	inline const XMatrix& GetViewProjectionMatrix()const			{ return ViewProjectionMatrix; };
+	inline const XMatrix& GetTranslatedViewMatrix()const			{ return TranslatedViewMatrix; };
+	inline const XMatrix& GetTranslatedViewProjectionMatrix()const	{ return TranslatedViewProjectionMatrix; };
 
 	//transpose
-	inline const DirectX::XMFLOAT4X4& GetProjectionMatrixTranspose()const		{ return ProjectionMatrixTranspose; };
-	inline const DirectX::XMFLOAT4X4& GetViewMatrixTranspose()const				{ return ViewMatrixTranspose; };
-	inline const DirectX::XMFLOAT4X4& GetViewProjectionMatrixTranspose()const	{ return ViewProjectionMatrixTranspose; };
-	inline const DirectX::XMFLOAT4X4& GetTranslatedViewMatrixTranspose()const	{ return TranslatedViewMatrixTranspose; };
-	inline const DirectX::XMFLOAT4X4& GetTranslatedViewProjectionMatrixTranspose()const { return TranslatedViewProjectionMatrixTranspose; };
+	inline const XMatrix& GetProjectionMatrixTranspose()const		{ return ProjectionMatrixTranspose; };
+	inline const XMatrix& GetViewMatrixTranspose()const				{ return ViewMatrixTranspose; };
+	inline const XMatrix& GetViewProjectionMatrixTranspose()const	{ return ViewProjectionMatrixTranspose; };
+	inline const XMatrix& GetTranslatedViewMatrixTranspose()const	{ return TranslatedViewMatrixTranspose; };
+	inline const XMatrix& GetTranslatedViewProjectionMatrixTranspose()const { return TranslatedViewProjectionMatrixTranspose; };
 
 	//inverse
-	inline const DirectX::XMFLOAT4X4& GetViewProjectionMatrixInverse()const { return ViewProjectionMatrixInverse; };
-	inline const DirectX::XMFLOAT4X4& GetTranslatedViewProjectionMatrixInverse()const { return TranslatedViewProjectionMatrixInverse; };
+	inline const XMatrix& GetViewProjectionMatrixInverse()const { return ViewProjectionMatrixInverse; };
+	inline const XMatrix& GetTranslatedViewProjectionMatrixInverse()const { return TranslatedViewProjectionMatrixInverse; };
 
 	//misc
-	DirectX::XMFLOAT4X4 GetScreenToTranslatedWorldTranPose();
-	DirectX::XMFLOAT4X4 GetScreenToWorldTranPose();
+	XMatrix GetScreenToTranslatedWorldTranPose();
+	XMatrix GetScreenToWorldTranPose();
 };
 
 struct ViewConstantBufferData
 {
-	DirectX::XMFLOAT4X4 TranslatedViewProjectionMatrix;
-	DirectX::XMFLOAT4X4 ScreenToTranslatedWorld;
-	DirectX::XMFLOAT4X4 ViewToClip;
-	DirectX::XMFLOAT4X4 ScreenToWorld;
+	XMatrix TranslatedViewProjectionMatrix;
+	XMatrix ScreenToTranslatedWorld;
+	XMatrix ViewToClip;
+	XMatrix ScreenToWorld;
 
-	DirectX::XMFLOAT4 InvDeviceZToWorldZTransform;
-	DirectX::XMFLOAT3 WorldCameraOrigin;
+	XVector4 InvDeviceZToWorldZTransform;
+	XVector3 WorldCameraOrigin;
 	uint32 StateFrameIndexMod8 = 0;
 
-	DirectX::XMFLOAT4 BufferSizeAndInvSize;
-	DirectX::XMFLOAT4 AtmosphereLightDirection;
+	XVector4 BufferSizeAndInvSize;
+	XVector4 AtmosphereLightDirection;
 
-	DirectX::XMFLOAT3 SkyWorldCameraOrigin;
+	XVector3 SkyWorldCameraOrigin;
 	float padding1 = 0.0;
 
-	DirectX::XMFLOAT4 SkyPlanetCenterAndViewHeight;
-	DirectX::XMFLOAT4X4 SkyViewLutReferential;
+	XVector4 SkyPlanetCenterAndViewHeight;
+	XMatrix SkyViewLutReferential;
 
-	DirectX::XMFLOAT4 ViewSizeAndInvSize;;
+	XVector4 ViewSizeAndInvSize;;
 };
 
 class XSceneView

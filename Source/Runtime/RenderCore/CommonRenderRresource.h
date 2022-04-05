@@ -41,4 +41,12 @@ public:
 	}
 };
 
+
+class XScreenQuadVertexBuffer :public RVertexBuffer
+{
+public:
+	void InitRHI()override;
+};
+
+
 extern TGlobalResource<RFullScreenQuadVertexLayout> GFullScreenLayout;

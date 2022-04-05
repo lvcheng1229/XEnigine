@@ -59,3 +59,11 @@ enum class EVertexElementType
 	VET_MAX,
 	VET_NumBits = 5,
 };
+
+enum class EBufferUsage
+{
+	BUF_None = 0x0000,
+	BUF_Static = 0x0001,
+	BUF_Dynamic = 0x0002,
+	BUF_AnyDynamic = BUF_Dynamic,
+};

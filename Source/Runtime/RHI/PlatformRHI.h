@@ -10,6 +10,9 @@ public:
 	//CreateVertexLayout
 	virtual std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements) = 0;
 	
+	//Create Buffer
+	virtual std::shared_ptr<XRHIVertexBuffer>RHIcreateVertexBuffer(uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData) = 0;
+
 	//Create State
 	virtual std::shared_ptr<XRHIDepthStencilState> RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer) = 0;
 	virtual std::shared_ptr<XRHIBlendState> RHICreateBlendState(const XBlendStateInitializerRHI& Initializer) = 0;

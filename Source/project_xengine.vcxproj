@@ -95,6 +95,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Runtime\Core\Math\Matrix.h" />
+    <ClInclude Include="Runtime\Core\Math\SimpleMath.h" />
+    <ClInclude Include="Runtime\Core\Math\Math.h" />
+    <ClInclude Include="Runtime\Engine\MaterialShared.h" />
     <ClInclude Include="ThirdParty\stb_image.h" />
     <ClInclude Include="FrameResource.h" />
     <ClInclude Include="Runtime\Core\PixelFormat.h" />
@@ -151,10 +155,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
+    <ClCompile Include="Runtime\Core\Math\SimpleMath.cpp" />
+    <ClCompile Include="Runtime\Core\Math\Math.cpp" />
     <ClCompile Include="Runtime\Core\XMath.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12AbstractDevice.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Adapter.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Allocation.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Buffer.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12CommandList.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12CommandQueue.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Context.cpp" />
@@ -169,8 +176,11 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Shader.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12State.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12VertexBuffer.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12VertexDeclaration.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp" />
+    <ClCompile Include="Runtime\Engine\MaterialShared.cpp" />
+    <ClCompile Include="Runtime\Engine\Material\MaterialShader.cpp" />
     <ClCompile Include="Runtime\Engine\SceneView.cpp" />
     <ClCompile Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.cpp" />
     <ClCompile Include="Runtime\RenderCore\CommonRenderRresource.cpp" />
@@ -187,6 +197,9 @@
     <ClCompile Include="UnitTest\MathHelper.cpp" />
     <ClCompile Include="UnitTest\d3dApp.cpp" />
     <ClCompile Include="UnitTest\d3dUtil.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Runtime\Core\Math\SimpleMath.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

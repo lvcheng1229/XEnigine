@@ -8,6 +8,8 @@
 //64KB
 #define MIN_PLACED_BUFFER_SIZE (64*1024)
 
+
+
 enum class AllocStrategy
 {
 	PlacedResource,
@@ -53,8 +55,8 @@ public:
 	
 	void Create(XD3D12PhysicDevice* device_in, XAllocConfig config_in, uint32 max_block_size_in, uint32 min_block_size_in, AllocStrategy strategy_in);
 
-	bool Allocate(uint32 allocate_size_byte, uint32 alignment, XD3D12ResourceLocation& resource_location);
-	void Deallocate(XD3D12ResourceLocation& ResourceLocation);
+	bool Allocate(uint32 allocate_size_byte, uint32 alignment, XD3D12ResourcePtr_CPUGPU& resource_location);
+	void Deallocate(XD3D12ResourcePtr_CPUGPU& ResourceLocation);
 
 	inline uint64 GetAllocationOffsetInBytes(const BuddyAllocatorData& AllocatorPrivateData) const 
 	{
@@ -86,3 +88,4 @@ private:
 //	XD3DMultiBuddyAllocator multi_buddy_allocator;
 //public:
 //};
+

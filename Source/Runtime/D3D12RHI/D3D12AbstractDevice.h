@@ -42,6 +42,10 @@ public:
 	XD3D12Texture3D* CreateD3D12Texture3D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,
 		EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
+	template<typename BufferType>
+	BufferType* CreateRHIBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
+		uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
+
 private:
 	uint64 TempResourceIndex;
 	std::vector<XD3D12Resource>ResourceManagerTempVec;
@@ -53,9 +57,12 @@ private:
 	XD3D12CommandQueue* DirectxCmdQueue;;
 	XD3D12CommandQueue* ComputeCmdQueue;
 
-	XD3DBuddyAllocator DefaultNonRtDsTextureHeapAlloc;
-	XD3DBuddyAllocator UploadHeapAlloc;
-	XD3DBuddyAllocator ConstantBufferUploadHeapAlloc;
+	XD3DBuddyAllocator VIBufferBufferAllocDefault;//manual+default
+	//XD3DBuddyAllocator VIBufferBufferAllocUpload;//manual+upload
+
+	XD3DBuddyAllocator DefaultNonRtDsTextureHeapAlloc;//placed+default
+	XD3DBuddyAllocator UploadHeapAlloc;//manual+upload
+	XD3DBuddyAllocator ConstantBufferUploadHeapAlloc;//manual+upload
 
 	std::vector<XD3DDirectContex>DirectCtxs;
 
