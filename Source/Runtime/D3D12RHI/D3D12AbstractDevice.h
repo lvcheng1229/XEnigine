@@ -43,7 +43,7 @@ public:
 		EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
 	template<typename BufferType>
-	BufferType* CreateRHIBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
+	BufferType* CreateRHIVIBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
 		uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
 
 private:
@@ -60,9 +60,9 @@ private:
 	XD3DBuddyAllocator VIBufferBufferAllocDefault;//manual+default
 	//XD3DBuddyAllocator VIBufferBufferAllocUpload;//manual+upload
 
-	XD3DBuddyAllocator DefaultNonRtDsTextureHeapAlloc;//placed+default
-	XD3DBuddyAllocator UploadHeapAlloc;//manual+upload
-	XD3DBuddyAllocator ConstantBufferUploadHeapAlloc;//manual+upload
+	XD3DBuddyAllocator DefaultNonRtDsTextureHeapAlloc;	//placed+default
+	XD3DBuddyAllocator UploadHeapAlloc;					//manual+upload
+	XD3DBuddyAllocator ConstantBufferUploadHeapAlloc;	//manual+upload
 
 	std::vector<XD3DDirectContex>DirectCtxs;
 

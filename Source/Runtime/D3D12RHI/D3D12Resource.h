@@ -2,15 +2,7 @@
 #include "D3D12PhysicDevice.h"
 #include "Runtime/RHI/RHIResource.h"
 
-class XD3D12VertexBuffer :public XRHIVertexBuffer
-{
-public:
-};
 
-class XD3D12IndexBuffer :public XRHIIndexBuffer
-{
-public:
-};
 
 class XD3D12ResourceTypeHelper
 {
@@ -127,11 +119,14 @@ private:
 	//End
 	
 public:
+	XD3D12ResourcePtr_CPUGPU() :buddy_alloc(nullptr), mapped_resource_cpu_ptr(nullptr), UploadCommitBackResource(nullptr) {}
 
 	/// for mannual suballocation
 	inline void SetBackResource(XD3D12Resource* ResourceIn) { UploadCommitBackResource = ResourceIn; }
 	inline void SetMappedCPUResourcePtr(void* address_in) { mapped_resource_cpu_ptr = address_in; }
 	inline void SetGPUVirtualPtr(D3D12_GPU_VIRTUAL_ADDRESS address) { GPUVirtualPtr = address; }
+	
+	inline XD3D12Resource* GetBackResource()const { return UploadCommitBackResource; }
 	inline void* GetMappedCPUResourcePtr() { return mapped_resource_cpu_ptr; }
 	inline D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualPtr() { return GPUVirtualPtr; };
 	//End
@@ -139,6 +134,25 @@ public:
 	inline void SetBuddyAllocator(XD3DBuddyAllocator* alloc_in) { buddy_alloc = alloc_in; };
 	inline XD3DBuddyAllocator* GetBuddyAllocator() { return buddy_alloc; };
 	inline BuddyAllocatorData& GetBuddyAllocData() { return buddy_alloc_data; };
+};
+
+class XD3D12VertexBuffer :public XRHIVertexBuffer
+{
+public:
+	//StrideIn is Unused
+	XD3D12VertexBuffer(uint32 StrideIn, uint32 SizeIn) :
+		XRHIVertexBuffer(SizeIn) {}
+
+	XD3D12ResourcePtr_CPUGPU ResourcePtr;
+};
+
+class XD3D12IndexBuffer :public XRHIIndexBuffer
+{
+public:
+	XD3D12IndexBuffer(uint32 StrideIn, uint32 SizeIn) :
+		XRHIIndexBuffer(StrideIn, SizeIn) {}
+
+	XD3D12ResourcePtr_CPUGPU ResourcePtr;
 };
 
 #define MAX_GLOBAL_CONSTANT_BUFFER_SIZE		4096
@@ -172,8 +186,8 @@ public:
 
 	inline void SetSlotIndex(uint32 BufferIndex)
 	{
-		if (HasValueBind && (BufferIndex != BindSlotIndex)) 
-		{ 
+		if (HasValueBind && (BufferIndex != BindSlotIndex))
+		{
 			X_Assert(false);
 		}
 

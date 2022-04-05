@@ -98,6 +98,7 @@
     <ClInclude Include="Runtime\Core\Math\Matrix.h" />
     <ClInclude Include="Runtime\Core\Math\SimpleMath.h" />
     <ClInclude Include="Runtime\Core\Math\Math.h" />
+    <ClInclude Include="Runtime\Core\XResourceCreateDataInterface.h" />
     <ClInclude Include="Runtime\Engine\MaterialShared.h" />
     <ClInclude Include="ThirdParty\stb_image.h" />
     <ClInclude Include="FrameResource.h" />

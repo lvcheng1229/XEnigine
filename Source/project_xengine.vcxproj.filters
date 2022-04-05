@@ -194,6 +194,7 @@
     <ClInclude Include="Runtime\Core\Math\Math.h" />
     <ClInclude Include="Runtime\Core\Math\Matrix.h" />
     <ClInclude Include="Runtime\Engine\MaterialShared.h" />
+    <ClInclude Include="Runtime\Core\XResourceCreateDataInterface.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />

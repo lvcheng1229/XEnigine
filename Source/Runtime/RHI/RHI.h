@@ -4,6 +4,7 @@
 #include "Runtime/DataStruct/XRefCountPtr.h"
 #include "Runtime/Core/Template/XEngineTemplate.h"
 #include "Runtime/Core/PixelFormat.h"
+#include "Runtime/Core/XResourceCreateDataInterface.h"
 
 struct FPixelFormatInfo
 {
@@ -17,7 +18,12 @@ using EShaderType_Underlying = std::underlying_type<EShaderType>::type;
 
 struct XRHIResourceCreateData
 {
+	XRHIResourceCreateData()
+		:ResourceArray(nullptr) {}
 
+	XRHIResourceCreateData(FResourceArrayInterface* ResourceArrayIn) :ResourceArray(ResourceArrayIn) {}
+	
+	FResourceArrayInterface* ResourceArray;
 };
 
 struct XDepthStencilStateInitializerRHI
