@@ -17,10 +17,20 @@ public:
 	//DrawCall/DisPatch
 	virtual void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) = 0;
 	virtual void RHIDrawIndexedPrimitive() = 0;
+	virtual void RHIDrawIndexedPrimitive(
+		XRHIIndexBuffer* IndexBuffer,
+		uint32 IndexCountPerInstance,
+		uint32 InstanceCount,
+		uint32 StartIndexLocation,
+		uint32 BaseVertexLocation,
+		uint32 StartInstanceLocation) = 0;
 
 	//SetPSO
 	virtual void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState) = 0;
 	virtual void RHISetComputePipelineState(XRHIComputePSO* ComputeState) = 0;
+
+	//SetVB IB
+	virtual void SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin) = 0;
 
 	//Misc
 	virtual void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ) = 0;

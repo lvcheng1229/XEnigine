@@ -346,15 +346,21 @@ bool D3DApp::InitDirect3D()
 
 	direct_ctx = abstrtact_device.GetDirectContex(0);
 	direct_ctx->OpenCmdList();
+
 	RHICmdList.SetContext(direct_ctx);
 	RHIInit();
 
 	pass_state_manager = direct_ctx->GetPassStateManager();
-	//pass_state_manager.Create(&Device, direct_ctx);
-
 	mDirectCmdListAlloc = direct_ctx->GetCmdAlloc()->GetDXAlloc();
 	mCommandList = direct_ctx->GetCmdList()->GetDXCmdList();
+	
 	direct_ctx->CloseCmdList();
+
+
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	direct_cmd_queue->CommandQueueWaitFlush();
+
 	return true;
 }
 

@@ -199,6 +199,8 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 	return std::make_shared<XD3DGraphicsPSO>(PSOInit, AbsDevice->GetRootSigMap()[BoundHash].get(), HashToID3D12[PSOHash].get());
 }
 
+
+
 std::shared_ptr<XRHIDepthStencilState> XD3D12PlatformRHI::RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer)
 {
 	XD3D12DepthStencilState* DepthStencilState = new XD3D12DepthStencilState;

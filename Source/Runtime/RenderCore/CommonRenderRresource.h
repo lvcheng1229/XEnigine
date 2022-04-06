@@ -57,5 +57,13 @@ public:
 	void InitRHI()override;
 };
 
+
+class XScreenQuadIndexBuffer :public RIndexBuffer
+{
+public:
+	void InitRHI()override;
+};
+
+extern TGlobalResource<XScreenQuadIndexBuffer> GFullScreenIndexRHI;
 extern TGlobalResource<XScreenQuadVertexBuffer> GFullScreenVertexRHI;
 extern TGlobalResource<RFullScreenQuadVertexLayout> GFullScreenLayout;

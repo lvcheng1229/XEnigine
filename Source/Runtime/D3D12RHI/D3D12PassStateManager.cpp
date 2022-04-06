@@ -25,7 +25,9 @@ void XD3D12PassStateManager::ResetState()
 	bNeedSetRT = false;
 	bNeedSetRootSig = false;
 	bNeedClearMRT = false;
+	bNeedSetVB = false;
 
+	PipelineState.Graphics.VBSlotIndexMax = 0;
 	PipelineState.Common.SRVManager.UnsetMasks();
 	PipelineState.Common.CBVRootDescManager.UnsetMasks();
 	PipelineState.Common.UAVManager.UnsetMasks();
@@ -122,6 +124,12 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 		ID3D12DescriptorHeap* descriptorHeaps[] = { pipe_curr_desc_array_manager.GetCurrentDescArray()->GetDescHeapPtr() };
 		dx_cmd_list->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 		bNeedSetHeapDesc = false;
+	}
+
+	if (bNeedSetVB)
+	{
+		bNeedSetVB = false;
+		dx_cmd_list->IASetVertexBuffers(0, PipelineState.Graphics.VBSlotIndexMax+1, PipelineState.Graphics.CurrentVertexBufferViews);
 	}
 
 	uint32 NumViews = 0;

@@ -58,7 +58,7 @@ private:
 	XD3D12CommandQueue* ComputeCmdQueue;
 
 	XD3DBuddyAllocator VIBufferBufferAllocDefault;//manual+default
-	//XD3DBuddyAllocator VIBufferBufferAllocUpload;//manual+upload
+	//XD3DBuddyAllocator VIBufferBufferAllocUpload;//manual+upload ->uisng UploadHeapAlloc
 
 	XD3DBuddyAllocator DefaultNonRtDsTextureHeapAlloc;	//placed+default
 	XD3DBuddyAllocator UploadHeapAlloc;					//manual+upload

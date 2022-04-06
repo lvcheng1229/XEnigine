@@ -3,6 +3,7 @@
 #include <array>
 TGlobalResource<RFullScreenQuadVertexLayout> GFullScreenLayout;
 TGlobalResource<XScreenQuadVertexBuffer> GFullScreenVertexRHI;
+TGlobalResource<XScreenQuadIndexBuffer> GFullScreenIndexRHI;
 
 RFullScreenQuadVS::ShaderInfos RFullScreenQuadVS::StaticShaderInfos(
 	"RFullScreenQuadVS", L"E:/XEngine/XEnigine/Source/Shaders/FullScreenVertexShader.hlsl",
@@ -18,5 +19,18 @@ void XScreenQuadVertexBuffer::InitRHI()
 	Vertices.PushBack(XFullScreenQuadVertex(XVector2(1.0f, -1.0f), XVector2(1.0f, 1.0f)));
 	
 	XRHIResourceCreateData CreateData(&Vertices);
-	RHIVertexBuffer = RHIcreateVertexBuffer(6, EBufferUsage::BUF_Static, CreateData);
+	RHIVertexBuffer = RHIcreateVertexBuffer(sizeof(XFullScreenQuadVertex), 4* sizeof(XFullScreenQuadVertex), EBufferUsage::BUF_Static, CreateData);
+}
+
+void XScreenQuadIndexBuffer::InitRHI()
+{
+	TResourceVector<uint16> Indecies;
+	Indecies.PushBack(0);
+	Indecies.PushBack(1);
+	Indecies.PushBack(2);
+	Indecies.PushBack(0);
+	Indecies.PushBack(2);
+	Indecies.PushBack(3);
+	XRHIResourceCreateData CreateData(&Indecies);
+	RHIIndexBuffer = RHICreateIndexBuffer(sizeof(uint16), 6 * sizeof(uint16), EBufferUsage::BUF_Static, CreateData);
 }

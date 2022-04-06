@@ -9,10 +9,14 @@
 class XRHIVertexBuffer
 {
 public:
-	XRHIVertexBuffer(uint32 SizeIn) :
-		Size(SizeIn) {}
+	XRHIVertexBuffer(uint32 StrideIn, uint32 SizeIn) :
+		Size(SizeIn),
+		Stride(StrideIn) {}
+	inline uint32 GetStride()const { return Stride; }
+	inline uint32 GetSize()const { return Size; }
 private:
 	uint32 Size;
+	uint32 Stride;
 };
 
 class XRHIIndexBuffer
@@ -21,6 +25,8 @@ public:
 	XRHIIndexBuffer(uint32 StrideIn, uint32 SizeIn)
 		:Size(SizeIn),
 		Stride(StrideIn) {}
+	inline uint32 GetStride()const { return Stride; }
+	inline uint32 GetSize()const { return Size; }
 private:
 	uint32 Size;
 	uint32 Stride;

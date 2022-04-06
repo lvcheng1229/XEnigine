@@ -154,6 +154,53 @@ void XD3DDirectContex::RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32
 	cmd_dirrect_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 
+void XD3DDirectContex::SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
+{
+	PassStateManager.SetVertexBuffer(RHIVertexBuffer, VertexBufferSlot, OffsetFormVBBegin);
+}
+
+void XD3DDirectContex::RHIDrawIndexedPrimitive(
+	XRHIIndexBuffer* IndexBuffer,
+	uint32 IndexCountPerInstance,
+	uint32 InstanceCount,
+	uint32 StartIndexLocation,
+	uint32 BaseVertexLocation,
+	uint32 StartInstanceLocation)
+{
+	if (VSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Vertex, VSGlobalConstantBuffer->BindSlotIndex, VSGlobalConstantBuffer.get());
+		VSGlobalConstantBuffer->ResetState();
+	}
+	if (PSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Pixel, PSGlobalConstantBuffer->BindSlotIndex, PSGlobalConstantBuffer.get());
+		PSGlobalConstantBuffer->ResetState();
+	}
+	if (CSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Compute, CSGlobalConstantBuffer->BindSlotIndex, CSGlobalConstantBuffer.get());
+		CSGlobalConstantBuffer->ResetState();
+	}
+	PassStateManager.ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
+
+	XD3D12ResourcePtr_CPUGPU* IndexBufferPtr = &static_cast<XD3D12IndexBuffer*>(IndexBuffer)->ResourcePtr;
+	const DXGI_FORMAT Format = (IndexBuffer->GetStride() == sizeof(uint16) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT);
+
+	D3D12_INDEX_BUFFER_VIEW IndexView;
+	IndexView.BufferLocation = IndexBufferPtr->GetGPUVirtualPtr();
+	IndexView.Format = Format;
+	IndexView.SizeInBytes = IndexBuffer->GetSize();
+
+	cmd_dirrect_list.GetDXCmdList()->IASetIndexBuffer(&IndexView);
+	cmd_dirrect_list.GetDXCmdList()->DrawIndexedInstanced(
+		IndexCountPerInstance,
+		InstanceCount,
+		StartIndexLocation,
+		BaseVertexLocation,
+		StartInstanceLocation);
+}
+
 void XD3DDirectContex::RHIDrawIndexedPrimitive()
 {
 	if (VSGlobalConstantBuffer->HasValueBind)

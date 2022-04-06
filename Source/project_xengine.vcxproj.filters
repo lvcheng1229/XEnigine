@@ -300,7 +300,7 @@
     <ClCompile Include="Runtime\Core\Math\Math.cpp" />
     <ClCompile Include="Runtime\Engine\MaterialShared.cpp" />
     <ClCompile Include="Runtime\Engine\Material\MaterialShader.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12VertexBuffer.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12VIBuffer.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Buffer.cpp" />
   </ItemGroup>
   <ItemGroup>

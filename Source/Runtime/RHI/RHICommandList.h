@@ -111,6 +111,17 @@ public:
 		GetContext()->RHIBeginRenderPass(InInfo, InName);
 	}
 
+	inline void RHIDrawIndexedPrimitive(
+		XRHIIndexBuffer* IndexBuffer,
+		uint32 IndexCountPerInstance,
+		uint32 InstanceCount,
+		uint32 StartIndexLocation,
+		uint32 BaseVertexLocation,
+		uint32 StartInstanceLocation)
+	{
+		GetContext()->RHIDrawIndexedPrimitive(IndexBuffer, IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
+	}
+
 	inline void RHIDrawIndexedPrimitive()
 	{
 		GetContext()->RHIDrawIndexedPrimitive();
@@ -135,12 +146,22 @@ public:
 	{
 		GetContext()->RHISetShaderTexture(ShaderType, TextureIndex, Texture);
 	}
+
+	inline void SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
+	{
+		GetContext()->SetVertexBuffer(RHIVertexBuffer, VertexBufferSlot, OffsetFormVBBegin);
+	}
 };
 
 
-inline std::shared_ptr<XRHIVertexBuffer>RHIcreateVertexBuffer(uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+inline std::shared_ptr<XRHIVertexBuffer>RHIcreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
-	return GPlatformRHI->RHIcreateVertexBuffer(Size, Usage, ResourceData);
+	return GPlatformRHI->RHIcreateVertexBuffer(Stride, Size, Usage, ResourceData);
+}
+
+inline std::shared_ptr<XRHIIndexBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return GPlatformRHI->RHICreateIndexBuffer(Stride, Size, Usage, ResourceData);
 }
 
 inline std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8> Code)

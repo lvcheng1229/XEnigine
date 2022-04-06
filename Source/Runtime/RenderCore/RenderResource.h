@@ -69,5 +69,5 @@ public:
 class RIndexBuffer :public XRenderResource
 {
 public:
-	std::shared_ptr<XRHIIndexBuffer>RHIIndedxBuffer;
+	std::shared_ptr<XRHIIndexBuffer>RHIIndexBuffer;
 };

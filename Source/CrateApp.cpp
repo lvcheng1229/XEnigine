@@ -786,7 +786,6 @@ private:
 	//Full Screen Pass
 	XD3D12RootSignature FullScreenRootSig;
 	ComPtr<ID3D12PipelineState>FullScreenPSO = nullptr;
-	std::unique_ptr<RenderItem> fullScreenItem;
 	XViewMatrices ViewMatrix;
 
 private://Shadow Pass
@@ -1305,19 +1304,14 @@ void CrateApp::Renderer(const GameTimer& gt)
 			TextureGBufferA.get(),
 			TextureDepthStencil.get());
 
+		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+		
 		for (int CSMindex = 3; CSMindex >= 0; CSMindex--)
 		{
 			PixelShader->SetShaderShadowMatrixBuffer(RHICmdList,
 				ShadowMaskNoCommonConstantBuffer[CSMindex].get());
-
-			RHICmdList.RHIDrawIndexedPrimitive();
 			
-			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
-			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-			mCommandList.Get()->DrawIndexedInstanced(
-				fullScreenItem->IndexCount, 1,
-				fullScreenItem->StartIndexLocation,
-				fullScreenItem->BaseVertexLocation, 0);
+			RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 		}
 
 		mCommandList->EndEvent();
@@ -1355,17 +1349,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 				TextureDepthStencil.get(),
 				ShadowMaskTexture.get());
 
-			RHICmdList.RHIDrawIndexedPrimitive();
 		}
 
-		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
-		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-		
-		mCommandList.Get()->DrawIndexedInstanced(
-			fullScreenItem->IndexCount, 1,
-			fullScreenItem->StartIndexLocation,
-			fullScreenItem->BaseVertexLocation, 0);
-
+		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 		mCommandList->EndEvent();
 	}
 
@@ -1399,13 +1386,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 			TextureDepthStencil.get(),
 			FurthestHZBOutput0.get());
 
-		RHICmdList.RHIDrawIndexedPrimitive();
-		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
-		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-		mCommandList.Get()->DrawIndexedInstanced(
-			fullScreenItem->IndexCount, 1,
-			fullScreenItem->StartIndexLocation,
-			fullScreenItem->BaseVertexLocation, 0);
+		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 
 		mCommandList->EndEvent();
 
@@ -1434,14 +1416,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 			SSROutput.get()
 		);
 
-		RHICmdList.RHIDrawIndexedPrimitive();
-
-		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
-		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-		mCommandList.Get()->DrawIndexedInstanced(
-			fullScreenItem->IndexCount, 1,
-			fullScreenItem->StartIndexLocation,
-			fullScreenItem->BaseVertexLocation, 0);
+		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 
 		mCommandList->EndEvent();
 	}
@@ -1477,14 +1453,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 			TransmittanceLutUAV.get()
 		);
 
-		RHICmdList.RHIDrawIndexedPrimitive();
-
-		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
-		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-		mCommandList.Get()->DrawIndexedInstanced(
-			fullScreenItem->IndexCount, 1,
-			fullScreenItem->StartIndexLocation,
-			fullScreenItem->BaseVertexLocation, 0);
+		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 
 		mCommandList->EndEvent();
 
@@ -1505,17 +1475,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);//TODO
 		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
 		
-		direct_ctx->RHISetShaderTexture(
-			EShaderType::SV_Pixel, 0
-			, TextureSceneColorDeffered.get());
+		direct_ctx->RHISetShaderTexture(EShaderType::SV_Pixel, 0, TextureSceneColorDeffered.get());
 		
-		mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(fullScreenItem->Geo->VertexBufferView()));
-		mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(fullScreenItem->Geo->IndexBufferView()));
-		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-		mCommandList.Get()->DrawIndexedInstanced(
-			fullScreenItem->IndexCount, 1, 
-			fullScreenItem->StartIndexLocation, 
-			fullScreenItem->BaseVertexLocation, 0);
+		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 
 		mCommandList->EndEvent();
 	}
@@ -2263,49 +2226,7 @@ void CrateApp::BuildShapeGeometry()
 		mGeometries[geo->Name] = std::move(geo);
 	}
 	
-	{
-		GeometryGenerator::MeshData fullScreenQuad = geoGen.CreateFullScreenQuad();
-		SubmeshGeometry fullScreenQuadSubmesh;
-		fullScreenQuadSubmesh.IndexCount = (UINT)fullScreenQuad.Indices32.size();
-		fullScreenQuadSubmesh.StartIndexLocation = 0;
-		fullScreenQuadSubmesh.BaseVertexLocation = 0;
 
-		std::vector<FullScreenVertex> quadVertices(fullScreenQuad.Vertices.size());
-		for (size_t i = 0; i < fullScreenQuad.Vertices.size(); ++i)
-		{
-			quadVertices[i].Pos = DirectX::XMFLOAT2(
-				fullScreenQuad.Vertices[i].Position.x,
-				fullScreenQuad.Vertices[i].Position.y);
-			quadVertices[i].TexC = fullScreenQuad.Vertices[i].TexC;
-		}
-		std::vector<std::uint16_t> quadindices;
-		quadindices.insert(quadindices.end(), std::begin(fullScreenQuad.GetIndices16()), std::end(fullScreenQuad.GetIndices16()));
-		const UINT vbByteSize = (UINT)quadVertices.size() * sizeof(FullScreenVertex);
-		const UINT ibByteSize = (UINT)quadindices.size() * sizeof(std::uint16_t);
-
-		auto geo = std::make_unique<MeshGeometry>();
-		geo->Name = "fullQuad";
-
-		ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-		CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), quadVertices.data(), vbByteSize);
-
-		ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-		CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), quadindices.data(), ibByteSize);
-
-		geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-			mCommandList.Get(), quadVertices.data(), vbByteSize, geo->VertexBufferUploader);
-
-		geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-			mCommandList.Get(), quadindices.data(), ibByteSize, geo->IndexBufferUploader);
-
-		geo->VertexByteStride = sizeof(FullScreenVertex);
-		geo->VertexBufferByteSize = vbByteSize;
-		geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-		geo->IndexBufferByteSize = ibByteSize;
-
-		geo->DrawArgs["quad"] = fullScreenQuadSubmesh;
-		mGeometries[geo->Name] = std::move(geo);
-	}
 }
 
 void CrateApp::BuildPSOs()
@@ -2529,25 +2450,9 @@ void CrateApp::BuildRenderItems()
 			mOpaqueRitems.push_back(e.get());
 	}
 
-	{
-		LightPassItem = std::make_unique<RenderItem>();
-		LightPassItem->ObjCBIndex = 4;
-		//fullScreenItem->Mat = mMaterials["woodCrate"].get();
-		LightPassItem->Geo = mGeometries["fullQuad"].get();
-		LightPassItem->IndexCount = LightPassItem->Geo->DrawArgs["quad"].IndexCount;
-		LightPassItem->StartIndexLocation = LightPassItem->Geo->DrawArgs["quad"].StartIndexLocation;
-		LightPassItem->BaseVertexLocation = LightPassItem->Geo->DrawArgs["quad"].BaseVertexLocation;
-	}
 
-	{
-		fullScreenItem = std::make_unique<RenderItem>();
-		fullScreenItem->ObjCBIndex = 0;//No  Use
-		//fullScreenItem->Mat = mMaterials["woodCrate"].get();
-		fullScreenItem->Geo = mGeometries["fullQuad"].get();
-		fullScreenItem->IndexCount = fullScreenItem->Geo->DrawArgs["quad"].IndexCount;
-		fullScreenItem->StartIndexLocation = fullScreenItem->Geo->DrawArgs["quad"].StartIndexLocation;
-		fullScreenItem->BaseVertexLocation = fullScreenItem->Geo->DrawArgs["quad"].BaseVertexLocation;
-	}
+
+
 }
 
 void CrateApp::TempDelete()
@@ -2561,7 +2466,7 @@ void CrateApp::TempDelete()
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(1456);
+	//_CrtSetBreakAlloc(416);
 	int* a = new int(5);
 	try
 	{

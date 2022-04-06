@@ -26,6 +26,7 @@ private:
 	bool bNeedClearMRT;
 	bool bNeedSetHeapDesc;
 
+	bool bNeedSetVB;;
 	struct
 	{
 		struct
@@ -34,6 +35,9 @@ private:
 			uint32						current_num_rendertarget;
 			XD3D12DepthStencilView*		depth_stencil;
 			XD3D12RenderTargetView*		render_target_array[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+
+			D3D12_VERTEX_BUFFER_VIEW CurrentVertexBufferViews[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+			uint32 VBSlotIndexMax;
 
 		}Graphics;
 
@@ -67,6 +71,28 @@ public:
 	template<ED3D12PipelineType PipelineType>
 	void ApplyCurrentStateToPipeline();
 
+	inline void SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
+	{
+		XD3D12ResourcePtr_CPUGPU* VertexBufferPtr = &static_cast<XD3D12VertexBuffer*>(RHIVertexBuffer)->ResourcePtr;
+		
+		__declspec(align(16)) D3D12_VERTEX_BUFFER_VIEW NewView;
+		NewView.BufferLocation = VertexBufferPtr->GetGPUVirtualPtr() + OffsetFormVBBegin;
+		NewView.StrideInBytes = RHIVertexBuffer->GetStride();
+		NewView.SizeInBytes = RHIVertexBuffer->GetSize() - OffsetFormVBBegin;
+		
+		auto& CurrentView = PipelineState.Graphics.CurrentVertexBufferViews[VertexBufferSlot];
+		if (CurrentView.BufferLocation != NewView.BufferLocation ||
+			CurrentView.StrideInBytes != NewView.StrideInBytes ||
+			CurrentView.SizeInBytes != NewView.SizeInBytes)
+		{
+			bNeedSetVB = true;
+			uint32 SlotIndexMax = PipelineState.Graphics.VBSlotIndexMax;
+			PipelineState.Graphics.VBSlotIndexMax = SlotIndexMax < VertexBufferSlot ? VertexBufferSlot : SlotIndexMax;
+
+			memcpy(&CurrentView, &NewView, sizeof(D3D12_VERTEX_BUFFER_VIEW));
+		}
+	}
+
 	inline const XD3D12RootSignature* GetCurrentRootSig()
 	{
 		return PipelineState.Common.RootSignature;
@@ -78,6 +104,9 @@ public:
 			PipelineState.Graphics.D3DGraphicsPSO = nullptr;
 		if (PipelineState.Compute.D3DComputePSO)
 			PipelineState.Compute.D3DComputePSO = nullptr;
+
+		if (PipelineState.Graphics.CurrentVertexBufferViews)
+			PipelineState.Graphics.CurrentVertexBufferViews[0].SizeInBytes = 100u;
 	}
 
 	inline XD3D12VertexShader* GetXD3D12VertexShader(XD3DGraphicsPSO* GraphicsPipelineState)

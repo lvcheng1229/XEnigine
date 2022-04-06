@@ -36,8 +36,18 @@ public:
 	
 	//DrawCall/DisPatch
 	void RHIDrawIndexedPrimitive() final override;
+	void RHIDrawIndexedPrimitive(
+		XRHIIndexBuffer* IndexBuffer,
+		uint32 IndexCountPerInstance,
+		uint32 InstanceCount,
+		uint32 StartIndexLocation,
+		uint32 BaseVertexLocation,
+		uint32 StartInstanceLocation) final override;
 	void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) final override;
 	
+	//SetVB IB
+	void SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin) final override;
+
 	//Misc
 	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
 	void SetRenderTargetsAndViewPort(uint32 NumRTs,const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)override;

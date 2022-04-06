@@ -139,12 +139,13 @@ public:
 	inline BuddyAllocatorData& GetBuddyAllocData() { return buddy_alloc_data; };
 };
 
+//No Multi Inherit !!
 class XD3D12VertexBuffer :public XRHIVertexBuffer
 {
 public:
 	//StrideIn is Unused
 	XD3D12VertexBuffer(uint32 StrideIn, uint32 SizeIn) :
-		XRHIVertexBuffer(SizeIn) {}
+		XRHIVertexBuffer(StrideIn,SizeIn) {}
 
 	XD3D12ResourcePtr_CPUGPU ResourcePtr;
 };

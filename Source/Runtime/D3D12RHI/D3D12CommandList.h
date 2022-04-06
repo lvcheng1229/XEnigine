@@ -56,7 +56,11 @@ public:
 	{
 		pending_resource_state_array.push_back({ pResource ,After });
 	}
+	
+	inline void Execute()
+	{
 
+	}
 private:
 public:
 	
