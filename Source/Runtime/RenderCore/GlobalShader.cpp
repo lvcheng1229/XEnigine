@@ -1,12 +1,12 @@
 #include "GlobalShader.h"
 
-XGlobalShaderMapInProjectUnit* GGlobalShaderMap = nullptr;
-XGlobalShaderMapInProjectUnit* GetGlobalShaderMap()
+XGlobalShaderMapping_ProjectUnit* GGlobalShaderMapping = nullptr;
+XGlobalShaderMapping_ProjectUnit* GetGlobalShaderMapping()
 {
-	return GGlobalShaderMap;
+	return GGlobalShaderMapping;
 }
 
-XGlobalShaderMapInProjectUnit::~XGlobalShaderMapInProjectUnit()
+XGlobalShaderMapping_ProjectUnit::~XGlobalShaderMapping_ProjectUnit()
 {
 	for (auto iter = MapFromHashedFileIndexToPtr.begin(); iter != MapFromHashedFileIndexToPtr.end(); iter++)
 	{
@@ -15,14 +15,14 @@ XGlobalShaderMapInProjectUnit::~XGlobalShaderMapInProjectUnit()
 	MapFromHashedFileIndexToPtr.clear();
 }
 
-XGlobalShaderMapInFileUnit* XGlobalShaderMapInProjectUnit::FindOrAddShaderMapFileUnit(const XShaderInfos* ShaderInfoToCompile)
+XGlobalShaderMapping_FileUnit* XGlobalShaderMapping_ProjectUnit::FindOrAddShaderMapping_FileUnit(const XShaderInfo* ShaderInfoToCompile)
 {
 	std::size_t HashedFileIndex = ShaderInfoToCompile->GetHashedFileIndex();
 	auto iter = MapFromHashedFileIndexToPtr.find(HashedFileIndex);
-	XGlobalShaderMapInFileUnit* ShaderMapInFileUnit;
+	XGlobalShaderMapping_FileUnit* ShaderMapInFileUnit;
 	if (iter == MapFromHashedFileIndexToPtr.end())
 	{
-		ShaderMapInFileUnit = new XGlobalShaderMapInFileUnit(HashedFileIndex);
+		ShaderMapInFileUnit = new XGlobalShaderMapping_FileUnit(HashedFileIndex);
 		MapFromHashedFileIndexToPtr[HashedFileIndex] = ShaderMapInFileUnit;
 	}
 	else
@@ -32,12 +32,12 @@ XGlobalShaderMapInFileUnit* XGlobalShaderMapInProjectUnit::FindOrAddShaderMapFil
 	return ShaderMapInFileUnit;
 }
 
-TShaderReference<XXShader> XGlobalShaderMapInProjectUnit::GetShader(XShaderInfos* ShaderInfo, int32 PermutationId) const
+TShaderReference<XXShader> XGlobalShaderMapping_ProjectUnit::GetShader(XShaderInfo* ShaderInfo, int32 PermutationId) const
 {
 	auto iter = MapFromHashedFileIndexToPtr.find(ShaderInfo->GetHashedFileIndex());
 	if (iter != MapFromHashedFileIndexToPtr.end())
 	{
-		XGlobalShaderMapInFileUnit* MapInFileUnit = iter->second;
+		XGlobalShaderMapping_FileUnit* MapInFileUnit = iter->second;
 		return TShaderReference<XXShader>(
 			MapInFileUnit->GetShaderMapStoreXShaders()->GetXShader(ShaderInfo->GetHashedEntryIndex(), 0),
 			MapInFileUnit);

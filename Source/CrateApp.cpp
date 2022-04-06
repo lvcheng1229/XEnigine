@@ -1102,7 +1102,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 	
 	//Pass2 HZB Pass
 	{
-		TShaderReference<XHZBPassCS> Shader = GetGlobalShaderMap()->GetShader<XHZBPassCS>();
+		TShaderReference<XHZBPassCS> Shader = GetGlobalShaderMapping()->GetShader<XHZBPassCS>();
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 
@@ -1122,7 +1122,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 	//Pass2.5 SkyAtmosPhere PreCompute
 	{
 		{
-			TShaderReference<XRenderTransmittanceLutCS> Shader = GetGlobalShaderMap()->GetShader<XRenderTransmittanceLutCS>();
+			TShaderReference<XRenderTransmittanceLutCS> Shader = GetGlobalShaderMapping()->GetShader<XRenderTransmittanceLutCS>();
 			XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 
@@ -1132,7 +1132,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		}
 
 		{
-			TShaderReference<XRenderMultiScatteredLuminanceLutCS> Shader = GetGlobalShaderMap()->GetShader<XRenderMultiScatteredLuminanceLutCS>();
+			TShaderReference<XRenderMultiScatteredLuminanceLutCS> Shader = GetGlobalShaderMapping()->GetShader<XRenderMultiScatteredLuminanceLutCS>();
 			XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 			
@@ -1146,7 +1146,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 		//RenderSkyViewLutCS
 		{
-			TShaderReference<XRenderSkyViewLutCS> Shader = GetGlobalShaderMap()->GetShader<XRenderSkyViewLutCS>();
+			TShaderReference<XRenderSkyViewLutCS> Shader = GetGlobalShaderMapping()->GetShader<XRenderSkyViewLutCS>();
 			XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 
@@ -1162,7 +1162,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 		//RenderCameraAerialPerspectiveVolumeCS
 		{
-			TShaderReference<XRenderCameraAerialPerspectiveVolumeCS> Shader = GetGlobalShaderMap()->GetShader<XRenderCameraAerialPerspectiveVolumeCS>();
+			TShaderReference<XRenderCameraAerialPerspectiveVolumeCS> Shader = GetGlobalShaderMapping()->GetShader<XRenderCameraAerialPerspectiveVolumeCS>();
 			XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 			
@@ -1289,8 +1289,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
 		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 
-		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMap()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XShadowMaskPassPS> PixelShader = GetGlobalShaderMap()->GetShader<XShadowMaskPassPS>();
+		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+		TShaderReference<XShadowMaskPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XShadowMaskPassPS>();
 		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
 		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
 		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
@@ -1329,8 +1329,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
 			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 
-			TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMap()->GetShader<XLightPassVS>();
-			TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMap()->GetShader<XLightPassPS>();
+			TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMapping()->GetShader<XLightPassVS>();
+			TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XLightPassPS>();
 			GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
 			GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
 			GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
@@ -1367,8 +1367,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
 		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 
-		TShaderReference<RFullScreenQuadVS> SSRVertexShader = GetGlobalShaderMap()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XSSRPassPS> SSRPixelShader = GetGlobalShaderMap()->GetShader<XSSRPassPS>();
+		TShaderReference<RFullScreenQuadVS> SSRVertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+		TShaderReference<XSSRPassPS> SSRPixelShader = GetGlobalShaderMapping()->GetShader<XSSRPassPS>();
 		GraphicsPSOInit.BoundShaderState.RHIVertexShader = SSRVertexShader.GetVertexShader();
 		GraphicsPSOInit.BoundShaderState.RHIPixelShader = SSRPixelShader.GetPixelShader();
 		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
@@ -1404,8 +1404,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 		GraphicsPSOInit.BlendState = TStaticBlendState<true, EBlendOperation::BO_Add, EBlendFactor::BF_One, EBlendFactor::BF_One>::GetRHI();
 		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 
-		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMap()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XReflectionEnvironmentPS> PixelShader = GetGlobalShaderMap()->GetShader<XReflectionEnvironmentPS>();
+		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+		TShaderReference<XReflectionEnvironmentPS> PixelShader = GetGlobalShaderMapping()->GetShader<XReflectionEnvironmentPS>();
 		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
 		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
 		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
@@ -1437,8 +1437,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 			EBlendOperation::BO_Add, EBlendFactor::BF_One, EBlendFactor::BF_One>::GetRHI();
 		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 
-		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMap()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XRenderSkyAtmosphereRayMarchingPS> PixelShader = GetGlobalShaderMap()->GetShader<XRenderSkyAtmosphereRayMarchingPS>();
+		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+		TShaderReference<XRenderSkyAtmosphereRayMarchingPS> PixelShader = GetGlobalShaderMapping()->GetShader<XRenderSkyAtmosphereRayMarchingPS>();
 		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
 		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
 		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
@@ -2459,8 +2459,8 @@ void CrateApp::TempDelete()
 {
 	if (GPlatformRHI)
 		delete GPlatformRHI;
-	if (GGlobalShaderMap)
-		delete GGlobalShaderMap;
+	if (GGlobalShaderMapping)
+		delete GGlobalShaderMapping;
 }
 
 int main()

@@ -20,16 +20,16 @@
 /////////////////////
 
 class XXShader;
-class XShaderInfos;
+class XShaderInfo;
 
 #pragma region ShaderMap
 
 
 
-class XShaderMapStoreRHIShaders //: public XRenderResource
+class XShaderMappingToRHIShaders //: public XRenderResource
 {
 public:
-	XShaderMapStoreRHIShaders(std::size_t NumShaders)
+	XShaderMappingToRHIShaders(std::size_t NumShaders)
 	{
 		RHIShaders.resize(NumShaders);
 	}
@@ -46,7 +46,7 @@ protected:
 	std::vector<std::shared_ptr<XRHIShader>>RHIShaders;
 };
 
-class XShaderMapStoreCodes
+class XShaderMappingToCodes
 {
 public:
 	struct XShaderEntry
@@ -61,18 +61,18 @@ public:
 	std::vector<std::size_t>EntryCodeHash;
 };
 
-class XShaderMapStoreRHIShaders_InlineCode :public XShaderMapStoreRHIShaders
+class XShaderMappingToRHIShaders_InlineCode :public XShaderMappingToRHIShaders
 {
 public:
-	XShaderMapStoreRHIShaders_InlineCode(XShaderMapStoreCodes* InCode)
-		: XShaderMapStoreRHIShaders(InCode->ShaderEntries.size()),
+	XShaderMappingToRHIShaders_InlineCode(XShaderMappingToCodes* InCode)
+		: XShaderMappingToRHIShaders(InCode->ShaderEntries.size()),
 		Code(InCode) {}
 
 	std::shared_ptr<XRHIShader> CreateRHIShaderFromCode(int32 ShaderIndex)override;
-	XShaderMapStoreCodes* Code;//Stored In ShaderMapBase
+	XShaderMappingToCodes* Code;//Stored In ShaderMapBase
 };
 
-class XShaderMapStoreXShaders
+class XShaderMappingToXShaders
 {
 public:
 	XXShader* FindOrAddXShader(const std::size_t HashedIndex, XXShader* Shader, int32 PermutationId = 0);
@@ -82,12 +82,12 @@ private:
 	std::unordered_map<std::size_t, std::size_t>MapHashedEntryIndexToXShaderIndex;
 };
 
-class XShaderMapBase
+class XShaderMappingBase
 {
 public:
-	~XShaderMapBase();
+	~XShaderMappingBase();
 
-	inline void AssignShadersInfo(XShaderMapStoreXShaders* InXShadersStored)
+	inline void AssignShadersInfo(XShaderMappingToXShaders* InXShadersStored)
 	{
 		XShadersStored = InXShadersStored;
 	}
@@ -97,39 +97,39 @@ public:
 		RHIShadersStored.reset();
 		if (CodesStored.get() != nullptr)
 		{
-			XShaderMapStoreRHIShaders_InlineCode* RHIShader = new XShaderMapStoreRHIShaders_InlineCode(CodesStored.get());
-			RHIShadersStored = std::shared_ptr<XShaderMapStoreRHIShaders>
-				(static_cast<XShaderMapStoreRHIShaders*>(RHIShader));
+			XShaderMappingToRHIShaders_InlineCode* RHIShader = new XShaderMappingToRHIShaders_InlineCode(CodesStored.get());
+			RHIShadersStored = std::shared_ptr<XShaderMappingToRHIShaders>
+				(static_cast<XShaderMappingToRHIShaders*>(RHIShader));
 		}
 	}
 	
-	inline XShaderMapStoreRHIShaders* GetShaderMapStoreRHIShaders() const
+	inline XShaderMappingToRHIShaders* GetShaderMapStoreRHIShaders() const
 	{ 
 		return RHIShadersStored.get();
 	}
 
-	inline XShaderMapStoreXShaders* GetShaderMapStoreXShaders()const 
+	inline XShaderMappingToXShaders* GetShaderMapStoreXShaders()const 
 	{ 
 		return XShadersStored;
 	}
 
-	inline XShaderMapStoreCodes* GetShaderMapStoreCodes()
+	inline XShaderMappingToCodes* GetShaderMapStoreCodes()
 	{ 
 		if (CodesStored.get() == nullptr)
 		{
-			CodesStored = std::make_shared<XShaderMapStoreCodes>();
+			CodesStored = std::make_shared<XShaderMappingToCodes>();
 		}
 		return CodesStored.get();
 	}
 
 private:
-	std::shared_ptr<XShaderMapStoreRHIShaders>RHIShadersStored;
-	std::shared_ptr<XShaderMapStoreCodes>CodesStored;
-	XShaderMapStoreXShaders* XShadersStored;//Stored In XGlobalShaderMapInProjectUnit
+	std::shared_ptr<XShaderMappingToRHIShaders>RHIShadersStored;
+	std::shared_ptr<XShaderMappingToCodes>CodesStored;
+	XShaderMappingToXShaders* XShadersStored;//Stored In XGlobalShaderMapInProjectUnit
 };
 
 template<typename ShadersInfotype>
-class TShaderMap: public XShaderMapBase
+class TShaderMapping: public XShaderMappingBase
 {
 public:
 };
@@ -137,21 +137,21 @@ public:
 
 struct XShaderInitlizer
 {
-	XShaderInitlizer(XShaderInfos* InShadersInfoPtr, XShaderCompileOutput& Output,std::size_t InRHIShaderIndex) :
+	XShaderInitlizer(XShaderInfo* InShadersInfoPtr, XShaderCompileOutput& Output,std::size_t InRHIShaderIndex) :
 		ShadersInfoPtr(InShadersInfoPtr),
 		ShaderParameterMap(Output.ShaderParameterMap),
 		CodeHash(Output.SourceCodeHash),
 		RHIShaderIndex(InRHIShaderIndex) {}
 
 	const XShaderParameterMap& ShaderParameterMap;
-	XShaderInfos* ShadersInfoPtr;
+	XShaderInfo* ShadersInfoPtr;
 	std::size_t CodeHash;
 	std::size_t RHIShaderIndex;
 };
 
 ////class FShaderType
 
-class XShaderInfos
+class XShaderInfo
 {
 public:
 	enum class EShaderTypeForDynamicCast
@@ -164,7 +164,7 @@ public:
 	typedef void (*ModifyShaderCompileDefinesFunctionPtr) (XShaderDefines& OutDefines);
 	typedef XXShader* (*XShaderCustomConstructFunctionPtr)(const XShaderInitlizer& Initializer);
 
-	XShaderInfos(
+	XShaderInfo(
 		EShaderTypeForDynamicCast InCastType,
 		const char* InShaderName,
 		const wchar_t* InSourceFileName,
@@ -173,7 +173,7 @@ public:
 		XShaderCustomConstructFunctionPtr InCtorPtr,
 		ModifyShaderCompileDefinesFunctionPtr InModifyDefinesPtr
 		);
-	static std::list<XShaderInfos*>& GetShaderInfos_LinkedList();
+	static std::list<XShaderInfo*>& GetShaderInfo_LinkedList();
 
 	inline const wchar_t* GetSourceFileName()const { return SourceFileName; }
 	inline const char* GetEntryName()const { return EntryName; }
@@ -204,44 +204,44 @@ class TShaderReference
 {
 public:
 	TShaderReference() :ShaderPtr(nullptr), ShaderMapFileUnitPtr(nullptr) {}
-	TShaderReference(XXShaderClass* InShaderPtr, const XShaderMapBase* InShaderMapFileUnitPtr)
+	TShaderReference(XXShaderClass* InShaderPtr, const XShaderMappingBase* InShaderMapFileUnitPtr)
 		:ShaderPtr(InShaderPtr),
 		ShaderMapFileUnitPtr(InShaderMapFileUnitPtr) {}
 
 	template<typename OtherXXShaderClass>
 	static TShaderReference<XXShaderClass> Cast(const TShaderReference<OtherXXShaderClass>& Rhs)
 	{
-		return TShaderReference<XXShaderClass>(static_cast<XXShaderClass*>(Rhs.GetShader()), Rhs.GetShaderMapFileUnit());
+		return TShaderReference<XXShaderClass>(static_cast<XXShaderClass*>(Rhs.GetShader()), Rhs.GetShaderMappingFileUnit());
 	}
 
 	inline XXShaderClass* GetShader()const { return ShaderPtr; }
-	inline const XShaderMapBase* GetShaderMapFileUnit()const { return ShaderMapFileUnitPtr; }
+	inline const XShaderMappingBase* GetShaderMappingFileUnit()const { return ShaderMapFileUnitPtr; }
 	
 	inline XXShaderClass* operator->() const { return ShaderPtr; }
 
-	inline XRHIShader* GetOrCreateRHIShaderFromMap(/*EShaderType ShaderType*/ ) const
+	inline XRHIShader* GetOrCreateRHIShaderFromMapping(/*EShaderType ShaderType*/ ) const
 	{
 		return ShaderMapFileUnitPtr->GetShaderMapStoreRHIShaders()->GetRHIShader(ShaderPtr->GetRHIShaderIndex());
 	}
 	
 	inline XRHIVertexShader* GetVertexShader() const
 	{
-		return static_cast<XRHIVertexShader*>(GetOrCreateRHIShaderFromMap());
+		return static_cast<XRHIVertexShader*>(GetOrCreateRHIShaderFromMapping());
 	}
 
 	inline XRHIPixelShader* GetPixelShader() const
 	{
-		return static_cast<XRHIPixelShader*>(GetOrCreateRHIShaderFromMap());
+		return static_cast<XRHIPixelShader*>(GetOrCreateRHIShaderFromMapping());
 	}
 
 	inline XRHIComputeShader* GetComputeShader() const
 	{
-		return static_cast<XRHIComputeShader*>(GetOrCreateRHIShaderFromMap());
+		return static_cast<XRHIComputeShader*>(GetOrCreateRHIShaderFromMapping());
 	}
 
 private:
 	XXShaderClass* ShaderPtr;
-	const XShaderMapBase* ShaderMapFileUnitPtr;
+	const XShaderMappingBase* ShaderMapFileUnitPtr;
 };
 
 
@@ -266,7 +266,7 @@ public:
 	inline std::size_t GetCodeHash()const { return CodeHash; };
 	inline std::size_t GetRHIShaderIndex()const { return RHIShaderIndex; };
 private:
-	XShaderInfos* ShadersInfoPtr;
+	XShaderInfo* ShadersInfoPtr;
 	std::size_t CodeHash;
 	std::size_t RHIShaderIndex;
 };

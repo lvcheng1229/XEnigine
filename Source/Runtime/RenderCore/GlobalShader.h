@@ -1,35 +1,33 @@
 #pragma once
 #include "Shader.h"
 
-//#pragma region GloablShaderMap
-//
-class XGloablShaderMapStoreShadersInfoInFileUnit :public XShaderMapStoreXShaders
+
+class XGloablShaderMappingToXShaders :public XShaderMappingToXShaders
 {
-	friend class XGlobalShaderMapInFileUnit;
+	friend class XGlobalShaderMapping_FileUnit;
 public:
-	XGloablShaderMapStoreShadersInfoInFileUnit(std::size_t InHashedSourceFileIndex) :
+	XGloablShaderMappingToXShaders(std::size_t InHashedSourceFileIndex) :
 		HashedSourceFileIndex(InHashedSourceFileIndex) {};
 private:
 	std::size_t HashedSourceFileIndex;
 };
 
-class XGlobalShaderMapInFileUnit :public TShaderMap<XGloablShaderMapStoreShadersInfoInFileUnit>
+class XGlobalShaderMapping_FileUnit :public TShaderMapping<XGloablShaderMappingToXShaders>
 {
 public:
-	XGlobalShaderMapInFileUnit(const std::size_t& InHashedSourceFileIndex)
+	XGlobalShaderMapping_FileUnit(const std::size_t& InHashedSourceFileIndex)
 	{
-		AssignShadersInfo(new XGloablShaderMapStoreShadersInfoInFileUnit(InHashedSourceFileIndex));
+		AssignShadersInfo(new XGloablShaderMappingToXShaders(InHashedSourceFileIndex));
 	}
 };
 
-//FGlobalShaderMap
-class XGlobalShaderMapInProjectUnit 
+class XGlobalShaderMapping_ProjectUnit 
 {
 public:
-	~XGlobalShaderMapInProjectUnit();
-	XGlobalShaderMapInFileUnit* FindOrAddShaderMapFileUnit(const XShaderInfos* ShaderInfoToCompile);
+	~XGlobalShaderMapping_ProjectUnit();
+	XGlobalShaderMapping_FileUnit* FindOrAddShaderMapping_FileUnit(const XShaderInfo* ShaderInfoToCompile);
 	
-	TShaderReference<XXShader> GetShader(XShaderInfos* ShaderInfo, int32 PermutationId = 0) const;
+	TShaderReference<XXShader> GetShader(XShaderInfo* ShaderInfo, int32 PermutationId = 0) const;
 	
 	template<typename XXShaderClass>
 	TShaderReference<XXShaderClass> GetShader(int32 PermutationId = 0)const
@@ -38,19 +36,19 @@ public:
 		return TShaderReference<XXShaderClass>::Cast(Shader);
 	}
 	
-	inline std::unordered_map<std::size_t, XGlobalShaderMapInFileUnit*>& GetGlobalShaderMap_HashMap()
+	inline std::unordered_map<std::size_t, XGlobalShaderMapping_FileUnit*>& GetGlobalShaderMap_HashMap()
 	{
 		return MapFromHashedFileIndexToPtr;
 	}
 private:
-	std::unordered_map<std::size_t, XGlobalShaderMapInFileUnit*>MapFromHashedFileIndexToPtr;
+	std::unordered_map<std::size_t, XGlobalShaderMapping_FileUnit*>MapFromHashedFileIndexToPtr;
 };
 
-extern XGlobalShaderMapInProjectUnit* GetGlobalShaderMap();
-extern class XGlobalShaderMapInProjectUnit* GGlobalShaderMap;
+extern XGlobalShaderMapping_ProjectUnit* GetGlobalShaderMapping();
+extern class XGlobalShaderMapping_ProjectUnit* GGlobalShaderMapping;
 
 
-class XGloablShaderInfos : public XShaderInfos
+class XGloablShaderInfos : public XShaderInfo
 {
 public:
 	XGloablShaderInfos(
@@ -60,7 +58,7 @@ public:
 		EShaderType ShaderType,
 		XShaderCustomConstructFunctionPtr InCtorPtr,
 		ModifyShaderCompileDefinesFunctionPtr InModifyDefinesPtr) :
-		XShaderInfos(
+		XShaderInfo(
 			EShaderTypeForDynamicCast::Global,
 			InShaderName,
 			InSourceFileName,

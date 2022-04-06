@@ -1,6 +1,12 @@
 #pragma once
 #include "Runtime/RenderCore/Shader.h"
 
+enum class MaterialDomain
+{
+	Surface,
+	PostProcess,
+};
+
 class XMaterialShaderMap
 {
 public:
@@ -17,5 +23,8 @@ private:
 
 class XMaterialResource :public RMaterial
 {
-
+public:
+private:
+	//UMaterial* Material;
+	//UMaterialInstance* MaterialInstance;
 };

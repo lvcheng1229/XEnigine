@@ -5,6 +5,10 @@
 #include "Runtime/RHI/RHIResource.h"
 #include <map>
 #include <string>
+
+#define GLOBAL_SHADER_PATH "E:/XEngine/XEnigine/Source/Shaders"
+//#define MATERIAL_SHADER_PATH "E:/XEngine/XEnigine/MaterialShaders"
+
 class XShaderCodeReader
 {
 	XArrayView<uint8> ShaderCode;

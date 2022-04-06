@@ -1,9 +1,9 @@
 #include "Shader.h"
 #include "Runtime/RHI/RHICommandList.h"
 
-std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShaderFromCode(int32 ShaderIndex)
+std::shared_ptr<XRHIShader> XShaderMappingToRHIShaders_InlineCode::CreateRHIShaderFromCode(int32 ShaderIndex)
 {
-	const XShaderMapStoreCodes::XShaderEntry& ShaderEntry = Code->ShaderEntries[ShaderIndex];
+	const XShaderMappingToCodes::XShaderEntry& ShaderEntry = Code->ShaderEntries[ShaderIndex];
 	
 	std::size_t CodeHash = Code->EntryCodeHash[ShaderIndex];
 
@@ -22,13 +22,13 @@ std::shared_ptr<XRHIShader> XShaderMapStoreRHIShaders_InlineCode::CreateRHIShade
 }
 
 
-XShaderMapBase::~XShaderMapBase()
+XShaderMappingBase::~XShaderMappingBase()
 {
 	delete XShadersStored;
 }
 
 
-std::size_t XShaderMapStoreCodes::AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo)
+std::size_t XShaderMappingToCodes::AddShaderCompilerOutput(XShaderCompileOutput& OutputInfo)
 {
 	XShaderEntry ShaderEntry;
 	ShaderEntry.Code = OutputInfo.ShaderCode;
@@ -38,7 +38,7 @@ std::size_t XShaderMapStoreCodes::AddShaderCompilerOutput(XShaderCompileOutput& 
 	return ShaderEntries.size() - 1;
 }
 
-XXShader* XShaderMapStoreXShaders::FindOrAddXShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)
+XXShader* XShaderMappingToXShaders::FindOrAddXShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)
 {
 	const std::size_t Index = HashedEntryIndex;
 	auto iter = MapHashedEntryIndexToXShaderIndex.find(Index);
@@ -51,7 +51,7 @@ XXShader* XShaderMapStoreXShaders::FindOrAddXShader(const std::size_t HashedEntr
 	return ShaderPtrArray.back().get();
 }
 
-XXShader* XShaderMapStoreXShaders::GetXShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
+XXShader* XShaderMappingToXShaders::GetXShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
 {
 	auto iter = MapHashedEntryIndexToXShaderIndex.find(HashedEntryIndex);
 	X_Assert(iter != MapHashedEntryIndexToXShaderIndex.end());
@@ -62,7 +62,7 @@ XXShader* XShaderMapStoreXShaders::GetXShader(const std::size_t HashedEntryIndex
 
 
 
-XShaderInfos::XShaderInfos(
+XShaderInfo::XShaderInfo(
 	EShaderTypeForDynamicCast InCastType,
 	const char* InShaderName,
 	const wchar_t* InSourceFileName,
@@ -78,14 +78,14 @@ XShaderInfos::XShaderInfos(
 	CtorPtr(InCtorPtr),
 	ModifyDefinesPtr(InModifyDefinesPtr)
 {
-	GetShaderInfos_LinkedList().push_back(this);
+	GetShaderInfo_LinkedList().push_back(this);
 	HashedFileIndex = std::hash<std::wstring>{}(InSourceFileName);
 	HashedEntryIndex = std::hash<std::string>{}(InEntryName);
 }
 
-std::list<XShaderInfos*>& XShaderInfos::GetShaderInfos_LinkedList()
+std::list<XShaderInfo*>& XShaderInfo::GetShaderInfo_LinkedList()
 {
-	static std::list<XShaderInfos*> GloablShaderInfosUsedToCompile_LinkedList;
+	static std::list<XShaderInfo*> GloablShaderInfosUsedToCompile_LinkedList;
 	return GloablShaderInfosUsedToCompile_LinkedList;
 }
 

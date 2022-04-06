@@ -175,12 +175,12 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 }
 void CompileGlobalShaderMap()
 {
-	if (GGlobalShaderMap == nullptr)
+	if (GGlobalShaderMapping == nullptr)
 	{
 		//ShaderMapInFileUnit has three part , first : source code ,second : shaders info,third : RHIShader 
 
-		GGlobalShaderMap = new XGlobalShaderMapInProjectUnit();
-		std::list<XShaderInfos*>& ShaderInfosUsedToCompile_LinkedList = XShaderInfos::GetShaderInfos_LinkedList();
+		GGlobalShaderMapping = new XGlobalShaderMapping_ProjectUnit();
+		std::list<XShaderInfo*>& ShaderInfosUsedToCompile_LinkedList = XShaderInfo::GetShaderInfo_LinkedList();
 		for (auto iter = ShaderInfosUsedToCompile_LinkedList.begin(); iter != ShaderInfosUsedToCompile_LinkedList.end(); iter++)
 		{
 			XShaderCompileInput Input;
@@ -192,7 +192,7 @@ void CompileGlobalShaderMap()
 
 			XShaderCompileOutput Output;
 			CompileDX12Shader(Input, Output);
-			XGlobalShaderMapInFileUnit* ShaderFileUnit = GGlobalShaderMap->FindOrAddShaderMapFileUnit((*iter));
+			XGlobalShaderMapping_FileUnit* ShaderFileUnit = GGlobalShaderMapping->FindOrAddShaderMapping_FileUnit((*iter));
 			
 			//first:store source code
 			std::size_t HashIndex = ShaderFileUnit->GetShaderMapStoreCodes()->AddShaderCompilerOutput(Output);
@@ -203,7 +203,7 @@ void CompileGlobalShaderMap()
 		}
 		
 		//third: RHIShader
-		std::unordered_map<std::size_t, XGlobalShaderMapInFileUnit*>ShaderMapFileUnit = GGlobalShaderMap->GetGlobalShaderMap_HashMap();
+		std::unordered_map<std::size_t, XGlobalShaderMapping_FileUnit*>ShaderMapFileUnit = GGlobalShaderMapping->GetGlobalShaderMap_HashMap();
 		for (auto iter = ShaderMapFileUnit.begin(); iter != ShaderMapFileUnit.end(); iter++)
 		{
 			iter->second->InitRHIShaders_InlineCode();
