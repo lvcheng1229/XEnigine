@@ -115,7 +115,7 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment
 
 		resource_location.SetBuddyAllocator(this);
 		BuddyAllocatorData& alloc_data = resource_location.GetBuddyAllocData();
-		alloc_data.offset = OffsetRes;
+		alloc_data.Offset_MinBlockUnit = OffsetRes;
 		alloc_data.order = order;
 
 		uint32 AllocatedResourceOffset = uint32(OffsetRes * min_block_size);
@@ -126,10 +126,14 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment
 		
 		if (strategy == AllocStrategy::ManualSubAllocation)
 		{
+			resource_location.SetOffsetByteFromBaseResource(AllocatedResourceOffset);
 			resource_location.SetBackResource(&back_resource);
-			resource_location.SetMappedCPUResourcePtr((uint8*)back_resource.GetMappedResourceCPUPtr() + AllocatedResourceOffset);
-			//resource_location.SetGPUVirtualPtr(back_resource.GetGPUVirtaulAddress() + OffsetRes * min_block_size);
 			resource_location.SetGPUVirtualPtr(back_resource.GetGPUVirtaulAddress() + AllocatedResourceOffset);
+
+			if (config.d3d12_heap_type == D3D12_HEAP_TYPE_UPLOAD) //if cpu writable
+			{
+				resource_location.SetMappedCPUResourcePtr((uint8*)back_resource.GetMappedResourceCPUPtr() + AllocatedResourceOffset);
+			}
 		}
 	}
 

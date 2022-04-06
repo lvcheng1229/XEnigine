@@ -11,7 +11,7 @@ void RHIInit()
 	{
 		GPlatformRHI = PlatformCreateDynamicRHI();
 	}
-
+	
 	XRenderResource::InitRHIForAllResources();
 
 	X_Assert(GIsRHIInitialized == false);

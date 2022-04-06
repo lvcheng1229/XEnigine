@@ -138,6 +138,11 @@ public:
 };
 
 
+inline std::shared_ptr<XRHIVertexBuffer>RHIcreateVertexBuffer(uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return GPlatformRHI->RHIcreateVertexBuffer(Size, Usage, ResourceData);
+}
+
 inline std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8> Code)
 {
 	return GPlatformRHI->RHICreateVertexShader(Code);

@@ -60,7 +60,7 @@ public:
 
 	inline uint64 GetAllocationOffsetInBytes(const BuddyAllocatorData& AllocatorPrivateData) const 
 	{
-		return uint64(AllocatorPrivateData.offset * min_block_size);
+		return uint64(AllocatorPrivateData.Offset_MinBlockUnit * min_block_size);
 	}
 	inline ID3D12Heap* GetDXHeap() { return m_heap.Get(); };
 	inline ID3D12Resource* GetDXResource() { return back_resource.GetResource(); };

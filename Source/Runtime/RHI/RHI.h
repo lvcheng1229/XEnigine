@@ -4,7 +4,7 @@
 #include "Runtime/DataStruct/XRefCountPtr.h"
 #include "Runtime/Core/Template/XEngineTemplate.h"
 #include "Runtime/Core/PixelFormat.h"
-#include "Runtime/Core/XResourceCreateDataInterface.h"
+#include "Runtime/Core/ResourceCreateDataInterface.h"
 
 struct FPixelFormatInfo
 {

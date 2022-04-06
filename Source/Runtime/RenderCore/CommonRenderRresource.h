@@ -3,7 +3,16 @@
 #include "Runtime/RHI/RHIResource.h"
 #include "Runtime/RHI/PlatformRHI.h"
 #include "Runtime/Core/XMath.h"
+#include "Runtime/Core/Math/Math.h"
 #include "GlobalShader.h"
+
+struct XFullScreenQuadVertex
+{
+	XVector2 Position;
+	XVector2 UV;
+	XFullScreenQuadVertex(XVector2 PositionIn, XVector2 UVIn)
+		:Position(PositionIn), UV(UVIn) {}
+};
 
 class RFullScreenQuadVertexLayout : public XRenderResource
 {
@@ -48,5 +57,5 @@ public:
 	void InitRHI()override;
 };
 
-
+extern TGlobalResource<XScreenQuadVertexBuffer> GFullScreenVertexRHI;
 extern TGlobalResource<RFullScreenQuadVertexLayout> GFullScreenLayout;
