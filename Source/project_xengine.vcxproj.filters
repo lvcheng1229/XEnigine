@@ -195,13 +195,12 @@
     <ClInclude Include="Runtime\Core\Math\Matrix.h" />
     <ClInclude Include="Runtime\Engine\Material\MaterialShared.h" />
     <ClInclude Include="Runtime\Core\ResourceCreateDataInterface.h" />
-    <ClInclude Include="Runtime\Engine\Material\MeshMaterialShaderInfo.h" />
     <ClInclude Include="Runtime\Render\BasePassRendering.h" />
     <ClInclude Include="Runtime\Render\MeshMaterialShader.h" />
     <ClInclude Include="Runtime\Render\MaterialShader.h" />
-    <ClInclude Include="Runtime\Engine\Material\MaterialShaderInfo.h" />
     <ClInclude Include="Runtime\Engine\Classes\EngineTypes.h" />
     <ClInclude Include="Runtime\Engine\Material\MaterialShaderMapSet.h" />
+    <ClInclude Include="Runtime\Render\MeshPassProcessor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />

@@ -20,9 +20,12 @@
 
 #include "Runtime/Core/XMath.h"
 #include "Runtime/Render/SceneRendering.h"
+#include "Runtime/Render/MeshPassProcessor.h"
+#include "Runtime/Render/MaterialShader.h"
 
 #include "Runtime/Engine/SceneView.h"
 #include "Runtime/Engine/ShaderCompiler/ShaderCompiler.h"
+#include "Runtime/Engine/Material/MaterialShared.h"
 
 #include "Runtime/RHI/PipelineStateCache.h"
 #include "Runtime/RHI/RHIStaticStates.h"
@@ -1219,8 +1222,11 @@ void CrateApp::Renderer(const GameTimer& gt)
 		mCommandList->EndEvent();
 	}
 
+
+
 	//Pass4 GBufferPass BasePass
 	{
+
 
 		mCommandList->BeginEvent(1, "GBufferPass BasePass", sizeof("GBufferPass BasePass"));
 
@@ -2303,6 +2309,32 @@ void CrateApp::BuildPSOs()
 		ShadowPSODesc.DSVFormat = mDepthStencilFormat;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
 	}
+
+	{
+
+		RMaterial Material;
+		Material.BeginCompileShaderMap();
+
+		XRHIBoundShaderStateInput_WithoutRT PassShaders;
+		XGraphicsPSOInitializer_WithoutRT BasePassPSOInit;
+
+		XMaterialShaderInfo_Set ShaderInfos;
+		XMaterialShader_Set XShaders;
+
+		//GetBasePassShaders
+		Material.GetShaderInfos(ShaderInfos, XShaders);
+
+		//XRHIShader* BaseVertexShader = PassShaders.MappingRHIVertexshader->GetRHIShader(PassShaders.IndexRHIVertexShader);
+		//XRHIShader* BasePixelShader = PassShaders.MappingRHIPixelshader->GetRHIShader(PassShaders.IndexRHIPixelShader);
+		//
+		//XRHIVertexShader* RHIVertexShader = static_cast<XRHIVertexShader*>(BaseVertexShader);
+		//XRHIPixelShader* RHIPixelShader = static_cast<XRHIPixelShader*>(BasePixelShader);
+		//
+		//XD3D12VertexShader* D3DVertexShader = static_cast<XD3D12VertexShader*>(RHIVertexShader);
+		//XD3D12PixelShader* D3DPixelShader = static_cast<XD3D12PixelShader*>(RHIPixelShader);
+	}
+
+	
 
 	//BasePass
 	{

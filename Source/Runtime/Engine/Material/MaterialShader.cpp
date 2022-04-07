@@ -1,4 +1,3 @@
-#include "MaterialShaderInfo.h"
 #include "MaterialShared.h"
 #include "MaterialShaderMapSet.h"
 

@@ -1,6 +1,11 @@
 #pragma once
 #include "MaterialShader.h"
-#include "Runtime/Engine/Material/MeshMaterialShaderInfo.h"
+
+class XMeshMaterialShaderInfo :public XShaderInfo
+{
+public:
+};
+
 class XMeshMaterialShader :public XMaterialShader
 {
 public:

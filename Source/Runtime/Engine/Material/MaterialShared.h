@@ -1,6 +1,14 @@
 #pragma once
 #include "Runtime/RenderCore/Shader.h"
 #include "Runtime/Engine/Classes/EngineTypes.h"
+#include "Runtime/Render/MaterialShader.h"
+
+class RMaterial;
+//class RMaterialRenderProxy
+//{
+//public:
+//	RMaterial* GetMaterial()const;
+//};
 
 enum class EMaterialDomain
 {
@@ -32,7 +40,8 @@ public:
 class RMaterial
 {
 public:
-	bool BeginCompileShaderMap();
+	void BeginCompileShaderMap();
+	bool GetShaderInfos(const XMaterialShaderInfo_Set& ShaderInfos, XMaterialShader_Set& ShaderOut);
 private:
 	std::shared_ptr<XMaterialShaderMapping_MatUnit>RThreadShaderMap;
 };

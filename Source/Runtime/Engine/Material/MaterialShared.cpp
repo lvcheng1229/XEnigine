@@ -59,7 +59,8 @@ const XMaterialShaderMapSet& GetMaterialShaderMapSet(const XMaterialShaderParame
 	return XMaterialShaderMappingSetsManager::Get().GetSet(MaterialParameters);
 }
 
-bool RMaterial::BeginCompileShaderMap()
+#define TEMP_SHADER_PATH L"E:/XEngine/XEnigine/MaterialShaders/Material.hlsl"
+void RMaterial::BeginCompileShaderMap()
 {
 	std::shared_ptr<XMaterialShaderMapping_MatUnit> NewShaderMap = std::make_shared<XMaterialShaderMapping_MatUnit>();
 	std::shared_ptr<XShaderCompileSetting> MaterialCompileSetting = std::make_shared<XShaderCompileSetting>();
@@ -67,6 +68,10 @@ bool RMaterial::BeginCompileShaderMap()
 	std::string TemplShaderCode;
 	MaterialCompileSetting->IncludePathToCode[L"Generated/Material.hlsl"] = TemplShaderCode;
 
-	NewShaderMap->Compile(*MaterialCompileSetting);
+	//NewShaderMap->Compile(*MaterialCompileSetting);
+}
+
+bool RMaterial::GetShaderInfos(const XMaterialShaderInfo_Set& ShaderInfos, XMaterialShader_Set& ShaderOut)
+{
 	return false;
 }
