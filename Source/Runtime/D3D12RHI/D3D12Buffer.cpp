@@ -22,13 +22,6 @@ BufferType* XD3D12AbstractDevice::CreateRHIVIBuffer(
 		X_Assert(res == true);
 
 		memcpy(UpLoadResourcePtr.GetMappedCPUResourcePtr(), CreateData.ResourceArray->GetResourceData(), CreateData.ResourceArray->GetResourceDataSize());
-		
-		D3D12CmdList->GetDXCmdList()->ResourceBarrier(1, GetRValuePtr((CD3DX12_RESOURCE_BARRIER::Transition(
-			BufferRet->ResourcePtr.GetBackResource()->GetResource(),
-			D3D12_RESOURCE_STATE_COMMON,
-			D3D12_RESOURCE_STATE_COPY_DEST))));
-		
-		uint32 tt = CreateData.ResourceArray->GetResourceDataSize();
 
 		D3D12CmdList->GetDXCmdList()->CopyBufferRegion(
 			BufferRet->ResourcePtr.GetBackResource()->GetResource(),
@@ -38,11 +31,6 @@ BufferType* XD3D12AbstractDevice::CreateRHIVIBuffer(
 			UpLoadResourcePtr.GetOffsetByteFromBaseResource(),
 
 			CreateData.ResourceArray->GetResourceDataSize());
-		
-		D3D12CmdList->GetDXCmdList()->ResourceBarrier(1, GetRValuePtr((CD3DX12_RESOURCE_BARRIER::Transition(
-			BufferRet->ResourcePtr.GetBackResource()->GetResource(),
-			D3D12_RESOURCE_STATE_COPY_DEST, 
-			D3D12_RESOURCE_STATE_GENERIC_READ))));
 
 		CreateData.ResourceArray->ReleaseData();
 	}

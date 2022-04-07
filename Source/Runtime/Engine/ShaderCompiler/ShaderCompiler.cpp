@@ -2,10 +2,50 @@
 #include "ShaderCompiler.h"
 #include "Runtime/RenderCore/GlobalShader.h"
 #include <filesystem>
-static const const std::filesystem::path ShaderASMPath("E:\\XEngine\\XEnigine\\Cache");
+static const std::filesystem::path ShaderASMPath("E:\\XEngine\\XEnigine\\Cache");
 //https://docs.microsoft.com/en-us/windows/win32/direct3dtools/dx-graphics-tools-fxc-syntax
 
 #define CACHE_SHADER 0
+
+
+class XD3DInclude : public ID3DInclude
+{
+	std::map<std::wstring, std::string>* IncludePathToCode;
+	HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
+	{
+		std::string FilePath = GLOBAL_SHADER_PATH + std::string(pFileName);
+		if (!std::filesystem::exists(FilePath))
+			return E_FAIL;
+
+		//open and get file size
+		std::ifstream FileSourceCode(FilePath, std::ios::ate);
+		UINT FileSize = static_cast<UINT>(FileSourceCode.tellg());
+		FileSourceCode.seekg(0, std::ios_base::beg);
+		
+		//read data
+		*pBytes = FileSize;
+		ACHAR* data = static_cast<ACHAR*>(std::malloc(*pBytes));
+		if (data)
+		{
+			//error X3000: Illegal character in shader file
+			//https: //zhuanlan.zhihu.com/p/27253604
+			memset(data, '\n', FileSize);
+		}
+		FileSourceCode.read(data, FileSize);
+
+
+	
+
+		*ppData = data;
+		return S_OK;
+}
+
+	HRESULT Close(LPCVOID pData) override
+	{
+		std::free(const_cast<void*>(pData));
+		return S_OK;
+	}
+};
 
 static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& Output)
 {
@@ -54,26 +94,42 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		}
 
 		std::vector<D3D_SHADER_MACRO>Macro;
-		if (Input.ShaderDefines.Defines.size() > 0)
+		if (Input.CompileSettings.Defines.size() > 0)
 		{
-			Macro.resize(Input.ShaderDefines.Defines.size() + 1);
-			Macro[Input.ShaderDefines.Defines.size()].Name = NULL;
-			Macro[Input.ShaderDefines.Defines.size()].Definition = NULL;
+			Macro.resize(Input.CompileSettings.Defines.size() + 1);
+			Macro[Input.CompileSettings.Defines.size()].Name = NULL;
+			Macro[Input.CompileSettings.Defines.size()].Definition = NULL;
 			int index = 0;
-			for (auto iter = Input.ShaderDefines.Defines.begin(); iter != Input.ShaderDefines.Defines.end(); iter++, index++)
+			for (auto iter = Input.CompileSettings.Defines.begin(); iter != Input.CompileSettings.Defines.end(); iter++, index++)
 			{
 				Macro[index].Name = iter->first.c_str();
 				Macro[index].Definition = iter->second.c_str();
 			};
 		}
+
+		XDxRefCount<ID3DBlob> BeforeCompressed;
+
+		XD3DInclude Include;
 		HRESULT hr = D3DCompileFromFile(
 			Input.SourceFilePath.data(),
-			Macro.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			Macro.data(), 
+			&Include,
+			//D3D_COMPILE_STANDARD_FILE_INCLUDE,
 			Input.EntryPointName.data(),
 			Target.data(), compileFlags, 0,
-			&CodeGened, &Errors);
+			&BeforeCompressed, &Errors);
 
 		if (Errors != nullptr)OutputDebugStringA((char*)Errors->GetBufferPointer()); ThrowIfFailed(hr);
+		
+		CodeGened = BeforeCompressed;
+
+		//https: //github.com/TheRealMJP/BakingLab/blob/master/SampleFramework11/v1.02/Graphics/ShaderCompilation.cpp#L131
+		//need D3DDecompressShaders
+		//D3D_SHADER_DATA ShaderData;
+		//ShaderData.pBytecode = BeforeCompressed->GetBufferPointer();
+		//ShaderData.BytecodeLength = BeforeCompressed->GetBufferSize();
+		//ThrowIfFailed(D3DCompressShaders(1, &ShaderData, D3D_COMPRESS_SHADER_KEEP_ALL_PARTS, &CodeGened));
+		
 
 		Output.Shadertype = Input.Shadertype;
 		Output.ShaderCode.clear();
@@ -173,6 +229,12 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&TotalOptionalDataSize), (uint8*)(&TotalOptionalDataSize) + 4);
 	}
 }
+
+void CompileMaterialShader(XShaderCompileInput& Input, XShaderCompileOutput& Output)
+{
+	CompileDX12Shader(Input, Output);
+}
+
 void CompileGlobalShaderMap()
 {
 	if (GGlobalShaderMapping == nullptr)
@@ -180,7 +242,7 @@ void CompileGlobalShaderMap()
 		//ShaderMapInFileUnit has three part , first : source code ,second : shaders info,third : RHIShader 
 
 		GGlobalShaderMapping = new XGlobalShaderMapping_ProjectUnit();
-		std::list<XShaderInfo*>& ShaderInfosUsedToCompile_LinkedList = XShaderInfo::GetShaderInfo_LinkedList();
+		std::list<XShaderInfo*>& ShaderInfosUsedToCompile_LinkedList = XShaderInfo::GetShaderInfo_LinkedList(XShaderInfo::EShaderTypeForDynamicCast::Global);
 		for (auto iter = ShaderInfosUsedToCompile_LinkedList.begin(); iter != ShaderInfosUsedToCompile_LinkedList.end(); iter++)
 		{
 			XShaderCompileInput Input;
@@ -188,7 +250,7 @@ void CompileGlobalShaderMap()
 			Input.EntryPointName = (*iter)->GetEntryName();
 			Input.Shadertype = (*iter)->GetShaderType();
 			Input.ShaderName = (*iter)->GetShaderName();
-			(*iter)->ModifyDefinesPtr(Input.ShaderDefines);
+			(*iter)->ModifySettingsPtr(Input.CompileSettings);
 
 			XShaderCompileOutput Output;
 			CompileDX12Shader(Input, Output);
@@ -196,8 +258,8 @@ void CompileGlobalShaderMap()
 			
 			//first:store source code
 			std::size_t HashIndex = ShaderFileUnit->GetShaderMapStoreCodes()->AddShaderCompilerOutput(Output);
-			//second: shaders info
 			
+			//second: shaders info
 			XXShader* Shader = (*iter)->CtorPtr(XShaderInitlizer(*iter, Output, HashIndex));
 			ShaderFileUnit->GetShaderMapStoreXShaders()->FindOrAddXShader((*iter)->GetHashedEntryIndex(), Shader, 0);
 		}

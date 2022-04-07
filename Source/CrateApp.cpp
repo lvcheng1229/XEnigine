@@ -51,7 +51,7 @@ public:
 
 	static ShaderInfos StaticShaderInfos;
 
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines) {}
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
 
 public:
 	XLightPassVS(const XShaderInitlizer& Initializer)
@@ -77,8 +77,8 @@ public:
 		return new XLightPassPS(Initializer);
 	}
 	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines) {}
-
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+	
 public:
 	XLightPassPS(const XShaderInitlizer& Initializer)
 		:XGloablShader(Initializer)
@@ -132,11 +132,11 @@ public:
 XLightPassVS::ShaderInfos XLightPassVS::StaticShaderInfos(
 	"XLightPassVS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightVertexShaders.hlsl", 
 	"DeferredLightVertexMain", EShaderType::SV_Vertex, XLightPassVS::CustomConstrucFunc,
-	XLightPassVS::ModifyShaderCompileDefines);
+	XLightPassVS::ModifyShaderCompileSettings);
 XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
 	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightPixelShaders.hlsl", 
 	"DeferredLightPixelMain",EShaderType::SV_Pixel, XLightPassPS::CustomConstrucFunc,
-	XLightPassPS::ModifyShaderCompileDefines);
+	XLightPassPS::ModifyShaderCompileSettings);
 
 
 
@@ -149,7 +149,7 @@ public:
 		return new XShadowMaskPassPS(Initializer);
 	}
 	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines) {}
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
 
 public:
 	XShadowMaskPassPS(const XShaderInitlizer& Initializer)
@@ -196,7 +196,7 @@ public:
 XShadowMaskPassPS::ShaderInfos XShadowMaskPassPS::StaticShaderInfos(
 	"XShadowMaskPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowProjectionShader.hlsl",
 	"PS", EShaderType::SV_Pixel, XShadowMaskPassPS::CustomConstrucFunc,
-	XShadowMaskPassPS::ModifyShaderCompileDefines);
+	XShadowMaskPassPS::ModifyShaderCompileSettings);
 
 
 //XHZBPassCS
@@ -208,9 +208,7 @@ public:
 		return new XHZBPassCS(Initializer);
 	}
 	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines)
-	{
-	}
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
 public:
 	XHZBPassCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
 	{
@@ -259,7 +257,7 @@ public:
 XHZBPassCS::ShaderInfos XHZBPassCS::StaticShaderInfos(
 	"HZBBuildCS", L"E:/XEngine/XEnigine/Source/Shaders/HZB.hlsl",
 	"HZBBuildCS", EShaderType::SV_Compute, XHZBPassCS::CustomConstrucFunc,
-	XHZBPassCS::ModifyShaderCompileDefines);
+	XHZBPassCS::ModifyShaderCompileSettings);
 
 //XRenderTransmittanceLutCS
 class XRenderTransmittanceLutCS :public XGloablShader
@@ -271,9 +269,9 @@ public:
 	}
 	static ShaderInfos StaticShaderInfos;
 
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines)
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) 
 	{
-		OutDefines.SetDefines("THREADGROUP_SIZE", "8");
+		OutSettings.SetDefines("THREADGROUP_SIZE", "8");
 	}
 public:
 
@@ -299,7 +297,7 @@ public:
 XRenderTransmittanceLutCS::ShaderInfos XRenderTransmittanceLutCS::StaticShaderInfos(
 	"RenderTransmittanceLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
 	"RenderTransmittanceLutCS", EShaderType::SV_Compute, XRenderTransmittanceLutCS::CustomConstrucFunc,
-	XRenderTransmittanceLutCS::ModifyShaderCompileDefines);
+	XRenderTransmittanceLutCS::ModifyShaderCompileSettings);
 
 
 //XRenderMultiScatteredLuminanceLutCS
@@ -312,9 +310,9 @@ public:
 	}
 	static ShaderInfos StaticShaderInfos;
 
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines)
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings)
 	{
-		OutDefines.SetDefines("THREADGROUP_SIZE", "8");
+		OutSettings.SetDefines("THREADGROUP_SIZE", "8");
 	}
 public:
 	XRenderMultiScatteredLuminanceLutCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
@@ -343,7 +341,7 @@ public:
 XRenderMultiScatteredLuminanceLutCS::ShaderInfos XRenderMultiScatteredLuminanceLutCS::StaticShaderInfos(
 	"RenderMultiScatteredLuminanceLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
 	"RenderMultiScatteredLuminanceLutCS", EShaderType::SV_Compute, XRenderMultiScatteredLuminanceLutCS::CustomConstrucFunc,
-	XRenderMultiScatteredLuminanceLutCS::ModifyShaderCompileDefines);
+	XRenderMultiScatteredLuminanceLutCS::ModifyShaderCompileSettings);
 
 
 //XRenderSkyViewLutCS
@@ -356,9 +354,9 @@ public:
 	}
 	static ShaderInfos StaticShaderInfos;
 
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines)
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings)
 	{
-		OutDefines.SetDefines("THREADGROUP_SIZE", "8");
+		OutSettings.SetDefines("THREADGROUP_SIZE", "8");
 	}
 public:
 	XRenderSkyViewLutCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
@@ -403,7 +401,7 @@ public:
 XRenderSkyViewLutCS::ShaderInfos XRenderSkyViewLutCS::StaticShaderInfos(
 	"RenderSkyViewLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
 	"RenderSkyViewLutCS", EShaderType::SV_Compute, XRenderSkyViewLutCS::CustomConstrucFunc,
-	XRenderSkyViewLutCS::ModifyShaderCompileDefines);
+	XRenderSkyViewLutCS::ModifyShaderCompileSettings);
 
 
 
@@ -418,9 +416,9 @@ public:
 	}
 	static ShaderInfos StaticShaderInfos;
 
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines)
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings)
 	{
-		OutDefines.SetDefines("THREADGROUP_SIZE", "8");
+		OutSettings.SetDefines("THREADGROUP_SIZE", "8");
 	}
 public:
 	XRenderCameraAerialPerspectiveVolumeCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
@@ -466,7 +464,7 @@ public:
 XRenderCameraAerialPerspectiveVolumeCS::ShaderInfos XRenderCameraAerialPerspectiveVolumeCS::StaticShaderInfos(
 	"RenderCameraAerialPerspectiveVolumeCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
 	"RenderCameraAerialPerspectiveVolumeCS", EShaderType::SV_Compute, XRenderCameraAerialPerspectiveVolumeCS::CustomConstrucFunc,
-	XRenderCameraAerialPerspectiveVolumeCS::ModifyShaderCompileDefines);
+	XRenderCameraAerialPerspectiveVolumeCS::ModifyShaderCompileSettings);
 
 
 class XSSRPassPS :public XGloablShader
@@ -477,7 +475,7 @@ public:
 		return new XSSRPassPS(Initializer);
 	}
 	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines) {}
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
 
 public:
 	XSSRPassPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
@@ -533,7 +531,7 @@ public:
 };
 XSSRPassPS::ShaderInfos XSSRPassPS::StaticShaderInfos(
 	"XSSRPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl",
-	"PS", EShaderType::SV_Pixel, XSSRPassPS::CustomConstrucFunc, XSSRPassPS::ModifyShaderCompileDefines);
+	"PS", EShaderType::SV_Pixel, XSSRPassPS::CustomConstrucFunc, XSSRPassPS::ModifyShaderCompileSettings);
 
 
 
@@ -548,7 +546,7 @@ public:
 		return new XReflectionEnvironmentPS(Initializer);
 	}
 	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines) {}
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
 
 public:
 	XReflectionEnvironmentPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
@@ -567,7 +565,8 @@ public:
 };
 XReflectionEnvironmentPS::ShaderInfos XReflectionEnvironmentPS::StaticShaderInfos(
 	"XReflectionEnvironmentPS", L"E:/XEngine/XEnigine/Source/Shaders/ReflectionEnvironmentShader.hlsl",
-	"PS", EShaderType::SV_Pixel, XReflectionEnvironmentPS::CustomConstrucFunc, XReflectionEnvironmentPS::ModifyShaderCompileDefines);
+	"PS", EShaderType::SV_Pixel, XReflectionEnvironmentPS::CustomConstrucFunc, 
+	XReflectionEnvironmentPS::ModifyShaderCompileSettings);
 
 
 
@@ -582,7 +581,7 @@ public:
 		return new XRenderSkyAtmosphereRayMarchingPS(Initializer);
 	}
 	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileDefines(XShaderDefines& OutDefines) {}
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
 
 public:
 	XRenderSkyAtmosphereRayMarchingPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
@@ -621,7 +620,8 @@ public:
 };
 XRenderSkyAtmosphereRayMarchingPS::ShaderInfos XRenderSkyAtmosphereRayMarchingPS::StaticShaderInfos(
 	"XRenderSkyAtmosphereRayMarchingPS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
-	"RenderSkyAtmosphereRayMarchingPS", EShaderType::SV_Pixel, XRenderSkyAtmosphereRayMarchingPS::CustomConstrucFunc, XRenderSkyAtmosphereRayMarchingPS::ModifyShaderCompileDefines);
+	"RenderSkyAtmosphereRayMarchingPS", EShaderType::SV_Pixel, XRenderSkyAtmosphereRayMarchingPS::CustomConstrucFunc, 
+	XRenderSkyAtmosphereRayMarchingPS::ModifyShaderCompileSettings);
 
 
 

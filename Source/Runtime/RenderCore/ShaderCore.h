@@ -6,7 +6,7 @@
 #include <map>
 #include <string>
 
-#define GLOBAL_SHADER_PATH "E:/XEngine/XEnigine/Source/Shaders"
+#define GLOBAL_SHADER_PATH "E:/XEngine/XEnigine/Source/Shaders/"
 //#define MATERIAL_SHADER_PATH "E:/XEngine/XEnigine/MaterialShaders"
 
 class XShaderCodeReader
@@ -55,13 +55,15 @@ public:
 	}
 };
 
-struct XShaderDefines
+class XShaderCompileSetting
 {
+public:
+	std::map<std::wstring, std::string>IncludePathToCode;
+	std::map<std::string, std::string>Defines;
 	inline void SetDefines(const char* Name,const char* Value)
 	{
 		Defines[Name] = Value;
 	}
-	std::map<std::string, std::string>Defines;
 };
 
 struct XShaderResourceCount

@@ -8,7 +8,7 @@ struct XShaderCompileInput
 	std::wstring SourceFilePath;
 	std::string EntryPointName;
 	std::string ShaderName;
-	XShaderDefines ShaderDefines;
+	XShaderCompileSetting CompileSettings;
 };
 
 struct XShaderCompileOutput
@@ -20,5 +20,5 @@ struct XShaderCompileOutput
 
 	XShaderParameterMap ShaderParameterMap;
 };
-
+extern void CompileMaterialShader(XShaderCompileInput& Input, XShaderCompileOutput& Output);
 extern void CompileGlobalShaderMap();

@@ -158,10 +158,11 @@ public:
 	{
 		Global,
 		Material,
-		MeshMaterial
+		MeshMaterial,
+		NumShaderInfoType,
 	};
 
-	typedef void (*ModifyShaderCompileDefinesFunctionPtr) (XShaderDefines& OutDefines);
+	typedef void (*ModifyShaderCompileSettingFunctionPtr) (XShaderCompileSetting& CompileSetting);
 	typedef XXShader* (*XShaderCustomConstructFunctionPtr)(const XShaderInitlizer& Initializer);
 
 	XShaderInfo(
@@ -171,9 +172,9 @@ public:
 		const char* InEntryName,
 		EShaderType InShaderType,
 		XShaderCustomConstructFunctionPtr InCtorPtr,
-		ModifyShaderCompileDefinesFunctionPtr InModifyDefinesPtr
+		ModifyShaderCompileSettingFunctionPtr InModifySettingsPtr
 		);
-	static std::list<XShaderInfo*>& GetShaderInfo_LinkedList();
+	static std::list<XShaderInfo*>& GetShaderInfo_LinkedList(EShaderTypeForDynamicCast ShaderInfoType);
 
 	inline const wchar_t* GetSourceFileName()const { return SourceFileName; }
 	inline const char* GetEntryName()const { return EntryName; }
@@ -183,7 +184,7 @@ public:
 	inline const char* GetShaderName()const { return ShaderName; };
 	
 public:
-	ModifyShaderCompileDefinesFunctionPtr ModifyDefinesPtr;
+	ModifyShaderCompileSettingFunctionPtr ModifySettingsPtr;
 	XShaderCustomConstructFunctionPtr CtorPtr;
 private:
 

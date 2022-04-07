@@ -57,7 +57,7 @@ public:
 		const char* InEntryName,
 		EShaderType ShaderType,
 		XShaderCustomConstructFunctionPtr InCtorPtr,
-		ModifyShaderCompileDefinesFunctionPtr InModifyDefinesPtr) :
+		ModifyShaderCompileSettingFunctionPtr InModifySettingsPtr) :
 		XShaderInfo(
 			EShaderTypeForDynamicCast::Global,
 			InShaderName,
@@ -65,7 +65,7 @@ public:
 			InEntryName,
 			ShaderType,
 			InCtorPtr,
-			InModifyDefinesPtr) {}
+			InModifySettingsPtr) {}
 };
 
 class XGloablShader : public XXShader

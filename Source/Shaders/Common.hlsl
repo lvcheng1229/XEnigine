@@ -56,4 +56,3 @@ float ClampedPow(float X,float Y)
 {
 	return pow(max(abs(X),POW_CLAMP),Y);
 }
-

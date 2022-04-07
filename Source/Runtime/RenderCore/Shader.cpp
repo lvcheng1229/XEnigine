@@ -69,24 +69,24 @@ XShaderInfo::XShaderInfo(
 	const char* InEntryName,
 	EShaderType InShaderType,
 	XShaderCustomConstructFunctionPtr InCtorPtr,
-	ModifyShaderCompileDefinesFunctionPtr InModifyDefinesPtr) :
+	ModifyShaderCompileSettingFunctionPtr InModifyDefinesPtr) :
 	CastType(InCastType),
 	ShaderName(InShaderName),
 	SourceFileName(InSourceFileName),
 	EntryName(InEntryName),
 	ShaderType(InShaderType),
 	CtorPtr(InCtorPtr),
-	ModifyDefinesPtr(InModifyDefinesPtr)
+	ModifySettingsPtr(InModifyDefinesPtr)
 {
-	GetShaderInfo_LinkedList().push_back(this);
+	GetShaderInfo_LinkedList(InCastType).push_back(this);
 	HashedFileIndex = std::hash<std::wstring>{}(InSourceFileName);
 	HashedEntryIndex = std::hash<std::string>{}(InEntryName);
 }
 
-std::list<XShaderInfo*>& XShaderInfo::GetShaderInfo_LinkedList()
+std::list<XShaderInfo*>& XShaderInfo::GetShaderInfo_LinkedList(EShaderTypeForDynamicCast ShaderInfoType)
 {
-	static std::list<XShaderInfo*> GloablShaderInfosUsedToCompile_LinkedList;
-	return GloablShaderInfosUsedToCompile_LinkedList;
+	static std::list<XShaderInfo*> GloablShaderInfosUsedToCompile_LinkedList[(int)EShaderTypeForDynamicCast::NumShaderInfoType];
+	return GloablShaderInfosUsedToCompile_LinkedList[(int)ShaderInfoType];
 }
 
 
