@@ -58,7 +58,7 @@ public:
 class XShaderCompileSetting
 {
 public:
-	std::map<std::wstring, std::string>IncludePathToCode;
+	std::map<std::string, std::string>IncludePathToCode;
 	std::map<std::string, std::string>Defines;
 	inline void SetDefines(const char* Name,const char* Value)
 	{

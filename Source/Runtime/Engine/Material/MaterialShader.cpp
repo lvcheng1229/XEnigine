@@ -6,9 +6,17 @@ void XMaterialShaderMapping_MatUnit::Compile(const XShaderCompileSetting& Shader
 {
 	//SubmitCompileJobs()
 	{
-		X_Assert(false);
+		
 		XMaterialShaderParameters_ForIndex MaterialParameters;
 		//const XMaterialShaderParameters_ForIndex& MaterialParameters;
+
+		//Temp
+		{
+			memset(&MaterialParameters, 0, sizeof(XMaterialShaderParameters_ForIndex));
+			MaterialParameters.MaterialDomain = EMaterialDomain::Surface;
+		}
+
+
 		const XMaterialShaderMapSet& MapSet = GetMaterialShaderMapSet(MaterialParameters);
 		for (auto ShaderInfo : MapSet.ShaderInfos)
 		{

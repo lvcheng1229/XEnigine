@@ -2,6 +2,11 @@
 #include "MaterialShared.h"
 #include "MaterialShaderMapSet.h"
 
+//temp
+#include <filesystem>
+#include <fstream>
+//
+
 #define TEMP_MATERIAL_PATH L"E:/XEngine/XEnigine/MaterialShaders"
 
 class XMaterialShaderMappingSetsManager
@@ -28,10 +33,10 @@ public:
 	
 	void CreateSet(XMaterialShaderMapSet& MapSet,const XMaterialShaderParameters_ForIndex& Parameters)
 	{
-		const std::list<XShaderInfo*>& MaterialShaderInfos = XShaderInfo::GetShaderInfo_LinkedList(
-			XShaderInfo::EShaderTypeForDynamicCast::Material);
-
-		for (auto iter = MaterialShaderInfos.begin(); iter != MaterialShaderInfos.end(); iter++)
+		const std::list<XShaderInfo*>& MeshMaterialShaderInfos = XShaderInfo::GetShaderInfo_LinkedList(
+			XShaderInfo::EShaderTypeForDynamicCast::MeshMaterial);
+		
+		for (auto iter = MeshMaterialShaderInfos.begin(); iter != MeshMaterialShaderInfos.end(); iter++)
 		{
 			//ShouldCompilePermutaion
 			MapSet.ShaderInfos.push_back(*iter);
@@ -65,10 +70,19 @@ void RMaterial::BeginCompileShaderMap()
 	std::shared_ptr<XMaterialShaderMapping_MatUnit> NewShaderMap = std::make_shared<XMaterialShaderMapping_MatUnit>();
 	std::shared_ptr<XShaderCompileSetting> MaterialCompileSetting = std::make_shared<XShaderCompileSetting>();
 
-	std::string TemplShaderCode;
-	MaterialCompileSetting->IncludePathToCode[L"Generated/Material.hlsl"] = TemplShaderCode;
 
-	//NewShaderMap->Compile(*MaterialCompileSetting);
+	std::string TemplShaderCode;
+	{
+		std::ifstream FileCode(std::filesystem::path(TEMP_SHADER_PATH), std::ios::ate);
+		std::ifstream::pos_type FileSize = FileCode.tellg();
+		FileCode.seekg(0, std::ios_base::beg);
+		TemplShaderCode.resize(FileSize, '\n');
+		FileCode.read(TemplShaderCode.data(), FileSize);
+		FileCode.close();
+	}
+	
+	MaterialCompileSetting->IncludePathToCode["Generated/Material.hlsl"] = TemplShaderCode;
+	NewShaderMap->Compile(*MaterialCompileSetting);
 }
 
 bool RMaterial::GetShaderInfos(const XMaterialShaderInfo_Set& ShaderInfos, XMaterialShader_Set& ShaderOut)

@@ -22,6 +22,7 @@
 #include "Runtime/Render/SceneRendering.h"
 #include "Runtime/Render/MeshPassProcessor.h"
 #include "Runtime/Render/MaterialShader.h"
+#include "Runtime/Render/BasePassRendering.h"
 
 #include "Runtime/Engine/SceneView.h"
 #include "Runtime/Engine/ShaderCompiler/ShaderCompiler.h"
@@ -42,6 +43,13 @@ using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 
+
+template<>
+TBasePassPS<false>::ShaderInfos TBasePassPS<false>::StaticShaderInfos(
+"PS", L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader_1.hlsl",
+"DeferredLightPixelMain", EShaderType::SV_Pixel, TBasePassPS<false>::CustomConstrucFunc,
+TBasePassPS<false>::ModifyShaderCompileSettings);
+ 
 
 //XLightPass
 class XLightPassVS :public XGloablShader

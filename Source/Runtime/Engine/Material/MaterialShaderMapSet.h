@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 class XShaderInfo;
-class XMaterialShaderParameters_ForIndex;
+struct XMaterialShaderParameters_ForIndex;
 class XMaterialShaderMapSet
 {
 public:

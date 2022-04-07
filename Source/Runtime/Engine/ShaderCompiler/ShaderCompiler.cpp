@@ -10,9 +10,21 @@ static const std::filesystem::path ShaderASMPath("E:\\XEngine\\XEnigine\\Cache")
 
 class XD3DInclude : public ID3DInclude
 {
-	std::map<std::wstring, std::string>* IncludePathToCode;
+public:
+	std::map<std::string, std::string>* IncludePathToCode;
+	bool HasIncludePath;
 	HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
 	{
+		auto iter = IncludePathToCode->find(std::string(pFileName));
+		if (iter != IncludePathToCode->end())
+		{
+			*ppData = iter->second.data();
+			*pBytes = iter->second.size();
+
+			HasIncludePath = true;
+			return S_OK;
+		}
+
 		std::string FilePath = GLOBAL_SHADER_PATH + std::string(pFileName);
 		if (!std::filesystem::exists(FilePath))
 			return E_FAIL;
@@ -35,14 +47,17 @@ class XD3DInclude : public ID3DInclude
 
 
 	
-
+		HasIncludePath = false;
 		*ppData = data;
 		return S_OK;
 }
 
 	HRESULT Close(LPCVOID pData) override
 	{
-		std::free(const_cast<void*>(pData));
+		if (HasIncludePath == false)
+		{
+			std::free(const_cast<void*>(pData));
+		}
 		return S_OK;
 	}
 };
@@ -110,6 +125,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		XDxRefCount<ID3DBlob> BeforeCompressed;
 
 		XD3DInclude Include;
+		Include.IncludePathToCode = &Input.CompileSettings.IncludePathToCode;
 		HRESULT hr = D3DCompileFromFile(
 			Input.SourceFilePath.data(),
 			Macro.data(), 
