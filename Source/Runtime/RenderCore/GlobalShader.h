@@ -17,7 +17,7 @@ class XGlobalShaderMapping_FileUnit :public TShaderMapping<XGloablShaderMappingT
 public:
 	XGlobalShaderMapping_FileUnit(const std::size_t& InHashedSourceFileIndex)
 	{
-		AssignShadersInfo(new XGloablShaderMappingToXShaders(InHashedSourceFileIndex));
+		AssignShaderMappingXShader(new XGloablShaderMappingToXShaders(InHashedSourceFileIndex));
 	}
 };
 

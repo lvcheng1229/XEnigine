@@ -41,7 +41,7 @@ class RMaterial
 {
 public:
 	void BeginCompileShaderMap();
-	bool GetShaderInfos(const XMaterialShaderInfo_Set& ShaderInfos, XMaterialShader_Set& ShaderOut);
+	void GetShaderInfos(const XMaterialShaderInfo_Set& ShaderInfos, XMaterialShader_Set& ShaderOut);
 private:
 	std::shared_ptr<XMaterialShaderMapping_MatUnit>RThreadShaderMap;
 };

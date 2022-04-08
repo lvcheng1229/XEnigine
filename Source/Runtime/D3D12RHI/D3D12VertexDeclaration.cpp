@@ -10,6 +10,7 @@ struct XD3D12VertexDeclarationKey
 	std::size_t Hash;
 	explicit XD3D12VertexDeclarationKey(const XRHIVertexLayoutArray& Elements)
 	{
+		Hash = 42;
 		VertexLayoutArray.resize(Elements.size());
 		for (int i = 0; i < Elements.size(); i++)
 		{
@@ -27,12 +28,14 @@ struct XD3D12VertexDeclarationKey
 			default:X_Assert(false);
 			}
 			
+			THashCombine(Hash, VertexLayoutArray[i].Format);
+
 			VertexLayoutArray[i].InputSlot = Element.InputSlot;
 			VertexLayoutArray[i].AlignedByteOffset = Element.AlignedByteOffset;
 			VertexLayoutArray[i].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 			VertexLayoutArray[i].InstanceDataStepRate = 0;
 		}
-		Hash = std::hash<std::string>{}((char*)VertexLayoutArray.data());
+		//Hash = std::hash<std::string>{}(std::string((char*)VertexLayoutArray.data()));
 	}
 };
 

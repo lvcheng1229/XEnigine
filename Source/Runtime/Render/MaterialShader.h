@@ -35,6 +35,6 @@ struct XMaterialShaderInfo_Set
 //struct FMaterialShaders
 struct XMaterialShader_Set
 {
-	XShaderMappingBase* ShaderMap;
+	const XShaderMappingBase* ShaderMap;
 	XXShader* XShaderSet[(int)EShaderType::SV_ShaderCount];
 };

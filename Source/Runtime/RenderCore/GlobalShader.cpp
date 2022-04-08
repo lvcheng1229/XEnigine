@@ -39,7 +39,7 @@ TShaderReference<XXShader> XGlobalShaderMapping_ProjectUnit::GetShader(XShaderIn
 	{
 		XGlobalShaderMapping_FileUnit* MapInFileUnit = iter->second;
 		return TShaderReference<XXShader>(
-			MapInFileUnit->GetShaderMapStoreXShaders()->GetXShader(ShaderInfo->GetHashedEntryIndex(), 0),
+			MapInFileUnit->GetShaderMapStoreXShaders()->GetXShader(ShaderInfo->GetHashedShaderNameIndex(), 0),
 			MapInFileUnit);
 	}
 	return TShaderReference<XXShader>();

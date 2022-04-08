@@ -201,6 +201,7 @@
     <ClInclude Include="Runtime\Engine\Classes\EngineTypes.h" />
     <ClInclude Include="Runtime\Engine\Material\MaterialShaderMapSet.h" />
     <ClInclude Include="Runtime\Render\MeshPassProcessor.h" />
+    <ClInclude Include="Runtime\RenderCore\VertexFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
@@ -308,6 +309,7 @@
     <ClCompile Include="Runtime\Engine\Material\MaterialShader.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12VIBuffer.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Buffer.cpp" />
+    <ClCompile Include="Runtime\RenderCore\VertexFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Runtime\Core\Math\SimpleMath.inl" />

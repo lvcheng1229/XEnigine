@@ -17,6 +17,7 @@
 #include "Runtime/RenderCore/ShaderParameter.h"
 #include "Runtime/RenderCore/CommonRenderRresource.h"
 #include "Runtime/RenderCore/Shader.h"
+#include "Runtime/RenderCore/VertexFactory.h"
 
 #include "Runtime/Core/XMath.h"
 #include "Runtime/Render/SceneRendering.h"
@@ -43,11 +44,40 @@ using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 
+class XLocalVertexFactory :public XVertexFactory
+{
+public:
+	void InitRHI()override;
+	void ReleaseRHI()override;
+};
+
+void XLocalVertexFactory::InitRHI()
+{
+	XRHIVertexLayoutArray LayoutArray;
+	LayoutArray.push_back(XVertexElement(0, EVertexElementType::VET_Float4, 0, 0));
+	LayoutArray.push_back(XVertexElement(1, EVertexElementType::VET_Float3, 0, 0 + sizeof(XVector4)));
+	LayoutArray.push_back(XVertexElement(2, EVertexElementType::VET_Float4, 0, 0 + sizeof(XVector4) + sizeof(XVector3)));
+	LayoutArray.push_back(XVertexElement(3, EVertexElementType::VET_Float2, 0, 0 + sizeof(XVector4) + sizeof(XVector3) + sizeof(XVector4)));
+	
+	InitLayout(LayoutArray, ELayoutType::Layout_Default);
+}
+
+void XLocalVertexFactory::ReleaseRHI()
+{
+	DefaultLayout.reset();
+}
+
+
+template<>
+TBasePassVS<false>::ShaderInfos TBasePassVS<false>::StaticShaderInfos(
+	"TBasePassVS<false>", L"E:/XEngine/XEnigine/Source/Shaders/BasePassVertexShader.hlsl",
+	"VS", EShaderType::SV_Vertex, TBasePassVS<false>::CustomConstrucFunc,
+	TBasePassVS<false>::ModifyShaderCompileSettings);
 
 template<>
 TBasePassPS<false>::ShaderInfos TBasePassPS<false>::StaticShaderInfos(
-"PS", L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader_1.hlsl",
-"DeferredLightPixelMain", EShaderType::SV_Pixel, TBasePassPS<false>::CustomConstrucFunc,
+"TBasePassPS<false>", L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader_1.hlsl",
+"PS", EShaderType::SV_Pixel, TBasePassPS<false>::CustomConstrucFunc,
 TBasePassPS<false>::ModifyShaderCompileSettings);
  
 
@@ -758,6 +788,12 @@ private:
 	XVector3 LightDir = { -1,1,1 };
 	XVector3 LightColor = { 1,1,1 };
 	float LightIntensity = 7.0f;
+
+
+//BasePass
+private:
+	XLocalVertexFactory LocalVertexFactory;
+	RMaterial SphereMaterial;
 private:
 	uint64 FrameNum = 0;
 	float Far = 1000.0f;
@@ -911,6 +947,7 @@ private:
 
 CrateApp::CrateApp()
 {
+	BeginInitResource(&LocalVertexFactory);
 }
 
 CrateApp::~CrateApp()
@@ -1235,6 +1272,40 @@ void CrateApp::Renderer(const GameTimer& gt)
 	//Pass4 GBufferPass BasePass
 	{
 
+
+		{
+			//PassShaders
+		
+			
+			//GetBasePassShaders
+			XMaterialShaderInfo_Set ShaderInfos;
+			XMaterialShader_Set XShaders;
+		
+			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
+			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = nullptr;
+			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
+		
+		
+			SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
+		
+			TShaderReference<TBasePassPS<false>> BasePixelShader = TShaderReference<TBasePassPS<false>>(
+				static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]), XShaders.ShaderMap);
+			
+			
+		
+			XRHIBoundShaderStateInput_WithoutRT PassShaders;
+			std::shared_ptr<XRHIVertexLayout> RefVertexLayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default);
+			PassShaders.RHIVertexLayout = RefVertexLayout.get();
+
+			PassShaders.MappingRHIPixelShader = BasePixelShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
+			PassShaders.IndexRHIPixelShader = BasePixelShader->GetRHIShaderIndex();
+			
+
+
+			//	XGraphicsPSOInitializer_WithoutRT BasePassPSOInit;
+			//	
+			//	BasePassPSOInit.
+		}
 
 		mCommandList->BeginEvent(1, "GBufferPass BasePass", sizeof("GBufferPass BasePass"));
 
@@ -2317,50 +2388,59 @@ void CrateApp::BuildPSOs()
 		ShadowPSODesc.DSVFormat = mDepthStencilFormat;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
 	}
-
+	
+	XD3D12PixelShader* BaseD3DPixelShader;
 	{
+		SphereMaterial.BeginCompileShaderMap();
 
-		RMaterial Material;
-		Material.BeginCompileShaderMap();
 
-		XRHIBoundShaderStateInput_WithoutRT PassShaders;
-		XGraphicsPSOInitializer_WithoutRT BasePassPSOInit;
 
-		XMaterialShaderInfo_Set ShaderInfos;
-		XMaterialShader_Set XShaders;
-
+		//PassShaders
+		
+		TShaderReference<TBasePassPS<false>> BasePixelShader;
 		//GetBasePassShaders
-		Material.GetShaderInfos(ShaderInfos, XShaders);
+		{
+			XMaterialShaderInfo_Set ShaderInfos;
+			XMaterialShader_Set XShaders;
 
-		//XRHIShader* BaseVertexShader = PassShaders.MappingRHIVertexshader->GetRHIShader(PassShaders.IndexRHIVertexShader);
-		//XRHIShader* BasePixelShader = PassShaders.MappingRHIPixelshader->GetRHIShader(PassShaders.IndexRHIPixelShader);
-		//
-		//XRHIVertexShader* RHIVertexShader = static_cast<XRHIVertexShader*>(BaseVertexShader);
-		//XRHIPixelShader* RHIPixelShader = static_cast<XRHIPixelShader*>(BasePixelShader);
-		//
-		//XD3D12VertexShader* D3DVertexShader = static_cast<XD3D12VertexShader*>(RHIVertexShader);
-		//XD3D12PixelShader* D3DPixelShader = static_cast<XD3D12PixelShader*>(RHIPixelShader);
+			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
+			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = nullptr;
+			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
+
+			
+			SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
+
+			BasePixelShader = TShaderReference<TBasePassPS<false>>(
+				static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]),
+				XShaders.ShaderMap);
+		}
+		XRHIPixelShader* RHIPixelShader = BasePixelShader.GetPixelShader();
+		BaseD3DPixelShader = static_cast<XD3D12PixelShader*>(RHIPixelShader);
 	}
 
 	
 
 	//BasePass
 	{
+		XRHIVertexLayout* BaseRHILayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default).get();
+		XD3D12VertexLayout* BassLayout = static_cast<XD3D12VertexLayout*>(BaseRHILayout);
+		
+
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
 
 		ZeroMemory(&opaquePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		opaquePsoDesc.InputLayout = { mBasePassLayout.data(), (UINT)mBasePassLayout.size() };
+		opaquePsoDesc.InputLayout = { BassLayout->VertexElements.data(), (UINT)BassLayout->VertexElements.size()};
 		opaquePsoDesc.pRootSignature = d3d12_root_signature.GetDXRootSignature();
 		opaquePsoDesc.VS =
 		{
 			reinterpret_cast<BYTE*>(mShaders["standardVS"].GetByteCode()->GetBufferPointer()),
 			mShaders["standardVS"].GetByteCode()->GetBufferSize()
 		};
-		opaquePsoDesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["opaquePS"].GetByteCode()->GetBufferPointer()),
-			mShaders["opaquePS"].GetByteCode()->GetBufferSize()
-		};
+		opaquePsoDesc.PS = BaseD3DPixelShader->D3DByteCode;
+		//{
+		//	reinterpret_cast<BYTE*>(mShaders["opaquePS"].GetByteCode()->GetBufferPointer()),
+		//	mShaders["opaquePS"].GetByteCode()->GetBufferSize()
+		//};
 
 		//TODO
 		opaquePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);

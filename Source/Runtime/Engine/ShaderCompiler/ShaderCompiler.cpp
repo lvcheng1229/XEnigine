@@ -275,9 +275,9 @@ void CompileGlobalShaderMap()
 			//first:store source code
 			std::size_t HashIndex = ShaderFileUnit->GetShaderMapStoreCodes()->AddShaderCompilerOutput(Output);
 			
-			//second: shaders info
+			//second: xshaders
 			XXShader* Shader = (*iter)->CtorPtr(XShaderInitlizer(*iter, Output, HashIndex));
-			ShaderFileUnit->GetShaderMapStoreXShaders()->FindOrAddXShader((*iter)->GetHashedEntryIndex(), Shader, 0);
+			ShaderFileUnit->GetShaderMapStoreXShaders()->FindOrAddXShader((*iter)->GetHashedShaderNameIndex(), Shader, 0);
 		}
 		
 		//third: RHIShader

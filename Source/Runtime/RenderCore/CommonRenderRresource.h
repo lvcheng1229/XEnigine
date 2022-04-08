@@ -23,7 +23,7 @@ public:
 		XRHIVertexLayoutArray LayoutArray;
 		LayoutArray.push_back(XVertexElement(0, EVertexElementType::VET_Float2, 0, 0));
 		LayoutArray.push_back(XVertexElement(1, EVertexElementType::VET_Float2, 0, 0 + sizeof(DirectX::XMFLOAT2)));
-		RHIVertexLayout = RHICreateVertexDeclaration(LayoutArray);
+		RHIVertexLayout = RHICreateVertexLayout(LayoutArray);
 	}
 
 	virtual void ReleaseRHI()override

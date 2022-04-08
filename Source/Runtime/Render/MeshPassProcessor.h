@@ -7,8 +7,8 @@ struct XRHIBoundShaderStateInput_WithoutRT
 {
 	XRHIVertexLayout* RHIVertexLayout;
 
-	std::shared_ptr<XShaderMappingToRHIShaders>MappingRHIVertexshader;
-	std::shared_ptr<XShaderMappingToRHIShaders>MappingRHIPixelshader;
+	std::shared_ptr<XShaderMappingToRHIShaders>MappingRHIVertexShader;
+	std::shared_ptr<XShaderMappingToRHIShaders>MappingRHIPixelShader;
 	int32 IndexRHIVertexShader;
 	int32 IndexRHIPixelShader;
 };

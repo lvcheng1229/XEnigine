@@ -19,8 +19,23 @@ void SetGraphicsPipelineStateFromPSOInit(XRHICommandList& RHICmdList, const XGra
 static std::unordered_map<std::size_t, std::shared_ptr<XRHIComputePSO>>GComputePSOMap;
 static std::unordered_map<std::size_t, std::shared_ptr<XRHIGraphicsPSO>>GGraphicsPSOMap;
 
+
+static std::unordered_map<std::size_t, std::shared_ptr<XRHIVertexLayout>>GVertexLayout;
 namespace PipelineStateCache
 {
+	std::shared_ptr<XRHIVertexLayout> GetOrCreateVertexLayout(const XRHIVertexLayoutArray& LayoutArray)
+	{
+		std::size_t HashIndex = std::hash<std::string>{}(std::string((char*)LayoutArray.data()));
+		
+		auto iter = GVertexLayout.find(HashIndex);
+		if (iter == GVertexLayout.end())
+		{
+			GVertexLayout[HashIndex] = RHICreateVertexLayout(LayoutArray);
+		}
+
+		return GVertexLayout[HashIndex];
+	}
+
 	std::shared_ptr <XRHIComputePSO> GetAndOrCreateComputePipelineState(XRHICommandList& RHICmdList, const XRHIComputeShader* ComputeShader)
 	{
 		std::size_t HashIndex = ComputeShader->GetHash();

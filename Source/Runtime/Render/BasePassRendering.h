@@ -20,3 +20,23 @@ public:
 
 	}
 };
+
+template<bool TempType>
+class TBasePassVS : public XMeshMaterialShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new TBasePassVS<TempType>(Initializer);
+	}
+
+	static ShaderInfos StaticShaderInfos;
+
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+public:
+	TBasePassVS(const XShaderInitlizer& Initializer) :
+		XMeshMaterialShader(Initializer)
+	{
+
+	}
+};

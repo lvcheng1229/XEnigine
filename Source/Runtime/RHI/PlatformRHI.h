@@ -32,7 +32,7 @@ XPlatformRHI* PlatformCreateDynamicRHI();
 extern XPlatformRHI* GPlatformRHI;
 extern bool GIsRHIInitialized;
 
-inline std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements)
+inline std::shared_ptr<XRHIVertexLayout> RHICreateVertexLayout(const XRHIVertexLayoutArray& Elements)
 {
 	return GPlatformRHI->RHICreateVertexDeclaration(Elements);
 }

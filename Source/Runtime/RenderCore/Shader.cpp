@@ -38,23 +38,23 @@ std::size_t XShaderMappingToCodes::AddShaderCompilerOutput(XShaderCompileOutput&
 	return ShaderEntries.size() - 1;
 }
 
-XXShader* XShaderMappingToXShaders::FindOrAddXShader(const std::size_t HashedEntryIndex, XXShader* Shader, int32 PermutationId)
+XXShader* XShaderMappingToXShaders::FindOrAddXShader(const std::size_t HashedShaderNameIndex, XXShader* Shader, int32 PermutationId)
 {
-	const std::size_t Index = HashedEntryIndex;
-	auto iter = MapHashedEntryIndexToXShaderIndex.find(Index);
-	if (iter != MapHashedEntryIndexToXShaderIndex.end())
+	const std::size_t Index = HashedShaderNameIndex;
+	auto iter = MapHashedShaderNameIndexToXShaderIndex.find(Index);
+	if (iter != MapHashedShaderNameIndexToXShaderIndex.end())
 	{
 		return ShaderPtrArray[iter->second].get();
 	}
 	ShaderPtrArray.push_back(std::shared_ptr<XXShader>(Shader));
-	MapHashedEntryIndexToXShaderIndex[Index] = ShaderPtrArray.size() - 1;
+	MapHashedShaderNameIndexToXShaderIndex[Index] = ShaderPtrArray.size() - 1;
 	return ShaderPtrArray.back().get();
 }
 
 XXShader* XShaderMappingToXShaders::GetXShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
 {
-	auto iter = MapHashedEntryIndexToXShaderIndex.find(HashedEntryIndex);
-	X_Assert(iter != MapHashedEntryIndexToXShaderIndex.end());
+	auto iter = MapHashedShaderNameIndexToXShaderIndex.find(HashedEntryIndex);
+	X_Assert(iter != MapHashedShaderNameIndexToXShaderIndex.end());
 	std::size_t ShaderPtrArrayIndex = iter->second;
 	return ShaderPtrArray[ShaderPtrArrayIndex].get();
 }
@@ -80,7 +80,8 @@ XShaderInfo::XShaderInfo(
 {
 	GetShaderInfo_LinkedList(InCastType).push_back(this);
 	HashedFileIndex = std::hash<std::wstring>{}(InSourceFileName);
-	HashedEntryIndex = std::hash<std::string>{}(InEntryName);
+	//HashedEntryIndex = std::hash<std::string>{}(InEntryName);
+	HashShaderNameIndex = std::hash<std::string>{}(InShaderName);
 }
 
 std::list<XShaderInfo*>& XShaderInfo::GetShaderInfo_LinkedList(EShaderTypeForDynamicCast ShaderInfoType)

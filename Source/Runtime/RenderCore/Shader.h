@@ -75,11 +75,11 @@ public:
 class XShaderMappingToXShaders
 {
 public:
-	XXShader* FindOrAddXShader(const std::size_t HashedIndex, XXShader* Shader, int32 PermutationId = 0);
-	XXShader* GetXShader(const std::size_t HashedEntryIndex, int32 PermutationId = 0)const;
+	XXShader* FindOrAddXShader(const std::size_t HashedShaderNameIndex, XXShader* Shader, int32 PermutationId = 0);
+	XXShader* GetXShader(const std::size_t HashedShaderNameIndex, int32 PermutationId = 0)const;
 private:
 	std::vector<std::shared_ptr<XXShader>>ShaderPtrArray;
-	std::unordered_map<std::size_t, std::size_t>MapHashedEntryIndexToXShaderIndex;
+	std::unordered_map<std::size_t, std::size_t>MapHashedShaderNameIndexToXShaderIndex;
 };
 
 class XShaderMappingBase
@@ -87,7 +87,7 @@ class XShaderMappingBase
 public:
 	~XShaderMappingBase();
 
-	inline void AssignShadersInfo(XShaderMappingToXShaders* InXShadersStored)
+	inline void AssignShaderMappingXShader(XShaderMappingToXShaders* InXShadersStored)
 	{
 		XShadersStored = InXShadersStored;
 	}
@@ -103,6 +103,11 @@ public:
 		}
 	}
 	
+	inline std::shared_ptr<XShaderMappingToRHIShaders>GetRefShaderMapStoreRHIShaders() const
+	{
+		return RHIShadersStored;
+	}
+
 	inline XShaderMappingToRHIShaders* GetShaderMapStoreRHIShaders() const
 	{ 
 		return RHIShadersStored.get();
@@ -176,10 +181,13 @@ public:
 		);
 	static std::list<XShaderInfo*>& GetShaderInfo_LinkedList(EShaderTypeForDynamicCast ShaderInfoType);
 
+
+	inline std::size_t GetHashedFileIndex()const { return HashedFileIndex; }
+	//inline std::size_t GetHashedEntryIndex()const { return HashedEntryIndex; }
+	inline std::size_t GetHashedShaderNameIndex()const { return HashShaderNameIndex; };
+
 	inline const wchar_t* GetSourceFileName()const { return SourceFileName; }
 	inline const char* GetEntryName()const { return EntryName; }
-	inline std::size_t GetHashedFileIndex()const { return HashedFileIndex; }
-	inline std::size_t GetHashedEntryIndex()const { return HashedEntryIndex; }
 	inline EShaderType GetShaderType()const { return ShaderType; }
 	inline const char* GetShaderName()const { return ShaderName; };
 	
@@ -189,7 +197,8 @@ public:
 private:
 
 	std::size_t HashedFileIndex;
-	std::size_t HashedEntryIndex;
+	//std::size_t HashedEntryIndex;
+	std::size_t HashShaderNameIndex;
 
 	EShaderTypeForDynamicCast CastType;
 	const char* ShaderName;

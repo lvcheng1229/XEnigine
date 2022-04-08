@@ -1,0 +1,36 @@
+#pragma once
+#include "Runtime/HAL/Mch.h"
+#include "RenderResource.h"
+enum class ELayoutType
+{
+	Layout_Default,
+	Layout_PositionOnly,
+	Layout_PositionAndNormal,
+};
+
+class XVertexFactory :public XRenderResource
+{
+
+public:
+	void InitLayout(const XRHIVertexLayoutArray& LayoutArray, ELayoutType LayoutType);
+	inline std::shared_ptr<XRHIVertexLayout> GetLayout(ELayoutType LayoutType = ELayoutType::Layout_Default)const
+	{
+		switch (LayoutType)
+		{
+		case ELayoutType::Layout_Default:
+			return DefaultLayout;
+
+		default:
+			X_Assert(false);
+			break;
+		}
+	}
+protected:
+	std::shared_ptr<XRHIVertexLayout> DefaultLayout;;
+};
+
+class XVertexFactoryShaderInfo
+{
+public:
+	static std::vector<XVertexFactoryShaderInfo*>& GetVertexFactoryShaderInfo_Array();
+};
