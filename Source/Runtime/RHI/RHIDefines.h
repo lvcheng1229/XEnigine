@@ -31,6 +31,7 @@ enum class EBlendFactor
 enum class ECompareFunction
 {
 	CF_Greater,
+	CF_GreaterEqual,
 	CF_Always,
 };
 

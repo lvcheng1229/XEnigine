@@ -1271,62 +1271,61 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	//Pass4 GBufferPass BasePass
 	{
-
-
+		XRHITexture* RTTextures[4];
+		RTTextures[0] = TextureGBufferA.get();
+		RTTextures[1] = TextureGBufferB.get();
+		RTTextures[2] = TextureGBufferC.get();
+		RTTextures[3] = TextureGBufferD.get();
+		XRHIRenderPassInfo RTInfos(4, RTTextures,ERenderTargetLoadAction::EClear, TextureDepthStencil.get(), EDepthStencilLoadAction::ELoad);
+		RHICmdList.RHIBeginRenderPass(RTInfos, L"GBufferPass");
+		RHICmdList.CacheActiveRenderTargets(RTInfos);
 		{
-			//PassShaders
-		
-			
-			//GetBasePassShaders
-			XMaterialShaderInfo_Set ShaderInfos;
-			XMaterialShader_Set XShaders;
-		
-			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
-			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = nullptr;
-			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
-		
-		
-			SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
-		
-			TShaderReference<TBasePassPS<false>> BasePixelShader = TShaderReference<TBasePassPS<false>>(
-				static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]), XShaders.ShaderMap);
-			
-			
-		
-			XRHIBoundShaderStateInput_WithoutRT PassShaders;
-			std::shared_ptr<XRHIVertexLayout> RefVertexLayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default);
-			PassShaders.RHIVertexLayout = RefVertexLayout.get();
+			XGraphicsPSOInitializer_WithoutRT PassState;
+			{
+				//PassShaders
+				XRHIBoundShaderStateInput_WithoutRT PassShaders;
+				{
+					//GetBasePassShaders
+					XMaterialShaderInfo_Set ShaderInfos;
+					XMaterialShader_Set XShaders;
 
-			PassShaders.MappingRHIPixelShader = BasePixelShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
-			PassShaders.IndexRHIPixelShader = BasePixelShader->GetRHIShaderIndex();
-			
+					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
+					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = &TBasePassVS<false>::StaticShaderInfos;
+					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
 
 
-			//	XGraphicsPSOInitializer_WithoutRT BasePassPSOInit;
-			//	
-			//	BasePassPSOInit.
+					SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
+
+					TShaderReference<TBasePassVS<false>> BaseVertexShader = TShaderReference<TBasePassVS<false>>(
+						static_cast<TBasePassVS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Vertex]), XShaders.ShaderMap);
+
+					TShaderReference<TBasePassPS<false>> BasePixelShader = TShaderReference<TBasePassPS<false>>(
+						static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]), XShaders.ShaderMap);
+
+
+					std::shared_ptr<XRHIVertexLayout> RefVertexLayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default);
+					PassShaders.RHIVertexLayout = RefVertexLayout.get();
+
+					PassShaders.MappingRHIVertexShader = BaseVertexShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
+					PassShaders.IndexRHIVertexShader = BaseVertexShader->GetRHIShaderIndex();
+
+					PassShaders.MappingRHIPixelShader = BasePixelShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
+					PassShaders.IndexRHIPixelShader = BasePixelShader->GetRHIShaderIndex();
+				}
+				PassState.BoundShaderState = PassShaders;
+				PassState.BlendState = TStaticBlendState<>::GetRHI();
+				PassState.DepthStencilState = TStaticDepthStencilState<true,ECompareFunction::CF_GreaterEqual>::GetRHI();
+			}
+
+			//SubmitDraw
+			{
+				XGraphicsPSOInitializer PSOInitializer = PassState.TransToGraphicsPSOInitializer();
+				RHICmdList.ApplyCachedRenderTargets(PSOInitializer);
+
+				SetGraphicsPipelineStateFromPSOInit(RHICmdList, PSOInitializer);
+			}
 		}
 
-		mCommandList->BeginEvent(1, "GBufferPass BasePass", sizeof("GBufferPass BasePass"));
-
-		mCommandList->SetPipelineState(mOpaquePSO.Get());
-		pass_state_manager->SetRootSignature(&d3d12_root_signature);
-		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["standardVS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Pixel> (&mShaders["opaquePS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
-
-		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
-
-		RTViews[0] = static_cast<XD3D12Texture2D*>(TextureGBufferA.get())->GetRenderTargetView();
-		RTViews[1] = static_cast<XD3D12Texture2D*>(TextureGBufferB.get())->GetRenderTargetView();
-		RTViews[2] = static_cast<XD3D12Texture2D*>(TextureGBufferC.get())->GetRenderTargetView();
-		RTViews[3] = static_cast<XD3D12Texture2D*>(TextureGBufferD.get())->GetRenderTargetView();
-
-		direct_ctx->RHISetRenderTargets(4, 
-			RTViews,
-			static_cast<XD3D12Texture2D*>(TextureDepthStencil.get())->GeDepthStencilView());
-		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
-		
 		for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
 		{
 			auto& ri = mOpaqueRitems[i];
@@ -2388,78 +2387,87 @@ void CrateApp::BuildPSOs()
 		ShadowPSODesc.DSVFormat = mDepthStencilFormat;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
 	}
-	
-	XD3D12PixelShader* BaseD3DPixelShader;
-	{
-		SphereMaterial.BeginCompileShaderMap();
-
-
-
-		//PassShaders
-		
-		TShaderReference<TBasePassPS<false>> BasePixelShader;
-		//GetBasePassShaders
-		{
-			XMaterialShaderInfo_Set ShaderInfos;
-			XMaterialShader_Set XShaders;
-
-			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
-			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = nullptr;
-			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
-
-			
-			SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
-
-			BasePixelShader = TShaderReference<TBasePassPS<false>>(
-				static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]),
-				XShaders.ShaderMap);
-		}
-		XRHIPixelShader* RHIPixelShader = BasePixelShader.GetPixelShader();
-		BaseD3DPixelShader = static_cast<XD3D12PixelShader*>(RHIPixelShader);
-	}
+	SphereMaterial.BeginCompileShaderMap();
+	//XD3D12PixelShader* BaseD3DPixelShader;
+	//XD3D12VertexShader* BaseD3DVertexShader;
+	//{
+	//	
+	//
+	//
+	//
+	//	//PassShaders
+	//	
+	//	TShaderReference<TBasePassPS<false>> BasePixelShader;
+	//	TShaderReference<TBasePassVS<false>> BaseVertexShader;
+	//	//GetBasePassShaders
+	//	{
+	//		XMaterialShaderInfo_Set ShaderInfos;
+	//		XMaterialShader_Set XShaders;
+	//
+	//		ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
+	//		ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = &TBasePassVS<false>::StaticShaderInfos;
+	//		ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
+	//
+	//		
+	//		SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
+	//
+	//		BasePixelShader = TShaderReference<TBasePassPS<false>>(
+	//			static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]),
+	//			XShaders.ShaderMap);
+	//
+	//		BaseVertexShader = TShaderReference<TBasePassVS<false>>(
+	//			static_cast<TBasePassVS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Vertex]),
+	//			XShaders.ShaderMap);
+	//	}
+	//	XRHIPixelShader* RHIPixelShader = BasePixelShader.GetPixelShader();
+	//	BaseD3DPixelShader = static_cast<XD3D12PixelShader*>(RHIPixelShader);
+	//
+	//	XRHIVertexShader* RHIVertexShader = BaseVertexShader.GetVertexShader();
+	//	BaseD3DVertexShader = static_cast<XD3D12VertexShader*>(RHIVertexShader);
+	//}
 
 	
 
 	//BasePass
-	{
-		XRHIVertexLayout* BaseRHILayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default).get();
-		XD3D12VertexLayout* BassLayout = static_cast<XD3D12VertexLayout*>(BaseRHILayout);
-		
-
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
-
-		ZeroMemory(&opaquePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		opaquePsoDesc.InputLayout = { BassLayout->VertexElements.data(), (UINT)BassLayout->VertexElements.size()};
-		opaquePsoDesc.pRootSignature = d3d12_root_signature.GetDXRootSignature();
-		opaquePsoDesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["standardVS"].GetByteCode()->GetBufferPointer()),
-			mShaders["standardVS"].GetByteCode()->GetBufferSize()
-		};
-		opaquePsoDesc.PS = BaseD3DPixelShader->D3DByteCode;
-		//{
-		//	reinterpret_cast<BYTE*>(mShaders["opaquePS"].GetByteCode()->GetBufferPointer()),
-		//	mShaders["opaquePS"].GetByteCode()->GetBufferSize()
-		//};
-
-		//TODO
-		opaquePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		opaquePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		opaquePsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-
-		opaquePsoDesc.SampleMask = UINT_MAX;
-		opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		opaquePsoDesc.NumRenderTargets = 4;
-		opaquePsoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		opaquePsoDesc.RTVFormats[1] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		opaquePsoDesc.RTVFormats[2] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		opaquePsoDesc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		opaquePsoDesc.SampleDesc.Count = 1;
-		opaquePsoDesc.SampleDesc.Quality = 0;
-		opaquePsoDesc.DSVFormat = mDepthStencilFormat;
-		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mOpaquePSO)));
-	}
+	//{
+	//	XRHIVertexLayout* BaseRHILayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default).get();
+	//	XD3D12VertexLayout* BassLayout = static_cast<XD3D12VertexLayout*>(BaseRHILayout);
+	//	
+	//
+	//	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
+	//
+	//	ZeroMemory(&opaquePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	//	opaquePsoDesc.InputLayout = { BassLayout->VertexElements.data(), (UINT)BassLayout->VertexElements.size()};
+	//	opaquePsoDesc.pRootSignature = d3d12_root_signature.GetDXRootSignature();
+	//	opaquePsoDesc.VS = BaseD3DVertexShader->D3DByteCode;
+	//	//{
+	//	//	reinterpret_cast<BYTE*>(mShaders["standardVS"].GetByteCode()->GetBufferPointer()),
+	//	//	mShaders["standardVS"].GetByteCode()->GetBufferSize()
+	//	//};
+	//	opaquePsoDesc.PS = BaseD3DPixelShader->D3DByteCode;
+	//	//{
+	//	//	reinterpret_cast<BYTE*>(mShaders["opaquePS"].GetByteCode()->GetBufferPointer()),
+	//	//	mShaders["opaquePS"].GetByteCode()->GetBufferSize()
+	//	//};
+	//
+	//	//TODO
+	//	opaquePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	//	opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	//	opaquePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	//	opaquePsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+	//
+	//	opaquePsoDesc.SampleMask = UINT_MAX;
+	//	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	//	opaquePsoDesc.NumRenderTargets = 4;
+	//	opaquePsoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//	opaquePsoDesc.RTVFormats[1] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//	opaquePsoDesc.RTVFormats[2] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//	opaquePsoDesc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//	opaquePsoDesc.SampleDesc.Count = 1;
+	//	opaquePsoDesc.SampleDesc.Quality = 0;
+	//	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
+	//	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mOpaquePSO)));
+	//}
 
 	//FullScreenPass
 	{
@@ -2565,6 +2573,17 @@ void CrateApp::BuildRenderItems()
 		gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 		mAllRitems.push_back(std::move(gridRitem));
 
+
+		auto sphereRitem2 = std::make_unique<RenderItem>();
+		XMStoreFloat4x4(&sphereRitem2->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(2.0f, 1.5f, 0.0f));
+		//XMStoreFloat4x4(&sphereRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
+		sphereRitem2->ObjCBIndex = 3;
+		sphereRitem2->Mat = mMaterials["metal"].get();
+		sphereRitem2->Geo = mGeometries["shapeGeo"].get();
+		sphereRitem2->IndexCount = sphereRitem2->Geo->DrawArgs["sphere"].IndexCount;
+		sphereRitem2->StartIndexLocation = sphereRitem2->Geo->DrawArgs["sphere"].StartIndexLocation;
+		sphereRitem2->BaseVertexLocation = sphereRitem2->Geo->DrawArgs["sphere"].BaseVertexLocation;
+		mAllRitems.push_back(std::move(sphereRitem2));
 		// All the render items are opaque.
 		for (auto& e : mAllRitems)
 			mOpaqueRitems.push_back(e.get());

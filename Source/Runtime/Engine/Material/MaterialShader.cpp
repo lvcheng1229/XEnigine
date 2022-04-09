@@ -35,11 +35,11 @@ public:
 			MapSet.ShaderInfos.push_back(*iter);
 		}
 
-		std::vector<XVertexFactoryShaderInfo*>& FactoryInfos = XVertexFactoryShaderInfo::GetVertexFactoryShaderInfo_Array();
-		for (auto iter = FactoryInfos.begin(); iter != FactoryInfos.end(); ++iter)
-		{
-
-		}
+		//std::vector<XVertexFactoryShaderInfo*>& FactoryInfos = XVertexFactoryShaderInfo::GetVertexFactoryShaderInfo_Array();
+		//for (auto iter = FactoryInfos.begin(); iter != FactoryInfos.end(); ++iter)
+		//{
+		//
+		//}
 	}
 
 	const XMaterialShaderMapSet& GetSet(const XMaterialShaderParameters_ForIndex& Parameters)

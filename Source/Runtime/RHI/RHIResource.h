@@ -130,6 +130,18 @@ struct XRHIBoundShaderStateInput
 	XRHIVertexLayout* RHIVertexLayout;
 	XRHIVertexShader* RHIVertexShader;
 	XRHIPixelShader* RHIPixelShader;
+	XRHIBoundShaderStateInput() :
+		RHIVertexLayout(nullptr),
+		RHIVertexShader(nullptr),
+		RHIPixelShader(nullptr) {}
+
+	XRHIBoundShaderStateInput(
+		XRHIVertexLayout* RHIVertexLayoutIn,
+		XRHIVertexShader* RHIVertexShaderIn,
+		XRHIPixelShader* RHIPixelShaderIn) :
+		RHIVertexLayout(RHIVertexLayoutIn),
+		RHIVertexShader(RHIVertexShaderIn),
+		RHIPixelShader(RHIPixelShaderIn) {}
 };
 
 class XGraphicsPSOInitializer

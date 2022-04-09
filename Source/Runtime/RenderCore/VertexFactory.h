@@ -1,6 +1,8 @@
 #pragma once
 #include "Runtime/HAL/Mch.h"
 #include "RenderResource.h"
+#include "ShaderCore.h"
+
 enum class ELayoutType
 {
 	Layout_Default,
@@ -32,5 +34,18 @@ protected:
 class XVertexFactoryShaderInfo
 {
 public:
+	inline const char* GetShaderFileName()
+	{
+		return ShaderFileName;
+	}
+
+	inline void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings)
+	{
+		OutSettings.IncludePathToCode["Generated/VertexFactory.hlsl"] = "#inlcude \"" + std::string(GetShaderFileName())+"\"";
+	}
+
 	static std::vector<XVertexFactoryShaderInfo*>& GetVertexFactoryShaderInfo_Array();
+
+private:
+	const char* ShaderFileName;
 };

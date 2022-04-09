@@ -11,7 +11,8 @@ cbuffer cbPass
 }
 
 
-//#include "Mapping/VertexFactory.hlsl"
+//#include "Generated/VertexFactory.hlsl"
+
 #include "LocalVertexFactory.hlsl"
 
 void VS(FVertexFactoryInput Input,

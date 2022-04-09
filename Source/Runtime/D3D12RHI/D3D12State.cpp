@@ -1,5 +1,6 @@
 #include <string>
 #include "d3dx12.h"
+#include "D3D12Common.h"
 #include "D3D12State.h"
 #include "D3D12Shader.h"
 #include "D3D12PlatformRHI.h"
@@ -12,6 +13,7 @@ static D3D12_COMPARISON_FUNC TranslateCompareFunction(ECompareFunction CompareFu
 	switch (CompareFunction)
 	{
 	case ECompareFunction::CF_Greater: return D3D12_COMPARISON_FUNC_GREATER;
+	case ECompareFunction::CF_GreaterEqual: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
 	case ECompareFunction::CF_Always:return D3D12_COMPARISON_FUNC_ALWAYS;
 	default: X_Assert(false); return D3D12_COMPARISON_FUNC_ALWAYS;
 	};
@@ -62,7 +64,8 @@ static void GetPSODescAndHash(
 	{
 		PSODesc.RTVFormats[i] = (DXGI_FORMAT)GPixelFormats[(int)PSOInit.RT_Format[i]].PlatformFormat;
 	}
-	PSODesc.DSVFormat = (DXGI_FORMAT)GPixelFormats[(int)PSOInit.DS_Format].PlatformFormat;
+	
+	PSODesc.DSVFormat = FindDepthStencilDXGIFormat((DXGI_FORMAT)GPixelFormats[(int)PSOInit.DS_Format].PlatformFormat);
 
 	//default
 	PSODesc.SampleMask = UINT_MAX;

@@ -18,3 +18,11 @@ inline DXGI_FORMAT FindShaderResourceDXGIFormat(DXGI_FORMAT InFormat)
 	}
 	return InFormat;
 }
+inline DXGI_FORMAT FindTextureResourceDXGIFormat(DXGI_FORMAT InFormat)
+{
+	switch (InFormat)
+	{
+	case DXGI_FORMAT_R24G8_TYPELESS: return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	return InFormat;
+}
