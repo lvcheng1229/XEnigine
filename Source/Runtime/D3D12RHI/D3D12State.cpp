@@ -34,6 +34,8 @@ static D3D12_BLEND TranslateBlendFactor(EBlendFactor BlendFactor)
 	{
 	case EBlendFactor::BF_One: return D3D12_BLEND_ONE;
 	case EBlendFactor::BF_Zero: return D3D12_BLEND_ZERO;
+	case EBlendFactor::BF_SourceAlpha: return D3D12_BLEND_SRC_ALPHA;
+	case EBlendFactor::BF_InverseSourceAlpha: return D3D12_BLEND_INV_SRC_ALPHA;
 	default: X_Assert(false); return D3D12_BLEND_ZERO;
 	};
 }

@@ -13,3 +13,23 @@ XD3D12PlatformRHI::XD3D12PlatformRHI(XD3D12AbstractDevice* InAbsDevice)
 	GPixelFormats[(int)EPixelFormat::FT_R16_FLOAT].PlatformFormat = DXGI_FORMAT_R16_FLOAT;
 }
 
+void* XD3D12PlatformRHI::LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)
+{
+	XD3D12VertexBuffer* D3DVertexBuffer = static_cast<XD3D12VertexBuffer*>(VertexBuffer);
+	return D3DVertexBuffer->ResourcePtr.GetMappedCPUResourcePtr();
+}
+void XD3D12PlatformRHI::UnLockVertexBuffer(XRHIVertexBuffer* VertexBuffer)
+{
+
+}
+
+void* XD3D12PlatformRHI::LockIndexBuffer(XRHIIndexBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)
+{
+	XD3D12IndexBuffer* D3DIndexBuffer = static_cast<XD3D12IndexBuffer*>(IndexBuffer);
+	return D3DIndexBuffer->ResourcePtr.GetMappedCPUResourcePtr();
+}
+
+void XD3D12PlatformRHI::UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)
+{
+}
+

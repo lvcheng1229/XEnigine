@@ -10,10 +10,20 @@ BufferType* XD3D12AbstractDevice::CreateRHIVIBuffer(
 	EBufferUsage InUsage, XRHIResourceCreateData& CreateData)
 {
 	const bool bDynamic = ((uint32)InUsage & (uint32)EBufferUsage::BUF_AnyDynamic) ? true : false;
-	X_Assert(bDynamic == false);//Dont Surpport Dynamic Now
+	//X_Assert(bDynamic == false);//Dont Surpport Dynamic Now
 	
 	BufferType* BufferRet = new BufferType(Stride, Size);
-	VIBufferBufferAllocDefault.Allocate(Size, Alignment, BufferRet->ResourcePtr);
+	if (bDynamic)
+	{
+		ConstantBufferUploadHeapAlloc.Allocate(Size, Alignment, BufferRet->ResourcePtr);
+	}
+	else
+	{
+		VIBufferBufferAllocDefault.Allocate(Size, Alignment, BufferRet->ResourcePtr);
+	}
+
+	
+	
 
 	if (CreateData.ResourceArray != nullptr && bDynamic == false)
 	{

@@ -2,6 +2,7 @@
 #include <memory>
 #include "RHIResource.h"
 
+class XRHICommandList;
 class XPlatformRHI
 {
 public:
@@ -32,7 +33,15 @@ public:
 
 	virtual std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data) = 0;
+
+	//Lock/UnLock Vertex Buffer
+	virtual void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI) = 0;
+	virtual void UnLockVertexBuffer(XRHIVertexBuffer* VertexBuffer) = 0;
+
+	virtual void* LockIndexBuffer(XRHIIndexBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI) = 0;
+	virtual void UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer) = 0;
 };
+
 
 XPlatformRHI* PlatformCreateDynamicRHI();
 extern XPlatformRHI* GPlatformRHI;

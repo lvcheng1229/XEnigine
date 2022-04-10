@@ -151,13 +151,28 @@ public:
 	{
 		GetContext()->SetVertexBuffer(RHIVertexBuffer, VertexBufferSlot, OffsetFormVBBegin);
 	}
-
-	//inline std::shared_ptr<XRHITexture2D> RHICreateRHITexture2D(uint32 width, uint32 height, uint32 SizeZ,
-	//	bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
-	//{
-	//
-	//}
 };
+
+//TODO
+
+
+inline void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)
+{
+	return GPlatformRHI->LockVertexBuffer(VertexBuffer, Offset, SizeRHI);
+}
+inline void UnLockVertexBuffer(XRHIVertexBuffer* VertexBuffer)
+{
+	return GPlatformRHI->UnLockVertexBuffer(VertexBuffer);
+}
+
+inline void* LockIndexBuffer(XRHIIndexBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)
+{
+	return GPlatformRHI->LockIndexBuffer(IndexBuffer, Offset, SizeRHI);
+}
+inline void UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)
+{
+	return GPlatformRHI->UnLockIndexBuffer(IndexBuffer);
+}
 
 inline std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ,
 	bool bTextureArray, bool bCubeTexture, EPixelFormat Format,

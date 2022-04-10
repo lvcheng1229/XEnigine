@@ -26,6 +26,15 @@ enum class EBlendFactor
 {
 	BF_Zero,
 	BF_One,
+	BF_SourceAlpha,
+	BF_InverseSourceAlpha,
+};
+
+enum class EResourceLockMode
+{
+	RLM_ReadOnly,
+	RLM_WriteOnly,
+	RLM_Num
 };
 
 enum class ECompareFunction

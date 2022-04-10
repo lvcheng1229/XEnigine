@@ -44,6 +44,8 @@
 //ImGUI Begin
 #include <backends/imgui_impl_dx12.h>
 #include <backends/imgui_impl_win32.h>
+
+#include "Runtime/Engine/UIBackend.h"
 //ImGUI End
 
 
@@ -800,7 +802,7 @@ private:
 	//UI
 	uint32 IMGUI_IndexOfDescInHeap;
 	uint32 IMGUI_IndexOfHeap;
-
+	RHIUI m_RHIUI;
 //BasePass
 private:
 	XLocalVertexFactory LocalVertexFactory;
@@ -1024,20 +1026,24 @@ bool CrateApp::Initialize()
 	OutputDebugString(L"2222\n");
 
 	////ImGUI Begin
-	//IMGUI_CHECKVERSION();
-	//ImGui::CreateContext();
-	//ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//ImGui::StyleColorsDark();
-	//ImGui_ImplWin32_Init(mhMainWnd);
-	//
-	//
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGui::StyleColorsDark();
+	
+
+
+	ImGui_ImplWin32_Init(mhMainWnd);
 	//abstrtact_device.GetShaderResourceDescArrayManager()->AllocateDesc(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap);
 	//ImGui_ImplDX12_Init(md3dDevice.Get(), SwapChainBufferCount,
 	//	mBackBufferFormat, 
 	//	abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap),
 	//	abstrtact_device.GetShaderResourceDescArrayManager()->compute_cpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap),
 	//	abstrtact_device.GetShaderResourceDescArrayManager()->compute_gpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap));
-	////ImGUI End
+	//
+
+	m_RHIUI.ImGui_Impl_RHI_Init();
+	//ImGUI End
 
     return true;
 }
@@ -1578,6 +1584,34 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	}
 
+
+	{
+	
+		//ImGUI Begin
+		m_RHIUI.ImGui_Impl_RHI_NewFrame(&RHICmdList);
+		//ImGui_ImplDX12_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		bool show_demo_window = true;
+		ImGui::ShowDemoWindow(&show_demo_window);
+		ImGui::Render();
+
+		//imgui.cpp h
+		std::cout << "IsWindowActiveAndVisible" << std::endl;
+
+
+		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+		m_RHIUI.ImGui_Impl_RHI_RenderDrawData(ImGui::GetDrawData(), &RHICmdList, TextureSceneColorDeffered.get());
+		//
+
+		////direct_ctx->RHISetShaderTexture();
+		//ID3D12DescriptorHeap* const DescHeap[] = {abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap)};
+		//mCommandList->SetDescriptorHeaps(1, DescHeap);
+		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+		////ImGUI End
+	}
+
 	//Pass9 FinalPass ToneMapping
 	{
 		mCommandList->BeginEvent(1, "FinalPass", sizeof("FinalPass"));
@@ -1597,26 +1631,15 @@ void CrateApp::Renderer(const GameTimer& gt)
 		
 		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
 		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
-
-
-
-		////ImGUI Begin
-		//ImGui_ImplDX12_NewFrame();
-		//ImGui_ImplWin32_NewFrame();
-		//ImGui::NewFrame();
-		//
-		//bool show_demo_window = true;
-		//ImGui::ShowDemoWindow(&show_demo_window);
-		//
-		//ImGui::Render();
-		////direct_ctx->RHISetShaderTexture();
-		//ID3D12DescriptorHeap* const DescHeap[] = {abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap)};
-		//mCommandList->SetDescriptorHeaps(1, DescHeap);
-		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
-		////ImGUI End
-
 		mCommandList->EndEvent();
+
+
+
+
+		
 	}
+
+
 
 	{
 		XD3D12PlatformRHI::TransitionResource(
@@ -2652,17 +2675,17 @@ void CrateApp::TempDelete()
 	if (GGlobalShaderMapping)
 		delete GGlobalShaderMapping;
 	
-	////ImGUI Begin
-	//ImGui_ImplDX12_Shutdown();
-	//ImGui_ImplWin32_Shutdown();
-	//ImGui::DestroyContext();
-	////ImGUI End
+	//ImGUI Begin
+	m_RHIUI.ImGui_Impl_RHI_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+	//ImGUI End
 }
 
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(416);
+	//_CrtSetBreakAlloc(4561);
 	int* a = new int(5);
 	try
 	{

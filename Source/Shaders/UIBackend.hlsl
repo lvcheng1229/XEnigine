@@ -1,4 +1,4 @@
-cbuffer vertexBuffer : register(b0)
+cbuffer vertexBuffer
 {
     float4x4 ProjectionMatrix;
 };
@@ -6,8 +6,8 @@ cbuffer vertexBuffer : register(b0)
 struct VS_INPUT
 {
     float2 pos : ATTRIBUTE0;
-    float4 col : ATTRIBUTE1;
-    float2 uv  : ATTRIBUTE2;
+    float2 uv  : ATTRIBUTE1;
+    float4 col : ATTRIBUTE2;
 };
             
 struct PS_INPUT
@@ -28,11 +28,14 @@ PS_INPUT UI_VS(VS_INPUT input)
 
 
 SamplerState sampler0  : register(s4,space1000);
-Texture2D texture0 : register(t0);
+Texture2D texture0;
 
 
 float4 UI_PS(PS_INPUT input) : SV_Target
 {
     float4 out_col = input.col * texture0.Sample(sampler0, input.uv);
+
+    //Temp  
+    out_col=float4(pow(out_col.rgb, float3(2.2,2.2,2.2)),out_col.a);
     return out_col;
 }

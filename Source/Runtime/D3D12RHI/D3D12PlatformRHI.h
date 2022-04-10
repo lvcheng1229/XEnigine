@@ -37,7 +37,14 @@ public:
 
 	std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)override;
-	
+
+
+	//Lock/UnLock Vertex Buffer
+	void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)override;
+	void UnLockVertexBuffer(XRHIVertexBuffer* VertexBuffer)override;
+
+	void* LockIndexBuffer(XRHIIndexBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)override;
+	void UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)override;
 public:
 	XD3D12PhysicDevice* PhyDevice;
 	XD3D12AbstractDevice* AbsDevice;

@@ -11,9 +11,11 @@ using namespace DirectX;
 
 
 
+
 LRESULT CALLBACK
 MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	
     return D3DApp::GetApp()->MsgProc(hwnd, msg, wParam, lParam);
 }
 
@@ -129,9 +131,15 @@ void D3DApp::OnResize()
     mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	direct_cmd_queue->CommandQueueWaitFlush();
 }
- 
+
+
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	//ImGUI Begin
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+		return true;
+	//ImGUI End
+
 	switch( msg )
 	{
 	// WM_ACTIVATE is sent when the window is activated or deactivated.  
