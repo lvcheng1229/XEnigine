@@ -115,6 +115,7 @@ void MemoryMappedFile::Init(std::wstring filename, UINT fileSize)
     m_file = CreateFile2(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, (found) ? OPEN_EXISTING : CREATE_NEW, nullptr);
     X_Assert(m_file != INVALID_HANDLE_VALUE);
 
+
     LARGE_INTEGER realFileSize = {};
     BOOL flag = GetFileSizeEx(m_file, &realFileSize); 
     X_Assert(flag == true);

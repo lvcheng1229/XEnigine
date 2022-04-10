@@ -29,6 +29,11 @@ public:
 	void AllocateDesc(uint32& index_of_desc_in_heap, uint32& index_of_heap);
 	void Create(XD3D12PhysicDevice* device_in, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32 num);
 
+	inline ID3D12DescriptorHeap* GetDxHeapByIndex(const uint32 IndexOfHeap)
+	{
+		return all_desc_arrays[IndexOfHeap].d3d12_heap.Get();
+	}
+
 	inline D3D12_CPU_DESCRIPTOR_HANDLE compute_cpu_ptr(const uint32 index_of_desc_in_heap,const  uint32 index_of_heap)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE ret_ptr = { 

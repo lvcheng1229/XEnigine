@@ -314,22 +314,13 @@ XPlatformRHI* PlatformCreateDynamicRHI() // In Crate.cpp
 
 bool D3DApp::InitDirect3D()
 {
-	
-
 	ComPtr<ID3D12Debug> debugController;
 	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
 	debugController->EnableDebugLayer();
-	
-	//ComPtr<ID3D12Debug> spDebugController0;
-	//ComPtr<ID3D12Debug1> spDebugController1;
-	//ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&spDebugController0)));
-	//ThrowIfFailed(spDebugController0->QueryInterface(IID_PPV_ARGS(&spDebugController1)));
-	//spDebugController1->SetEnableGPUBasedValidation(true);
 
 	Adapter.Create();
 	Device.Create(&Adapter);
 	TempPhyDevice = &Device;
-	
 
 	//mdxgiFactory = Adapter.GetDXFactory();
 	md3dDevice = Device.GetDXDevice();

@@ -40,6 +40,13 @@
 
 #include "Runtime/Core/Math/Math.h"
 
+
+//ImGUI Begin
+#include <backends/imgui_impl_dx12.h>
+#include <backends/imgui_impl_win32.h>
+//ImGUI End
+
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
@@ -789,6 +796,10 @@ private:
 	XVector3 LightColor = { 1,1,1 };
 	float LightIntensity = 7.0f;
 
+private:
+	//UI
+	uint32 IMGUI_IndexOfDescInHeap;
+	uint32 IMGUI_IndexOfHeap;
 
 //BasePass
 private:
@@ -1011,6 +1022,23 @@ bool CrateApp::Initialize()
     mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	direct_cmd_queue->CommandQueueWaitFlush();
 	OutputDebugString(L"2222\n");
+
+	//ImGUI Begin
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGui::StyleColorsDark();
+	ImGui_ImplWin32_Init(mhMainWnd);
+
+
+	abstrtact_device.GetShaderResourceDescArrayManager()->AllocateDesc(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap);
+	ImGui_ImplDX12_Init(md3dDevice.Get(), SwapChainBufferCount,
+		mBackBufferFormat, 
+		abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap),
+		abstrtact_device.GetShaderResourceDescArrayManager()->compute_cpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap),
+		abstrtact_device.GetShaderResourceDescArrayManager()->compute_gpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap));
+	//ImGUI End
+
     return true;
 }
  
@@ -1106,6 +1134,12 @@ void CrateApp::Renderer(const GameTimer& gt)
 	//std::wstring str = L"xx" + std::to_wstring(i) + L"xx\n";
 	//OutputDebugString(str.c_str());
 	
+
+
+
+
+
+
 	pass_state_manager->ResetDescHeapIndex();
 	pass_state_manager->TempResetPSO(&static_pso);
 	//Pass1 DepthPrePass
@@ -1563,6 +1597,29 @@ void CrateApp::Renderer(const GameTimer& gt)
 		
 		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
 		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
+
+
+
+		//ImGUI Begin
+		ImGui_ImplDX12_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		bool show_demo_window = true;
+		ImGui::ShowDemoWindow(&show_demo_window);
+
+		ImGui::Render();
+		//direct_ctx->RHISetShaderTexture();
+		ID3D12DescriptorHeap* const DescHeap[] = {abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap)};
+		mCommandList->SetDescriptorHeaps(1, DescHeap);
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+		//ImGUI End
+
+
+		int *a=new int(5);
+		int& b = *a;
+		std::cout << &b << std::endl;
+		std::cout << a << std::endl;
 
 		mCommandList->EndEvent();
 	}
@@ -2600,6 +2657,12 @@ void CrateApp::TempDelete()
 		delete GPlatformRHI;
 	if (GGlobalShaderMapping)
 		delete GGlobalShaderMapping;
+	
+	//ImGUI Begin
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+	//ImGUI End
 }
 
 int main()

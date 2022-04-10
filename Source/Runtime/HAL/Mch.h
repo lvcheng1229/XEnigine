@@ -1,5 +1,7 @@
 #pragma once
 
+#define XSTR(x) #x
+
 #ifdef X_PLATFORM_WIN
 
 #include <windows.h>

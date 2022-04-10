@@ -36,5 +36,7 @@
 /bin-int/*
 /.vs/*
 /build/*
+/cbuild/*
 /boost_1_78_0/*
 /packages/*
+/ThridParty/*
