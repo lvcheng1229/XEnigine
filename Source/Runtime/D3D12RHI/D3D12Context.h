@@ -59,15 +59,15 @@ public:
 		SetRenderTargetsAndClear(OutRTInfo);
 	}
 
-	//Resource Create
-	std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(
-		uint32 width, uint32 height, uint32 SizeZ,
-		bool bTextureArray, bool bCubeTexture, EPixelFormat Format,
-		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
-	std::shared_ptr<XRHITexture3D> CreateD3D12Texture3D(
-		uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
-		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
+	//TODO Remove ctx->CreateD3D12Texture2D
+	//Resource Create 
+	//std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
+	//	bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
+	//
+	//std::shared_ptr<XRHITexture3D> CreateD3D12Texture3D(
+	//	uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
+	//	ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
 	//Deprecated in the future
 	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);

@@ -23,6 +23,8 @@ public:
 	void Create(XD3D12PhysicDevice* PhysicalDeviceIn);
 
 	inline XD3D12PhysicDevice*		GetPhysicalDevice()						{ return PhysicalDevice; }
+
+	//index 0 is default Contex
 	inline XD3DDirectContex*		GetDirectContex(uint32 index_thread)	{ return &DirectCtxs[index_thread]; }
 	inline XD3DBuddyAllocator*		GetConstantBufferUploadHeapAlloc()		{ return &ConstantBufferUploadHeapAlloc; }
 	

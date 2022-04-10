@@ -56,6 +56,7 @@ enum class EVertexElementType
 	VET_Float2,
 	VET_Float3,
 	VET_Float4,
+	VET_Color,
 	VET_PackedNormal,	// FPackedNormal
 	VET_MAX,
 	VET_NumBits = 5,

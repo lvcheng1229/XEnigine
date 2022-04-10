@@ -5,9 +5,9 @@ cbuffer vertexBuffer : register(b0)
 
 struct VS_INPUT
 {
-    float2 pos : POSITION;
-    float4 col : COLOR0;
-    float2 uv  : TEXCOORD0;
+    float2 pos : ATTRIBUTE0;
+    float4 col : ATTRIBUTE1;
+    float2 uv  : ATTRIBUTE2;
 };
             
 struct PS_INPUT

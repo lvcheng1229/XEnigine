@@ -1,6 +1,9 @@
 #pragma once
 
-#define XSTR(x) #x
+#define X_STR(x) X_STR_IMPL(x)
+#define X_STR_IMPL(x) #x
+
+#define X_TEXT(x) L##x
 
 #ifdef X_PLATFORM_WIN
 

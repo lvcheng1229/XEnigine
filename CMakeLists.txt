@@ -51,6 +51,12 @@ target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 link_libraries(imgui)
 #ImGUI End
 
+
+#ImGUI Begin
+set(BOOST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThridParty/boost_1_78_0)
+include_directories(${BOOST_SOURCE_DIR})
+#ImGUI End
+
 #set(EXE_SOURCES
 #${XENGINE_ROOT_DIR}/Source/CrateApp.cpp
 #)

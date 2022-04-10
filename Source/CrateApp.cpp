@@ -1023,21 +1023,21 @@ bool CrateApp::Initialize()
 	direct_cmd_queue->CommandQueueWaitFlush();
 	OutputDebugString(L"2222\n");
 
-	//ImGUI Begin
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	ImGui::StyleColorsDark();
-	ImGui_ImplWin32_Init(mhMainWnd);
-
-
-	abstrtact_device.GetShaderResourceDescArrayManager()->AllocateDesc(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap);
-	ImGui_ImplDX12_Init(md3dDevice.Get(), SwapChainBufferCount,
-		mBackBufferFormat, 
-		abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap),
-		abstrtact_device.GetShaderResourceDescArrayManager()->compute_cpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap),
-		abstrtact_device.GetShaderResourceDescArrayManager()->compute_gpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap));
-	//ImGUI End
+	////ImGUI Begin
+	//IMGUI_CHECKVERSION();
+	//ImGui::CreateContext();
+	//ImGuiIO& io = ImGui::GetIO(); (void)io;
+	//ImGui::StyleColorsDark();
+	//ImGui_ImplWin32_Init(mhMainWnd);
+	//
+	//
+	//abstrtact_device.GetShaderResourceDescArrayManager()->AllocateDesc(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap);
+	//ImGui_ImplDX12_Init(md3dDevice.Get(), SwapChainBufferCount,
+	//	mBackBufferFormat, 
+	//	abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap),
+	//	abstrtact_device.GetShaderResourceDescArrayManager()->compute_cpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap),
+	//	abstrtact_device.GetShaderResourceDescArrayManager()->compute_gpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap));
+	////ImGUI End
 
     return true;
 }
@@ -1600,26 +1600,20 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 
 
-		//ImGUI Begin
-		ImGui_ImplDX12_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
-		bool show_demo_window = true;
-		ImGui::ShowDemoWindow(&show_demo_window);
-
-		ImGui::Render();
-		//direct_ctx->RHISetShaderTexture();
-		ID3D12DescriptorHeap* const DescHeap[] = {abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap)};
-		mCommandList->SetDescriptorHeaps(1, DescHeap);
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
-		//ImGUI End
-
-
-		int *a=new int(5);
-		int& b = *a;
-		std::cout << &b << std::endl;
-		std::cout << a << std::endl;
+		////ImGUI Begin
+		//ImGui_ImplDX12_NewFrame();
+		//ImGui_ImplWin32_NewFrame();
+		//ImGui::NewFrame();
+		//
+		//bool show_demo_window = true;
+		//ImGui::ShowDemoWindow(&show_demo_window);
+		//
+		//ImGui::Render();
+		////direct_ctx->RHISetShaderTexture();
+		//ID3D12DescriptorHeap* const DescHeap[] = {abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap)};
+		//mCommandList->SetDescriptorHeaps(1, DescHeap);
+		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+		////ImGUI End
 
 		mCommandList->EndEvent();
 	}
@@ -2005,7 +1999,7 @@ void CrateApp::LoadTextures()
 		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Metal_Gold_D.TGA", &w, &h, &n, 0);
 		if (n == 3) { X_Assert(false); }
 		
-		TextureMetalBaseColor = direct_ctx->CreateD3D12Texture2D(w, h,1, false, false,
+		TextureMetalBaseColor = RHICreateTexture2D(w, h,1, false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM_SRGB
 			,ETextureCreateFlags(TexCreate_SRGB),1
 			, BaseColorData);
@@ -2025,7 +2019,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 2] = NormalMapData[k + 2];
 			FourChannelData[i + 3] = 0b11111111;
 		}
-		TextureMetalNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n, 1, false, false,
+		TextureMetalNormal = RHICreateTexture2D(w_n, h_n, 1, false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM
 			,ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
@@ -2046,7 +2040,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 2] = RoughnessMapData[k + 2];
 			FourChannelData[i + 3] = 0b11111111;
 		}
-		TextureRoughness = direct_ctx->CreateD3D12Texture2D(w_r, h_r, 1, false, false,
+		TextureRoughness = RHICreateTexture2D(w_r, h_r, 1, false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
@@ -2059,7 +2053,7 @@ void CrateApp::LoadTextures()
 		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA", &w, &h, &n, 0);
 		if (n == 3) { X_Assert(false); }
 		
-		TextureWoodBaseColor = direct_ctx->CreateD3D12Texture2D(w, h, 1,false, false,
+		TextureWoodBaseColor = RHICreateTexture2D(w, h, 1,false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM_SRGB
 			, ETextureCreateFlags(TexCreate_SRGB), 1
 			, BaseColorData);
@@ -2079,7 +2073,7 @@ void CrateApp::LoadTextures()
 			FourChannelData[i + 2] = NormalMapData[k + 2];
 			FourChannelData[i + 3] = 0b11111111;
 		}
-		TextureWoodNormal = direct_ctx->CreateD3D12Texture2D(w_n, h_n, 1, false, false,
+		TextureWoodNormal = RHICreateTexture2D(w_n, h_n, 1, false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_None), 1
 			, FourChannelData);
@@ -2089,67 +2083,67 @@ void CrateApp::LoadTextures()
 
 
 	{
-		TextureGBufferA = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
+		TextureGBufferA = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R16G16B16A16_FLOAT
 			,ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		TextureGBufferB = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
+		TextureGBufferB = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		TextureGBufferC = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
+		TextureGBufferC = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		TextureGBufferD = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
+		TextureGBufferD = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		TextureSceneColorDeffered = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
+		TextureSceneColorDeffered = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
 
-		ShadowTexture0 = direct_ctx->CreateD3D12Texture2D(ShadowMapWidth, ShadowMapHeight, 1, false, false,
+		ShadowTexture0 = RHICreateTexture2D(ShadowMapWidth, ShadowMapHeight, 1, false, false,
 			EPixelFormat::FT_R24G8_TYPELESS
 			, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		ShadowMaskTexture = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
+		ShadowMaskTexture = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		FurthestHZBOutput0 = direct_ctx->CreateD3D12Texture2D(512, 512, 1, false, false,
+		FurthestHZBOutput0 = RHICreateTexture2D(512, 512, 1, false, false,
 			EPixelFormat::FT_R16_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 5
 			, nullptr);
 
-		SSROutput = direct_ctx->CreateD3D12Texture2D(mClientWidth, mClientHeight, 1, false, false,
+		SSROutput = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		TransmittanceLutUAV = direct_ctx->CreateD3D12Texture2D(256, 64, 1, false, false,
+		TransmittanceLutUAV = RHICreateTexture2D(256, 64, 1, false, false,
 			EPixelFormat::FT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		MultiScatteredLuminanceLutUAV = direct_ctx->CreateD3D12Texture2D(32, 32, 1, false, false,
+		MultiScatteredLuminanceLutUAV = RHICreateTexture2D(32, 32, 1, false, false,
 			EPixelFormat::FT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		SkyViewLutUAV = direct_ctx->CreateD3D12Texture2D(192, 104, 1, false, false,
+		SkyViewLutUAV = RHICreateTexture2D(192, 104, 1, false, false,
 			EPixelFormat::FT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		CameraAerialPerspectiveVolumeUAV = direct_ctx->CreateD3D12Texture3D(32, 32, 16,
+		CameraAerialPerspectiveVolumeUAV = RHICreateTexture3D(32, 32, 16,
 			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
@@ -2658,11 +2652,11 @@ void CrateApp::TempDelete()
 	if (GGlobalShaderMapping)
 		delete GGlobalShaderMapping;
 	
-	//ImGUI Begin
-	ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-	//ImGUI End
+	////ImGUI Begin
+	//ImGui_ImplDX12_Shutdown();
+	//ImGui_ImplWin32_Shutdown();
+	//ImGui::DestroyContext();
+	////ImGUI End
 }
 
 int main()
