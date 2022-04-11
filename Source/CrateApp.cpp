@@ -45,7 +45,8 @@
 #include <backends/imgui_impl_dx12.h>
 #include <backends/imgui_impl_win32.h>
 
-#include "Runtime/Engine/UIBackend.h"
+#include "Editor/EditorUI.h"
+//#include "Runtime/Engine/UIBackend.h"
 //ImGUI End
 
 
@@ -89,6 +90,44 @@ TBasePassPS<false>::ShaderInfos TBasePassPS<false>::StaticShaderInfos(
 "PS", EShaderType::SV_Pixel, TBasePassPS<false>::CustomConstrucFunc,
 TBasePassPS<false>::ModifyShaderCompileSettings);
  
+
+
+
+//ToneMapping PS
+class XToneMappingPassPS :public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new XToneMappingPassPS(Initializer);
+	}
+
+	static ShaderInfos StaticShaderInfos;
+
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+
+public:
+	XToneMappingPassPS(const XShaderInitlizer& Initializer)
+		:XGloablShader(Initializer)
+	{
+		FullScreenMap.Bind(Initializer.ShaderParameterMap, "FullScreenMap");
+	}
+
+	void SetParameter(
+		XRHICommandList& RHICommandList,
+		XRHITexture* InTexture)
+	{
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, FullScreenMap, InTexture);
+	}
+	TextureParameterType    FullScreenMap;
+};
+XToneMappingPassPS::ShaderInfos XToneMappingPassPS::StaticShaderInfos(
+	"XToneMappingPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ToneMapping.hlsl",
+	"ToneMapping_PS", EShaderType::SV_Pixel, XToneMappingPassPS::CustomConstrucFunc,
+	XToneMappingPassPS::ModifyShaderCompileSettings);
+
+
+
 
 //XLightPass
 class XLightPassVS :public XGloablShader
@@ -802,7 +841,7 @@ private:
 	//UI
 	uint32 IMGUI_IndexOfDescInHeap;
 	uint32 IMGUI_IndexOfHeap;
-	RHIUI m_RHIUI;
+	XEditorUI EditorUI;
 //BasePass
 private:
 	XLocalVertexFactory LocalVertexFactory;
@@ -826,6 +865,7 @@ private:
 	std::shared_ptr<XRHITexture2D>TextureGBufferC;
 	std::shared_ptr<XRHITexture2D>TextureGBufferD;
 	std::shared_ptr<XRHITexture2D>TextureSceneColorDeffered;
+	std::shared_ptr<XRHITexture2D>TextureSceneColorDefferedPingPong;
 
 	XRHIRenderTargetView* RTViews[8];
 
@@ -1029,20 +1069,23 @@ bool CrateApp::Initialize()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	ImGui::StyleColorsDark();
-	
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	io.ConfigDockingAlwaysTabBar = true;
+	io.ConfigWindowsMoveFromTitleBarOnly = true;
 
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowPadding = ImVec2(1.0, 0);
+	style.FramePadding = ImVec2(14.0, 2.0f);
+	style.ChildBorderSize = 0.0f;
+	style.FrameRounding = 5.0f;
+	style.FrameBorderSize = 1.5f;
+
+	//ImGui::StyleColorsDark();
+	EditorUI.SetDefaltStyle();
+	EditorUI.InitIOInfo(mClientWidth, mClientHeight);
 
 	ImGui_ImplWin32_Init(mhMainWnd);
-	//abstrtact_device.GetShaderResourceDescArrayManager()->AllocateDesc(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap);
-	//ImGui_ImplDX12_Init(md3dDevice.Get(), SwapChainBufferCount,
-	//	mBackBufferFormat, 
-	//	abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap),
-	//	abstrtact_device.GetShaderResourceDescArrayManager()->compute_cpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap),
-	//	abstrtact_device.GetShaderResourceDescArrayManager()->compute_gpu_ptr(IMGUI_IndexOfDescInHeap, IMGUI_IndexOfHeap));
-	//
-
-	m_RHIUI.ImGui_Impl_RHI_Init();
+	EditorUI.ImGui_Impl_RHI_Init();
 	//ImGUI End
 
     return true;
@@ -1136,16 +1179,6 @@ static XD3DGraphicsPSO static_pso(static_RHIPSOINIT, nullptr, nullptr);
 
 void CrateApp::Renderer(const GameTimer& gt)
 {
-	//static int i = 0;
-	//std::wstring str = L"xx" + std::to_wstring(i) + L"xx\n";
-	//OutputDebugString(str.c_str());
-	
-
-
-
-
-
-
 	pass_state_manager->ResetDescHeapIndex();
 	pass_state_manager->TempResetPSO(&static_pso);
 	//Pass1 DepthPrePass
@@ -1585,34 +1618,52 @@ void CrateApp::Renderer(const GameTimer& gt)
 	}
 
 
+
+
+	//ToneMapping
 	{
-	
+		XRHITexture* TextureSceneColor = TextureSceneColorDefferedPingPong.get();
+		XRHIRenderPassInfo RPInfos(1, &TextureSceneColor, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
+		RHICmdList.RHIBeginRenderPass(RPInfos, L"PostProcess_ToneMapping");
+		RHICmdList.CacheActiveRenderTargets(RPInfos);
+
+		XGraphicsPSOInitializer GraphicsPSOInit;
+		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+
+
+		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+		TShaderReference<XToneMappingPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XToneMappingPassPS>();
+		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
+		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
+		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
+
+		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
+		PixelShader->SetParameter(RHICmdList, TextureSceneColorDeffered.get());
+
+		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
+			
+	}
+
+	XRHITexture* CurrentPingPongTextureSceneColorTarget = TextureSceneColorDefferedPingPong.get();
+	{
+
 		//ImGUI Begin
-		m_RHIUI.ImGui_Impl_RHI_NewFrame(&RHICmdList);
-		//ImGui_ImplDX12_NewFrame();
+		EditorUI.ImGui_Impl_RHI_NewFrame(&RHICmdList);
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
 		bool show_demo_window = true;
-		ImGui::ShowDemoWindow(&show_demo_window);
+		EditorUI.OnTick();
+		//ImGui::ShowDemoWindow(&show_demo_window);
 		ImGui::Render();
-
-		//imgui.cpp h
-		std::cout << "IsWindowActiveAndVisible" << std::endl;
-
-
-		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
-		m_RHIUI.ImGui_Impl_RHI_RenderDrawData(ImGui::GetDrawData(), &RHICmdList, TextureSceneColorDeffered.get());
-		//
-
-		////direct_ctx->RHISetShaderTexture();
-		//ID3D12DescriptorHeap* const DescHeap[] = {abstrtact_device.GetShaderResourceDescArrayManager()->GetDxHeapByIndex(IMGUI_IndexOfHeap)};
-		//mCommandList->SetDescriptorHeaps(1, DescHeap);
-		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+		EditorUI.ImGui_Impl_RHI_RenderDrawData(ImGui::GetDrawData(), &RHICmdList, CurrentPingPongTextureSceneColorTarget);
 		////ImGUI End
 	}
 
-	//Pass9 FinalPass ToneMapping
+	//Pass9 FinalPass
 	{
 		mCommandList->BeginEvent(1, "FinalPass", sizeof("FinalPass"));
 		mCommandList->SetPipelineState(FullScreenPSO.Get());
@@ -1627,7 +1678,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		direct_ctx->RHISetRenderTargets(1, RTViews, nullptr);//TODO
 		direct_ctx->RHIClearMRT(true, false, clear_color, 0.0f, 0);
 		
-		direct_ctx->RHISetShaderTexture(EShaderType::SV_Pixel, 0, TextureSceneColorDeffered.get());
+		direct_ctx->RHISetShaderTexture(EShaderType::SV_Pixel, 0, TextureSceneColorDefferedPingPong.get());
 		
 		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
 		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
@@ -2127,6 +2178,11 @@ void CrateApp::LoadTextures()
 			, nullptr);
 
 		TextureSceneColorDeffered = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
+			EPixelFormat::FT_R16G16B16A16_FLOAT
+			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
+			, nullptr);
+
+		TextureSceneColorDefferedPingPong = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R16G16B16A16_FLOAT
 			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
 			, nullptr);
@@ -2676,7 +2732,7 @@ void CrateApp::TempDelete()
 		delete GGlobalShaderMapping;
 	
 	//ImGUI Begin
-	m_RHIUI.ImGui_Impl_RHI_Shutdown();
+	EditorUI.ImGui_Impl_RHI_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 	//ImGUI End

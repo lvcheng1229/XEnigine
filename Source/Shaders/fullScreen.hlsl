@@ -28,6 +28,6 @@ float4 PS(VertexOut pin) : SV_Target
 {
     
     float4 FullScreenSample = FullScreenMap.Sample(gsamPointWarp, pin.TexC);
-    FullScreenSample=float4(saturate(pow(FullScreenSample.rgb, float3(1.0/2.2,1.0/2.2,1.0/2.2))),1.0f);
+    //FullScreenSample=float4(saturate(pow(FullScreenSample.rgb, float3(1.0/2.2,1.0/2.2,1.0/2.2))),1.0f);
     return FullScreenSample;
 }

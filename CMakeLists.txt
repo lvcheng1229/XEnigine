@@ -35,6 +35,9 @@ add_definitions(-DX_RHI_DX12)
 
 add_definitions(-DUNICODE)
 
+#for imgui
+add_definitions(-D_UNICODE)
+
 
 
 #ImGUI Begin

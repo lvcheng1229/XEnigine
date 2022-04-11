@@ -36,6 +36,6 @@ float4 UI_PS(PS_INPUT input) : SV_Target
     float4 out_col = input.col * texture0.Sample(sampler0, input.uv);
 
     //Temp  
-    out_col=float4(pow(out_col.rgb, float3(2.2,2.2,2.2)),out_col.a);
+    out_col=float4(pow(out_col.rgb, float3(1.0/2.2,1.0/2.2,1.0/2.2)),out_col.a);
     return out_col;
 }
