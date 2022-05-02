@@ -95,23 +95,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Editor\EditorUI.h" />
+    <ClInclude Include="FrameResource.h" />
+    <ClInclude Include="Runtime\Core\Math\Math.h" />
     <ClInclude Include="Runtime\Core\Math\Matrix.h" />
     <ClInclude Include="Runtime\Core\Math\SimpleMath.h" />
-    <ClInclude Include="Runtime\Core\Math\Math.h" />
-    <ClInclude Include="Runtime\Core\ResourceCreateDataInterface.h" />
-    <ClInclude Include="Runtime\Engine\Classes\EngineTypes.h" />
-    <ClInclude Include="Runtime\Engine\Material\MaterialShared.h" />
-    <ClInclude Include="Runtime\Engine\Material\MaterialShaderMapSet.h" />
-    <ClInclude Include="Runtime\RenderCore\VertexFactory.h" />
-    <ClInclude Include="Runtime\Render\BasePassRendering.h" />
-    <ClInclude Include="Runtime\Render\MaterialShader.h" />
-    <ClInclude Include="Runtime\Render\MeshMaterialShader.h" />
-    <ClInclude Include="Runtime\Render\MeshPassProcessor.h" />
-    <ClInclude Include="ThirdParty\stb_image.h" />
-    <ClInclude Include="FrameResource.h" />
     <ClInclude Include="Runtime\Core\PixelFormat.h" />
+    <ClInclude Include="Runtime\Core\ResourceCreateDataInterface.h" />
     <ClInclude Include="Runtime\Core\Template\XEngineTemplate.h" />
     <ClInclude Include="Runtime\Core\XMath.h" />
+    <ClInclude Include="Runtime\CoreGObject\GObjtect\Object.h" />
+    <ClInclude Include="Runtime\CoreGObject\GObjtect\Reflection.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12AbstractDevice.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Adapter.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Allocation.h" />
@@ -120,10 +114,10 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12Common.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12Context.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12DescriptorArray.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PassStateManager.h" />
-    <ClInclude Include="Runtime\D3D12RHI\D3D12PhysicDevice.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12OnlineDescArray.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12OnlineDescArrayManager.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PassStateManager.h" />
+    <ClInclude Include="Runtime\D3D12RHI\D3D12PhysicDevice.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineLibrary.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PipelineState.h" />
     <ClInclude Include="Runtime\D3D12RHI\D3D12PlatformRHI.h" />
@@ -136,13 +130,14 @@
     <ClInclude Include="Runtime\D3D12RHI\D3D12Viewport.h" />
     <ClInclude Include="Runtime\D3D12RHI\d3dx12.h" />
     <ClInclude Include="Runtime\DataStruct\XRefCountPtr.h" />
+    <ClInclude Include="Runtime\Engine\Classes\EngineTypes.h" />
+    <ClInclude Include="Runtime\Engine\Material\MaterialShaderMapSet.h" />
+    <ClInclude Include="Runtime\Engine\Material\MaterialShared.h" />
     <ClInclude Include="Runtime\Engine\SceneView.h" />
     <ClInclude Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.h" />
+    <ClInclude Include="Runtime\Engine\UIBackend.h" />
     <ClInclude Include="Runtime\HAL\Mch.h" />
     <ClInclude Include="Runtime\HAL\PlatformTypes.h" />
-    <ClInclude Include="Runtime\RenderCore\CommonRenderRresource.h" />
-    <ClInclude Include="Runtime\RenderCore\ShaderParameter.h" />
-    <ClInclude Include="Runtime\Render\SceneRendering.h" />
     <ClInclude Include="Runtime\RHI\PipelineStateCache.h" />
     <ClInclude Include="Runtime\RHI\PlatformRHI.h" />
     <ClInclude Include="Runtime\RHI\RHI.h" />
@@ -151,10 +146,20 @@
     <ClInclude Include="Runtime\RHI\RHIDefines.h" />
     <ClInclude Include="Runtime\RHI\RHIResource.h" />
     <ClInclude Include="Runtime\RHI\RHIStaticStates.h" />
+    <ClInclude Include="Runtime\Render\BasePassRendering.h" />
+    <ClInclude Include="Runtime\Render\DeferredShadingRenderer.h" />
+    <ClInclude Include="Runtime\Render\MaterialShader.h" />
+    <ClInclude Include="Runtime\Render\MeshMaterialShader.h" />
+    <ClInclude Include="Runtime\Render\MeshPassProcessor.h" />
+    <ClInclude Include="Runtime\Render\SceneRendering.h" />
+    <ClInclude Include="Runtime\RenderCore\CommonRenderRresource.h" />
     <ClInclude Include="Runtime\RenderCore\GlobalShader.h" />
     <ClInclude Include="Runtime\RenderCore\RenderResource.h" />
     <ClInclude Include="Runtime\RenderCore\Shader.h" />
     <ClInclude Include="Runtime\RenderCore\ShaderCore.h" />
+    <ClInclude Include="Runtime\RenderCore\ShaderParameter.h" />
+    <ClInclude Include="Runtime\RenderCore\VertexFactory.h" />
+    <ClInclude Include="ThirdParty\stb_image.h" />
     <ClInclude Include="UnitTest\GameTimer.h" />
     <ClInclude Include="UnitTest\GeometryGenerator.h" />
     <ClInclude Include="UnitTest\MathHelper.h" />
@@ -163,9 +168,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrateApp.cpp" />
-    <ClCompile Include="Runtime\Core\Math\SimpleMath.cpp" />
+    <ClCompile Include="Editor\EditorUI.cpp" />
     <ClCompile Include="Runtime\Core\Math\Math.cpp" />
+    <ClCompile Include="Runtime\Core\Math\SimpleMath.cpp" />
     <ClCompile Include="Runtime\Core\XMath.cpp" />
+    <ClCompile Include="Runtime\CoreGObject\GObjtect\Object.cpp" />
+    <ClCompile Include="Runtime\CoreGObject\GObjtect\Reflection.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12AbstractDevice.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Adapter.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Allocation.cpp" />
@@ -174,41 +182,41 @@
     <ClCompile Include="Runtime\D3D12RHI\D3D12CommandQueue.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Context.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12DescriptorArray.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PassStateManager.cpp" />
-    <ClCompile Include="Runtime\D3D12RHI\D3D12PhysicDevice.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12OnlineDescArray.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12OnlineDescArrayManager.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PassStateManager.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12PhysicDevice.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PipelineLibraryWindows.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12PlatformRHI.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Resource.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Rootsignature.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Shader.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12State.cpp" />
+    <ClCompile Include="Runtime\D3D12RHI\D3D12Texture.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12VIBuffer.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12VertexDeclaration.cpp" />
     <ClCompile Include="Runtime\D3D12RHI\D3D12Viewport.cpp" />
-    <ClCompile Include="Runtime\Engine\Material\MaterialShared.cpp" />
     <ClCompile Include="Runtime\Engine\Material\MaterialShader.cpp" />
+    <ClCompile Include="Runtime\Engine\Material\MaterialShared.cpp" />
     <ClCompile Include="Runtime\Engine\SceneView.cpp" />
     <ClCompile Include="Runtime\Engine\ShaderCompiler\ShaderCompiler.cpp" />
-    <ClCompile Include="Runtime\RenderCore\CommonRenderRresource.cpp" />
-    <ClCompile Include="Runtime\RenderCore\ShaderParameter.cpp" />
-    <ClCompile Include="Runtime\RenderCore\VertexFactory.cpp" />
+    <ClCompile Include="Runtime\Engine\UIBackend.cpp" />
     <ClCompile Include="Runtime\RHI\PipelineStateCache.cpp" />
     <ClCompile Include="Runtime\RHI\PlatformRHI.cpp" />
     <ClCompile Include="Runtime\RHI\RHI.cpp" />
     <ClCompile Include="Runtime\RHI\Windows\WindowsRHI.cpp" />
+    <ClCompile Include="Runtime\ReflectionGen\Object.gen.cpp" />
+    <ClCompile Include="Runtime\RenderCore\CommonRenderRresource.cpp" />
     <ClCompile Include="Runtime\RenderCore\GlobalShader.cpp" />
     <ClCompile Include="Runtime\RenderCore\RenderResource.cpp" />
     <ClCompile Include="Runtime\RenderCore\Shader.cpp" />
+    <ClCompile Include="Runtime\RenderCore\ShaderParameter.cpp" />
+    <ClCompile Include="Runtime\RenderCore\VertexFactory.cpp" />
     <ClCompile Include="UnitTest\GameTimer.cpp" />
     <ClCompile Include="UnitTest\GeometryGenerator.cpp" />
     <ClCompile Include="UnitTest\MathHelper.cpp" />
     <ClCompile Include="UnitTest\d3dApp.cpp" />
     <ClCompile Include="UnitTest\d3dUtil.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Runtime\Core\Math\SimpleMath.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

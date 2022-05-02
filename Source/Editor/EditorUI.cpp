@@ -10,9 +10,10 @@ void XEditorUI::ShowEditorUI()
     bool bGameEngineWindowOpen = true;
     bool bFileContentWindowOpen = true;
     bool bDetailWindowOpen = true;
+
+	ShowEditorMenu(&bEditorMenuWindowOpen);
     
     ShowEditorWorldObjectsWindow(&bAssetWindowOpen);
-	ShowEditorMenu(&bEditorMenuWindowOpen);
     ShowEditorGameWindow(&bGameEngineWindowOpen);
     ShowEditorFileContentWindow(&bFileContentWindowOpen);
     ShowEditorDetialWindow(&bDetailWindowOpen);

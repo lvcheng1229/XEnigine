@@ -2,6 +2,7 @@
 #include "Runtime/RenderCore/Shader.h"
 #include "Runtime/Engine/Classes/EngineTypes.h"
 #include "Runtime/Render/MaterialShader.h"
+#include "Runtime/Engine/Classes/Material.h"
 
 class RMaterial;
 //class RMaterialRenderProxy
@@ -44,6 +45,8 @@ public:
 	void GetShaderInfos(const XMaterialShaderInfo_Set& ShaderInfos, XMaterialShader_Set& ShaderOut);
 private:
 	std::shared_ptr<XMaterialShaderMapping_MatUnit>RThreadShaderMap;
+
+	GMaterial* Material;
 };
 
 class XMaterialResource :public RMaterial

@@ -50,6 +50,11 @@
 //ImGUI End
 
 
+#include "Runtime/Core/MainInit.h"
+#include "Runtime/Engine/Classes/Texture.h"
+#include "Runtime/HAL/FileManagerGeneric.h"
+#include "Runtime/Core/Misc/Path.h"
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
@@ -857,8 +862,13 @@ private:
 	std::shared_ptr<XRHITexture2D>TextureMetalNormal;
 	std::shared_ptr<XRHITexture2D>TextureRoughness;
 
+	GTexture2D TextureWoodTexture;
 	std::shared_ptr<XRHITexture2D>TextureWoodBaseColor;
+	
+	
+	
 	std::shared_ptr<XRHITexture2D>TextureWoodNormal;
+
 
 	std::shared_ptr<XRHITexture2D>TextureGBufferA;
 	std::shared_ptr<XRHITexture2D>TextureGBufferB;
@@ -1181,6 +1191,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 {
 	pass_state_manager->ResetDescHeapIndex();
 	pass_state_manager->TempResetPSO(&static_pso);
+	
 	//Pass1 DepthPrePass
 	{
 		direct_ctx->ResetCmdAlloc();
@@ -2123,15 +2134,16 @@ void CrateApp::LoadTextures()
 	}
 
 	{
-		int w, h, n;
-		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA", &w, &h, &n, 0);
-		if (n == 3) { X_Assert(false); }
-		
-		TextureWoodBaseColor = RHICreateTexture2D(w, h, 1,false, false,
-			EPixelFormat::FT_R8G8B8A8_UNORM_SRGB
-			, ETextureCreateFlags(TexCreate_SRGB), 1
-			, BaseColorData);
-		stbi_image_free(BaseColorData);
+		std::wstring FileName = XPath::ProjectResourceSavedDir() + L"/T_Rock_Sandstone_D.xasset";
+		//std::shared_ptr<XArchiveBase>ArchiveWriterTex = XFileManagerGeneric::CreateFileWriter(FileName.c_str());
+		std::shared_ptr<XArchiveBase>ArchiveReaderTex = XFileManagerGeneric::CreateFileReader(FileName.c_str());
+		GTexture2D TextureWoodTexture;
+		//TextureWoodTexture.LoadTextureFromImage("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA");
+		TextureWoodTexture.ArchiveImpl(*ArchiveReaderTex);
+		TextureWoodTexture.CreateRHITexture(true);
+		ArchiveReaderTex->Close();
+
+		TextureWoodBaseColor = TextureWoodTexture.GetRHITexture2D();
 	}
 	
 	{
@@ -2738,13 +2750,35 @@ void CrateApp::TempDelete()
 	//ImGUI End
 }
 
+
+
+
+void TestReflectAndArchive()
+{
+	std::cout << GTexture::StaticReflectionInfo.GetProperty(0)->PropertyName << std::endl;
+	std::wstring FileName = XPath::ProjectResourceSavedDir() + L"/T_Rock_Sandstone_D111.xasset";
+	std::shared_ptr<XArchiveBase>ArchiveWriterTex= XFileManagerGeneric::CreateFileWriter(FileName.c_str());
+	GTexture2D Texture;
+	Texture.LoadTextureFromImage("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA");
+	Texture.ArchiveImpl(*ArchiveWriterTex);
+	ArchiveWriterTex->Close();
+	
+	std::shared_ptr<XArchiveBase>ArchiveReaderTex = XFileManagerGeneric::CreateFileReader(FileName.c_str());
+	GTexture2D Texture2;
+	Texture2.ArchiveImpl(*ArchiveReaderTex);
+	X_Assert(Texture2.SizeX == Texture.SizeX);
+}
+
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(4561);
+	//_CrtSetBreakAlloc(304);
 	int* a = new int(5);
 	try
 	{
+		MainInit::Init();
+		TestReflectAndArchive();
+
 		CrateApp theApp;
 		if (!theApp.Initialize())return 0;
 		return theApp.Run();

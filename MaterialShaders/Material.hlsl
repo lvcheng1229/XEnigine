@@ -60,3 +60,17 @@ void CalcMaterialParameters(ParametersIn Parameters,inout GBufferdataOutput Outp
     OutputGbufferData.Normal=DecodeNormal;
     OutputGbufferData.ShadingModel=1;
 }
+
+
+//used for reflection
+void Empty_PS(out float4 OutTarget0 : SV_Target0)
+{
+    ParametersIn Parameters;
+    GBufferdataOutput OutputGbufferData;
+    CalcMaterialParameters(Parameters,OutputGbufferData);
+    float TempValue=OutputGbufferData.BaseColor.x+OutputGbufferData.Metallic+OutputGbufferData.Specular+OutputGbufferData.Roughness+OutputGbufferData.Normal.x;
+    OutTarget0=float4(TempValue,0,0,0);
+}
+
+
+

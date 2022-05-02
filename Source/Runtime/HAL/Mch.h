@@ -27,6 +27,13 @@
     using XDxRefCount = Microsoft::WRL::ComPtr<T>;
     #endif
 
+#define CRT_HEAP_TRACK_OFF_BEGIN\
+    int tmpFlag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);\
+    _CrtSetDbgFlag(tmpFlag& (~_CRTDBG_ALLOC_MEM_DF));\
+
+#define CRT_HEAP_TRACK_OFF_END\
+    _CrtSetDbgFlag(tmpFlag);\
+
 #endif
     
 #include <iostream>
