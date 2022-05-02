@@ -4,7 +4,7 @@ cbuffer cbMaterial
     float Specular;
     float Roughness;
     float TextureScale;
-    float padding[12];
+    //float padding[12];
 };
 
 Texture2D    BaseColorMap;
@@ -65,7 +65,7 @@ void CalcMaterialParameters(ParametersIn Parameters,inout GBufferdataOutput Outp
 //used for reflection
 void Empty_PS(out float4 OutTarget0 : SV_Target0)
 {
-    ParametersIn Parameters;
+    ParametersIn Parameters=(ParametersIn)0;
     GBufferdataOutput OutputGbufferData;
     CalcMaterialParameters(Parameters,OutputGbufferData);
     float TempValue=OutputGbufferData.BaseColor.x+OutputGbufferData.Metallic+OutputGbufferData.Specular+OutputGbufferData.Roughness+OutputGbufferData.Normal.x;

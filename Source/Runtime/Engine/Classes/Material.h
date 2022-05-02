@@ -1,13 +1,13 @@
 #pragma once
 #include "Texture.h"
 #include "Runtime/Core/Math/Math.h"
-#include "Runtime/CoreGObject/GObjtect/Object.h"
+#include "Runtime/Engine/Classes/Texture.h"
 
 struct MaterialValueParas
 {
 	std::string Name;
 	float Value[4];
-	int32 Size;
+	unsigned int SizeInByte;
 };
 
 struct MaterialTexParas
@@ -20,7 +20,7 @@ class RMaterial;
 class GMaterial :public GObject
 {
 public:
-	std::vector<MaterialValueParas>MaterialFloatArray;
+	std::vector<MaterialValueParas>MaterialValueArray;
 	std::vector<MaterialTexParas>MaterialTextureArray;
 	std::wstring CodePath;
 	void CreateGMaterial(const std::wstring& CodePathIn);

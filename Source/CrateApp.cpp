@@ -55,6 +55,9 @@
 #include "Runtime/HAL/FileManagerGeneric.h"
 #include "Runtime/Core/Misc/Path.h"
 
+
+#include "Runtime/Engine/Classes/Material.h"
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
@@ -850,6 +853,9 @@ private:
 //BasePass
 private:
 	XLocalVertexFactory LocalVertexFactory;
+	
+	
+	GMaterial SphereGMaterial;
 	RMaterial SphereMaterial;
 private:
 	uint64 FrameNum = 0;
@@ -2529,6 +2535,8 @@ void CrateApp::BuildPSOs()
 		ShadowPSODesc.DSVFormat = mDepthStencilFormat;
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
 	}
+
+	SphereGMaterial.CreateGMaterial(XPath::ProjectMaterialSavedDir()+L"/Material.hlsl");
 	SphereMaterial.BeginCompileShaderMap();
 	//XD3D12PixelShader* BaseD3DPixelShader;
 	//XD3D12VertexShader* BaseD3DVertexShader;
