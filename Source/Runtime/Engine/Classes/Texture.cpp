@@ -13,3 +13,12 @@ void GTexture::LoadTextureFromImage(const char* Name)
 	TextureDataArray.insert(TextureDataArray.end(), ColorData, ColorData + SizeX * SizeY * Channel);
 	stbi_image_free(ColorData);
 }
+
+GTexture::GTexture(uint8* TextureDataArrayIn, int32 SizeXIn, int32 SizeYIn, int32 ChannelIn, bool TextureSRGBIn)
+{
+	SizeX = SizeXIn;
+	SizeY = SizeYIn;
+	Channel = ChannelIn;
+	TextureSRGB = TextureSRGBIn;
+	TextureDataArray.insert(TextureDataArray.end(), TextureDataArrayIn, TextureDataArrayIn + SizeX * SizeY * Channel);
+}

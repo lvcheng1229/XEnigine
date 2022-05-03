@@ -1,10 +1,9 @@
 cbuffer cbMaterial
 {
 	float Metallic;
-    float Specular;
     float Roughness;
     float TextureScale;
-    float padding[12];
+    float padding;
 };
 
 Texture2D    BaseColorMap;
@@ -32,14 +31,14 @@ struct ParametersIn
 {
     float2 TexCoords;
     float3 TangentToWorld0;
-    float3 TangentToWorld2;
+    float3 TangentToWorld1;
 };
 
 struct GBufferdataOutput
 {
 	float3  BaseColor;
     float   Metallic;
-	float   Specular;
+	//float   Specular;
 	float   Roughness;	
     float3  Normal;
 	uint    ShadingModel;
@@ -51,11 +50,11 @@ void CalcMaterialParameters(ParametersIn Parameters,inout GBufferdataOutput Outp
     float4 RoughnessSampleValue=RoughnessMap.Sample(gsamLinearWarp, Parameters.TexCoords.xy*TextureScale);
     float4 SampleNormalValue = NormalMap.Sample(gsamPointWarp, Parameters.TexCoords.xy*TextureScale);
 
-    float3 DecodeNormal=NormalSampleToWorldSpace(SampleNormalValue.xyz,normalize(Parameters.TangentToWorld2),Parameters.TangentToWorld0);
+    float3 DecodeNormal=NormalSampleToWorldSpace(SampleNormalValue.xyz,normalize(Parameters.TangentToWorld1),Parameters.TangentToWorld0);
 
     OutputGbufferData.BaseColor=(RoughnessSampleValue.r+0.5f)*float3(0.8f,0.8f,0.8f)*BaseColorSample.xyz;
     OutputGbufferData.Metallic=Metallic;
-    OutputGbufferData.Specular=Specular;
+    //OutputGbufferData.Specular=Specular;
     OutputGbufferData.Roughness=(RoughnessSampleValue.r+0.5f)*BaseColorSample.a*Roughness;
     OutputGbufferData.Normal=DecodeNormal;
     OutputGbufferData.ShadingModel=1;

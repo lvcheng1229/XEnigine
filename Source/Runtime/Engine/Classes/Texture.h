@@ -27,6 +27,8 @@ private:
 	//Declare Initial End
 
 public:
+	GTexture() {}
+	GTexture(uint8* TextureDataArrayIn, int32 SizeXIn, int32 SizeYIn, int32 ChannelIn, bool TextureSRGBIn);
 
 	virtual void ArchiveImpl(XArchiveBase& Archvice)
 	{
@@ -37,16 +39,21 @@ public:
 		Archvice.ArchiveFun(TextureDataArray);
 	}
 
-	virtual void CreateRHITexture(bool bSRGB)
+	virtual void CreateRHITexture()
 	{
 	
 	}
 
+	//deprecated
 	void LoadTextureFromImage(const char* Name);
+
+	
 
 	int32 SizeX;
 	int32 SizeY;
 	int32 Channel;
+
+	bool TextureSRGB;
 protected:
 	
 	std::vector<uint8>TextureDataArray;//Temp Data Array , NO MipMap Now
@@ -55,9 +62,12 @@ protected:
 class GTexture2D :public GTexture
 {
 public:
-	virtual void CreateRHITexture(bool bSRGB)override
+	GTexture2D() {}
+	GTexture2D(uint8* TextureDataArrayIn, int32 SizeXIn, int32 SizeYIn, int32 ChannelIn, bool TextureSRGBIn)
+		:GTexture(TextureDataArrayIn, SizeXIn, SizeYIn, ChannelIn, TextureSRGBIn) {}
+	virtual void CreateRHITexture()override
 	{
-		if (bSRGB)
+		if (TextureSRGB)
 		{
 			RHITexturePrivate = RHICreateTexture2D(SizeX, SizeY, 1, false, false, EPixelFormat::FT_R8G8B8A8_UNORM_SRGB
 				, ETextureCreateFlags(TexCreate_SRGB), 1, TextureDataArray.data());

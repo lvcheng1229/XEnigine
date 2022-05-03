@@ -57,7 +57,7 @@
 
 
 #include "Runtime/Engine/Classes/Material.h"
-
+#include "Runtime/Engine/ResourcecConverter.h"
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
@@ -855,7 +855,7 @@ private:
 	XLocalVertexFactory LocalVertexFactory;
 	
 	
-	GMaterial SphereGMaterial;
+	
 	RMaterial SphereMaterial;
 private:
 	uint64 FrameNum = 0;
@@ -1858,7 +1858,7 @@ void CrateApp::UpdateMaterialCBs(const GameTimer& gt)
 	
 		MaterialConstants matConstants;
 		matConstants.Metallic = mat->Metallic;
-		matConstants.Specular = mat->Specular;
+		//matConstants.Specular = mat->Specular;
 		matConstants.Roughness = mat->Roughness;
 		matConstants.TextureScale = mat->TextureScale;
 		mFrameResource.get()->MaterialConstantBuffer[mat->MatCBIndex].get()->
@@ -2142,14 +2142,16 @@ void CrateApp::LoadTextures()
 	{
 		std::wstring FileName = XPath::ProjectResourceSavedDir() + L"/T_Rock_Sandstone_D.xtexture";
 		//std::shared_ptr<XArchiveBase>ArchiveWriterTex = XFileManagerGeneric::CreateFileWriter(FileName.c_str());
-		std::shared_ptr<XArchiveBase>ArchiveReaderTex = XFileManagerGeneric::CreateFileReader(FileName.c_str());
-		GTexture2D TextureWoodTexture;
-		//TextureWoodTexture.LoadTextureFromImage("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA");
-		TextureWoodTexture.ArchiveImpl(*ArchiveReaderTex);
-		TextureWoodTexture.CreateRHITexture(true);
-		ArchiveReaderTex->Close();
+		//std::shared_ptr<XArchiveBase>ArchiveReaderTex = XFileManagerGeneric::CreateFileReader(FileName.c_str());
 
-		TextureWoodBaseColor = TextureWoodTexture.GetRHITexture2D();
+		std::shared_ptr<GTexture2D>TextureWoodTexture = CreateTextureFromImageFile(
+			"E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA",true);
+		//TextureWoodTexture.LoadTextureFromImage("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA");
+		//TextureWoodTexture->ArchiveImpl(*ArchiveReaderTex);
+		TextureWoodTexture->CreateRHITexture();
+		//ArchiveReaderTex->Close();
+
+		TextureWoodBaseColor = TextureWoodTexture->GetRHITexture2D();
 	}
 	
 	{
@@ -2398,7 +2400,7 @@ void CrateApp::BuildShapeGeometry()
 				1.0f);
 			
 			vertices[k].TangentX = sphere.Vertices[i].TangentU;
-			vertices[k].TangentZ = DirectX::XMFLOAT4(
+			vertices[k].TangentY = DirectX::XMFLOAT4(
 				sphere.Vertices[i].Normal.x,
 				sphere.Vertices[i].Normal.y,
 				sphere.Vertices[i].Normal.z,
@@ -2415,7 +2417,7 @@ void CrateApp::BuildShapeGeometry()
 				1.0f);
 
 			vertices[k].TangentX = grid.Vertices[i].TangentU;
-			vertices[k].TangentZ = DirectX::XMFLOAT4(
+			vertices[k].TangentY = DirectX::XMFLOAT4(
 				grid.Vertices[i].Normal.x,
 				grid.Vertices[i].Normal.y,
 				grid.Vertices[i].Normal.z,
@@ -2536,7 +2538,7 @@ void CrateApp::BuildPSOs()
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
 	}
 
-	SphereGMaterial.CreateGMaterial(XPath::ProjectMaterialSavedDir()+L"/Material.hlsl");
+	//SphereGMaterial.CreateGMaterial(XPath::ProjectMaterialSavedDir()+L"/Material.hlsl");
 	SphereMaterial.BeginCompileShaderMap();
 	//XD3D12PixelShader* BaseD3DPixelShader;
 	//XD3D12VertexShader* BaseD3DVertexShader;

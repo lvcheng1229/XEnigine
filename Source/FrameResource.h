@@ -20,7 +20,7 @@ struct Vertex
 {
     DirectX::XMFLOAT4 Position;
     DirectX::XMFLOAT3 TangentX;
-	DirectX::XMFLOAT4 TangentZ;
+	DirectX::XMFLOAT4 TangentY;
 	DirectX::XMFLOAT2 TexCoord;
 };
 

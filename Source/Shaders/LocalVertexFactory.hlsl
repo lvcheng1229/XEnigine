@@ -4,7 +4,7 @@ struct FVertexFactoryInput
 {
     float4	Position	: ATTRIBUTE0;
     float3	TangentX	: ATTRIBUTE1;
-    float4	TangentZ	: ATTRIBUTE2;
+    float4	TangentY	: ATTRIBUTE2;
     float2	TexCoord    : ATTRIBUTE3;
 };
 
@@ -19,7 +19,7 @@ struct FVertexFactoryInterpolantsVSToPS
 void VsToPsCompute(FVertexFactoryInput Input ,in out FVertexFactoryInterpolantsVSToPS Output,in out float4 Position)
 {
     Output.TangentToWorld0 = float4(mul(Input.TangentX, (float3x3)gWorld),0.0f);
-    Output.TangentToWorld2 = float4(mul(Input.TangentZ.xyz, (float3x3)gWorld),1.0f);
+    Output.TangentToWorld2 = float4(mul(Input.TangentY.xyz, (float3x3)gWorld),1.0f);
     Output.TexCoords=float4(Input.TexCoord.xy,0.0f,0.0f);
     Output.TestWorldPosition= mul(Input.Position,gWorld).xyz;
     float4 PositionW=mul(Input.Position, gWorld);

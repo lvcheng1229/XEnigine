@@ -228,10 +228,10 @@ struct Light
 struct MaterialConstants
 {
     float Metallic = 0.0f;
-    float Specular = 0.5f;
     float Roughness = 0.0f;
     float TextureScale = 1.0f;
-    float padding[12];
+    float padding = 0.0f;
+    //float padding[12];
 };
 
 // Simple struct to represent a material for our demos.  A production 3D engine

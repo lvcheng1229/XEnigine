@@ -47,4 +47,6 @@ bool GTexture::PushInitFunToGloablFunArray()
 	return false;
 }
 
+
+
 //Impl Initial End

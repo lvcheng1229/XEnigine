@@ -22,7 +22,7 @@ struct FGBufferData
 	float3 WorldNormal;
 	float3 BaseColor;
 	float Metallic;
-	float Specular;
+	//float Specular;
 	float Roughness;
 	uint ShadingModelID;
 
@@ -140,12 +140,12 @@ void DeferredLightPixelMain(
 		GBuffer.WorldNormal=normalize(GbufferA.xyz);
 		GBuffer.BaseColor=GbufferC.xyz;
 		GBuffer.Metallic=GbufferB.x;
-		GBuffer.Specular=GbufferB.y;
+		//GBuffer.Specular=GbufferB.y;
 		GBuffer.Roughness=GbufferB.z;
 		GBuffer.ShadingModelID=uint(GbufferB.w);
 
 		//EncodeGBuffer in DeferredShadingCommon.usf
-		GBuffer.SpecularColor = lerp( 0.08 * GBuffer.Specular.xxx, GBuffer.BaseColor, GBuffer.Metallic );
+		GBuffer.SpecularColor = lerp( 0.04, GBuffer.BaseColor, GBuffer.Metallic );
 		GBuffer.DiffuseColor = GBuffer.BaseColor - GBuffer.BaseColor * GBuffer.Metallic;
 		tempres+=(GbufferA.x+GbufferB.x+GbufferA.x+GbufferC.x+GbufferD.x);
 	}

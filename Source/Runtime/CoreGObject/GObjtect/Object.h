@@ -1,3 +1,4 @@
+#pragma once
 #include "Reflection.h"
 #include "Runtime/Core/Serialization/Archive.h"
 class GObject
