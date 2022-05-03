@@ -68,7 +68,7 @@ std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn
 
 			if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_TEXTURE)
 			{
-				MaterialResult->MaterialTextureArray.push_back(MaterialTexParas{ ResourceDesc.Name ,nullptr });
+				MaterialResult->MaterialTextureArray.push_back(MaterialTexParas{ ResourceDesc.Name ,ResourceDesc.BindPoint,nullptr });
 			}
 			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_CBUFFER)
 			{
@@ -80,7 +80,12 @@ std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn
 					ID3D12ShaderReflectionVariable* Variable = ConstantBuffer->GetVariableByIndex(ConstantIndex);
 					D3D12_SHADER_VARIABLE_DESC VariableDesc;
 					Variable->GetDesc(&VariableDesc);
-					MaterialResult->MaterialValueArray.push_back(MaterialValueParas{ VariableDesc.Name ,{},VariableDesc.Size });
+					MaterialResult->MaterialValueArray.push_back(MaterialValueParas{ 
+						VariableDesc.Name ,
+						{},
+						ResourceDesc.BindPoint,
+						VariableDesc.StartOffset,
+						VariableDesc.Size });
 				}
 			}
 		}
@@ -126,19 +131,19 @@ std::shared_ptr<GGeomertry> CreateDefualtQuadGeo()
 
 	
 	std::shared_ptr<GDataBuffer> PositionDataBuffer = std::make_shared<GDataBuffer>();
-	PositionDataBuffer->SetData((uint8*)Positions.data(), Positions.size(), EDataType::DT_FLOAT32_4);
+	PositionDataBuffer->SetData((uint8*)Positions.data(), Positions.size(), EVertexElementType::VET_Float4);
 
 	std::shared_ptr<GDataBuffer> TangentXDataBuffer = std::make_shared<GDataBuffer>();
-	TangentXDataBuffer->SetData((uint8*)TangentX.data(), TangentX.size(), EDataType::DT_FLOAT32_4);
+	TangentXDataBuffer->SetData((uint8*)TangentX.data(), TangentX.size(), EVertexElementType::VET_Float4);
 
 	std::shared_ptr<GDataBuffer> TangentYDataBuffer = std::make_shared<GDataBuffer>();
-	TangentYDataBuffer->SetData((uint8*)TangentY.data(), TangentY.size(), EDataType::DT_FLOAT32_4);
+	TangentYDataBuffer->SetData((uint8*)TangentY.data(), TangentY.size(), EVertexElementType::VET_Float4);
 
 	std::shared_ptr<GDataBuffer> TextureCoordsDataBuffer = std::make_shared<GDataBuffer>();
-	TextureCoordsDataBuffer->SetData((uint8*)TextureCoords.data(), TextureCoords.size(), EDataType::DT_FLOAT32_2);
+	TextureCoordsDataBuffer->SetData((uint8*)TextureCoords.data(), TextureCoords.size(), EVertexElementType::VET_Float2);
 
 	std::shared_ptr<GDataBuffer> IndexDataBuffer = std::make_shared<GDataBuffer>();
-	IndexDataBuffer->SetData((uint8*)Indices.data(), Indices.size(), EDataType::DT_USHORT);
+	IndexDataBuffer->SetData((uint8*)Indices.data(), Indices.size(), EVertexElementType::VET_UINT16);
 
 	std::shared_ptr<GVertexBuffer>VertexBuffer = std::make_shared<GVertexBuffer>();
 	VertexBuffer->SetData(PositionDataBuffer,EVertexAttributeType::VAT_POSITION);
@@ -176,6 +181,10 @@ std::shared_ptr<GGeomertry> TempCreateQuadGeoWithMat()
 
 	std::shared_ptr<GTexture2D> TexNormal =
 		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_MacroVariation.TGA", false);
+
+	TexBaseColor->CreateRHITexture();
+	TexRouhness->CreateRHITexture();
+	TexNormal->CreateRHITexture();
 
 	MaterialIns->SetMaterialTexture2D("BaseColorMap", TexBaseColor);
 	MaterialIns->SetMaterialTexture2D("RoughnessMap", TexRouhness);

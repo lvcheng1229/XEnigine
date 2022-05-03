@@ -1,7 +1,9 @@
 #include "GeomertyData.h"
 
-uint32 GDataBuffer::DataTypeByteSize[(int)EDataType::DT_MAX_NUM] =
+uint32 GDataBuffer::DataTypeByteSize[(int)EVertexElementType::VET_MAX] =
 {
+	0,
+
 	4,  
 	8,
 	12,
@@ -9,13 +11,18 @@ uint32 GDataBuffer::DataTypeByteSize[(int)EDataType::DT_MAX_NUM] =
 
 	16,
 	32,
+
+	16,
+	0,
 };
+
+static_assert((int)EVertexElementType::VET_MAX == 9,"(int)EVertexElementType::VET_MAX == 9");
 
 GDataBuffer::~GDataBuffer()
 {
 }
 
-void GDataBuffer::SetData(uint8* DataStoreIn, uint64 DataNumIn, EDataType DataTypeIn)
+void GDataBuffer::SetData(uint8* DataStoreIn, uint64 DataNumIn, EVertexElementType DataTypeIn)
 {
 	DataType = DataTypeIn;
 	DataNum = DataNumIn;
@@ -26,5 +33,34 @@ void GDataBuffer::SetData(uint8* DataStoreIn, uint64 DataNumIn, EDataType DataTy
 
 void GVertexBuffer::SetData(std::shared_ptr<GDataBuffer> DataBufferIn, EVertexAttributeType EVAIn)
 {
-	DataBufferPtrArray_LodArray[(int)EVAIn].push_back(DataBufferIn);
+	DataBufferPtrArray[(int)EVAIn] = DataBufferIn;
+}
+
+void GVertexBuffer::CreateRHIVertexBufferAndLayoutChecked()
+{
+	if (RHIVertexLayout.get() != nullptr)
+	{
+		return;
+	}
+
+	XRHIVertexLayoutArray LayoutArray;
+	uint32 SemanticIndex = 0;
+	uint32 ByteOffset = 0;
+	
+	for (int i = 0; i < (int)EVertexAttributeType::VAT_MAX_NUM; i++)
+	{
+		std::shared_ptr<GDataBuffer> BufferPtr = DataBufferPtrArray[i];
+		if (BufferPtr.get() != nullptr)
+		{
+			LayoutArray.push_back(XVertexElement(SemanticIndex, BufferPtr->DataType, 0, ByteOffset));
+			SemanticIndex++;
+			ByteOffset += BufferPtr->DataByteSize;
+		}
+	}
+	
+	uint64 ElementNum = ByteOffset * DataBufferPtrArray[(int)EVertexAttributeType::VAT_POSITION]->DataNum;
+	for (uint64 i = 0; i < ElementNum; i++)
+	{
+
+	}
 }

@@ -6,13 +6,16 @@ struct MaterialValueParas
 {
 	std::string Name;
 	std::vector<float>Value;
+	unsigned int BufferIndex;
+	unsigned int VariableOffsetInBuffer;
 	unsigned int SizeInByte;
 };
 
 struct MaterialTexParas
 {
 	std::string Name;
-	std::shared_ptr<GTexture>TexturePtr;
+	unsigned int ResourceIndex;
+	std::shared_ptr<GTexture2D>TexturePtr;
 };
 
 class RMaterial;
@@ -44,7 +47,7 @@ public:
 	void SetMaterialValueFloat2(const std::string& ValueName, XVector2 Value);
 	void SetMaterialValueFloat3(const std::string& ValueName, XVector3 Value);
 	void SetMaterialValueFloat4(const std::string& ValueName, XVector4 Value);
-	void SetMaterialTexture2D(const std::string& TexName, std::shared_ptr<GTexture> TexPtrIn);
+	void SetMaterialTexture2D(const std::string& TexName, std::shared_ptr<GTexture2D> TexPtrIn);
 
 	std::vector<MaterialValueParas>MaterialFloatArray;
 	std::vector<MaterialTexParas>MaterialTextureArray;

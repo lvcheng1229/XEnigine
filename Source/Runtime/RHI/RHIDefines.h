@@ -65,6 +65,8 @@ enum class EVertexElementType
 	VET_Float2,
 	VET_Float3,
 	VET_Float4,
+	VET_UINT16,
+	VET_UINT32,
 	VET_Color,
 	VET_PackedNormal,	// FPackedNormal
 	VET_MAX,

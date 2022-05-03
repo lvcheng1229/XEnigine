@@ -854,6 +854,7 @@ private:
 private:
 	XLocalVertexFactory LocalVertexFactory;
 	
+	std::shared_ptr<GGeomertry>TestQuadPtr;
 	
 	
 	RMaterial SphereMaterial;
@@ -2085,6 +2086,7 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 void CrateApp::LoadTextures()
 {
+	TestQuadPtr = TempCreateQuadGeoWithMat();
 	{
 		int w, h, n;
 		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Metal_Gold_D.TGA", &w, &h, &n, 0);

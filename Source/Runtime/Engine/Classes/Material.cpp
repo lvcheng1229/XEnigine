@@ -58,7 +58,7 @@ void GMaterialInstance::SetMaterialValueFloat4(const std::string& ValueName, XVe
 	X_Assert(false);
 }
 
-void GMaterialInstance::SetMaterialTexture2D(const std::string& TexName, std::shared_ptr<GTexture> TexPtrIn)
+void GMaterialInstance::SetMaterialTexture2D(const std::string& TexName, std::shared_ptr<GTexture2D> TexPtrIn)
 {
 	for (auto iter = MaterialTextureArray.begin(); iter != MaterialTextureArray.end(); iter++)
 	{
