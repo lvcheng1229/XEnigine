@@ -4,6 +4,7 @@ cbuffer cbView
     float4x4 View_ScreenToTranslatedWorld;
     float4x4 View_ViewToClip;
     float4x4 View_ScreenToWorld;
+    float4x4 View_ViewPorjectionMatrix;
 
     float4 View_InvDeviceZToWorldZTransform;
     float3 View_WorldCameraOrigin;

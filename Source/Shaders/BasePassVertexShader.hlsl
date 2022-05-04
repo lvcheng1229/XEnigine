@@ -5,11 +5,12 @@ cbuffer cbPerObject
     float4x4 gWorld;
 }
 
-cbuffer cbPass
-{
-    float4x4 gViewProj;
-}
+//cbuffer cbPass
+//{
+//    float4x4 gViewProj;
+//}
 
+#include "Common.Hlsl"
 
 //#include "Generated/VertexFactory.hlsl"
 

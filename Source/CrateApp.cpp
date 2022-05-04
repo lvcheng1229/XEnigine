@@ -1009,7 +1009,7 @@ private:
 
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
 	std::vector<RenderItem*> mOpaqueRitems;
-    PassConstants mMainPassCB;
+    //PassConstants mMainPassCB;
 	XMatrix mProj = XMatrix::Identity;
 	XMatrix mLightProj = XMatrix::Identity;
     POINT mLastMousePos;
@@ -1043,7 +1043,7 @@ bool CrateApp::Initialize()
 
 	mFrameResource = std::make_unique<FrameResource>();
 	
-	mFrameResource.get()->PassConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants)));
+	//mFrameResource.get()->PassConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants)));
 	
 	for (int i = 0; i < mMaterials.size();i++)
 	{
@@ -1197,7 +1197,7 @@ static XD3DGraphicsPSO static_pso(static_RHIPSOINIT, nullptr, nullptr);
 void CrateApp::Renderer(const GameTimer& gt)
 {
 	pass_state_manager->ResetDescHeapIndex();
-	pass_state_manager->TempResetPSO(&static_pso);
+	//pass_state_manager->TempResetPSO(&static_pso);
 	
 	//Pass1 DepthPrePass
 	{
@@ -1227,7 +1227,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 			direct_ctx->RHISetShaderConstantBuffer(
 				EShaderType::SV_Vertex, 1,
-				mFrameResource.get()->PassConstantBuffer.get());
+				RViewInfo.ViewConstantBuffer.get());
 
 			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(ri->Geo->VertexBufferView()));
 			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
@@ -1427,8 +1427,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 			
 			direct_ctx->RHISetShaderConstantBuffer(
 				EShaderType::SV_Vertex, 1,
-				mFrameResource.get()->PassConstantBuffer.get());
-		
+				RViewInfo.ViewConstantBuffer.get());
+			
 
 			direct_ctx->RHISetShaderTexture(EShaderType::SV_Pixel, 0,
 				ri->Mat->TextureBaseColor.get());
@@ -1451,9 +1451,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		}
 
 		{
-
-
-			TShaderReference<TBasePassPS<false>> BasePixelShader;
 			XGraphicsPSOInitializer_WithoutRT PassState;
 			{
 				//PassShaders
@@ -1473,9 +1470,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 					TShaderReference<TBasePassVS<false>> BaseVertexShader = TShaderReference<TBasePassVS<false>>(
 						static_cast<TBasePassVS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Vertex]), XShaders.ShaderMap);
 
-					BasePixelShader = TShaderReference<TBasePassPS<false>>(
+					TShaderReference<TBasePassPS<false>> BasePixelShader = TShaderReference<TBasePassPS<false>>(
 						static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]), XShaders.ShaderMap);
 
+					BaseVertexShader->SetParameter(RHICmdList, nullptr,TestQuadPtr->GetPerObjectVertexCBuffer().get());
 					BasePixelShader->SetParameter(RHICmdList, TestQuadPtr->GetMaterialInstance());
 
 					std::shared_ptr<XRHIVertexLayout> RefVertexLayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default);
@@ -1502,14 +1500,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 				SetGraphicsPipelineStateFromPSOInit(RHICmdList, PSOInitializer);
 			}
 
-			direct_ctx->RHISetShaderConstantBuffer(
-				EShaderType::SV_Vertex, 0,
-				mFrameResource.get()->ObjectConstantBuffer[1].get());
 
 			direct_ctx->RHISetShaderConstantBuffer(
 				EShaderType::SV_Vertex, 1,
-				mFrameResource.get()->PassConstantBuffer.get());
-
+				RViewInfo.ViewConstantBuffer.get());
 
 			RHICmdList.SetVertexBuffer(TestQuadPtr->GetRHIVertexBuffer().get(), 0, 0);
 			RHICmdList.RHIDrawIndexedPrimitive(TestQuadPtr->GetRHIIndexBuffer().get(), 6, 1, 0, 0, 0);
@@ -1767,11 +1761,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
 		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 		mCommandList->EndEvent();
-
-
-
-
-		
 	}
 
 
@@ -1941,9 +1930,6 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	cbDefferedLightIns.LightColorAndIntensityInLux = XMFLOAT4(LightColor.x, LightColor.y, LightColor.z, LightIntensity);
 	RHIcbDefferedLight->UpdateData(&cbDefferedLightIns, sizeof(cbDefferedLight), 0);
 
-	//BasePass
-	memcpy(&mMainPassCB.ViewProj, &ViewMatrix.GetViewProjectionMatrixTranspose(), sizeof(DirectX::XMFLOAT4X4));
-	mFrameResource->PassConstantBuffer.get()->UpdateData(&mMainPassCB, sizeof(PassConstants), 0);
 	
 	FrameNum++;
 	RViewInfo.ViewCBCPUData.StateFrameIndexMod8 = FrameNum % 8;
@@ -1959,10 +1945,8 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	RViewInfo.ViewCBCPUData.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorldTranPose();
 	RViewInfo.ViewCBCPUData.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(ViewMatrix.GetProjectionMatrix());
 	RViewInfo.ViewCBCPUData.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
-
+	RViewInfo.ViewCBCPUData.ViewProjectionMatrix = ViewMatrix.GetViewProjectionMatrixTranspose();
 	
-	//cbHZBins.DispatchThreadIdToBufferUV = XMFLOAT4(1.0 / 512.0, 1.0 / 512.0, 1.0, 1.0);
-	//RHICbbHZB.get()->UpdateData(&cbHZBins, sizeof(cbHZB), 0);
 
 	//Shadow Pass
 	for (uint32 i = 0; i < 4; i++)
@@ -1971,7 +1955,6 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		memcpy(&ShadowPassConstant[i].Proj, &LightMatrix[i].GetProjectionMatrixTranspose(), sizeof(XMatrix));
 		ShadowPassConstantBuffer[i].get()->UpdateData(&ShadowPassConstant[i], sizeof(ShadowPassConstants), 0);
 	}
-
 
 	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0f / mClientWidth, 1.0f / mClientHeight);
 
@@ -2155,6 +2138,7 @@ void CrateApp::LoadTextures()
 	TestQuadPtr = TempCreateQuadGeoWithMat();
 	TestQuadPtr->GetGVertexBuffer()->CreateRHIBufferChecked();
 	TestQuadPtr->GetGIndexBuffer()->CreateRHIBufferChecked();
+	TestQuadPtr->SetWorldTranslate(XVector3(0.0, 1.5,0.0));
 	{
 		int w, h, n;
 		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Metal_Gold_D.TGA", &w, &h, &n, 0);

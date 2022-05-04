@@ -44,7 +44,7 @@ public:
     FrameResource& operator=(const FrameResource& rhs) = delete;
     ~FrameResource() {};
 
-    std::shared_ptr<XRHIConstantBuffer>PassConstantBuffer;
+    //std::shared_ptr<XRHIConstantBuffer>PassConstantBuffer;
     std::vector<std::shared_ptr<XRHIConstantBuffer>>MaterialConstantBuffer;
     std::vector<std::shared_ptr<XRHIConstantBuffer>>ObjectConstantBuffer;
 };

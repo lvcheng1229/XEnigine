@@ -87,6 +87,7 @@ struct ViewConstantBufferData
 	XMatrix ScreenToTranslatedWorld;
 	XMatrix ViewToClip;
 	XMatrix ScreenToWorld;
+	XMatrix ViewProjectionMatrix;
 
 	XVector4 InvDeviceZToWorldZTransform;
 	XVector3 WorldCameraOrigin;

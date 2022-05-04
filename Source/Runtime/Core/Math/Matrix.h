@@ -1,5 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
+#include "SimpleMath.h"
 namespace DirectX
 {
     namespace SimpleMath
@@ -36,6 +37,10 @@ namespace DirectX
                     r3.x, r3.y, r3.z, r3.w) {}
 
             LMatrix(const XMFLOAT4X4& M) noexcept { memcpy(this, &M, sizeof(XMFLOAT4X4)); }
+            LMatrix Transpose() const noexcept;
+
+            static LMatrix CreateScale(const Vector3& scales) noexcept;
+            static LMatrix CreateTranslation(const Vector3& position) noexcept;
         };
     }
 }

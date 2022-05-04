@@ -166,7 +166,10 @@ public:
 	{
 		return MaterialInstancePtr;
 	}
+
+	std::shared_ptr<XRHIConstantBuffer> GetPerObjectVertexCBuffer();
 private:
 	std::shared_ptr<GMeshData>MeshDataPtr;
 	std::shared_ptr<GMaterialInstance>MaterialInstancePtr;
+	std::shared_ptr<XRHIConstantBuffer>PerObjectVertexCBuffer;
 };

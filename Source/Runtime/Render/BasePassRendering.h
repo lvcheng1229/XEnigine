@@ -1,6 +1,7 @@
 #pragma once
 #include "MeshMaterialShader.h"
 #include "Runtime/Engine/Classes/Material.h"
+#include "Runtime/RenderCore/ShaderParameter.h"
 
 template<bool TempType>
 class TBasePassPS : public XMeshMaterialShader
@@ -50,6 +51,18 @@ public:
 	TBasePassVS(const XShaderInitlizer& Initializer) :
 		XMeshMaterialShader(Initializer)
 	{
-
+		cbPerObject.Bind(Initializer.ShaderParameterMap, "cbPerObject");
+		cbPass.Bind(Initializer.ShaderParameterMap, "cbPass");
 	}
+
+	void SetParameter(
+		XRHICommandList& RHICommandList,
+		XRHIConstantBuffer* ViewCB,
+		XRHIConstantBuffer* CBPerObjectIn)
+	{
+		//SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Vertex, cbPass, ViewCB);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Vertex, cbPerObject, CBPerObjectIn);
+	}
+	CBVParameterType cbPerObject;
+	CBVParameterType cbPass;
 };

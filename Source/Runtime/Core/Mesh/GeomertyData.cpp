@@ -96,3 +96,20 @@ void GIndexBuffer::CreateRHIBufferChecked()
 	XRHIResourceCreateData CreateData(&ResourceData);
 	RHIIndexBuffer = RHICreateIndexBuffer(IndexBufferPtr->GetDataTypeSize(), IndexBufferPtr->DataByteSize, EBufferUsage::BUF_Static, CreateData);
 }
+
+struct VertexCBufferStruct
+{
+	XMatrix WorldMatrix;
+};
+
+std::shared_ptr<XRHIConstantBuffer> GGeomertry::GetPerObjectVertexCBuffer()
+{
+	if (PerObjectVertexCBuffer.get() == nullptr)
+	{
+		PerObjectVertexCBuffer = RHICreateConstantBuffer(sizeof(VertexCBufferStruct));
+	}
+
+	PerObjectVertexCBuffer->UpdateData(GetRValuePtr(GetWorldTransform().GetCombineMatrixTranspose()), sizeof(XMatrix), 0);
+
+	return PerObjectVertexCBuffer;
+}

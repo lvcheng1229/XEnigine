@@ -23,5 +23,5 @@ void VsToPsCompute(FVertexFactoryInput Input ,in out FVertexFactoryInterpolantsV
     Output.TexCoords=float4(Input.TexCoord.xy,0.0f,0.0f);
     Output.TestWorldPosition= mul(Input.Position,gWorld).xyz;
     float4 PositionW=mul(Input.Position, gWorld);
-    Position=mul(PositionW, gViewProj);
+    Position=mul(PositionW, View_ViewPorjectionMatrix);
 }
