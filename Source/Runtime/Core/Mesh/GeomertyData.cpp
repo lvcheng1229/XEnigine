@@ -1,5 +1,6 @@
 #include "GeomertyData.h"
-
+#include "Runtime/Core/ResourceCreateDataInterface.h"
+#include "Runtime/RHI/RHICommandList.h"
 uint32 GDataBuffer::DataTypeByteSize[(int)EVertexElementType::VET_MAX] =
 {
 	0,
@@ -9,8 +10,8 @@ uint32 GDataBuffer::DataTypeByteSize[(int)EVertexElementType::VET_MAX] =
 	12,
 	16,
 
-	16,
-	32,
+	2,
+	4,
 
 	16,
 	0,
@@ -36,7 +37,7 @@ void GVertexBuffer::SetData(std::shared_ptr<GDataBuffer> DataBufferIn, EVertexAt
 	DataBufferPtrArray[(int)EVAIn] = DataBufferIn;
 }
 
-void GVertexBuffer::CreateRHIVertexBufferAndLayoutChecked()
+void GVertexBuffer::CreateRHIBufferChecked()
 {
 	if (RHIVertexLayout.get() != nullptr)
 	{
@@ -54,13 +55,44 @@ void GVertexBuffer::CreateRHIVertexBufferAndLayoutChecked()
 		{
 			LayoutArray.push_back(XVertexElement(SemanticIndex, BufferPtr->DataType, 0, ByteOffset));
 			SemanticIndex++;
-			ByteOffset += BufferPtr->DataByteSize;
+			ByteOffset += BufferPtr->GetDataTypeSize();
 		}
 	}
-	
-	uint64 ElementNum = ByteOffset * DataBufferPtrArray[(int)EVertexAttributeType::VAT_POSITION]->DataNum;
-	for (uint64 i = 0; i < ElementNum; i++)
-	{
+	RHIVertexLayout = RHICreateVertexLayout(LayoutArray);
 
+	uint32 ElementSize = ByteOffset;
+	uint64 ArrayElementNum = DataBufferPtrArray[(int)EVertexAttributeType::VAT_POSITION]->DataNum;;
+	uint64 ArrayByteSize = ElementSize * ArrayElementNum;
+	
+	FResourceVectorUint8 ResourceData;
+	ResourceData.Data = std::malloc(ArrayByteSize);
+	ResourceData.SetResourceDataSize(ArrayByteSize);
+	
+	for (uint64 i = 0; i < ArrayElementNum; i++)
+	{
+		uint32 OffsetInVertex = 0;
+		for (int j = 0; j < (int)EVertexAttributeType::VAT_MAX_NUM; j++)
+		{
+			std::shared_ptr<GDataBuffer> BufferPtr = DataBufferPtrArray[j];
+			if (BufferPtr.get() != nullptr)
+			{
+				memcpy((uint8*)ResourceData.Data + i * ElementSize + OffsetInVertex, 
+					BufferPtr->GetData() + i * BufferPtr->GetDataTypeSize(), BufferPtr->GetDataTypeSize());
+				OffsetInVertex += BufferPtr->GetDataTypeSize();
+			}
+		}
 	}
+
+	XRHIResourceCreateData VertexCreateData(&ResourceData);
+	RHIVertexBuffer = RHIcreateVertexBuffer(ElementSize, ArrayByteSize, EBufferUsage::BUF_Static, VertexCreateData);
+}
+
+void GIndexBuffer::CreateRHIBufferChecked()
+{
+	FResourceVectorUint8 ResourceData;
+	ResourceData.Data = std::malloc(IndexBufferPtr->DataByteSize);
+	ResourceData.SetResourceDataSize(IndexBufferPtr->DataByteSize);
+	memcpy(ResourceData.Data, IndexBufferPtr->GetData(), IndexBufferPtr->DataByteSize);
+	XRHIResourceCreateData CreateData(&ResourceData);
+	RHIIndexBuffer = RHICreateIndexBuffer(IndexBufferPtr->GetDataTypeSize(), IndexBufferPtr->DataByteSize, EBufferUsage::BUF_Static, CreateData);
 }

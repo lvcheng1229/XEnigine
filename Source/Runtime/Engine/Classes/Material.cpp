@@ -6,7 +6,9 @@ void GMaterialInstance::SetMaterialValueFloat(const std::string& ValueName, floa
 	{
 		if (iter->Name == ValueName)
 		{
-			iter->Value.push_back(Value);
+			bValueChanged = true;
+			iter->Value.resize(1);
+			iter->Value[0] = Value;
 			return;
 		}
 	}
@@ -19,8 +21,10 @@ void GMaterialInstance::SetMaterialValueFloat2(const std::string& ValueName, XVe
 	{
 		if (iter->Name == ValueName)
 		{
-			iter->Value.push_back(Value.x);
-			iter->Value.push_back(Value.y);
+			bValueChanged = true;
+			iter->Value.resize(2);
+			iter->Value[0] = Value.x;
+			iter->Value[1] = Value.y;
 			return;
 		}
 	}
@@ -33,9 +37,11 @@ void GMaterialInstance::SetMaterialValueFloat3(const std::string& ValueName, XVe
 	{
 		if (iter->Name == ValueName)
 		{
-			iter->Value.push_back(Value.x);
-			iter->Value.push_back(Value.y);
-			iter->Value.push_back(Value.z);
+			bValueChanged = true;
+			iter->Value.resize(3);
+			iter->Value[0] = Value.x;
+			iter->Value[1] = Value.y;
+			iter->Value[2] = Value.z;
 			return;
 		}
 	}
@@ -48,10 +54,12 @@ void GMaterialInstance::SetMaterialValueFloat4(const std::string& ValueName, XVe
 	{
 		if (iter->Name == ValueName)
 		{
-			iter->Value.push_back(Value.x);
-			iter->Value.push_back(Value.y);
-			iter->Value.push_back(Value.z);
-			iter->Value.push_back(Value.w);
+			bValueChanged = true;
+			iter->Value.resize(4);
+			iter->Value[0] = Value.x;
+			iter->Value[1] = Value.y;
+			iter->Value[2] = Value.z;
+			iter->Value[3] = Value.w;
 			return;
 		}
 	}
@@ -64,6 +72,7 @@ void GMaterialInstance::SetMaterialTexture2D(const std::string& TexName, std::sh
 	{
 		if (iter->Name == TexName)
 		{
+			bValueChanged = true;
 			iter->TexturePtr = TexPtrIn;
 			return;
 		}
@@ -71,6 +80,26 @@ void GMaterialInstance::SetMaterialTexture2D(const std::string& TexName, std::sh
 	X_Assert(false);
 }
 
+std::shared_ptr<XRHIConstantBuffer> GMaterialInstance::GetRHIConstantBuffer()
+{
+	if (MaterialRHIConstantBuffer.get() == nullptr)
+	{
+		MaterialRHIConstantBuffer = RHICreateConstantBuffer(256);
+	}
+
+	if (bValueChanged)
+	{
+		for (auto iter = MaterialFloatArray.begin(); iter != MaterialFloatArray.end(); iter++)
+		{
+			if (iter->Value.size() != 0)
+			{
+				MaterialRHIConstantBuffer->UpdateData(iter->Value.data(), iter->SizeInByte, iter->VariableOffsetInBuffer);
+			}
+		}
+		bValueChanged = false;
+	}
+	return MaterialRHIConstantBuffer;
+}
 
 
 

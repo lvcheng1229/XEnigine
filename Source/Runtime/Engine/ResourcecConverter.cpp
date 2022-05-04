@@ -84,6 +84,7 @@ std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn
 						VariableDesc.Name ,
 						{},
 						ResourceDesc.BindPoint,
+						//3,
 						VariableDesc.StartOffset,
 						VariableDesc.Size });
 				}
@@ -96,7 +97,7 @@ std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn
 std::shared_ptr<GGeomertry> CreateDefualtQuadGeo()
 {
 	std::vector<XVector4>Positions;
-	std::vector<XVector4>TangentX;
+	std::vector<XVector3>TangentX;
 	std::vector<XVector4>TangentY;
 	std::vector<XVector2>TextureCoords;
 	std::vector<uint16>Indices;
@@ -106,10 +107,10 @@ std::shared_ptr<GGeomertry> CreateDefualtQuadGeo()
 	Positions.push_back(XVector4(-8.0, 0.0, 8.0, 1.0));
 	Positions.push_back(XVector4(-8.0, 0.0, -8.0, 1.0));
 
-	TangentX.push_back(XVector4(1.0, 0.0, 0.0, 1.0));
-	TangentX.push_back(XVector4(1.0, 0.0, 0.0, 1.0));
-	TangentX.push_back(XVector4(1.0, 0.0, 0.0, 1.0));
-	TangentX.push_back(XVector4(1.0, 0.0, 0.0, 1.0));
+	TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+	TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+	TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+	TangentX.push_back(XVector3(1.0, 0.0, 0.0));
 
 	TangentY.push_back(XVector4(0.0, 1.0, 0.0, 1.0));
 	TangentY.push_back(XVector4(0.0, 1.0, 0.0, 1.0));
@@ -134,7 +135,7 @@ std::shared_ptr<GGeomertry> CreateDefualtQuadGeo()
 	PositionDataBuffer->SetData((uint8*)Positions.data(), Positions.size(), EVertexElementType::VET_Float4);
 
 	std::shared_ptr<GDataBuffer> TangentXDataBuffer = std::make_shared<GDataBuffer>();
-	TangentXDataBuffer->SetData((uint8*)TangentX.data(), TangentX.size(), EVertexElementType::VET_Float4);
+	TangentXDataBuffer->SetData((uint8*)TangentX.data(), TangentX.size(), EVertexElementType::VET_Float3);
 
 	std::shared_ptr<GDataBuffer> TangentYDataBuffer = std::make_shared<GDataBuffer>();
 	TangentYDataBuffer->SetData((uint8*)TangentY.data(), TangentY.size(), EVertexElementType::VET_Float4);
@@ -174,13 +175,13 @@ std::shared_ptr<GGeomertry> TempCreateQuadGeoWithMat()
 	MaterialIns->SetMaterialValueFloat("TextureScale",10.0f);
 	
 	std::shared_ptr<GTexture2D> TexBaseColor = 
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Metal_Gold_D.TGA", true);
+		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Rock_Sandstone_D.TGA", true);
 
 	std::shared_ptr<GTexture2D> TexRouhness =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Metal_Gold_D.TGA", false);
+		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_MacroVariation.TGA", false);
 
 	std::shared_ptr<GTexture2D> TexNormal =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_MacroVariation.TGA", false);
+		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Rock_Sandstone_N.TGA", false);
 
 	TexBaseColor->CreateRHITexture();
 	TexRouhness->CreateRHITexture();
@@ -191,6 +192,6 @@ std::shared_ptr<GGeomertry> TempCreateQuadGeoWithMat()
 	MaterialIns->SetMaterialTexture2D("NormalMap", TexNormal);
 
 	Result->SetMaterialPtr(MaterialIns);
-	return std::shared_ptr<GGeomertry>();
+	return Result;
 }
 

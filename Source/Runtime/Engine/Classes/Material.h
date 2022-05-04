@@ -38,6 +38,7 @@ class GMaterialInstance :public GObject
 public:
 	GMaterialInstance(std::shared_ptr<GMaterial>MaterialPtrIn)
 	{
+		bValueChanged = true;
 		MaterialPtr = MaterialPtrIn;
 		MaterialFloatArray = MaterialPtrIn->MaterialValueArray;
 		MaterialTextureArray = MaterialPtrIn->MaterialTextureArray;
@@ -48,10 +49,15 @@ public:
 	void SetMaterialValueFloat3(const std::string& ValueName, XVector3 Value);
 	void SetMaterialValueFloat4(const std::string& ValueName, XVector4 Value);
 	void SetMaterialTexture2D(const std::string& TexName, std::shared_ptr<GTexture2D> TexPtrIn);
+	std::shared_ptr<XRHIConstantBuffer> GetRHIConstantBuffer();
 
 	std::vector<MaterialValueParas>MaterialFloatArray;
 	std::vector<MaterialTexParas>MaterialTextureArray;
 
 	std::shared_ptr<GMaterial>MaterialPtr;
 	//RMaterial* GetRMaterial()const;
+
+private:
+	bool bValueChanged;
+	std::shared_ptr<XRHIConstantBuffer> MaterialRHIConstantBuffer;
 };

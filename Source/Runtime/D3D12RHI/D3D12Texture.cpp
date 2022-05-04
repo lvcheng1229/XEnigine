@@ -4,6 +4,11 @@
 #include "D3D12AbstractDevice.h"
 #include "Runtime/RHI/RHICommandList.h"
 
+std::shared_ptr<XRHIConstantBuffer> XD3D12PlatformRHI::RHICreateConstantBuffer(uint32 size)
+{
+	return std::shared_ptr<XRHIConstantBuffer>(AbsDevice->CreateUniformBuffer(size));
+}
+
 std::shared_ptr<XRHITexture2D> XD3D12PlatformRHI::RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
 	bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
 {

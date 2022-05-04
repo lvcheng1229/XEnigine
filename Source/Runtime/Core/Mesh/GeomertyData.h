@@ -29,6 +29,14 @@ public:
 	static uint32 DataTypeByteSize[(int)EVertexElementType::VET_MAX];
 	~GDataBuffer();
 	void SetData(uint8* DataStoreIn, uint64 DataNumIn, EVertexElementType DataTypeIn);
+	inline uint32 GetDataTypeSize()const
+	{
+		return DataTypeByteSize[(int)DataType];
+	}
+	inline const uint8* GetData()const
+	{
+		return DataStore.data();
+	}
 protected:
 	EVertexElementType  DataType;
 	std::vector<uint8>DataStore;
@@ -45,25 +53,38 @@ enum class EVertexAttributeType
 	VAT_MAX_NUM,
 };
 
-struct DataPerVertex
-{
-	XVector4 Position;
-	XVector3 TangentX;
-	XVector4 TangentY;
-	XVector2 TextureCoord;
-};
 
 class GVertexBuffer : public GObject
 {
 public:
-	void PushVertex(DataPerVertex& DataPerVertexIn);
 	void SetData(std::shared_ptr<GDataBuffer>DataBufferIn, EVertexAttributeType EVAIn);
-	void CreateRHIVertexBufferAndLayoutChecked();
-	inline std::shared_ptr<XRHIVertexLayout> GetRHIVertexLayout();
-	inline std::shared_ptr<XRHIVertexBuffer> GetRHIVertexBuffer();
+	void CreateRHIBufferChecked();
+	inline std::shared_ptr<XRHIVertexLayout> GetRHIVertexLayout()const
+	{
+		return RHIVertexLayout;
+	}
+	inline std::shared_ptr<XRHIVertexBuffer> GetRHIVertexBuffer()const
+	{
+		return RHIVertexBuffer;
+	}
+	//inline std::shared_ptr<GDataBuffer> GetPositionPtr()const
+	//{
+	//	return DataBufferPtrArray[(int)EVertexAttributeType::VAT_POSITION];
+	//}
+	//inline std::shared_ptr<GDataBuffer> GetTangentPtr()const
+	//{
+	//	return DataBufferPtrArray[(int)EVertexAttributeType::VAT_TANGENT];
+	//}
+	//inline std::shared_ptr<GDataBuffer> GetNormalPtr()const
+	//{
+	//	return DataBufferPtrArray[(int)EVertexAttributeType::VAT_NORMAL];
+	//}
+	//inline std::shared_ptr<GDataBuffer> GetTextureCoordPtr()const
+	//{
+	//	return DataBufferPtrArray[(int)EVertexAttributeType::VAT_TEXCOORD];
+	//}
 private:
 	std::shared_ptr<GDataBuffer> DataBufferPtrArray[(int)EVertexAttributeType::VAT_MAX_NUM];
-
 	std::shared_ptr<XRHIVertexLayout> RHIVertexLayout;
 	std::shared_ptr<XRHIVertexBuffer> RHIVertexBuffer;
 };
@@ -71,12 +92,18 @@ private:
 class GIndexBuffer : public GObject
 {
 public:
+	void CreateRHIBufferChecked();
 	inline void SetData(std::shared_ptr<GDataBuffer>DataBufferIn)
 	{
 		IndexBufferPtr = DataBufferIn;
 	}
+	inline std::shared_ptr<XRHIIndexBuffer> GetRHIIndexBuffer()const
+	{
+		return RHIIndexBuffer;
+	}
 private:
 	std::shared_ptr<GDataBuffer> IndexBufferPtr;
+	std::shared_ptr<XRHIIndexBuffer> RHIIndexBuffer;
 };
 
 class GMeshData :public GObject
@@ -99,6 +126,31 @@ private:
 class GGeomertry :public GSpatial
 {
 public:
+	inline std::shared_ptr<GVertexBuffer> GetGVertexBuffer()const
+	{
+		return MeshDataPtr->VertexBufferPtr;
+	}
+	inline std::shared_ptr<XRHIVertexLayout> GetRHIVertexLayout()const
+	{
+		return MeshDataPtr->VertexBufferPtr->GetRHIVertexLayout();
+	}
+	inline std::shared_ptr<XRHIVertexBuffer> GetRHIVertexBuffer()const
+	{
+		return MeshDataPtr->VertexBufferPtr->GetRHIVertexBuffer();
+	}
+
+
+	inline std::shared_ptr<GIndexBuffer> GetGIndexBuffer()const
+	{
+		return MeshDataPtr->IndexBufferPtr;
+	}
+	inline std::shared_ptr<XRHIIndexBuffer> GetRHIIndexBuffer()const
+	{
+		return MeshDataPtr->IndexBufferPtr->GetRHIIndexBuffer();
+	}
+
+
+
 
 	inline void SetMeshData(std::shared_ptr<GMeshData>MeshDataPtrIn)
 	{
@@ -108,6 +160,11 @@ public:
 	inline void SetMaterialPtr(std::shared_ptr<GMaterialInstance>MaterialInstancePtrIn)
 	{
 		MaterialInstancePtr = MaterialInstancePtrIn;
+	}
+
+	inline std::shared_ptr<GMaterialInstance> GetMaterialInstance()
+	{
+		return MaterialInstancePtr;
 	}
 private:
 	std::shared_ptr<GMeshData>MeshDataPtr;

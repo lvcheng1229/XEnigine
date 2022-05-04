@@ -2,7 +2,7 @@
 #include "D3D12AbstractDevice.h"
 #include "Runtime/D3D12RHI/d3dx12.h"
 #include "Runtime/Core/Template/XEngineTemplate.h"
-
+#include "Runtime/Core/Template/AlignmentTemplate.h"
 
 XD3D12AbstractDevice::~XD3D12AbstractDevice()
 {
@@ -61,5 +61,13 @@ std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(
 	XD3D12ResourcePtr_CPUGPU& Location = ContantBuffer.get()->ResourceLocation;
 	ConstantBufferUploadHeapAlloc.Allocate(size, 256, Location);
 	return ContantBuffer;
+}
+
+XD3D12ConstantBuffer* XD3D12AbstractDevice::CreateConstantBuffer(uint32 size)
+{
+	XD3D12ConstantBuffer* ConstantBuffer = new XD3D12ConstantBuffer();
+	XD3D12ResourcePtr_CPUGPU& Location = ConstantBuffer->ResourceLocation;
+	ConstantBufferUploadHeapAlloc.Allocate(Align(size,256), 256, Location);
+	return ConstantBuffer;
 }
 

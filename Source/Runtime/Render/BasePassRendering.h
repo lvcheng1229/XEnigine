@@ -25,15 +25,11 @@ public:
 		XRHICommandList& RHICommandList,
 		std::shared_ptr<GMaterialInstance> MaterialInstancePtr)
 	{
-		for (auto iter = MaterialInstancePtr->MaterialFloatArray.begin(); iter != MaterialInstancePtr->MaterialFloatArray.end(); iter++)
-		{
-			RHICommandList.SetShaderValue(EShaderType::SV_Pixel,iter->BufferIndex,
-				iter->VariableOffsetInBuffer,iter->SizeInByte,iter->Value.data());
-		}
+		RHICommandList.SetConstantBuffer(EShaderType::SV_Pixel, 0, MaterialInstancePtr->GetRHIConstantBuffer().get());
 
 		for (auto iter = MaterialInstancePtr->MaterialTextureArray.begin(); iter != MaterialInstancePtr->MaterialTextureArray.end(); iter++)
 		{
-			RHICommandList.SetShaderTexture(EShaderType::SV_Pixel, iter->ResourceIndex, iter->TexturePtr->GetRHITexture2D());
+			RHICommandList.SetShaderTexture(EShaderType::SV_Pixel, iter->ResourceIndex, iter->TexturePtr->GetRHITexture2D().get());
 		}
 	}
 };

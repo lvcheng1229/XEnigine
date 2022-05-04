@@ -11,6 +11,34 @@ public:
 	virtual void ReleaseData() = 0;
 };
 
+
+class FResourceVectorUint8 :public FResourceArrayInterface
+{
+private:
+	uint32 Size;
+public:
+	void* Data;
+	void SetResourceDataSize(uint32 SizeIn)
+	{
+		Size = SizeIn;
+	}
+
+	const void* GetResourceData() const override
+	{
+		return Data;
+	}
+
+	uint32 GetResourceDataSize() const override
+	{
+		return Size;
+	}
+
+	void ReleaseData()override
+	{
+		std::free(Data);
+	}
+};
+
 template<typename T>
 class TResourceVector :public FResourceArrayInterface
 {

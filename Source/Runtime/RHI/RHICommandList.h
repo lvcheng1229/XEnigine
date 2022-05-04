@@ -174,6 +174,11 @@ inline void UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)
 	return GPlatformRHI->UnLockIndexBuffer(IndexBuffer);
 }
 
+inline std::shared_ptr<XRHIConstantBuffer> RHICreateConstantBuffer(uint32 size)
+{
+	return GPlatformRHI->RHICreateConstantBuffer(size);
+}
+
 inline std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ,
 	bool bTextureArray, bool bCubeTexture, EPixelFormat Format,
 	ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)

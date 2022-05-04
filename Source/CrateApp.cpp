@@ -1047,7 +1047,7 @@ bool CrateApp::Initialize()
 	
 	for (int i = 0; i < mMaterials.size();i++)
 	{
-		mFrameResource.get()->MaterialConstantBuffer.push_back(abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants))));
+		mFrameResource.get()->MaterialConstantBuffer.push_back(RHICreateConstantBuffer(sizeof(MaterialConstants)));
 	}
 
 	for (uint32 i = 0; i < mAllRitems.size();++i)
@@ -1449,6 +1449,72 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 			mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 		}
+
+		{
+
+
+			TShaderReference<TBasePassPS<false>> BasePixelShader;
+			XGraphicsPSOInitializer_WithoutRT PassState;
+			{
+				//PassShaders
+				XRHIBoundShaderStateInput_WithoutRT PassShaders;
+				{
+					//GetBasePassShaders
+					XMaterialShaderInfo_Set ShaderInfos;
+					XMaterialShader_Set XShaders;
+
+					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
+					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = &TBasePassVS<false>::StaticShaderInfos;
+					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
+
+
+					SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
+
+					TShaderReference<TBasePassVS<false>> BaseVertexShader = TShaderReference<TBasePassVS<false>>(
+						static_cast<TBasePassVS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Vertex]), XShaders.ShaderMap);
+
+					BasePixelShader = TShaderReference<TBasePassPS<false>>(
+						static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]), XShaders.ShaderMap);
+
+					BasePixelShader->SetParameter(RHICmdList, TestQuadPtr->GetMaterialInstance());
+
+					std::shared_ptr<XRHIVertexLayout> RefVertexLayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default);
+					PassShaders.RHIVertexLayout = RefVertexLayout.get();
+
+					PassShaders.MappingRHIVertexShader = BaseVertexShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
+					PassShaders.IndexRHIVertexShader = BaseVertexShader->GetRHIShaderIndex();
+
+					PassShaders.MappingRHIPixelShader = BasePixelShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
+					PassShaders.IndexRHIPixelShader = BasePixelShader->GetRHIShaderIndex();
+
+					
+				}
+				PassState.BoundShaderState = PassShaders;
+				PassState.BlendState = TStaticBlendState<>::GetRHI();
+				PassState.DepthStencilState = TStaticDepthStencilState<true, ECompareFunction::CF_GreaterEqual>::GetRHI();
+			}
+
+			//SubmitDraw
+			{
+				XGraphicsPSOInitializer PSOInitializer = PassState.TransToGraphicsPSOInitializer();
+				RHICmdList.ApplyCachedRenderTargets(PSOInitializer);
+
+				SetGraphicsPipelineStateFromPSOInit(RHICmdList, PSOInitializer);
+			}
+
+			direct_ctx->RHISetShaderConstantBuffer(
+				EShaderType::SV_Vertex, 0,
+				mFrameResource.get()->ObjectConstantBuffer[1].get());
+
+			direct_ctx->RHISetShaderConstantBuffer(
+				EShaderType::SV_Vertex, 1,
+				mFrameResource.get()->PassConstantBuffer.get());
+
+
+			RHICmdList.SetVertexBuffer(TestQuadPtr->GetRHIVertexBuffer().get(), 0, 0);
+			RHICmdList.RHIDrawIndexedPrimitive(TestQuadPtr->GetRHIIndexBuffer().get(), 6, 1, 0, 0, 0);
+		}
+
 		pass_state_manager->ResetState();
 		mCommandList->EndEvent();
 	}
@@ -2087,6 +2153,8 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 void CrateApp::LoadTextures()
 {
 	TestQuadPtr = TempCreateQuadGeoWithMat();
+	TestQuadPtr->GetGVertexBuffer()->CreateRHIBufferChecked();
+	TestQuadPtr->GetGIndexBuffer()->CreateRHIBufferChecked();
 	{
 		int w, h, n;
 		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Metal_Gold_D.TGA", &w, &h, &n, 0);
