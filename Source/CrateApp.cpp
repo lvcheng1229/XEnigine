@@ -836,6 +836,9 @@ private:
 	void BuildMaterials();
 	void BuildRenderItems();
 
+
+	void TestExecute();
+
 	BoundSphere BuildBoundSphere(float FoVAngleY, float WHRatio, float SplirNear, float SplitFar);
 
 	Camera cam_ins;
@@ -845,6 +848,11 @@ private:
 	XVector3 LightColor = { 1,1,1 };
 	float LightIntensity = 7.0f;
 
+
+	//GPU Driven
+	ComPtr<ID3D12Resource> m_commandBuffer;
+	ComPtr<ID3D12Resource> commandBufferUpload;
+	ComPtr<ID3D12CommandSignature> m_commandSignature;
 private:
 	//UI
 	uint32 IMGUI_IndexOfDescInHeap;
@@ -1025,6 +1033,7 @@ CrateApp::~CrateApp()
 	if (md3dDevice != nullptr)direct_cmd_queue->CommandQueueWaitFlush();
 }
 
+
 //-------------------
 bool CrateApp::Initialize()
 {
@@ -1040,6 +1049,7 @@ bool CrateApp::Initialize()
 	BuildShapeGeometry();
 	BuildMaterials();
 	BuildRenderItems();
+	
 
 	mFrameResource = std::make_unique<FrameResource>();
 
@@ -1073,6 +1083,7 @@ bool CrateApp::Initialize()
 	RHIcbDefferedLight = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbDefferedLight)));
 
 	BuildPSOs();
+	TestExecute();
 
 	OutputDebugString(L"1111\n");
 
@@ -1194,6 +1205,88 @@ void CrateApp::Update(const GameTimer& gt)
 static XGraphicsPSOInitializer static_RHIPSOINIT;
 static XD3DGraphicsPSO static_pso(static_RHIPSOINIT, nullptr, nullptr);
 
+struct DepthPassIndirectCommand
+{
+	D3D12_GPU_VIRTUAL_ADDRESS CbWorld;
+	D3D12_VERTEX_BUFFER_VIEW VertexBufferView;
+	D3D12_INDEX_BUFFER_VIEW IndexBufferView;
+	D3D12_DRAW_INDEXED_ARGUMENTS DrawArguments;
+};
+
+void CrateApp::TestExecute()
+{
+	
+	
+	//----------------------------------------------
+	D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[4] = {};
+	argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
+	argumentDescs[0].ConstantBufferView.RootParameterIndex = 0;//cbPerObject
+	
+	argumentDescs[1].Type = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
+	argumentDescs[1].VertexBuffer.Slot = 0;
+
+	argumentDescs[2].Type = D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW;
+	argumentDescs[3].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+
+	D3D12_COMMAND_SIGNATURE_DESC CommandSignatureDesc = {};
+	CommandSignatureDesc.pArgumentDescs = argumentDescs;
+	CommandSignatureDesc.NumArgumentDescs = _countof(argumentDescs);
+	CommandSignatureDesc.ByteStride = sizeof(DepthPassIndirectCommand);
+	
+	ThrowIfFailed(md3dDevice->CreateCommandSignature(&CommandSignatureDesc,PrePassRootSig.GetDXRootSignature(), IID_PPV_ARGS(&m_commandSignature)));
+
+	std::vector<DepthPassIndirectCommand> commands;
+	commands.resize(mOpaqueRitems.size());
+	
+	for (int i = 0; i < mOpaqueRitems.size(); i++)
+	{
+		auto& ri = mOpaqueRitems[i];
+		XD3D12ConstantBuffer* ConstantBuffer = static_cast<XD3D12ConstantBuffer*>(
+			mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
+		commands[i].CbWorld = ConstantBuffer->ResourceLocation.GetGPUVirtualPtr();
+
+		commands[i].VertexBufferView = ri->Geo->VertexBufferView();
+		commands[i].IndexBufferView = ri->Geo->IndexBufferView();
+
+		commands[i].DrawArguments.IndexCountPerInstance = ri->IndexCount;
+		commands[i].DrawArguments.InstanceCount = 1;
+		commands[i].DrawArguments.StartIndexLocation = ri->StartIndexLocation;
+		commands[i].DrawArguments.BaseVertexLocation = ri->BaseVertexLocation;
+		commands[i].DrawArguments.StartInstanceLocation = 0;
+	}
+
+	const UINT commandBufferSize = sizeof(DepthPassIndirectCommand) * mOpaqueRitems.size();
+
+	D3D12_SUBRESOURCE_DATA commandData = {};
+	commandData.pData = reinterpret_cast<UINT8*>(&commands[0]);
+	commandData.RowPitch = commandBufferSize;
+	commandData.SlicePitch = commandData.RowPitch;
+	
+	
+	{
+		D3D12_RESOURCE_DESC commandBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(commandBufferSize);
+		ThrowIfFailed(md3dDevice->CreateCommittedResource(
+			GetRValuePtr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT)),
+			D3D12_HEAP_FLAG_NONE,
+			&commandBufferDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&m_commandBuffer)));
+
+		ThrowIfFailed(md3dDevice->CreateCommittedResource(
+			GetRValuePtr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD)),
+			D3D12_HEAP_FLAG_NONE,
+			GetRValuePtr(CD3DX12_RESOURCE_DESC::Buffer(commandBufferSize)),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&commandBufferUpload)));
+	}
+
+	UpdateSubresources<1>(mCommandList.Get(), m_commandBuffer.Get(), commandBufferUpload.Get(), 0, 0, 1, &commandData);
+	mCommandList->ResourceBarrier(1, 
+		GetRValuePtr(CD3DX12_RESOURCE_BARRIER::Transition(m_commandBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)));
+}
+
 void CrateApp::Renderer(const GameTimer& gt)
 {
 	pass_state_manager->ResetDescHeapIndex();
@@ -1218,26 +1311,45 @@ void CrateApp::Renderer(const GameTimer& gt)
 		pass_state_manager->SetShader<EShaderType::SV_Pixel>(&mShaders["PrePassPS"]);
 		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
 
-		for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
-		{
-			auto& ri = mOpaqueRitems[i];
-			direct_ctx->RHISetShaderConstantBuffer(EShaderType::SV_Vertex,
-				0,
-				mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
 
+		{
 			direct_ctx->RHISetShaderConstantBuffer(
 				EShaderType::SV_Vertex, 1,
 				RViewInfo.ViewConstantBuffer.get());
-
-			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(ri->Geo->VertexBufferView()));
-			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
 			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-
 			direct_ctx->GetCmdList()->CmdListFlushBarrier();
-			mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+			mCommandList->ExecuteIndirect(
+				m_commandSignature.Get(),
+				mOpaqueRitems.size(),
+				m_commandBuffer.Get(),
+				0,
+				nullptr,
+				0);
 		}
+		
+
+		//for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
+		//{
+		//	auto& ri = mOpaqueRitems[i];
+		//	direct_ctx->RHISetShaderConstantBuffer(EShaderType::SV_Vertex,
+		//		0,
+		//		mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
+		//
+		//	direct_ctx->RHISetShaderConstantBuffer(
+		//		EShaderType::SV_Vertex, 1,
+		//		RViewInfo.ViewConstantBuffer.get());
+		//
+		//	mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(ri->Geo->VertexBufferView()));
+		//	mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
+		//	pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
+		//
+		//	direct_ctx->GetCmdList()->CmdListFlushBarrier();
+		//	mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+		//}
 		mCommandList->EndEvent();
 	}
+
+	pass_state_manager->ResetState();
 
 	//Pass2 HZB Pass
 	{

@@ -7,6 +7,10 @@
 struct ObjectConstants
 {
     DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
+    DirectX::XMFLOAT3 BoundingBoxMax;
+    float padding0;
+    DirectX::XMFLOAT3 BoundingBoxMin;
+    float padding1;
 };
 
 

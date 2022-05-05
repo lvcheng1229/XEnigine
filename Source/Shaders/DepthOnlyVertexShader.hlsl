@@ -1,6 +1,10 @@
 cbuffer cbPerObject
 {
     float4x4 gWorld;
+    float3 BoundBoxMax;
+    float padding0;
+    float3 BoundBoxMin;
+    float padding1;
 }
 
 #include "common.hlsl"
