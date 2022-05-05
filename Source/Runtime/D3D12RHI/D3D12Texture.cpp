@@ -174,12 +174,12 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 
 		uint32 index_of_desc_in_heap;
 		uint32 index_of_heap;
-		ShaderResourceDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
+		CBV_SRV_UAVDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
 
 		XD3D12ShaderResourceView ShaderResourceView;
 		ShaderResourceView.Create(
 			PhysicalDevice, TextureResource,
-			srvDesc, ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+			srvDesc, CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
 		TextureRet->SetShaderResourceView(ShaderResourceView);
 
 	}
@@ -206,12 +206,12 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 
 			uint32 index_of_desc_in_heap;
 			uint32 index_of_heap;
-			ShaderResourceDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
+			CBV_SRV_UAVDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
 
 			XD3D12UnorderedAcessView UnorderedAcessView;
 			UnorderedAcessView.Create(
 				PhysicalDevice, TextureResource,
-				UavDesc, ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+				UavDesc, CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
 			TextureRet->SetUnorderedAcessView(UnorderedAcessView);
 		}
 	}
@@ -381,12 +381,12 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 		uint32 index_of_desc_in_heap;
 		uint32 index_of_heap;
-		ShaderResourceDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
+		CBV_SRV_UAVDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
 
 		XD3D12ShaderResourceView ShaderResourceView;
 		ShaderResourceView.Create(
 			PhysicalDevice, TextureResource,
-			srvDesc, ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+			srvDesc, CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
 		TextureRet->SetShaderResourceView(ShaderResourceView);
 
 	}
@@ -403,12 +403,12 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 		uint32 index_of_desc_in_heap;
 		uint32 index_of_heap;
-		ShaderResourceDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
+		CBV_SRV_UAVDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
 
 		XD3D12UnorderedAcessView UnorderedAcessView;
 		UnorderedAcessView.Create(
 			PhysicalDevice, TextureResource,
-			UavDesc, ShaderResourceDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+			UavDesc, CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
 		TextureRet->SetUnorderedAcessView(UnorderedAcessView);
 	}
 

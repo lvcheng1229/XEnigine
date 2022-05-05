@@ -314,13 +314,16 @@ public:
 		cbCullingParameters.Bind(Initializer.ShaderParameterMap, "cbCullingParameters");
 	}
 
-	void SetParameters(XRHICommandList& RHICommandList)
+	void SetParameters(XRHICommandList& RHICommandList,
+		XRHIUnorderedAcessView* OutputCommandsUAV,
+		XRHIShaderResourceView* InputCommandsSRV,
+		XRHIConstantBuffer* CullingParametersCBV)
 	{
 
 	}
 
 	UAVParameterType outputCommands;
-	TextureParameterType inputCommands;
+	SRVParameterType inputCommands;
 	CBVParameterType cbCullingParameters;
 };
 DepthGPUCullingCS::ShaderInfos DepthGPUCullingCS::StaticShaderInfos(
@@ -888,7 +891,18 @@ private:
 	ComPtr<ID3D12CommandSignature> m_commandSignature;
 
 	std::shared_ptr<XRHIStructBuffer>CmdBufferNoCulling;
+
+	uint32 CounterOffset;
 	std::shared_ptr<XRHIStructBuffer>CmdBufferCulled;
+
+	std::shared_ptr<XRHIShaderResourceView>CmdBufferShaderResourceView;
+	std::shared_ptr<XRHIUnorderedAcessView> CmdBufferUnorderedAcessView;
+
+	struct cbCullingParametersStruct
+	{
+		float commandCount;
+	};
+	std::shared_ptr<XRHIConstantBuffer>cbCullingParameters;
 private:
 	//UI
 	uint32 IMGUI_IndexOfDescInHeap;
@@ -1115,6 +1129,7 @@ bool CrateApp::Initialize()
 		ShadowMaskNoCommonConstantBuffer[i] = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbShadowMaskNoCommonBuffer)));
 	}
 
+	cbCullingParameters = RHICreateConstantBuffer(sizeof(cbCullingParametersStruct));
 	RHICbSkyAtmosphere = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbSkyAtmosphere)));
 	RHIcbDefferedLight = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbDefferedLight)));
 
@@ -1292,8 +1307,9 @@ void CrateApp::TestExecute()
 	}
 	
 	//Create Command Buffer
+	uint32 IndirectBufferDataSize = sizeof(DepthPassIndirectCommand) * commands.size();
 	{
-		uint32 IndirectBufferDataSize = sizeof(DepthPassIndirectCommand) * commands.size();
+		
 		void* IndirectBufferDataPtr = std::malloc(IndirectBufferDataSize);
 		memcpy(IndirectBufferDataPtr, commands.data(), IndirectBufferDataSize);
 		FResourceVectorUint8 IndirectBufferData;
@@ -1309,6 +1325,20 @@ void CrateApp::TestExecute()
 		m_commandBufferOffset = static_cast<XD3D12StructBuffer*>(CmdBufferNoCulling.get())->ResourcePtr.GetOffsetByteFromBaseResource();
 	}
 	
+	CounterOffset = AlignArbitrary(IndirectBufferDataSize, D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT);
+	{
+		CmdBufferCulled = RHIcreateStructBuffer(
+			sizeof(DepthPassIndirectCommand),
+			CounterOffset + sizeof(UINT),
+			EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer)|int(EBufferUsage::BUF_UnorderedAccess)),
+			nullptr);
+	}
+
+	CmdBufferShaderResourceView = RHICreateShaderResourceView(CmdBufferNoCulling.get());
+	CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(CmdBufferCulled.get(), true, true, CounterOffset);
+
+	float SizeFloat = commands.size();
+	cbCullingParameters->UpdateData(&SizeFloat, sizeof(float), 0);
 	//used in compute shader
 	//{
 	//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -1345,15 +1375,20 @@ void CrateApp::Renderer(const GameTimer& gt)
 	}
 
 	//Pass0 GPU Culling
-	//{
-	//	TShaderReference<XRenderTransmittanceLutCS> Shader = GetGlobalShaderMapping()->GetShader<XRenderTransmittanceLutCS>();
-	//	XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
-	//	SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
-	//
-	//	XD3D12TextureBase* TransmittanceLutUAVTex = GetD3D12TextureFromRHITexture(TransmittanceLutUAV.get());
-	//	Shader->SetParameters(RHICmdList, TransmittanceLutUAVTex->GeUnorderedAcessView(), RHICbSkyAtmosphere.get());
-	//	RHICmdList.RHIDispatchComputeShader(256 / 8, 64 / 8, 1);
-	//}
+	{
+		TShaderReference<DepthGPUCullingCS> Shader = GetGlobalShaderMapping()->GetShader<DepthGPUCullingCS>();
+		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
+		RHIResetStructBufferCounter(CmdBufferCulled.get(), CounterOffset);
+		Shader->SetParameters(
+			RHICmdList, 
+			CmdBufferUnorderedAcessView.get(),
+			CmdBufferShaderResourceView.get(),
+			cbCullingParameters.get());
+		RHICmdList.RHIDispatchComputeShader(128, 1, 1);
+	}
+
+
 
 	//Pass1 DepthPrePass
 	{
@@ -1373,6 +1408,23 @@ void CrateApp::Renderer(const GameTimer& gt)
 		pass_state_manager->SetShader<EShaderType::SV_Pixel>(&mShaders["PrePassPS"]);
 		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
 
+		{
+			bool m_enableCulling = false;
+
+
+
+			//		D3D12_RESOURCE_BARRIER barriers[2] = {
+			//CD3DX12_RESOURCE_BARRIER::Transition(
+			//m_enableCulling ? m_processedCommandBuffers[m_frameIndex].Get() : m_commandBuffer.Get(),
+			//m_enableCulling ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+			//D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)
+			D3D12_RESOURCE_BARRIER barriers[1] = {
+			CD3DX12_RESOURCE_BARRIER::Transition(
+			m_commandBuffer.Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT) };
+			mCommandList->ResourceBarrier(_countof(barriers), barriers);
+		}
 
 		{
 			direct_ctx->RHISetShaderConstantBuffer(
@@ -1388,7 +1440,70 @@ void CrateApp::Renderer(const GameTimer& gt)
 				nullptr,
 				0);
 		}
+		ID3D12Resource * AllUploadBuffer=
+			static_cast<XD3D12ConstantBuffer*>(cbCullingParameters.get())->ResourceLocation.GetBackResource()->GetResource();
+
 		
+		//GFullScreenVertexRHI.RHIVertexBuffer
+		//D3D12_RESOURCE_BARRIER barriers[2] = {
+		//	CD3DX12_RESOURCE_BARRIER::Transition(
+		//		
+		//	m_commandBuffer.Get(),
+		//	D3D12_RESOURCE_STATE_COPY_DEST,
+		//	D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT) };
+		{
+			std::vector<D3D12_RESOURCE_BARRIER>barriers;
+			//barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+			//	AllUploadBuffer,
+			//	D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+			//	D3D12_RESOURCE_STATE_INDEX_BUFFER));
+			
+			//
+			//do this becase do ExecuteIndirect will Transition all resource in heap
+			//no event for m_commandBuffer resource
+			barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+				m_commandBuffer.Get(),
+				D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+				D3D12_RESOURCE_STATE_COMMON));
+			//D3D12_RESOURCE_BARRIER barriers[1] = {
+			//CD3DX12_RESOURCE_BARRIER::Transition(
+			//m_commandBuffer.Get(),
+			//D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+			//D3D12_RESOURCE_STATE_COMMON) };
+
+			std::vector<std::string>ItemsName;
+			for (int i = 0; i < mOpaqueRitems.size(); i++)
+			{
+				auto& ri = mOpaqueRitems[i];
+				MeshGeometry* GeoS = ri->Geo;
+				auto iter = ItemsName.begin();
+				bool find = false;
+				for (; iter != ItemsName.end(); iter++)
+				{
+					if (*iter == GeoS->Name)
+					{
+						find = true;
+					}
+				}
+				
+				if (find == false)
+				{
+					ItemsName.push_back(GeoS->Name);
+					barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+						GeoS->GetID3DVertexBufferResource(),
+						D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+						D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+
+					barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+						GeoS->GetID3DIndexBufferResource(),
+						D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+						D3D12_RESOURCE_STATE_INDEX_BUFFER));
+				}
+			}
+			mCommandList->ResourceBarrier(barriers.size(), barriers.data());
+
+			//direct_ctx->GetCmdList()->CmdListFlushBarrier();
+		}
 
 		//for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
 		//{

@@ -202,6 +202,16 @@ inline void RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer,uint32
 	GPlatformRHI->RHIResetStructBufferCounter(RHIStructBuffer, CounterOffset);
 }
 
+inline std::shared_ptr<XRHIUnorderedAcessView> RHICreateUnorderedAccessView(XRHIStructBuffer* StructuredBuffer, bool bUseUAVCounter, bool bAppendBuffer, uint64 CounterOffsetInBytes)
+{
+	return GPlatformRHI->RHICreateUnorderedAccessView(StructuredBuffer, bUseUAVCounter, bAppendBuffer, CounterOffsetInBytes);
+}
+
+inline std::shared_ptr<XRHIShaderResourceView> RHICreateShaderResourceView(XRHIStructBuffer* StructuredBuffer)
+{
+	return GPlatformRHI->RHICreateShaderResourceView(StructuredBuffer);
+}
+
 inline std::shared_ptr<XRHIStructBuffer>RHIcreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	return GPlatformRHI->RHIcreateStructBuffer(Stride, Size, Usage, ResourceData);

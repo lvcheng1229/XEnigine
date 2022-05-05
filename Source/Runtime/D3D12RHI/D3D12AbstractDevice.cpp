@@ -25,11 +25,12 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 
 	RenderTargetDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128);
 	DepthStencilDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 128);
-	ShaderResourceDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128);
+	CBV_SRV_UAVDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128);
 
 	XAllocConfig default_cfg;
 	default_cfg.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
 	default_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
+	default_cfg.d3d12_resource_flags = D3D12_RESOURCE_FLAG_NONE;
 	DefaultNonRtDsTextureHeapAlloc.Create(PhysicalDevice, default_cfg, 512 * (1 << 20), (64 * 1024), AllocStrategy::PlacedResource);
 
 
@@ -37,12 +38,14 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	BufferTypeAlloc_HeapDefault.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
 	BufferTypeAlloc_HeapDefault.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
 	BufferTypeAlloc_HeapDefault.d3d12_resource_states = D3D12_RESOURCE_STATE_COMMON;
+	BufferTypeAlloc_HeapDefault.d3d12_resource_flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	VIBufferBufferAllocDefault.Create(PhysicalDevice, BufferTypeAlloc_HeapDefault, 512 * (1 << 20), (64 * 1024), AllocStrategy::ManualSubAllocation);
 
 
 	XAllocConfig upload_cfg;
 	upload_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_UPLOAD;
 	upload_cfg.d3d12_resource_states = D3D12_RESOURCE_STATE_GENERIC_READ;
+	upload_cfg.d3d12_resource_flags = D3D12_RESOURCE_FLAG_NONE;
 	UploadHeapAlloc.Create(PhysicalDevice, upload_cfg, 512 * (1 << 20), (64 * 1024), AllocStrategy::ManualSubAllocation);
 
 	ConstantBufferUploadHeapAlloc.Create(PhysicalDevice, upload_cfg, 128 * (1 << 20), 256, AllocStrategy::ManualSubAllocation);
@@ -55,24 +58,40 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	}
 
 	//Create Zero Struct Buffer
+	//{
+	//	uint32 ZeroStructBufferSize = sizeof(uint64) * 4;
+	//	void* IndirectBufferDataPtr = std::malloc(ZeroStructBufferSize);
+	//	memset(IndirectBufferDataPtr, 0, ZeroStructBufferSize);
+	//
+	//	FResourceVectorUint8 ZeroStructBufferData;
+	//	ZeroStructBufferData.Data = IndirectBufferDataPtr;
+	//	ZeroStructBufferData.SetResourceDataSize(ZeroStructBufferSize);
+	//	XRHIResourceCreateData ZeroStructBufferResourceData(&ZeroStructBufferData);
+	//
+	//	D3D12_RESOURCE_DESC BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint64) * 4);
+	//	D3D12ZeroStructBuffer = std::shared_ptr<XD3D12StructBuffer>(
+	//		DeviceCreateRHIBuffer<XD3D12StructBuffer>(
+	//			GetDirectContex(0)->GetCmdList(),
+	//			BufferDesc, 4, sizeof(uint64), (sizeof(uint64) * 4),
+	//			EBufferUsage::BUF_StructuredBuffer, ZeroStructBufferResourceData));
+	//}
+
 	{
-		uint32 ZeroStructBufferSize = sizeof(uint64) * 4;
-		void* IndirectBufferDataPtr = std::malloc(ZeroStructBufferSize);
-		memset(IndirectBufferDataPtr, 0, ZeroStructBufferSize);
+		
+		ThrowIfFailed(PhysicalDevice->GetDXDevice()->CreateCommittedResource(
+			GetRValuePtr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD)),
+			D3D12_HEAP_FLAG_NONE,
+			GetRValuePtr(CD3DX12_RESOURCE_DESC::Buffer(sizeof(UINT))),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&ID3D12ZeroStructBuffer)));
 
-		FResourceVectorUint8 ZeroStructBufferData;
-		ZeroStructBufferData.Data = IndirectBufferDataPtr;
-		ZeroStructBufferData.SetResourceDataSize(ZeroStructBufferSize);
-		XRHIResourceCreateData ZeroStructBufferResourceData(&ZeroStructBufferData);
-
-		D3D12_RESOURCE_DESC BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint64) * 4);
-		D3D12ZeroStructBuffer = std::shared_ptr<XD3D12StructBuffer>(
-			DeviceCreateRHIBuffer<XD3D12StructBuffer>(
-				GetDirectContex(0)->GetCmdList(),
-				BufferDesc, 4, sizeof(uint64), (sizeof(uint64) * 4),
-				EBufferUsage::BUF_StructuredBuffer, ZeroStructBufferResourceData));
+		UINT8* pMappedCounterReset = nullptr;
+		CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
+		ThrowIfFailed(ID3D12ZeroStructBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pMappedCounterReset)));
+		ZeroMemory(pMappedCounterReset, sizeof(UINT));
+		ID3D12ZeroStructBuffer->Unmap(0, nullptr);
 	}
-
 }
 
 std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(uint32 size)

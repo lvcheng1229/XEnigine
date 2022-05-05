@@ -30,7 +30,7 @@ public:
 	
 	inline XD3D12DescArrayManager*	GetRenderTargetDescArrayManager()		{ return &RenderTargetDescArrayManager; }
 	inline XD3D12DescArrayManager*	GetDepthStencilDescArrayManager()		{ return &DepthStencilDescArrayManager; }
-	inline XD3D12DescArrayManager*	GetShaderResourceDescArrayManager()		{ return &ShaderResourceDescArrayManager; }
+	inline XD3D12DescArrayManager*	GetShaderResourceDescArrayManager()		{ return &CBV_SRV_UAVDescArrayManager; }
 
 	inline std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>& GetRootSigMap() { return RootSignatureMap; }
 
@@ -50,8 +50,10 @@ public:
 		uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
 
 	void DeviceResetStructBufferCounter(XD3D12DirectCommandList* D3D12CmdList, XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset);
-
+	XD3D12ShaderResourceView* RHICreateShaderResourceView(XRHIStructBuffer* StructuredBuffer);
+	XD3D12UnorderedAcessView* RHICreateUnorderedAccessView(XRHIStructBuffer* StructuredBuffer, bool bUseUAVCounter, bool bAppendBuffer, uint64 CounterOffsetInBytes);
 private:
+
 	uint64 TempResourceIndex;
 	std::vector<XD3D12Resource>ResourceManagerTempVec;
 
@@ -59,12 +61,14 @@ private:
 
 	XD3D12PhysicDevice* PhysicalDevice;
 
+	XDxRefCount<ID3D12Resource> ID3D12ZeroStructBuffer;
+
 	XD3D12CommandQueue* DirectxCmdQueue;;
 	XD3D12CommandQueue* ComputeCmdQueue;
 
-	std::shared_ptr<XD3D12StructBuffer> D3D12ZeroStructBuffer;
+	//std::shared_ptr<XD3D12StructBuffer> D3D12ZeroStructBuffer;
 
-	XD3DBuddyAllocator VIBufferBufferAllocDefault;//manual+default
+	XD3DBuddyAllocator VIBufferBufferAllocDefault;//manual+default +allow unrodered acess
 	//XD3DBuddyAllocator VIBufferBufferAllocUpload;//manual+upload ->uisng UploadHeapAlloc
 
 	XD3DBuddyAllocator DefaultNonRtDsTextureHeapAlloc;	//placed+default
@@ -75,6 +79,6 @@ private:
 
 	XD3D12DescArrayManager RenderTargetDescArrayManager;
 	XD3D12DescArrayManager DepthStencilDescArrayManager;
-	XD3D12DescArrayManager ShaderResourceDescArrayManager;
+	XD3D12DescArrayManager CBV_SRV_UAVDescArrayManager;
 	XD3D12DescArrayManager ConstantBufferDescArrayManager;
 };

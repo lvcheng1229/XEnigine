@@ -51,6 +51,7 @@ private:
 
 
 using TextureParameterType = XSRVCBVUAVParameter;
+using SRVParameterType = XSRVCBVUAVParameter;
 using UAVParameterType = XSRVCBVUAVParameter;
 using CBVParameterType = XSRVCBVUAVParameter;
 

@@ -185,6 +185,16 @@ struct MeshGeometry
 	// the Submeshes individually.
 	std::unordered_map<std::string, SubmeshGeometry> DrawArgs;
 
+    ID3D12Resource* GetID3DVertexBufferResource()
+    {
+        return VertexBufferGPU.Get();
+    }
+
+    ID3D12Resource* GetID3DIndexBufferResource()
+    {
+        return IndexBufferGPU.Get();
+    }
+
 	D3D12_VERTEX_BUFFER_VIEW VertexBufferView()const
 	{
 		D3D12_VERTEX_BUFFER_VIEW vbv;

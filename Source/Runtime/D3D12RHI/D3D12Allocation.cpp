@@ -56,10 +56,13 @@ void XD3DBuddyAllocator::Create(
 	}
 	else
 	{
+		CD3DX12_RESOURCE_DESC ResDesc = CD3DX12_RESOURCE_DESC::Buffer(max_block_size);
+		ResDesc.Flags |= config.d3d12_resource_flags;
+
 		ThrowIfFailed(GetParentDevice()->GetDXDevice()->CreateCommittedResource(
 			GetRValuePtr((CD3DX12_HEAP_PROPERTIES(config.d3d12_heap_type))),
 			D3D12_HEAP_FLAG_NONE,
-			GetRValuePtr((CD3DX12_RESOURCE_DESC::Buffer(max_block_size))),
+			&ResDesc,
 			config.d3d12_resource_states,
 			nullptr,
 			IID_PPV_ARGS(back_resource.GetPtrToResourceAdress())));
