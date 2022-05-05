@@ -102,7 +102,7 @@ struct ViewConstantBufferData
 	XVector4 SkyPlanetCenterAndViewHeight;
 	XMatrix SkyViewLutReferential;
 
-	XVector4 ViewSizeAndInvSize;;
+	XVector4 ViewSizeAndInvSize;
 };
 
 class XSceneView
