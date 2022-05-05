@@ -74,6 +74,8 @@ public:
 
     XD3D12DescArrayManager* RenderTargetDescArrayManager;
     XD3D12DescArrayManager* DepthStencilDescArrayManager;
+    XD3D12DescArrayManager* CBVSRVUAVDescArrayManager;
+
 
     XD3D12PassStateManager* pass_state_manager;
 

@@ -4,7 +4,7 @@
 #include "D3D12DescriptorArray.h"
 #include "D3D12Allocation.h"
 #include "D3D12Texture.h"
-
+#include "D3D12Buffer.h"
 #include <memory>
 
 
@@ -46,8 +46,10 @@ public:
 		EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
 	template<typename BufferType>
-	BufferType* CreateRHIVIBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
+	BufferType* DeviceCreateRHIBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
 		uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
+
+	void DeviceResetStructBufferCounter(XD3D12DirectCommandList* D3D12CmdList, XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset);
 
 private:
 	uint64 TempResourceIndex;
@@ -59,6 +61,8 @@ private:
 
 	XD3D12CommandQueue* DirectxCmdQueue;;
 	XD3D12CommandQueue* ComputeCmdQueue;
+
+	std::shared_ptr<XD3D12StructBuffer> D3D12ZeroStructBuffer;
 
 	XD3DBuddyAllocator VIBufferBufferAllocDefault;//manual+default
 	//XD3DBuddyAllocator VIBufferBufferAllocUpload;//manual+upload ->uisng UploadHeapAlloc

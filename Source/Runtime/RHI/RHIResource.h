@@ -32,6 +32,17 @@ private:
 	uint32 Stride;
 };
 
+class XRHIStructBuffer
+{
+public:
+	XRHIStructBuffer(uint32 StrideIn, uint32 SizeIn)
+		:Size(SizeIn),
+		Stride(StrideIn) {}
+private:
+	uint32 Size;
+	uint32 Stride;
+};
+
 class XRHIShader
 {
 public:

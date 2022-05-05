@@ -197,6 +197,16 @@ inline std::shared_ptr<XRHIVertexBuffer>RHIcreateVertexBuffer(uint32 Stride, uin
 	return GPlatformRHI->RHIcreateVertexBuffer(Stride, Size, Usage, ResourceData);
 }
 
+inline void RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer,uint32 CounterOffset)
+{
+	GPlatformRHI->RHIResetStructBufferCounter(RHIStructBuffer, CounterOffset);
+}
+
+inline std::shared_ptr<XRHIStructBuffer>RHIcreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return GPlatformRHI->RHIcreateStructBuffer(Stride, Size, Usage, ResourceData);
+}
+
 inline std::shared_ptr<XRHIIndexBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	return GPlatformRHI->RHICreateIndexBuffer(Stride, Size, Usage, ResourceData);

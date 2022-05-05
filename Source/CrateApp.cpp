@@ -188,7 +188,7 @@ public:
 		GBufferCTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferCTexture");
 		GBufferDTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferDTexture");
 		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
-		LightAttenuationTexture.Bind(Initializer.ShaderParameterMap, "LightAttenuationTexture");
+		//LightAttenuationTexture.Bind(Initializer.ShaderParameterMap, "LightAttenuationTexture");
 	}
 
 	void SetParameter(
@@ -222,7 +222,7 @@ public:
 	TextureParameterType GBufferCTexture;
 	TextureParameterType GBufferDTexture;
 	TextureParameterType SceneDepthTexture;
-	TextureParameterType LightAttenuationTexture;
+	//TextureParameterType LightAttenuationTexture;
 
 };
 
@@ -295,6 +295,38 @@ XShadowMaskPassPS::ShaderInfos XShadowMaskPassPS::StaticShaderInfos(
 	"PS", EShaderType::SV_Pixel, XShadowMaskPassPS::CustomConstrucFunc,
 	XShadowMaskPassPS::ModifyShaderCompileSettings);
 
+
+//
+class DepthGPUCullingCS : public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new DepthGPUCullingCS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+public:
+	DepthGPUCullingCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		outputCommands.Bind(Initializer.ShaderParameterMap, "outputCommands");
+		inputCommands.Bind(Initializer.ShaderParameterMap, "inputCommands");
+		cbCullingParameters.Bind(Initializer.ShaderParameterMap, "cbCullingParameters");
+	}
+
+	void SetParameters(XRHICommandList& RHICommandList)
+	{
+
+	}
+
+	UAVParameterType outputCommands;
+	TextureParameterType inputCommands;
+	CBVParameterType cbCullingParameters;
+};
+DepthGPUCullingCS::ShaderInfos DepthGPUCullingCS::StaticShaderInfos(
+	"DepthGPUCullingCS", L"E:/XEngine/XEnigine/Source/Shaders/GPUCulling.hlsl",
+	"CSMain", EShaderType::SV_Compute, DepthGPUCullingCS::CustomConstrucFunc,
+	DepthGPUCullingCS::ModifyShaderCompileSettings);
 
 //XHZBPassCS
 class XHZBPassCS :public XGloablShader
@@ -733,7 +765,7 @@ struct RenderItem
 
 	Material* Mat = nullptr;
 	MeshGeometry* Geo = nullptr;
-
+	DirectX::BoundingBox BoundingBox;
 	// DrawIndexedInstanced parameters.
 	UINT IndexCount = 0;
 	UINT StartIndexLocation = 0;
@@ -850,9 +882,13 @@ private:
 
 
 	//GPU Driven
+	uint64 m_commandBufferOffset;
 	ComPtr<ID3D12Resource> m_commandBuffer;
 	ComPtr<ID3D12Resource> commandBufferUpload;
 	ComPtr<ID3D12CommandSignature> m_commandSignature;
+
+	std::shared_ptr<XRHIStructBuffer>CmdBufferNoCulling;
+	std::shared_ptr<XRHIStructBuffer>CmdBufferCulled;
 private:
 	//UI
 	uint32 IMGUI_IndexOfDescInHeap;
@@ -1254,37 +1290,48 @@ void CrateApp::TestExecute()
 		commands[i].DrawArguments.BaseVertexLocation = ri->BaseVertexLocation;
 		commands[i].DrawArguments.StartInstanceLocation = 0;
 	}
-
-	const UINT commandBufferSize = sizeof(DepthPassIndirectCommand) * mOpaqueRitems.size();
-
-	D3D12_SUBRESOURCE_DATA commandData = {};
-	commandData.pData = reinterpret_cast<UINT8*>(&commands[0]);
-	commandData.RowPitch = commandBufferSize;
-	commandData.SlicePitch = commandData.RowPitch;
 	
-	
+	//Create Command Buffer
 	{
-		D3D12_RESOURCE_DESC commandBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(commandBufferSize);
-		ThrowIfFailed(md3dDevice->CreateCommittedResource(
-			GetRValuePtr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT)),
-			D3D12_HEAP_FLAG_NONE,
-			&commandBufferDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&m_commandBuffer)));
+		uint32 IndirectBufferDataSize = sizeof(DepthPassIndirectCommand) * commands.size();
+		void* IndirectBufferDataPtr = std::malloc(IndirectBufferDataSize);
+		memcpy(IndirectBufferDataPtr, commands.data(), IndirectBufferDataSize);
+		FResourceVectorUint8 IndirectBufferData;
+		IndirectBufferData.Data = IndirectBufferDataPtr;
+		IndirectBufferData.SetResourceDataSize(IndirectBufferDataSize);
+		XRHIResourceCreateData IndirectBufferResourceData(&IndirectBufferData);
+		CmdBufferNoCulling = RHIcreateStructBuffer(
+			sizeof(DepthPassIndirectCommand),
+			IndirectBufferDataSize,
+			EBufferUsage(int(EBufferUsage::BUF_DrawIndirect) | (int)EBufferUsage::BUF_ShaderResource),
+			IndirectBufferResourceData);
+		m_commandBuffer = static_cast<XD3D12StructBuffer*>(CmdBufferNoCulling.get())->ResourcePtr.GetBackResource()->GetResource();
+		m_commandBufferOffset = static_cast<XD3D12StructBuffer*>(CmdBufferNoCulling.get())->ResourcePtr.GetOffsetByteFromBaseResource();
+	}
+	
+	//used in compute shader
+	//{
+	//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	//	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	//	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	//	srvDesc.Buffer.NumElements = mOpaqueRitems.size();
+	//	srvDesc.Buffer.StructureByteStride = sizeof(DepthPassIndirectCommand);
+	//	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+	//	srvDesc.Buffer.FirstElement = 0;
+	//
+	//	uint32 index_of_desc_in_heap;
+	//	uint32 index_of_heap;
+	//	CBVSRVUAVDescArrayManager->AllocateDesc(index_of_desc_in_heap, index_of_heap);
+	//	md3dDevice->CreateShaderResourceView(m_commandBuffer.Get(), &srvDesc, 
+	//		CBVSRVUAVDescArrayManager->compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
+	//}
 
-		ThrowIfFailed(md3dDevice->CreateCommittedResource(
-			GetRValuePtr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD)),
-			D3D12_HEAP_FLAG_NONE,
-			GetRValuePtr(CD3DX12_RESOURCE_DESC::Buffer(commandBufferSize)),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&commandBufferUpload)));
+	//used in compute shader -->>ComsumeBuffer
+	{
+
 	}
 
-	UpdateSubresources<1>(mCommandList.Get(), m_commandBuffer.Get(), commandBufferUpload.Get(), 0, 0, 1, &commandData);
-	mCommandList->ResourceBarrier(1, 
-		GetRValuePtr(CD3DX12_RESOURCE_BARRIER::Transition(m_commandBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)));
 }
 
 void CrateApp::Renderer(const GameTimer& gt)
@@ -1292,10 +1339,25 @@ void CrateApp::Renderer(const GameTimer& gt)
 	pass_state_manager->ResetDescHeapIndex();
 	pass_state_manager->TempResetPSO(&static_pso);
 
-	//Pass1 DepthPrePass
 	{
 		direct_ctx->ResetCmdAlloc();
 		direct_ctx->OpenCmdList();
+	}
+
+	//Pass0 GPU Culling
+	//{
+	//	TShaderReference<XRenderTransmittanceLutCS> Shader = GetGlobalShaderMapping()->GetShader<XRenderTransmittanceLutCS>();
+	//	XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+	//	SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
+	//
+	//	XD3D12TextureBase* TransmittanceLutUAVTex = GetD3D12TextureFromRHITexture(TransmittanceLutUAV.get());
+	//	Shader->SetParameters(RHICmdList, TransmittanceLutUAVTex->GeUnorderedAcessView(), RHICbSkyAtmosphere.get());
+	//	RHICmdList.RHIDispatchComputeShader(256 / 8, 64 / 8, 1);
+	//}
+
+	//Pass1 DepthPrePass
+	{
+		
 
 		mCommandList->BeginEvent(1, "DepthPrePass", sizeof("DepthPrePass"));
 
@@ -1322,7 +1384,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 				m_commandSignature.Get(),
 				mOpaqueRitems.size(),
 				m_commandBuffer.Get(),
-				0,
+				m_commandBufferOffset,
 				nullptr,
 				0);
 		}
@@ -2013,6 +2075,8 @@ void CrateApp::UpdateObjectCBs(const GameTimer& gt)
 		ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
 		//XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));
+		objConstants.BoundingBoxExtent = e->BoundingBox.Extents;
+		objConstants.BoundingBoxCenter = e->BoundingBox.Center;
 		mFrameResource.get()->ObjectConstantBuffer[e->ObjCBIndex].get()->
 			UpdateData(&objConstants, sizeof(ObjectConstants), 0);
 	}
@@ -2544,11 +2608,15 @@ void CrateApp::BuildShapeGeometry()
 		sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
 		sphereSubmesh.StartIndexLocation = 0;
 		sphereSubmesh.BaseVertexLocation = 0;
+		sphereSubmesh.Bounds.Center = DirectX::XMFLOAT3((sphere.BoundBoxMax + sphere.BoundBoxMin) * 0.5);
+		sphereSubmesh.Bounds.Extents = DirectX::XMFLOAT3((sphere.BoundBoxMax + sphere.BoundBoxMin) * 0.5 - sphere.BoundBoxMin);
 
 		SubmeshGeometry gridSubmesh;
 		gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
 		gridSubmesh.StartIndexLocation = gridIndexOffset;
 		gridSubmesh.BaseVertexLocation = gridVertexOffset;
+		gridSubmesh.Bounds.Center = DirectX::XMFLOAT3((grid.BoundBoxMax + grid.BoundBoxMin) * 0.5);
+		gridSubmesh.Bounds.Extents = DirectX::XMFLOAT3((grid.BoundBoxMax + grid.BoundBoxMin) * 0.5 - grid.BoundBoxMin);
 
 		//step4 vertices
 		auto totalVertexCount =
@@ -2867,6 +2935,7 @@ void CrateApp::BuildRenderItems()
 		sphereBackRitem->IndexCount = sphereBackRitem->Geo->DrawArgs["sphere"].IndexCount;
 		sphereBackRitem->StartIndexLocation = sphereBackRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
 		sphereBackRitem->BaseVertexLocation = sphereBackRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+		sphereBackRitem->BoundingBox = sphereBackRitem->Geo->DrawArgs["sphere"].Bounds;
 		mAllRitems.push_back(std::move(sphereBackRitem));
 
 		auto sphereRitem = std::make_unique<RenderItem>();
@@ -2878,6 +2947,7 @@ void CrateApp::BuildRenderItems()
 		sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
 		sphereRitem->StartIndexLocation = sphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
 		sphereRitem->BaseVertexLocation = sphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+		sphereRitem->BoundingBox = sphereRitem->Geo->DrawArgs["sphere"].Bounds;
 		mAllRitems.push_back(std::move(sphereRitem));
 
 
@@ -2890,6 +2960,7 @@ void CrateApp::BuildRenderItems()
 		gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
 		gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
 		gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
+		gridRitem->BoundingBox = gridRitem->Geo->DrawArgs["grid"].Bounds;
 		mAllRitems.push_back(std::move(gridRitem));
 
 
@@ -2902,6 +2973,7 @@ void CrateApp::BuildRenderItems()
 		sphereRitem2->IndexCount = sphereRitem2->Geo->DrawArgs["sphere"].IndexCount;
 		sphereRitem2->StartIndexLocation = sphereRitem2->Geo->DrawArgs["sphere"].StartIndexLocation;
 		sphereRitem2->BaseVertexLocation = sphereRitem2->Geo->DrawArgs["sphere"].BaseVertexLocation;
+		sphereRitem2->BoundingBox = sphereRitem2->Geo->DrawArgs["sphere"].Bounds;
 		mAllRitems.push_back(std::move(sphereRitem2));
 		// All the render items are opaque.
 		for (auto& e : mAllRitems)

@@ -53,6 +53,26 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	{
 		DirectCtxs[i].Create(this);
 	}
+
+	//Create Zero Struct Buffer
+	{
+		uint32 ZeroStructBufferSize = sizeof(uint64) * 4;
+		void* IndirectBufferDataPtr = std::malloc(ZeroStructBufferSize);
+		memset(IndirectBufferDataPtr, 0, ZeroStructBufferSize);
+
+		FResourceVectorUint8 ZeroStructBufferData;
+		ZeroStructBufferData.Data = IndirectBufferDataPtr;
+		ZeroStructBufferData.SetResourceDataSize(ZeroStructBufferSize);
+		XRHIResourceCreateData ZeroStructBufferResourceData(&ZeroStructBufferData);
+
+		D3D12_RESOURCE_DESC BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint64) * 4);
+		D3D12ZeroStructBuffer = std::shared_ptr<XD3D12StructBuffer>(
+			DeviceCreateRHIBuffer<XD3D12StructBuffer>(
+				GetDirectContex(0)->GetCmdList(),
+				BufferDesc, 4, sizeof(uint64), (sizeof(uint64) * 4),
+				EBufferUsage::BUF_StructuredBuffer, ZeroStructBufferResourceData));
+	}
+
 }
 
 std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(uint32 size)

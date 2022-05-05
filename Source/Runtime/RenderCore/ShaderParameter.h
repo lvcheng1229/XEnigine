@@ -38,7 +38,9 @@ public:
 		{
 			ResourceIndex = iter->second.BufferIndex;
 			ResourceNum = iter->second.ResourceCount;
+			return;
 		}
+		X_Assert(false);
 	}
 	uint16 GetResourceIndex()const { return ResourceIndex; }
 	uint16 GetResourceNum()const { return ResourceNum; };

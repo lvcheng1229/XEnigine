@@ -184,7 +184,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 			ParameterInfo.BufferIndex = ResourceDesc.BindPoint;
 			ParameterInfo.ResourceCount = ResourceDesc.BindCount;
 			
-			if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_TEXTURE)
+			if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_TEXTURE || ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_STRUCTURED)
 			{
 				NumSRVCount++;
 				ParameterInfo.Parametertype = EShaderParametertype::SRV;
@@ -211,7 +211,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 					}
 				}
 			}
-			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWTYPED)
+			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWTYPED || ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_APPEND_STRUCTURED)
 			{
 				NumUAVCount++;
 				ParameterInfo.Parametertype = EShaderParametertype::UAV;

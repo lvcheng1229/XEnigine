@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <DirectXMath.h>
 #include <vector>
-
+#include "Runtime/Core/Math/Math.h"
 class GeometryGenerator
 {
 public:
@@ -57,6 +57,8 @@ public:
 	{
 		std::vector<Vertex> Vertices;
         std::vector<uint32> Indices32;
+		XVector3 BoundBoxMax;
+		XVector3 BoundBoxMin;
 
         std::vector<uint16>& GetIndices16()
         {

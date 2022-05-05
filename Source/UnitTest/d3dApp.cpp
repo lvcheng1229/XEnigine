@@ -339,6 +339,7 @@ bool D3DApp::InitDirect3D()
 	
 	DepthStencilDescArrayManager = abstrtact_device.GetDepthStencilDescArrayManager();
 	RenderTargetDescArrayManager = abstrtact_device.GetRenderTargetDescArrayManager();
+	CBVSRVUAVDescArrayManager = abstrtact_device.GetShaderResourceDescArrayManager();
 
 	direct_cmd_queue = abstrtact_device.GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	mCommandQueue = direct_cmd_queue->GetDXCommandQueue();

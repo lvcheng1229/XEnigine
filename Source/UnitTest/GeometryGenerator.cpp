@@ -4,7 +4,8 @@
 
 #include "GeometryGenerator.h"
 #include <algorithm>
-
+#include <limits>
+#include <iostream>
 using namespace DirectX;
 
 GeometryGenerator::MeshData GeometryGenerator::CreateBox(float width, float height, float depth, uint32 numSubdivisions)
@@ -114,6 +115,11 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSphere(float radius, uint32
 	Vertex topVertex(0.0f, +radius, 0.0f, 0.0f, +1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 	Vertex bottomVertex(0.0f, -radius, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 
+
+	XVector3 BoundingBoxMaxVar((std::numeric_limits<float>::min)(), (std::numeric_limits<float>::min)(), (std::numeric_limits<float>::min)());
+	XVector3 BoundingBoxMinVar((std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)());
+
+
 	meshData.Vertices.push_back( topVertex );
 
 	float phiStep   = XM_PI/stackCount;
@@ -135,6 +141,15 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSphere(float radius, uint32
 			v.Position.x = radius*sinf(phi)*cosf(theta);
 			v.Position.y = radius*cosf(phi);
 			v.Position.z = radius*sinf(phi)*sinf(theta);
+
+			XMFLOAT3 PositionCal = XMFLOAT3(v.Position.x, v.Position.y, v.Position.z);
+			BoundingBoxMinVar.x = (BoundingBoxMinVar.x < PositionCal.x) ? BoundingBoxMinVar.x : PositionCal.x;
+			BoundingBoxMinVar.y = (BoundingBoxMinVar.y < PositionCal.y) ? BoundingBoxMinVar.y : PositionCal.y;
+			BoundingBoxMinVar.z = (BoundingBoxMinVar.z < PositionCal.z) ? BoundingBoxMinVar.z : PositionCal.z;
+
+			BoundingBoxMaxVar.x = (BoundingBoxMaxVar.x > PositionCal.x) ? BoundingBoxMaxVar.x : PositionCal.x;
+			BoundingBoxMaxVar.y = (BoundingBoxMaxVar.y > PositionCal.y) ? BoundingBoxMaxVar.y : PositionCal.y;
+			BoundingBoxMaxVar.z = (BoundingBoxMaxVar.z > PositionCal.z) ? BoundingBoxMaxVar.z : PositionCal.z;
 
 			// Partial derivative of P with respect to theta
 			v.TangentU.x = -radius*sinf(phi)*sinf(theta);
@@ -208,6 +223,10 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSphere(float radius, uint32
 		meshData.Indices32.push_back(baseIndex+i+1);
 	}
 
+	meshData.BoundBoxMax = BoundingBoxMaxVar + XVector3(0.1, 0.1, 0.1);
+	meshData.BoundBoxMin = BoundingBoxMinVar - XVector3(0.1, 0.1, 0.1);
+	std::cout << "bounding box min -=0.1" << std::endl;
+	std::cout << "bounding box max +=0.1" << std::endl;
     return meshData;
 }
  
@@ -555,6 +574,8 @@ GeometryGenerator::MeshData GeometryGenerator::CreateGrid(float width, float dep
 	uint32 vertexCount = m*n;
 	uint32 faceCount   = (m-1)*(n-1)*2;
 
+	XVector3 BoundingBoxMaxVar((std::numeric_limits<float>::min)(), (std::numeric_limits<float>::min)(), (std::numeric_limits<float>::min)());
+	XVector3 BoundingBoxMinVar((std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)());
 	//
 	// Create the vertices.
 	//
@@ -576,7 +597,17 @@ GeometryGenerator::MeshData GeometryGenerator::CreateGrid(float width, float dep
 		{
 			float x = -halfWidth + j*dx;
 
-			meshData.Vertices[i*n+j].Position = XMFLOAT3(x, 0.0f, z);
+			XMFLOAT3 PositionCal = XMFLOAT3(x, 0.0f, z);
+			meshData.Vertices[i*n+j].Position = PositionCal;
+
+			BoundingBoxMinVar.x = (BoundingBoxMinVar.x < PositionCal.x) ? BoundingBoxMinVar.x : PositionCal.x;
+			BoundingBoxMinVar.y = (BoundingBoxMinVar.y < PositionCal.y) ? BoundingBoxMinVar.y : PositionCal.y;
+			BoundingBoxMinVar.z = (BoundingBoxMinVar.z < PositionCal.z) ? BoundingBoxMinVar.z : PositionCal.z;
+
+			BoundingBoxMaxVar.x = (BoundingBoxMaxVar.x > PositionCal.x) ? BoundingBoxMaxVar.x : PositionCal.x;
+			BoundingBoxMaxVar.y = (BoundingBoxMaxVar.y > PositionCal.y) ? BoundingBoxMaxVar.y : PositionCal.y;
+			BoundingBoxMaxVar.z = (BoundingBoxMaxVar.z > PositionCal.z) ? BoundingBoxMaxVar.z : PositionCal.z;
+
 			meshData.Vertices[i*n+j].Normal   = XMFLOAT3(0.0f, 1.0f, 0.0f);
 			meshData.Vertices[i*n+j].TangentU = XMFLOAT3(1.0f, 0.0f, 0.0f);
 
@@ -609,7 +640,10 @@ GeometryGenerator::MeshData GeometryGenerator::CreateGrid(float width, float dep
 			k += 6; // next quad
 		}
 	}
-
+	meshData.BoundBoxMax = BoundingBoxMaxVar + XVector3(0.1, 0.1, 0.1);
+	meshData.BoundBoxMin = BoundingBoxMinVar - XVector3(0.1, 0.1, 0.1);
+	std::cout << "bounding box min -=0.1" << std::endl;
+	std::cout << "bounding box max +=0.1" << std::endl;
     return meshData;
 }
 

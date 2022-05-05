@@ -115,21 +115,21 @@ private:
 	/// for mannual suballocation
 	void* mapped_resource_cpu_ptr;
 	D3D12_GPU_VIRTUAL_ADDRESS GPUVirtualPtr;
-	XD3D12Resource* UploadCommitBackResource;
+	XD3D12Resource* CommitBackResource;
 	uint64 OffsetBytesFromBaseResource;//unit in bytes
 	//End
 	
 public:
-	XD3D12ResourcePtr_CPUGPU() :buddy_alloc(nullptr), mapped_resource_cpu_ptr(nullptr), UploadCommitBackResource(nullptr) {}
+	XD3D12ResourcePtr_CPUGPU() :buddy_alloc(nullptr), mapped_resource_cpu_ptr(nullptr), CommitBackResource(nullptr) {}
 
 	/// for mannual suballocation
 	inline void SetOffsetByteFromBaseResource(uint64 Value) { OffsetBytesFromBaseResource = Value; }
-	inline void SetBackResource(XD3D12Resource* ResourceIn) { UploadCommitBackResource = ResourceIn; }
+	inline void SetBackResource(XD3D12Resource* ResourceIn) { CommitBackResource = ResourceIn; }
 	inline void SetMappedCPUResourcePtr(void* address_in) { mapped_resource_cpu_ptr = address_in; }
 	inline void SetGPUVirtualPtr(D3D12_GPU_VIRTUAL_ADDRESS address) { GPUVirtualPtr = address; }
 	
 	inline uint64 GetOffsetByteFromBaseResource()const { return  OffsetBytesFromBaseResource; }
-	inline XD3D12Resource* GetBackResource()const { return UploadCommitBackResource; }
+	inline XD3D12Resource* GetBackResource()const { return CommitBackResource; }
 	inline void* GetMappedCPUResourcePtr() { return mapped_resource_cpu_ptr; }
 	inline D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualPtr() { return GPUVirtualPtr; };
 	//End
@@ -158,6 +158,8 @@ public:
 
 	XD3D12ResourcePtr_CPUGPU ResourcePtr;
 };
+
+
 
 #define MAX_GLOBAL_CONSTANT_BUFFER_SIZE		4096
 
