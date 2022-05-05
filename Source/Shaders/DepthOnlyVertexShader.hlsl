@@ -4,10 +4,6 @@ cbuffer cbPerObject
 }
 
 #include "common.hlsl"
-//cbuffer cbPass
-//{
-//    float4x4 gViewProj;
-//}
 
 struct FVertexFactoryInput
 {

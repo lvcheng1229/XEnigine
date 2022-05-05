@@ -52,7 +52,7 @@ public:
 		XMeshMaterialShader(Initializer)
 	{
 		cbPerObject.Bind(Initializer.ShaderParameterMap, "cbPerObject");
-		cbPass.Bind(Initializer.ShaderParameterMap, "cbPass");
+		cbPass.Bind(Initializer.ShaderParameterMap, "cbView");
 	}
 
 	void SetParameter(
@@ -60,7 +60,7 @@ public:
 		XRHIConstantBuffer* ViewCB,
 		XRHIConstantBuffer* CBPerObjectIn)
 	{
-		//SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Vertex, cbPass, ViewCB);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Vertex, cbPass, ViewCB);
 		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Vertex, cbPerObject, CBPerObjectIn);
 	}
 	CBVParameterType cbPerObject;
