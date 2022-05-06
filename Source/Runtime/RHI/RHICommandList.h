@@ -101,6 +101,11 @@ public:
 	{
 		GetComputeContext()->RHISetShaderUAV(ShaderType, TextureIndex, RHIUAV);
 	}
+
+	inline void SetShaderSRV(EShaderType ShaderType, uint32 SRVIndex, XRHIShaderResourceView* SRV)
+	{
+		GetComputeContext()->RHISetShaderSRV(ShaderType, SRVIndex, SRV);
+	}
 };
 
 class XRHICommandList : public XRHIComputeCommandList
@@ -150,6 +155,11 @@ public:
 	inline void SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
 	{
 		GetContext()->SetVertexBuffer(RHIVertexBuffer, VertexBufferSlot, OffsetFormVBBegin);
+	}
+
+	inline void SetShaderSRV(EShaderType ShaderType, uint32 SRVIndex, XRHIShaderResourceView* SRV)
+	{
+		GetContext()->RHISetShaderSRV(ShaderType, SRVIndex, SRV);
 	}
 };
 

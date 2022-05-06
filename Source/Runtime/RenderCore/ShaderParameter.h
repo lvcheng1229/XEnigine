@@ -68,6 +68,19 @@ inline void SetShaderConstantBufferParameter(
 	RHICmdList.SetConstantBuffer(ShaderType, ConstantBufferParameter.GetResourceIndex() + ElementIndex, RHIConstantBuffer);
 }
 
+template<typename TRHICmdList>
+inline void SetShaderSRVParameter(
+	TRHICmdList& RHICmdList,
+	EShaderType ShaderType,
+	const SRVParameterType& SRVParameter,
+	XRHIShaderResourceView* RHISRV,
+	uint32 ElementIndex = 0
+)
+{
+	X_Assert(SRVParameter.GetResourceNum() > 0);
+	RHICmdList.SetShaderSRV(ShaderType, SRVParameter.GetResourceIndex() + ElementIndex, RHISRV);
+}
+
 template<typename TRHICmdList, class ParameterType>
 inline void SetShaderValue(
 	TRHICmdList& RHICmdList,

@@ -25,7 +25,7 @@ cbuffer cbCullingParameters
 {
     float commandCount; 
 }
-
+//StructuredBuffer<SceneConstantBuffer> cbv                : register(t0); ???
 StructuredBuffer<DepthIndirectCommand> inputCommands;            //: register(t1);    // SRV: Indirect commands
 AppendStructuredBuffer<DepthIndirectCommand> outputCommands;    //: register(u0);    // UAV: Processed indirect commands
 

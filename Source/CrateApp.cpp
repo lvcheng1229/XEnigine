@@ -319,7 +319,9 @@ public:
 		XRHIShaderResourceView* InputCommandsSRV,
 		XRHIConstantBuffer* CullingParametersCBV)
 	{
-
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, outputCommands, OutputCommandsUAV);
+		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, inputCommands, InputCommandsSRV);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbCullingParameters, CullingParametersCBV);
 	}
 
 	UAVParameterType outputCommands;
@@ -887,6 +889,9 @@ private:
 	//GPU Driven
 	uint64 m_commandBufferOffset;
 	ComPtr<ID3D12Resource> m_commandBuffer;
+
+	ComPtr<ID3D12Resource> mCulledCommandBuffer;
+
 	ComPtr<ID3D12Resource> commandBufferUpload;
 	ComPtr<ID3D12CommandSignature> m_commandSignature;
 
@@ -1333,34 +1338,19 @@ void CrateApp::TestExecute()
 			EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer)|int(EBufferUsage::BUF_UnorderedAccess)),
 			nullptr);
 	}
+	
+	{
+		mCulledCommandBuffer = static_cast<XD3D12StructBuffer*>(CmdBufferCulled.get())->ResourcePtr.GetBackResource()->GetResource();
+	}
+
 
 	CmdBufferShaderResourceView = RHICreateShaderResourceView(CmdBufferNoCulling.get());
 	CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(CmdBufferCulled.get(), true, true, CounterOffset);
-
+	
 	float SizeFloat = commands.size();
 	cbCullingParameters->UpdateData(&SizeFloat, sizeof(float), 0);
-	//used in compute shader
-	//{
-	//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	//	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	//	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	//	srvDesc.Buffer.NumElements = mOpaqueRitems.size();
-	//	srvDesc.Buffer.StructureByteStride = sizeof(DepthPassIndirectCommand);
-	//	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-	//	srvDesc.Buffer.FirstElement = 0;
-	//
-	//	uint32 index_of_desc_in_heap;
-	//	uint32 index_of_heap;
-	//	CBVSRVUAVDescArrayManager->AllocateDesc(index_of_desc_in_heap, index_of_heap);
-	//	md3dDevice->CreateShaderResourceView(m_commandBuffer.Get(), &srvDesc, 
-	//		CBVSRVUAVDescArrayManager->compute_cpu_ptr(index_of_desc_in_heap, index_of_heap));
-	//}
-
-	//used in compute shader -->>ComsumeBuffer
-	{
-
-	}
+	
+	
 
 }
 
@@ -1368,14 +1358,17 @@ void CrateApp::Renderer(const GameTimer& gt)
 {
 	pass_state_manager->ResetDescHeapIndex();
 	pass_state_manager->TempResetPSO(&static_pso);
-
+	pass_state_manager->SetHeapDesc();
 	{
 		direct_ctx->ResetCmdAlloc();
 		direct_ctx->OpenCmdList();
 	}
 
 	//Pass0 GPU Culling
+	
 	{
+		mCommandList->BeginEvent(1, "GPUCulling", sizeof("GPUCulling"));
+	
 		TShaderReference<DepthGPUCullingCS> Shader = GetGlobalShaderMapping()->GetShader<DepthGPUCullingCS>();
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
@@ -1386,20 +1379,22 @@ void CrateApp::Renderer(const GameTimer& gt)
 			CmdBufferShaderResourceView.get(),
 			cbCullingParameters.get());
 		RHICmdList.RHIDispatchComputeShader(128, 1, 1);
+		
+
+
+		mCommandList->EndEvent();
 	}
 
 
 
 	//Pass1 DepthPrePass
-	{
-		
-
+	{		
 		mCommandList->BeginEvent(1, "DepthPrePass", sizeof("DepthPrePass"));
 
 		direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
 		mCommandList->SetPipelineState(mDepthOnlyPSO.Get());
 		pass_state_manager->SetRootSignature(&PrePassRootSig);
-		pass_state_manager->SetHeapDesc();
+		
 		direct_ctx->RHISetRenderTargets(0, nullptr,
 			static_cast<XD3D12Texture2D*>(TextureDepthStencil.get())->GeDepthStencilView());
 		direct_ctx->RHIClearMRT(false, true, nullptr, 0.0f, 0);
@@ -1409,23 +1404,15 @@ void CrateApp::Renderer(const GameTimer& gt)
 		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
 
 		{
-			bool m_enableCulling = false;
-
-
-
-			//		D3D12_RESOURCE_BARRIER barriers[2] = {
-			//CD3DX12_RESOURCE_BARRIER::Transition(
-			//m_enableCulling ? m_processedCommandBuffers[m_frameIndex].Get() : m_commandBuffer.Get(),
 			//m_enableCulling ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-			//D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT)
+		
 			D3D12_RESOURCE_BARRIER barriers[1] = {
 			CD3DX12_RESOURCE_BARRIER::Transition(
-			m_commandBuffer.Get(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
+			mCulledCommandBuffer.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT) };
 			mCommandList->ResourceBarrier(_countof(barriers), barriers);
 		}
-
 		{
 			direct_ctx->RHISetShaderConstantBuffer(
 				EShaderType::SV_Vertex, 1,
@@ -1435,94 +1422,21 @@ void CrateApp::Renderer(const GameTimer& gt)
 			mCommandList->ExecuteIndirect(
 				m_commandSignature.Get(),
 				mOpaqueRitems.size(),
-				m_commandBuffer.Get(),
-				m_commandBufferOffset,
-				nullptr,
-				0);
+				mCulledCommandBuffer.Get(),
+				0,
+				mCulledCommandBuffer.Get(),
+				CounterOffset);
 		}
-		ID3D12Resource * AllUploadBuffer=
-			static_cast<XD3D12ConstantBuffer*>(cbCullingParameters.get())->ResourceLocation.GetBackResource()->GetResource();
-
-		
-		//GFullScreenVertexRHI.RHIVertexBuffer
-		//D3D12_RESOURCE_BARRIER barriers[2] = {
-		//	CD3DX12_RESOURCE_BARRIER::Transition(
-		//		
-		//	m_commandBuffer.Get(),
-		//	D3D12_RESOURCE_STATE_COPY_DEST,
-		//	D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT) };
 		{
-			std::vector<D3D12_RESOURCE_BARRIER>barriers;
-			//barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-			//	AllUploadBuffer,
-			//	D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-			//	D3D12_RESOURCE_STATE_INDEX_BUFFER));
-			
-			//
-			//do this becase do ExecuteIndirect will Transition all resource in heap
-			//no event for m_commandBuffer resource
-			barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-				m_commandBuffer.Get(),
-				D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-				D3D12_RESOURCE_STATE_COMMON));
-			//D3D12_RESOURCE_BARRIER barriers[1] = {
-			//CD3DX12_RESOURCE_BARRIER::Transition(
-			//m_commandBuffer.Get(),
-			//D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-			//D3D12_RESOURCE_STATE_COMMON) };
+			//m_enableCulling ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
 
-			std::vector<std::string>ItemsName;
-			for (int i = 0; i < mOpaqueRitems.size(); i++)
-			{
-				auto& ri = mOpaqueRitems[i];
-				MeshGeometry* GeoS = ri->Geo;
-				auto iter = ItemsName.begin();
-				bool find = false;
-				for (; iter != ItemsName.end(); iter++)
-				{
-					if (*iter == GeoS->Name)
-					{
-						find = true;
-					}
-				}
-				
-				if (find == false)
-				{
-					ItemsName.push_back(GeoS->Name);
-					barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-						GeoS->GetID3DVertexBufferResource(),
-						D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-						D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
-					barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-						GeoS->GetID3DIndexBufferResource(),
-						D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-						D3D12_RESOURCE_STATE_INDEX_BUFFER));
-				}
-			}
-			mCommandList->ResourceBarrier(barriers.size(), barriers.data());
-
-			//direct_ctx->GetCmdList()->CmdListFlushBarrier();
+			D3D12_RESOURCE_BARRIER barriers[1] = {
+			CD3DX12_RESOURCE_BARRIER::Transition(
+			mCulledCommandBuffer.Get(),
+			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+			D3D12_RESOURCE_STATE_COMMON) };
+			mCommandList->ResourceBarrier(_countof(barriers), barriers);
 		}
-
-		//for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
-		//{
-		//	auto& ri = mOpaqueRitems[i];
-		//	direct_ctx->RHISetShaderConstantBuffer(EShaderType::SV_Vertex,
-		//		0,
-		//		mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
-		//
-		//	direct_ctx->RHISetShaderConstantBuffer(
-		//		EShaderType::SV_Vertex, 1,
-		//		RViewInfo.ViewConstantBuffer.get());
-		//
-		//	mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(ri->Geo->VertexBufferView()));
-		//	mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
-		//	pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-		//
-		//	direct_ctx->GetCmdList()->CmdListFlushBarrier();
-		//	mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
-		//}
 		mCommandList->EndEvent();
 	}
 

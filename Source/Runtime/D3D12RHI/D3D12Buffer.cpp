@@ -51,18 +51,58 @@ BufferType* XD3D12AbstractDevice::DeviceCreateRHIBuffer(
 	return BufferRet;
 }
 
+XD3D12StructBuffer* XD3D12AbstractDevice::DeviceCreateStructBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment, uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData)
+{
+	XD3D12StructBuffer* BufferRet = new XD3D12StructBuffer(Stride, Size);
+
+	XD3D12Resource& BackResource = ResourceManagerTempVec[TempResourceIndex]; TempResourceIndex++;
+	ThrowIfFailed(PhysicalDevice->GetDXDevice()->CreateCommittedResource(
+		GetRValuePtr((CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT))),
+		D3D12_HEAP_FLAG_NONE,
+		&InDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(BackResource.GetPtrToResourceAdress())));
+	BackResource.Create(BackResource.GetResource(), D3D12_RESOURCE_STATE_COPY_DEST);
+	BackResource.GetResource()->SetName(L"Struct Buffer");
+
+	BufferRet->ResourcePtr.SetOffsetByteFromBaseResource(0);
+	BufferRet->ResourcePtr.SetBackResource(&BackResource);
+	BufferRet->ResourcePtr.SetGPUVirtualPtr(BackResource.GetGPUVirtaulAddress() + 0);
+
+	if (CreateData.ResourceArray != nullptr)
+	{
+		XD3D12ResourcePtr_CPUGPU UpLoadResourcePtr;
+		bool res = UploadHeapAlloc.Allocate(Size, Alignment, UpLoadResourcePtr);
+		X_Assert(res == true);
+
+		memcpy(UpLoadResourcePtr.GetMappedCPUResourcePtr(), CreateData.ResourceArray->GetResourceData(), CreateData.ResourceArray->GetResourceDataSize());
+
+		D3D12CmdList->GetDXCmdList()->CopyBufferRegion(
+			BufferRet->ResourcePtr.GetBackResource()->GetResource(),
+			BufferRet->ResourcePtr.GetOffsetByteFromBaseResource(),
+
+			UpLoadResourcePtr.GetBackResource()->GetResource(),
+			UpLoadResourcePtr.GetOffsetByteFromBaseResource(),
+
+			CreateData.ResourceArray->GetResourceDataSize());
+
+		CreateData.ResourceArray->ReleaseData();
+	}
+
+	return BufferRet;
+}
 
 void XD3D12AbstractDevice::DeviceResetStructBufferCounter(XD3D12DirectCommandList* D3D12CmdList, XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset)
 {
 	const XD3D12ResourcePtr_CPUGPU& DestResourcePtr = static_cast<XD3D12StructBuffer*>(RHIStructBuffer)->ResourcePtr;
-	ID3D12Resource* DestResource = DestResourcePtr.GetBackResource()->GetResource();
+	XD3D12Resource* D3D12Resource = DestResourcePtr.GetBackResource();
+	ID3D12Resource* DestResource = D3D12Resource->GetResource();
 	uint64 DestOffset = DestResourcePtr.GetOffsetByteFromBaseResource();
-
-	//const XD3D12ResourcePtr_CPUGPU& SrcResourcePtr = static_cast<XD3D12StructBuffer*>(D3D12ZeroStructBuffer.get())->ResourcePtr;
-	//ID3D12Resource* SrcResource = SrcResourcePtr.GetBackResource()->GetResource();
-	//uint64 SrcOffset = SrcResourcePtr.GetOffsetByteFromBaseResource();
-
+	
+	D3D12_RESOURCE_STATES ResourceStateBefore = D3D12Resource->GetResourceState().GetResourceState();
 	D3D12CmdList->GetDXCmdList()->CopyBufferRegion(DestResource, DestOffset + CounterOffset, ID3D12ZeroStructBuffer.Get(), 0, sizeof(UINT));
+	D3D12CmdList->CmdListAddTransition(D3D12Resource, D3D12_RESOURCE_STATE_COPY_DEST, ResourceStateBefore);
 }
 
 void XD3D12PlatformRHI::RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset)
@@ -161,7 +201,7 @@ std::shared_ptr<XRHIStructBuffer> XD3D12PlatformRHI::RHIcreateStructBuffer(uint3
 		(((int)Usage & ((int)EBufferUsage::BUF_DrawIndirect)) == 0) ? 
 		Stride
 		: 4;
-	XD3D12StructBuffer* IndexBuffer = AbsDevice->DeviceCreateRHIBuffer<XD3D12StructBuffer>(AbsDevice->GetDirectContex(0)->GetCmdList(), BufferDesc, Alignment, Stride, Size, Usage, ResourceData);
+	XD3D12StructBuffer* IndexBuffer = AbsDevice->DeviceCreateStructBuffer(AbsDevice->GetDirectContex(0)->GetCmdList(), BufferDesc, Alignment, Stride, Size, Usage, ResourceData);
 	return std::shared_ptr<XRHIStructBuffer>(IndexBuffer);
 }
 
