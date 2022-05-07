@@ -4,6 +4,17 @@
 #include "Runtime/RHI/RHIResource.h"
 XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix);
 
+enum class ECameraPlane
+{
+	CP_RIGHT = 0,
+	CP_LEFT,
+	CP_TOP,
+	CP_BOTTOM,
+	CP_FAR,
+	CP_NEAR,
+	CP_MAX = 6
+};
+
 struct XViewMatrices
 {
 	//3D Game Programming With DirectX12 Page163
@@ -30,23 +41,14 @@ private:
 	XMatrix		TranslatedViewProjectionMatrix;
 	XMatrix		TranslatedWorldToClip;
 
-	//Transpose
-	//XMatrix		ProjectionMatrixTranspose;
-	//XMatrix		ViewMatrixTranspose;
-	//XMatrix		ViewProjectionMatrixTranspose;
-	//XMatrix		TranslatedViewMatrixTranspose;
-	//XMatrix		TranslatedViewProjectionMatrixTranspose;
 
-	//Inverse
-	//DirectX::XMFLOAT4X4		ProjectionMatrixInverse;
-	//DirectX::XMFLOAT4X4		ViewMatrixInverse;
 	XMatrix		ViewProjectionMatrixInverse;
-	//DirectX::XMFLOAT4X4		TranslatedViewMatrixInverse;
 	XMatrix		TranslatedViewProjectionMatrixInverse;
 
-	//misc
-	//DirectX::XMFLOAT4X4		ScreenToTranslatedWorld;
 public:
+	void GetPlanes(XPlane Planes[(int)ECameraPlane::CP_MAX]);
+
+
 	void UpdateViewMatrix(const XVector3& ViewLocation, const XVector3& ViewTargetPosition);
 
 //TODO
@@ -65,21 +67,13 @@ public:
 	inline const XMatrix& GetTranslatedViewMatrix()const			{ return TranslatedViewMatrix; };
 	inline const XMatrix& GetTranslatedViewProjectionMatrix()const	{ return TranslatedViewProjectionMatrix; };
 
-	//transpose
-	//inline const XMatrix& GetProjectionMatrixTranspose()const		{ return ProjectionMatrixTranspose; };
-	//inline const XMatrix& GetViewMatrixTranspose()const				{ return ViewMatrixTranspose; };
-	//inline const XMatrix& GetViewProjectionMatrixTranspose()const	{ return ViewProjectionMatrixTranspose; };
-	//inline const XMatrix& GetTranslatedViewMatrixTranspose()const	{ return TranslatedViewMatrixTranspose; };
-	//inline const XMatrix& GetTranslatedViewProjectionMatrixTranspose()const { return TranslatedViewProjectionMatrixTranspose; };
 
 	//inverse
 	inline const XMatrix& GetViewProjectionMatrixInverse()const { return ViewProjectionMatrixInverse; };
 	inline const XMatrix& GetTranslatedViewProjectionMatrixInverse()const { return TranslatedViewProjectionMatrixInverse; };
 
 	//misc
-	//XMatrix GetScreenToTranslatedWorldTranPose();
 	XMatrix GetScreenToTranslatedWorld();
-	//XMatrix GetScreenToWorldTranPose();
 	XMatrix GetScreenToWorld();
 };
 

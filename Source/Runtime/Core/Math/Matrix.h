@@ -5,6 +5,8 @@ namespace DirectX
 {
     namespace SimpleMath
     {
+        
+
         struct LMatrix : public XMFLOAT4X4
         {
             static const LMatrix Identity;
@@ -41,7 +43,18 @@ namespace DirectX
 
             static LMatrix CreateScale(const Vector3& scales) noexcept;
             static LMatrix CreateTranslation(const Vector3& position) noexcept;
+            static LMatrix MMatrixPerspectiveFovLH
+            (
+                float FovAngleY,
+                float AspectRatio,
+                float NearZ,
+                float FarZ
+            );
         };
+
+
+
+        
     }
 }
 

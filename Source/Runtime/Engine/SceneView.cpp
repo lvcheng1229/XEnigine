@@ -49,6 +49,39 @@ void XViewMatrices::Create(const XMatrix& ProjectionMatrixIn, const XVector3& Vi
 	UpdateViewMatrix(ViewLocation, ViewTargetPosition);
 }
 
+/*
+	a					a'
+	b					b'
+(	c	) = ViewProj(	c'	)
+	d					d'
+*/
+void XViewMatrices::GetPlanes(XPlane Planes[(int)ECameraPlane::CP_MAX])
+{
+	//Right Plane x = 1; 
+	XVector4 RightPlane = XVector4::Zero; RightPlane.x = 1; RightPlane.w = -1;
+	Planes[(int)ECameraPlane::CP_RIGHT] = XVector4::Transform(RightPlane, ViewProjectionMatrix);
+	
+	//Left Plane x = -1; 
+	XVector4 LeftPlane = XVector4::Zero; LeftPlane.x = 1; LeftPlane.w = 1;
+	Planes[(int)ECameraPlane::CP_LEFT] = XVector4::Transform(LeftPlane, ViewProjectionMatrix);
+
+	//Near Plane z = 1;
+	XVector4 NearPlane = XVector4::Zero; NearPlane.z = 1; NearPlane.w = -1;
+	Planes[(int)ECameraPlane::CP_NEAR] = XVector4::Transform(NearPlane, ViewProjectionMatrix);
+
+	// FarPlane z = 0;
+	XVector4 FarPlane = XVector4::Zero; FarPlane.z = 1;
+	Planes[(int)ECameraPlane::CP_FAR] = XVector4::Transform(FarPlane, ViewProjectionMatrix);
+
+	//Top Plane y = 1;
+	XVector4 TopPlane = XVector4::Zero; TopPlane.y = 1; TopPlane.w = -1;
+	Planes[(int)ECameraPlane::CP_TOP] = XVector4::Transform(TopPlane, ViewProjectionMatrix);
+
+	//Bottom Plane y = -1;
+	XVector4 BottomPlane = XVector4::Zero; BottomPlane.y = 1; BottomPlane.w = 1;
+	Planes[(int)ECameraPlane::CP_BOTTOM] = XVector4::Transform(BottomPlane, ViewProjectionMatrix);
+}
+
 void XViewMatrices::UpdateViewMatrix(const XVector3& ViewLocation, const XVector3& ViewTargetPosition)
 {
 	ViewOrigin = ViewLocation;

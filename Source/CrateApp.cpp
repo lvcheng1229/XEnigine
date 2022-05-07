@@ -861,6 +861,7 @@ private:
 	struct cbCullingParametersStruct
 	{
 		float commandCount;
+		//XPlane Planes[(int)ECameraPlane::CP_MAX];
 	};
 	std::shared_ptr<XRHIConstantBuffer>cbCullingParameters;
 private:
@@ -1028,7 +1029,6 @@ private:
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
 	std::vector<RenderItem*> mOpaqueRitems;
 	//PassConstants mMainPassCB;
-	XMatrix mProj = XMatrix::Identity;
 	XMatrix mLightProj = XMatrix::Identity;
 	POINT mLastMousePos;
 };
@@ -1193,10 +1193,8 @@ void CrateApp::OnResize()
 {
 	D3DApp::OnResize();
 
-
-	XMMATRIX P = XDirectx::XXMMatrixPerspectiveFovLH(FoVAngleY, AspectRatio(), Near, Far);
-
-	XMStoreFloat4x4(&mProj, P);
+	CamIns.SetPerspective(FoVAngleY, AspectRatio(), Near, Far);
+	XMatrix mProj = CamIns.GetProjectMatrix();
 	ViewMatrix.Create(mProj, CamIns.GetEyePosition(), CamIns.GetTargetPosition());
 
 
@@ -1880,7 +1878,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 		XRHITexture* TextureSceneColor = TextureSceneColorDeffered.get();
 		XRHIRenderPassInfo RPInfos(1, &TextureSceneColor, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
-		RHICmdList.RHIBeginRenderPass(RPInfos, L"ReflectionEnvironmentPass");
+		RHICmdList.RHIBeginRenderPass(RPInfos, L"SkyAtmosphere Combine Pass");
 		RHICmdList.CacheActiveRenderTargets(RPInfos);
 
 		XGraphicsPSOInitializer GraphicsPSOInit;
@@ -2270,6 +2268,7 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		XMStoreFloat3(&DotMainDir, XMVectorAbs(XMVector3Dot(SkyUp, Forward)));
 		if (DotMainDir.x > 0.999f)
 		{
+			X_Assert(false);
 			XVector3 UpStore; XMStoreFloat3(&UpStore, SkyUp);
 			const float Sign = UpStore.z >= 0.0f ? 1.0f : -1.0f;
 			const float a = -1.0f / (Sign + UpStore.z);
@@ -2283,17 +2282,20 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 			Forward = XMVector3Normalize(Forward);
 		}
 		XMFLOAT4 SkyViewRow0; XMStoreFloat4(&SkyViewRow0, SkyLeft);
+		//SkyViewRow0.x *= -1.0;
+		//SkyViewRow0.y *= -1.0;
+		//SkyViewRow0.z *= -1.0;
 		XMFLOAT4 SkyViewRow1; XMStoreFloat4(&SkyViewRow1, SkyUp);
 		XMFLOAT4 SkyViewRow2; XMStoreFloat4(&SkyViewRow2, Forward);
 
-		XMFLOAT4X4 SkyViewLutReferentialTransposed(
-			SkyViewRow0.x, SkyViewRow1.x, SkyViewRow2.x, 0,
-			SkyViewRow0.y, SkyViewRow1.y, SkyViewRow2.y, 0,
-			SkyViewRow0.z, SkyViewRow1.z, SkyViewRow2.z, 0,
-			0, 0, 0, 0);
+		//XMFLOAT4X4 SkyViewLutReferentialTransposed(
+		//	SkyViewRow0.x, SkyViewRow1.x, SkyViewRow2.x, 0,
+		//	SkyViewRow0.y, SkyViewRow1.y, SkyViewRow2.y, 0,
+		//	SkyViewRow0.z, SkyViewRow1.z, SkyViewRow2.z, 0,
+		//	0, 0, 0, 0);
 
 		XMFLOAT4X4 SkyViewLutReferential(
-			SkyViewRow0.x, SkyViewRow0.y, SkyViewRow0.y, 0,
+			SkyViewRow0.x, SkyViewRow0.y, SkyViewRow0.z, 0,
 			SkyViewRow1.x, SkyViewRow1.y, SkyViewRow1.z, 0,
 			SkyViewRow2.x, SkyViewRow2.y, SkyViewRow2.z, 0,
 			0, 0, 0, 0);
@@ -2355,6 +2357,11 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 
 	RViewInfo.ViewConstantBuffer.get()->UpdateData(&RViewInfo.ViewCBCPUData, sizeof(ViewConstantBufferData), 0);
+
+
+	XPlane Planes[(int)ECameraPlane::CP_MAX];
+	ViewMatrix.GetPlanes(Planes);
+	//cbCullingParameters->UpdateData(Planes, sizeof(XPlane)* (int)ECameraPlane::CP_MAX, sizeof(float));
 
 }
 

@@ -37,7 +37,6 @@ public:
 		mLook.z = cos(XDegreeToRadians(RotateXDegree))* cos(XDegreeToRadians(RotateYDegree));
 
 		//Cartesian coordinates is right hand
-
 		mRight = -mLook.Cross(XVector3(0.0, 1.0, 0.0));
 		mRight.Normalize();
 
@@ -64,7 +63,29 @@ public:
 	{
 		return mPosition + mLook;
 	}
+
+	inline void SetPerspective(float FovAngleYIn,float AspectRatioIn,float NearIn,float FarIn)
+	{
+		FovAngleY = FovAngleYIn;
+		AspectRatio = AspectRatioIn;
+		Near = NearIn;
+		Far = FarIn;
+
+		ProjectMatrix = XMatrix::MMatrixPerspectiveFovLH(FovAngleYIn, AspectRatioIn, NearIn, FarIn);
+	}
+
+	inline XMatrix& GetProjectMatrix()
+	{
+		return ProjectMatrix;
+	}
 private:
+	XMatrix ProjectMatrix;
+
+	float FovAngleY;
+	float Near;
+	float Far;
+	float AspectRatio;
+
 	float RotateXDegree;
 	float RotateYDegree;
 	float RotateZDegree;
