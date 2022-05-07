@@ -32,12 +32,12 @@ XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix)
 
 static void StoreMat_Inverse(
 	XMFLOAT4X4* Common, 
-	//XMFLOAT4X4* Tranpose, 
+	XMFLOAT4X4* Tranpose, 
 	XMFLOAT4X4* Inverse, 
 	XMMATRIX& MatrixIn)
 {
 	XMStoreFloat4x4(Common, MatrixIn);
-	//XMStoreFloat4x4(Tranpose, XMMatrixTranspose(MatrixIn));
+	XMStoreFloat4x4(Tranpose, XMMatrixTranspose(MatrixIn));
 
 	DirectX::XMVECTOR Determinant = XMMatrixDeterminant(MatrixIn);
 	XMStoreFloat4x4(Inverse, XMMatrixInverse(&Determinant, MatrixIn));
@@ -54,32 +54,41 @@ void XViewMatrices::Create(const XMatrix& ProjectionMatrixIn, const XVector3& Vi
 	b					b'
 (	c	) = ViewProj(	c'	)
 	d					d'
+
+	= aT * VP T
 */
+
+//in frustum is positive
 void XViewMatrices::GetPlanes(XPlane Planes[(int)ECameraPlane::CP_MAX])
 {
-	//Right Plane x = 1; 
+	//Right Plane x = 1;  
 	XVector4 RightPlane = XVector4::Zero; RightPlane.x = 1; RightPlane.w = -1;
-	Planes[(int)ECameraPlane::CP_RIGHT] = XVector4::Transform(RightPlane, ViewProjectionMatrix);
+	Planes[(int)ECameraPlane::CP_RIGHT] = XVector4::Transform(RightPlane, ViewProjectionMatrixTranspose);
 	
-	//Left Plane x = -1; 
+	//Left Plane x = -1;  -> reflect normal
 	XVector4 LeftPlane = XVector4::Zero; LeftPlane.x = 1; LeftPlane.w = 1;
-	Planes[(int)ECameraPlane::CP_LEFT] = XVector4::Transform(LeftPlane, ViewProjectionMatrix);
+	Planes[(int)ECameraPlane::CP_LEFT] = XVector4::Transform(LeftPlane, ViewProjectionMatrixTranspose);
+	Planes[(int)ECameraPlane::CP_LEFT].NegNormal();
 
-	//Near Plane z = 1;
+	//Near Plane z = 1;   -> reflect normal
 	XVector4 NearPlane = XVector4::Zero; NearPlane.z = 1; NearPlane.w = -1;
-	Planes[(int)ECameraPlane::CP_NEAR] = XVector4::Transform(NearPlane, ViewProjectionMatrix);
+	Planes[(int)ECameraPlane::CP_NEAR] = XVector4::Transform(NearPlane, ViewProjectionMatrixTranspose);
+	Planes[(int)ECameraPlane::CP_NEAR].NegNormal();
 
 	// FarPlane z = 0;
 	XVector4 FarPlane = XVector4::Zero; FarPlane.z = 1;
-	Planes[(int)ECameraPlane::CP_FAR] = XVector4::Transform(FarPlane, ViewProjectionMatrix);
+	Planes[(int)ECameraPlane::CP_FAR] = XVector4::Transform(FarPlane, ViewProjectionMatrixTranspose);
+	//Planes[(int)ECameraPlane::CP_FAR]
 
-	//Top Plane y = 1;
+	//Top Plane y = 1 ;
 	XVector4 TopPlane = XVector4::Zero; TopPlane.y = 1; TopPlane.w = -1;
-	Planes[(int)ECameraPlane::CP_TOP] = XVector4::Transform(TopPlane, ViewProjectionMatrix);
+	Planes[(int)ECameraPlane::CP_TOP] = XVector4::Transform(TopPlane, ViewProjectionMatrixTranspose);
+	
 
-	//Bottom Plane y = -1;
+	//Bottom Plane y = -1; -> reflect normal
 	XVector4 BottomPlane = XVector4::Zero; BottomPlane.y = 1; BottomPlane.w = 1;
-	Planes[(int)ECameraPlane::CP_BOTTOM] = XVector4::Transform(BottomPlane, ViewProjectionMatrix);
+	Planes[(int)ECameraPlane::CP_BOTTOM] = XVector4::Transform(BottomPlane, ViewProjectionMatrixTranspose);
+	Planes[(int)ECameraPlane::CP_BOTTOM].NegNormal();
 }
 
 void XViewMatrices::UpdateViewMatrix(const XVector3& ViewLocation, const XVector3& ViewTargetPosition)
@@ -136,14 +145,14 @@ void XViewMatrices::UpdateViewMatrix(const XVector3& ViewLocation, const XVector
 
 	StoreMat_Inverse(
 		&ViewProjectionMatrix,
-		//&ViewProjectionMatrixTranspose,
+		&ViewProjectionMatrixTranspose,
 		&ViewProjectionMatrixInverse,
 		ViewProjectionMatrixCom
 	);
 	
 	StoreMat_Inverse(
 		&TranslatedViewProjectionMatrix,
-		//&TranslatedViewProjectionMatrixTranspose,
+		&TranslatedViewProjectionMatrixTranspose,
 		&TranslatedViewProjectionMatrixInverse,
 		TranslatedViewProjectionMatrixCom
 	);

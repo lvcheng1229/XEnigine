@@ -580,7 +580,7 @@ namespace DirectX
             // Properties
             Vector3 Normal() const noexcept { return Vector3(x, y, z); }
             void Normal(const Vector3& normal) noexcept { x = normal.x; y = normal.y; z = normal.z; }
-
+            void NegNormal() { x *= -1.0; y *= -1.0; z *= -1.0; w *= -1.0; };
             float D() const noexcept { return w; }
             void D(float d) noexcept { w = d; }
 

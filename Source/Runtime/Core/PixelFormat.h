@@ -8,5 +8,6 @@ enum class EPixelFormat
 	FT_R24G8_TYPELESS = 4,
 	FT_R11G11B10_FLOAT = 5,
 	FT_R16_FLOAT = 6,
-	FT_MAX = 7,
+	FT_R32_UINT = 7,
+	FT_MAX = 8,
 };

@@ -84,8 +84,8 @@ FSSRTRay InitScreenSpaceRayFromWorldSpace(
 	float3 WorldRayDirection,
 	float ViewZ)
 {
-    float4 RayStartClip	= mul_x(float4(RayOriginTranslatedWorld, 1), View_TranslatedViewProjectionMatrix);
-	float4 RayEndClip = mul(float4(RayOriginTranslatedWorld + WorldRayDirection * ViewZ, 1), View_TranslatedViewProjectionMatrix);
+    float4 RayStartClip	= mul_x(float4(RayOriginTranslatedWorld, 1), cbView_TranslatedViewProjectionMatrix);
+	float4 RayEndClip = mul_x(float4(RayOriginTranslatedWorld + WorldRayDirection * ViewZ, 1), cbView_TranslatedViewProjectionMatrix);
 
 	float3 RayStartScreen = RayStartClip.xyz * rcp(RayStartClip.w);
 	float3 RayEndScreen = RayEndClip.xyz * rcp(RayEndClip.w);
@@ -176,7 +176,7 @@ void PS(float4 SvPosition : SV_POSITION
 
     float DeviceZ = SceneTexturesStruct_SceneDepthTexture.Sample(gsamPointWarp, UV).r;
     const float ViewZ = ConvertFromDeviceZ(DeviceZ);
-    const float3 PositionTranslatedWorld = mul(float4(ScreenPos * ViewZ, ViewZ, 1), View_ScreenToTranslatedWorld).xyz;
+    const float3 PositionTranslatedWorld = mul_x(float4(ScreenPos * ViewZ, ViewZ, 1), cbView_ScreenToTranslatedWorld).xyz;
     const float3 V = normalize(float3(0, 0, 0) - PositionTranslatedWorld);
 
     FGBufferData GBuffer = GetGbufferData(SvPosition.xy);

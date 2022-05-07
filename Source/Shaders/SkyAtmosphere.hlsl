@@ -590,7 +590,7 @@ void RenderSkyViewLutCS(uint3 ThreadId : SV_DispatchThreadID)
 
 	// For the sky view lut to work, and not be distorted, we need to transform the view and light directions 
 	// into a referential with UP being perpendicular to the ground. And with origin at the planet center.
-    float3x3 LocalReferencial = (float3x3)View_SkyViewLutReferential;
+    float3x3 LocalReferencial = (float3x3)cbView_SkyViewLutReferential;
     float3 AtmosphereLightDirection0 = View_AtmosphereLightDirection.xyz;
     //AtmosphereLightDirection0 = mul(LocalReferencial, AtmosphereLightDirection0);
     AtmosphereLightDirection0 = mul_x(AtmosphereLightDirection0,LocalReferencial);
@@ -625,7 +625,7 @@ float3 GetScreenWorldDir(in float4 SvPosition)
     float3 NDCPos = float3((SvPosition.xy * View_ViewSizeAndInvSize.zw - 0.5f) * float2(2, -2), SvPosition.z);
     float2 ScreenPosition = float4(NDCPos.xyz, 1) * SvPosition.w;
     const float Depth = 10000.0f;
-    float4 WorldPos = mul_x(float4(ScreenPosition * Depth, Depth, 1), View_ScreenToWorld);
+    float4 WorldPos = mul_x(float4(ScreenPosition * Depth, Depth, 1),cbView_ScreenToWorld);
     return normalize(WorldPos.xyz - View_WorldCameraOrigin);
 }
 
@@ -802,10 +802,10 @@ void RenderSkyAtmosphereRayMarchingPS(
     if (ViewHeight < (Atmosphere_TopRadiusKm + 0.01) && DeviceZ < 0.0001f)
     {
         float2 UV;
-        float3x3 LocalReferencial = (float3x3) View_SkyViewLutReferential;
+        float3x3 LocalReferencial = (float3x3) cbView_SkyViewLutReferential;
         float3 WorldPosLocal = float3(0.0, ViewHeight, 0.0);
         float3 UpVectorLocal = float3(0.0, 1.0, 0.0);
-        float3 WorldDirLocal = mul(WorldDir,LocalReferencial);
+        float3 WorldDirLocal = mul_x(WorldDir,LocalReferencial);
         float ViewZenithCosAngle = dot(WorldDirLocal, UpVectorLocal);
 
         bool IntersectGround = RaySphereIntersectNearest(WorldPosLocal, WorldDirLocal, float3(0, 0, 0), Atmosphere_BottomRadiusKm) >= 0.0f;

@@ -6,6 +6,8 @@ RWTexture2D<float> FurthestHZBOutput_2;
 RWTexture2D<float> FurthestHZBOutput_3;
 RWTexture2D<float> FurthestHZBOutput_4;
 
+RWTexture2D<uint> VirtualSMFlags;
+
 SamplerState gsamPointWarp  : register(s0,space1000);
 
 cbuffer cbHZB
@@ -93,6 +95,8 @@ void HZBBuildCS(
 
     uint2 OutputPixelPos=DispatchThreadId;
     
+	VirtualSMFlags[uint2(0,0)] = 0;
+
     FurthestHZBOutput_0[OutputPixelPos.xy]=FurthestDeviceZ;
     SharedFurthestDeviceZ[GroupThreadIndex] = FurthestDeviceZ;
 

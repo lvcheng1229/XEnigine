@@ -4,11 +4,11 @@
 #include "Math.hlsl"
 cbuffer cbView
 {
-    float4x4 View_TranslatedViewProjectionMatrix;
-    float4x4 View_ScreenToTranslatedWorld;
-    float4x4 View_ViewToClip;
-    float4x4 View_ScreenToWorld;
-    float4x4 View_ViewPorjectionMatrix;
+    float4x4 cbView_TranslatedViewProjectionMatrix;
+    float4x4 cbView_ScreenToTranslatedWorld;
+    float4x4 cbView_ViewToClip;
+    float4x4 cbView_ScreenToWorld;
+    float4x4 cbView_ViewPorjectionMatrix;
     
     float4 View_InvDeviceZToWorldZTransform;
     float3 View_WorldCameraOrigin;
@@ -22,7 +22,7 @@ cbuffer cbView
     float cbView_padding1;
 
     float4 View_SkyPlanetCenterAndViewHeight;
-    float4x4 View_SkyViewLutReferential;
+    float4x4 cbView_SkyViewLutReferential;
 
     float4 View_ViewSizeAndInvSize;
     

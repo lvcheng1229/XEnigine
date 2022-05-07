@@ -20,7 +20,7 @@ void VS(FVertexFactoryInput Input,
     out float4 Position : SV_POSITION)
 {
     float4 PositionW=mul_x(Input.Position, gWorld);
-    Position=mul_x(PositionW, View_ViewPorjectionMatrix);
+    Position=mul_x(PositionW, cbView_ViewPorjectionMatrix);
 }
 
 void PS()

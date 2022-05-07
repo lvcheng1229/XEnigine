@@ -17,7 +17,7 @@ void DeferredLightVertexMain(
 {
     OutTexCoord=Input.Tex;
     OutPosition=float4(Input.PosIn,0.0f,1.0f);
-    OutScreenVector=mul_x(float4(OutPosition.xy,1.0f,0.0f),View_ScreenToTranslatedWorld);
+    OutScreenVector=mul_x(float4(OutPosition.xy,1.0f,0.0f),cbView_ScreenToTranslatedWorld);
 }
 
  

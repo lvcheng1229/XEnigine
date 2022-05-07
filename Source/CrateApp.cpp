@@ -359,6 +359,8 @@ public:
 		FurthestHZBOutput_2.Bind(Initializer.ShaderParameterMap, "FurthestHZBOutput_2");
 		FurthestHZBOutput_3.Bind(Initializer.ShaderParameterMap, "FurthestHZBOutput_3");
 		FurthestHZBOutput_4.Bind(Initializer.ShaderParameterMap, "FurthestHZBOutput_4");
+
+		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
 	}
 
 	void SetParameters(
@@ -370,7 +372,9 @@ public:
 		XRHIUnorderedAcessView* InFurthestHZBOutput_1,
 		XRHIUnorderedAcessView* InFurthestHZBOutput_2,
 		XRHIUnorderedAcessView* InFurthestHZBOutput_3,
-		XRHIUnorderedAcessView* InFurthestHZBOutput_4
+		XRHIUnorderedAcessView* InFurthestHZBOutput_4,
+
+		XRHIUnorderedAcessView* VirtualSMFlagsIn
 	)
 	{
 		SetShaderValue(RHICommandList, EShaderType::SV_Compute, DispatchThreadIdToBufferUV, InDispatchThreadIdToBufferUV);
@@ -381,6 +385,8 @@ public:
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, FurthestHZBOutput_2, InFurthestHZBOutput_2);
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, FurthestHZBOutput_3, InFurthestHZBOutput_3);
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, FurthestHZBOutput_4, InFurthestHZBOutput_4);
+		
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
 	}
 
 	XShaderVariableParameter DispatchThreadIdToBufferUV;
@@ -391,6 +397,8 @@ public:
 	UAVParameterType FurthestHZBOutput_2;
 	UAVParameterType FurthestHZBOutput_3;
 	UAVParameterType FurthestHZBOutput_4;
+
+	UAVParameterType VirtualSMFlags;
 };
 
 XHZBPassCS::ShaderInfos XHZBPassCS::StaticShaderInfos(
@@ -861,7 +869,7 @@ private:
 	struct cbCullingParametersStruct
 	{
 		float commandCount;
-		//XPlane Planes[(int)ECameraPlane::CP_MAX];
+		XPlane Planes[(int)ECameraPlane::CP_MAX];
 	};
 	std::shared_ptr<XRHIConstantBuffer>cbCullingParameters;
 private:
@@ -871,6 +879,8 @@ private:
 	XEditorUI EditorUI;
 	//BasePass
 private:
+	std::shared_ptr <XRHITexture2D> TileUsedFlagUAV;
+
 	XLocalVertexFactory LocalVertexFactory;
 
 	std::shared_ptr<GGeomertry>TestQuadPtr;
@@ -1245,6 +1255,19 @@ void CrateApp::TestExecute()
 	ThrowIfFailed(md3dDevice->CreateCommandSignature(&CommandSignatureDesc,PrePassRootSig.GetDXRootSignature(), IID_PPV_ARGS(&m_commandSignature)));
 
 	std::vector<DepthPassIndirectCommand> commands;
+
+	D3D12_GPU_VIRTUAL_ADDRESS CbWorld;
+	D3D12_VERTEX_BUFFER_VIEW VertexBufferView;
+	D3D12_INDEX_BUFFER_VIEW IndexBufferView;
+	D3D12_DRAW_INDEXED_ARGUMENTS DrawArguments;
+
+	int a = sizeof(DepthPassIndirectCommand);
+	int b = sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
+	int c = sizeof(D3D12_VERTEX_BUFFER_VIEW);
+	int d = sizeof(D3D12_INDEX_BUFFER_VIEW);
+	int e = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
+	int f = b + c + d + e;
+
 	commands.resize(mOpaqueRitems.size());
 	
 	//ObjectConstants
@@ -1266,27 +1289,15 @@ void CrateApp::TestExecute()
 		commands[i].DrawArguments.StartInstanceLocation = 0;
 	}
 	
-	
-	//std::vector<ObjectConstants>ObjConstVec;
-	//ObjConstVec.resize(mOpaqueRitems.size());
-	
-	//for (int i = 0; i < mOpaqueRitems.size(); i++)
-	//{
-	//	auto& ri = mOpaqueRitems[i];
-	//	XMMATRIX world = XMLoadFloat4x4(&ri->World);
-	//	XMStoreFloat4x4(&ObjConstVec[i].World, XMMatrixTranspose(world));
-	//	ObjConstVec[i].BoundingBoxCenter = ri->BoundingBox.Center;
-	//	ObjConstVec[i].BoundingBoxExtent = ri->BoundingBox.Extents;
-	//}
-	
 	uint32 ObjConstVecSize = sizeof(ObjectConstants) * mOpaqueRitems.size();
 	ObjectConstants* ConstantArray = (ObjectConstants*)std::malloc(ObjConstVecSize);
 	for (int i = 0; i < mOpaqueRitems.size(); i++)
 	{
 		auto& ri = mOpaqueRitems[i];
+		XMMATRIX world = XMLoadFloat4x4(&ri->World);
+		ri->BoundingBox.Transform(ri->BoundingBox,world);
 		ConstantArray[i].BoundingBoxCenter = ri->BoundingBox.Center;
 		ConstantArray[i].BoundingBoxExtent = ri->BoundingBox.Extents;
-		XMMATRIX world = XMLoadFloat4x4(&ri->World);
 		XMStoreFloat4x4(&ConstantArray[i].World, world);
 	}
 	{
@@ -1389,14 +1400,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		mCommandList->EndEvent();
 	}
 
-	//direct_ctx->CloseCmdList();
-	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	//direct_cmd_queue->CommandQueueWaitFlush();
-	//
-	//pass_state_manager->SetHeapDesc();
-	//direct_ctx->ResetCmdAlloc();
-	//direct_ctx->OpenCmdList();
+
 
 
 	//Pass1 DepthPrePass
@@ -2361,7 +2365,7 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 	XPlane Planes[(int)ECameraPlane::CP_MAX];
 	ViewMatrix.GetPlanes(Planes);
-	//cbCullingParameters->UpdateData(Planes, sizeof(XPlane)* (int)ECameraPlane::CP_MAX, sizeof(float));
+	cbCullingParameters->UpdateData(Planes, sizeof(XPlane)* (int)ECameraPlane::CP_MAX, sizeof(float));
 
 }
 
@@ -2524,6 +2528,11 @@ void CrateApp::LoadTextures()
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
+		TileUsedFlagUAV = RHICreateTexture2D(8*16, 8*16, 1, false, false,
+			EPixelFormat::FT_R32_UINT
+			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
+			, nullptr);
+
 		SkyViewLutUAV = RHICreateTexture2D(192, 104, 1, false, false,
 			EPixelFormat::FT_R11G11B10_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
@@ -2650,7 +2659,7 @@ void CrateApp::BuildShapeGeometry()
 	GeometryGenerator geoGen;
 	{
 		GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5, 20, 20);//geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
-		GeometryGenerator::MeshData grid = geoGen.CreateGrid(10.0f, 15.0f, 60, 40);
+		GeometryGenerator::MeshData grid = geoGen.CreateGrid(50.0f, 50.0f, 60, 40);
 
 		//step2
 		UINT sphereVertexOffset = 0;
