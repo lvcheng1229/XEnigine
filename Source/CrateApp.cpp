@@ -239,62 +239,62 @@ XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
 
 
 //XShadowMaskPassPS
-class XShadowMaskPassPS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XShadowMaskPassPS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-
-public:
-	XShadowMaskPassPS(const XShaderInitlizer& Initializer)
-		:XGloablShader(Initializer)
-	{
-		ShadowMatrixBuffer.Bind(Initializer.ShaderParameterMap, "cbShadowMaskNoCommon");
-		ViewCB.Bind(Initializer.ShaderParameterMap, "cbView");
-
-		ShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "ShadowDepthTexture");
-		GBufferATexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferATexture");
-		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
-	}
-
-	void SetParameter(
-		XRHICommandList& RHICommandList,
-		XRHIConstantBuffer* InViewCB,
-		XRHITexture* InShadowDepthTexture,
-		XRHITexture* InGBufferATexture,
-		XRHITexture* InSceneDepthTexture
-	)
-	{
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, ViewCB, InViewCB);
-
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, ShadowDepthTexture, InShadowDepthTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferATexture, InGBufferATexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
-	}
-
-
-	void SetShaderShadowMatrixBuffer(
-		XRHICommandList& RHICommandList,
-		XRHIConstantBuffer* InShadowMatrixBuffer)
-	{
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, ShadowMatrixBuffer, InShadowMatrixBuffer);
-	}
-
-	CBVParameterType ShadowMatrixBuffer;
-	CBVParameterType ViewCB;
-
-	TextureParameterType ShadowDepthTexture;
-	TextureParameterType GBufferATexture;
-	TextureParameterType SceneDepthTexture;
-};
-XShadowMaskPassPS::ShaderInfos XShadowMaskPassPS::StaticShaderInfos(
-	"XShadowMaskPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowProjectionShader.hlsl",
-	"PS", EShaderType::SV_Pixel, XShadowMaskPassPS::CustomConstrucFunc,
-	XShadowMaskPassPS::ModifyShaderCompileSettings);
+//class XShadowMaskPassPS :public XGloablShader
+//{
+//public:
+//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+//	{
+//		return new XShadowMaskPassPS(Initializer);
+//	}
+//	static ShaderInfos StaticShaderInfos;
+//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+//
+//public:
+//	XShadowMaskPassPS(const XShaderInitlizer& Initializer)
+//		:XGloablShader(Initializer)
+//	{
+//		ShadowMatrixBuffer.Bind(Initializer.ShaderParameterMap, "cbShadowMaskNoCommon");
+//		ViewCB.Bind(Initializer.ShaderParameterMap, "cbView");
+//
+//		ShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "ShadowDepthTexture");
+//		GBufferATexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferATexture");
+//		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
+//	}
+//
+//	void SetParameter(
+//		XRHICommandList& RHICommandList,
+//		XRHIConstantBuffer* InViewCB,
+//		XRHITexture* InShadowDepthTexture,
+//		XRHITexture* InGBufferATexture,
+//		XRHITexture* InSceneDepthTexture
+//	)
+//	{
+//		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, ViewCB, InViewCB);
+//
+//		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, ShadowDepthTexture, InShadowDepthTexture);
+//		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferATexture, InGBufferATexture);
+//		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
+//	}
+//
+//
+//	void SetShaderShadowMatrixBuffer(
+//		XRHICommandList& RHICommandList,
+//		XRHIConstantBuffer* InShadowMatrixBuffer)
+//	{
+//		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, ShadowMatrixBuffer, InShadowMatrixBuffer);
+//	}
+//
+//	CBVParameterType ShadowMatrixBuffer;
+//	CBVParameterType ViewCB;
+//
+//	TextureParameterType ShadowDepthTexture;
+//	TextureParameterType GBufferATexture;
+//	TextureParameterType SceneDepthTexture;
+//};
+//XShadowMaskPassPS::ShaderInfos XShadowMaskPassPS::StaticShaderInfos(
+//	"XShadowMaskPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowProjectionShader.hlsl",
+//	"PS", EShaderType::SV_Pixel, XShadowMaskPassPS::CustomConstrucFunc,
+//	XShadowMaskPassPS::ModifyShaderCompileSettings);
 
 
 //
@@ -788,59 +788,6 @@ struct BoundSphere
 	float Radius;
 };
 
-class Camera
-{
-public:
-	void RotateY(float angle)
-	{
-		// Rotate the basis vectors about the world y-axis.
-
-		XMMATRIX R = XMMatrixRotationY(angle);
-		XMStoreFloat3(&mRight, XMVector3TransformNormal(XMLoadFloat3(&mRight), R));
-		XMStoreFloat3(&mUp, XMVector3TransformNormal(XMLoadFloat3(&mUp), R));
-		XMStoreFloat3(&mLook, XMVector3TransformNormal(XMLoadFloat3(&mLook), R));
-	}
-
-	void Pitch(float angle)
-	{
-		// Rotate up and look vector about the right vector.
-		XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
-		XMStoreFloat3(&mUp, XMVector3TransformNormal(XMLoadFloat3(&mUp), R));
-		XMStoreFloat3(&mLook, XMVector3TransformNormal(XMLoadFloat3(&mLook), R));
-	}
-
-	void WalkWS(float d)
-	{
-		XMVECTOR s = XMVectorReplicate(d);
-		XMVECTOR r = XMLoadFloat3(&mRight);
-		XMVECTOR p = XMLoadFloat3(&mPosition);
-		XMStoreFloat3(&mPosition, XMVectorMultiplyAdd(s, r, p));
-	}
-	void Walk(float d)
-	{
-		// mPosition += d*mLook
-		XMVECTOR s = XMVectorReplicate(d);
-		XMVECTOR l = XMLoadFloat3(&mLook);
-		XMVECTOR p = XMLoadFloat3(&mPosition);
-		XMStoreFloat3(&mPosition, XMVectorMultiplyAdd(s, l, p));
-	}
-
-	XVector3 GetEyePosition()
-	{
-		return mPosition;
-	}
-
-	XVector3 GetTargetPosition()
-	{
-		//return XVector3(mPosition.x + mLook.x, mPosition.y + mLook.y, mPosition.z + mLook.z);
-		return mPosition + mLook;
-	}
-private:
-	XVector3 mPosition = { 0.0f, 3.0f, -3.0f };
-	XVector3 mRight = { 1.0f, 0.0f, 0.0f };
-	XVector3 mUp = { 0.0f, 1.0f, 0.0f };
-	XVector3 mLook = { 0.0f, 0.0f, 1.0f };
-};
 
 class CrateApp : public D3DApp
 {
@@ -987,10 +934,10 @@ private://Shadow Pass
 
 	XViewMatrices LightMatrix[4];
 
-	ShadowPassConstants ShadowPassConstant[4];
+	//ShadowPassConstants ShadowPassConstant[4];
 	ComPtr<ID3D12PipelineState> ShadowPSO = nullptr;
 	XD3D12RootSignature ShadowPassRootSig;
-	std::shared_ptr<XRHIConstantBuffer>ShadowPassConstantBuffer[4];
+	//std::shared_ptr<XRHIConstantBuffer>ShadowPassConstantBuffer[4];
 	std::shared_ptr<XRHITexture2D>ShadowTexture0;
 
 	float ShadowMapHeight = 1024;
@@ -1131,10 +1078,10 @@ bool CrateApp::Initialize()
 	RViewInfo.ViewConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferData)));
 
 
-	for (uint32 i = 0; i < 4; i++)
-	{
-		ShadowPassConstantBuffer[i] = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
-	}
+	//for (uint32 i = 0; i < 4; i++)
+	//{
+	//	ShadowPassConstantBuffer[i] = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
+	//}
 
 
 	for (uint32 i = 0; i < 4; i++)
@@ -1342,7 +1289,7 @@ void CrateApp::TestExecute()
 		ConstantArray[i].BoundingBoxCenter = ri->BoundingBox.Center;
 		ConstantArray[i].BoundingBoxExtent = ri->BoundingBox.Extents;
 		XMMATRIX world = XMLoadFloat4x4(&ri->World);
-		XMStoreFloat4x4(&ConstantArray[i].World, XMMatrixTranspose(world));
+		XMStoreFloat4x4(&ConstantArray[i].World, world);
 	}
 	{
 
@@ -2170,8 +2117,7 @@ void CrateApp::UpdateObjectCBs(const GameTimer& gt)
 		//XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
 
 		ObjectConstants objConstants;
-		XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
-		//XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));
+		XMStoreFloat4x4(&objConstants.World, world);
 		objConstants.BoundingBoxExtent = e->BoundingBox.Extents;
 		objConstants.BoundingBoxCenter = e->BoundingBox.Center;
 		mFrameResource.get()->ObjectConstantBuffer[e->ObjCBIndex].get()->
@@ -2212,23 +2158,23 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	RViewInfo.ViewCBCPUData.ViewSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0 / mClientWidth, 1.0 / mClientHeight);
 	float LenSqrt = sqrt(LightDir.x * LightDir.x + LightDir.y * LightDir.y + LightDir.z * LightDir.z);
 	RViewInfo.ViewCBCPUData.AtmosphereLightDirection = XMFLOAT4(LightDir.x / LenSqrt, LightDir.y / LenSqrt, LightDir.z / LenSqrt, 1.0f);
-	RViewInfo.ViewCBCPUData.ViewToClip = ViewMatrix.GetProjectionMatrixTranspose();
+	RViewInfo.ViewCBCPUData.ViewToClip = ViewMatrix.GetProjectionMatrix();
 
-	RViewInfo.ViewCBCPUData.TranslatedViewProjectionMatrix = ViewMatrix.GetTranslatedViewProjectionMatrixTranspose();
-	RViewInfo.ViewCBCPUData.ScreenToWorld = ViewMatrix.GetScreenToWorldTranPose();
-	RViewInfo.ViewCBCPUData.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorldTranPose();
+	RViewInfo.ViewCBCPUData.TranslatedViewProjectionMatrix = ViewMatrix.GetTranslatedViewProjectionMatrix();
+	RViewInfo.ViewCBCPUData.ScreenToWorld = ViewMatrix.GetScreenToWorld();
+	RViewInfo.ViewCBCPUData.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorld();
 	RViewInfo.ViewCBCPUData.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(ViewMatrix.GetProjectionMatrix());
 	RViewInfo.ViewCBCPUData.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
-	RViewInfo.ViewCBCPUData.ViewProjectionMatrix = ViewMatrix.GetViewProjectionMatrixTranspose();
+	RViewInfo.ViewCBCPUData.ViewProjectionMatrix = ViewMatrix.GetViewProjectionMatrix();
 
 
 	//Shadow Pass
-	for (uint32 i = 0; i < 4; i++)
-	{
-		memcpy(&ShadowPassConstant[i].View, &LightMatrix[i].GetViewMatrixTranspose(), sizeof(XMatrix));
-		memcpy(&ShadowPassConstant[i].Proj, &LightMatrix[i].GetProjectionMatrixTranspose(), sizeof(XMatrix));
-		ShadowPassConstantBuffer[i].get()->UpdateData(&ShadowPassConstant[i], sizeof(ShadowPassConstants), 0);
-	}
+	//for (uint32 i = 0; i < 4; i++)
+	//{
+	//	memcpy(&ShadowPassConstant[i].View, &LightMatrix[i].GetViewMatrixTranspose(), sizeof(XMatrix));
+	//	memcpy(&ShadowPassConstant[i].Proj, &LightMatrix[i].GetProjectionMatrixTranspose(), sizeof(XMatrix));
+	//	ShadowPassConstantBuffer[i].get()->UpdateData(&ShadowPassConstant[i], sizeof(ShadowPassConstants), 0);
+	//}
 
 	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0f / mClientWidth, 1.0f / mClientHeight);
 
@@ -2346,7 +2292,13 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 			SkyViewRow0.z, SkyViewRow1.z, SkyViewRow2.z, 0,
 			0, 0, 0, 0);
 
-		RViewInfo.ViewCBCPUData.SkyViewLutReferential = SkyViewLutReferentialTransposed;
+		XMFLOAT4X4 SkyViewLutReferential(
+			SkyViewRow0.x, SkyViewRow0.y, SkyViewRow0.y, 0,
+			SkyViewRow1.x, SkyViewRow1.y, SkyViewRow1.z, 0,
+			SkyViewRow2.x, SkyViewRow2.y, SkyViewRow2.z, 0,
+			0, 0, 0, 0);
+
+		RViewInfo.ViewCBCPUData.SkyViewLutReferential = SkyViewLutReferential;
 
 
 		//SkyAtmosphere Precompute
@@ -2601,21 +2553,21 @@ void CrateApp::BuildRootSignature()
 	}
 
 	//BasePass
-	{
-		XPipelineRegisterBoundCount pipeline_register_count;
-		memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
-
-		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Vertex)].ConstantBufferCount
-			= mShaders["standardVS"].GetCBVCount();
-
-
-		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
-			= mShaders["opaquePS"].GetCBVCount();
-		pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
-			= mShaders["opaquePS"].GetSRVCount();
-
-		d3d12_root_signature.Create(&Device, pipeline_register_count);
-	}
+	//{
+	//	XPipelineRegisterBoundCount pipeline_register_count;
+	//	memset(&pipeline_register_count, 0, sizeof(XPipelineRegisterBoundCount));
+	//
+	//	pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Vertex)].ConstantBufferCount
+	//		= mShaders["standardVS"].GetCBVCount();
+	//
+	//
+	//	pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ConstantBufferCount
+	//		= mShaders["opaquePS"].GetCBVCount();
+	//	pipeline_register_count.register_count[EShaderType_Underlying(EShaderType::SV_Pixel)].ShaderResourceCount
+	//		= mShaders["opaquePS"].GetSRVCount();
+	//
+	//	d3d12_root_signature.Create(&Device, pipeline_register_count);
+	//}
 
 	//FullScreenPass
 	{
@@ -2640,33 +2592,33 @@ void CrateApp::BuildShadersAndInputLayout()
 		mShaders["PrePassPS"].ShaderReflect();
 	}
 
-	{
-		mShaders["ShadowPassVS"].CreateShader(EShaderType::SV_Vertex);
-		mShaders["ShadowPassVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowDepthShader.hlsl", nullptr, "VS", "vs_5_1");
-		mShaders["ShadowPassVS"].ShaderReflect();
+	//{
+	//	mShaders["ShadowPassVS"].CreateShader(EShaderType::SV_Vertex);
+	//	mShaders["ShadowPassVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowDepthShader.hlsl", nullptr, "VS", "vs_5_1");
+	//	mShaders["ShadowPassVS"].ShaderReflect();
+	//
+	//	mShaders["ShadowPassPS"].CreateShader(EShaderType::SV_Pixel);
+	//	mShaders["ShadowPassPS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowDepthShader.hlsl", nullptr, "PS", "ps_5_1");
+	//	mShaders["ShadowPassPS"].ShaderReflect();
+	//}
 
-		mShaders["ShadowPassPS"].CreateShader(EShaderType::SV_Pixel);
-		mShaders["ShadowPassPS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowDepthShader.hlsl", nullptr, "PS", "ps_5_1");
-		mShaders["ShadowPassPS"].ShaderReflect();
-	}
-
-	{
-		mShaders["standardVS"].CreateShader(EShaderType::SV_Vertex);
-		mShaders["standardVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader.hlsl", nullptr, "VS", "vs_5_1");
-		mShaders["standardVS"].ShaderReflect();
-
-		mShaders["opaquePS"].CreateShader(EShaderType::SV_Pixel);
-		mShaders["opaquePS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader.hlsl", nullptr, "PS", "ps_5_1");
-		mShaders["opaquePS"].ShaderReflect();
-	}
+	//{
+	//	mShaders["standardVS"].CreateShader(EShaderType::SV_Vertex);
+	//	mShaders["standardVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader.hlsl", nullptr, "VS", "vs_5_1");
+	//	mShaders["standardVS"].ShaderReflect();
+	//
+	//	mShaders["opaquePS"].CreateShader(EShaderType::SV_Pixel);
+	//	mShaders["opaquePS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader.hlsl", nullptr, "PS", "ps_5_1");
+	//	mShaders["opaquePS"].ShaderReflect();
+	//}
 
 	{
 		mShaders["fullScreenVS"].CreateShader(EShaderType::SV_Vertex);
-		mShaders["fullScreenVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/fullScreen.hlsl", nullptr, "VS", "vs_5_1");
+		mShaders["fullScreenVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/FinalPassShader.hlsl", nullptr, "VS", "vs_5_1");
 		mShaders["fullScreenVS"].ShaderReflect();
 
 		mShaders["fullScreenPS"].CreateShader(EShaderType::SV_Pixel);
-		mShaders["fullScreenPS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/fullScreen.hlsl", nullptr, "PS", "ps_5_1");
+		mShaders["fullScreenPS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/FinalPassShader.hlsl", nullptr, "PS", "ps_5_1");
 		mShaders["fullScreenPS"].ShaderReflect();
 	}
 
@@ -2838,37 +2790,37 @@ void CrateApp::BuildPSOs()
 	}
 
 	//ShadowPass
-	{
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC ShadowPSODesc;
-
-		ZeroMemory(&ShadowPSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		ShadowPSODesc.InputLayout = { mBasePassLayout.data(), (UINT)mBasePassLayout.size() };
-		ShadowPSODesc.pRootSignature = PrePassRootSig.GetDXRootSignature();
-		ShadowPSODesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["ShadowPassVS"].GetByteCode()->GetBufferPointer()),
-			mShaders["ShadowPassVS"].GetByteCode()->GetBufferSize()
-		};
-		ShadowPSODesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["ShadowPassPS"].GetByteCode()->GetBufferPointer()),
-			mShaders["ShadowPassPS"].GetByteCode()->GetBufferSize()
-		};
-
-		//TODO
-		ShadowPSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		ShadowPSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		ShadowPSODesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		ShadowPSODesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
-
-		ShadowPSODesc.SampleMask = UINT_MAX;
-		ShadowPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		ShadowPSODesc.NumRenderTargets = 0;
-		ShadowPSODesc.SampleDesc.Count = 1;
-		ShadowPSODesc.SampleDesc.Quality = 0;
-		ShadowPSODesc.DSVFormat = mDepthStencilFormat;
-		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
-	}
+	//{
+	//	D3D12_GRAPHICS_PIPELINE_STATE_DESC ShadowPSODesc;
+	//
+	//	ZeroMemory(&ShadowPSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	//	ShadowPSODesc.InputLayout = { mBasePassLayout.data(), (UINT)mBasePassLayout.size() };
+	//	ShadowPSODesc.pRootSignature = PrePassRootSig.GetDXRootSignature();
+	//	ShadowPSODesc.VS =
+	//	{
+	//		reinterpret_cast<BYTE*>(mShaders["ShadowPassVS"].GetByteCode()->GetBufferPointer()),
+	//		mShaders["ShadowPassVS"].GetByteCode()->GetBufferSize()
+	//	};
+	//	ShadowPSODesc.PS =
+	//	{
+	//		reinterpret_cast<BYTE*>(mShaders["ShadowPassPS"].GetByteCode()->GetBufferPointer()),
+	//		mShaders["ShadowPassPS"].GetByteCode()->GetBufferSize()
+	//	};
+	//
+	//	//TODO
+	//	ShadowPSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	//	ShadowPSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	//	ShadowPSODesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	//	ShadowPSODesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
+	//
+	//	ShadowPSODesc.SampleMask = UINT_MAX;
+	//	ShadowPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	//	ShadowPSODesc.NumRenderTargets = 0;
+	//	ShadowPSODesc.SampleDesc.Count = 1;
+	//	ShadowPSODesc.SampleDesc.Quality = 0;
+	//	ShadowPSODesc.DSVFormat = mDepthStencilFormat;
+	//	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
+	//}
 
 	//SphereGMaterial.CreateGMaterial(XPath::ProjectMaterialSavedDir()+L"/Material.hlsl");
 	SphereMaterial.BeginCompileShaderMap();

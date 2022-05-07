@@ -1,7 +1,7 @@
 #include "Common.hlsl"
 #include "Random.hlsl"
 #include "MonteCarlo.hlsl"
-
+#include "Math.hlsl"
 
 //.r:Intensity in 0..1 range 
 //.g:RoughnessMaskMul,
@@ -84,7 +84,7 @@ FSSRTRay InitScreenSpaceRayFromWorldSpace(
 	float3 WorldRayDirection,
 	float ViewZ)
 {
-    float4 RayStartClip	= mul(float4(RayOriginTranslatedWorld, 1), View_TranslatedViewProjectionMatrix);
+    float4 RayStartClip	= mul_x(float4(RayOriginTranslatedWorld, 1), View_TranslatedViewProjectionMatrix);
 	float4 RayEndClip = mul(float4(RayOriginTranslatedWorld + WorldRayDirection * ViewZ, 1), View_TranslatedViewProjectionMatrix);
 
 	float3 RayStartScreen = RayStartClip.xyz * rcp(RayStartClip.w);

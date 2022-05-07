@@ -31,11 +31,11 @@ private:
 	XMatrix		TranslatedWorldToClip;
 
 	//Transpose
-	XMatrix		ProjectionMatrixTranspose;
-	XMatrix		ViewMatrixTranspose;
-	XMatrix		ViewProjectionMatrixTranspose;
-	XMatrix		TranslatedViewMatrixTranspose;
-	XMatrix		TranslatedViewProjectionMatrixTranspose;
+	//XMatrix		ProjectionMatrixTranspose;
+	//XMatrix		ViewMatrixTranspose;
+	//XMatrix		ViewProjectionMatrixTranspose;
+	//XMatrix		TranslatedViewMatrixTranspose;
+	//XMatrix		TranslatedViewProjectionMatrixTranspose;
 
 	//Inverse
 	//DirectX::XMFLOAT4X4		ProjectionMatrixInverse;
@@ -66,19 +66,21 @@ public:
 	inline const XMatrix& GetTranslatedViewProjectionMatrix()const	{ return TranslatedViewProjectionMatrix; };
 
 	//transpose
-	inline const XMatrix& GetProjectionMatrixTranspose()const		{ return ProjectionMatrixTranspose; };
-	inline const XMatrix& GetViewMatrixTranspose()const				{ return ViewMatrixTranspose; };
-	inline const XMatrix& GetViewProjectionMatrixTranspose()const	{ return ViewProjectionMatrixTranspose; };
-	inline const XMatrix& GetTranslatedViewMatrixTranspose()const	{ return TranslatedViewMatrixTranspose; };
-	inline const XMatrix& GetTranslatedViewProjectionMatrixTranspose()const { return TranslatedViewProjectionMatrixTranspose; };
+	//inline const XMatrix& GetProjectionMatrixTranspose()const		{ return ProjectionMatrixTranspose; };
+	//inline const XMatrix& GetViewMatrixTranspose()const				{ return ViewMatrixTranspose; };
+	//inline const XMatrix& GetViewProjectionMatrixTranspose()const	{ return ViewProjectionMatrixTranspose; };
+	//inline const XMatrix& GetTranslatedViewMatrixTranspose()const	{ return TranslatedViewMatrixTranspose; };
+	//inline const XMatrix& GetTranslatedViewProjectionMatrixTranspose()const { return TranslatedViewProjectionMatrixTranspose; };
 
 	//inverse
 	inline const XMatrix& GetViewProjectionMatrixInverse()const { return ViewProjectionMatrixInverse; };
 	inline const XMatrix& GetTranslatedViewProjectionMatrixInverse()const { return TranslatedViewProjectionMatrixInverse; };
 
 	//misc
-	XMatrix GetScreenToTranslatedWorldTranPose();
-	XMatrix GetScreenToWorldTranPose();
+	//XMatrix GetScreenToTranslatedWorldTranPose();
+	XMatrix GetScreenToTranslatedWorld();
+	//XMatrix GetScreenToWorldTranPose();
+	XMatrix GetScreenToWorld();
 };
 
 struct ViewConstantBufferData

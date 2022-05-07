@@ -1,6 +1,6 @@
 #include "Common.hlsl"
 #include "FastMath.hlsl"
-
+#include "Math.hlsl"
 
 #define CM_TO_SKY_UNIT 0.00001f
 
@@ -593,7 +593,7 @@ void RenderSkyViewLutCS(uint3 ThreadId : SV_DispatchThreadID)
     float3x3 LocalReferencial = (float3x3)View_SkyViewLutReferential;
     float3 AtmosphereLightDirection0 = View_AtmosphereLightDirection.xyz;
     //AtmosphereLightDirection0 = mul(LocalReferencial, AtmosphereLightDirection0);
-    AtmosphereLightDirection0 = mul(AtmosphereLightDirection0,LocalReferencial);
+    AtmosphereLightDirection0 = mul_x(AtmosphereLightDirection0,LocalReferencial);
 
 	//if ((Ray is not intersecting the atmosphere)) {}
 
@@ -625,7 +625,7 @@ float3 GetScreenWorldDir(in float4 SvPosition)
     float3 NDCPos = float3((SvPosition.xy * View_ViewSizeAndInvSize.zw - 0.5f) * float2(2, -2), SvPosition.z);
     float2 ScreenPosition = float4(NDCPos.xyz, 1) * SvPosition.w;
     const float Depth = 10000.0f;
-    float4 WorldPos = mul(float4(ScreenPosition * Depth, Depth, 1), View_ScreenToWorld);
+    float4 WorldPos = mul_x(float4(ScreenPosition * Depth, Depth, 1), View_ScreenToWorld);
     return normalize(WorldPos.xyz - View_WorldCameraOrigin);
 }
 

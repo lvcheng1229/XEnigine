@@ -1,3 +1,7 @@
+#ifndef __COMMON_HLSL__
+#define __COMMON_HLSL__
+
+#include "Math.hlsl"
 cbuffer cbView
 {
     float4x4 View_TranslatedViewProjectionMatrix;
@@ -57,3 +61,5 @@ float ClampedPow(float X,float Y)
 {
 	return pow(max(abs(X),POW_CLAMP),Y);
 }
+
+#endif

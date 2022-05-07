@@ -1,3 +1,4 @@
+#include "Math.hlsl"
 cbuffer cbPerObject
 {
     float4x4 gWorld;
@@ -18,8 +19,8 @@ struct FVertexFactoryInput
 void VS(FVertexFactoryInput Input,
     out float4 Position : SV_POSITION)
 {
-    float4 PositionW=mul(Input.Position, gWorld);
-    Position=mul(PositionW, View_ViewPorjectionMatrix);
+    float4 PositionW=mul_x(Input.Position, gWorld);
+    Position=mul_x(PositionW, View_ViewPorjectionMatrix);
 }
 
 void PS()

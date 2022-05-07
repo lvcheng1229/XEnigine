@@ -30,14 +30,14 @@ XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix)
 	}
 }
 
-static void StoreMat_Transpose_Inverse(
+static void StoreMat_Inverse(
 	XMFLOAT4X4* Common, 
-	XMFLOAT4X4* Tranpose, 
+	//XMFLOAT4X4* Tranpose, 
 	XMFLOAT4X4* Inverse, 
 	XMMATRIX& MatrixIn)
 {
 	XMStoreFloat4x4(Common, MatrixIn);
-	XMStoreFloat4x4(Tranpose, XMMatrixTranspose(MatrixIn));
+	//XMStoreFloat4x4(Tranpose, XMMatrixTranspose(MatrixIn));
 
 	DirectX::XMVECTOR Determinant = XMMatrixDeterminant(MatrixIn);
 	XMStoreFloat4x4(Inverse, XMMatrixInverse(&Determinant, MatrixIn));
@@ -83,40 +83,56 @@ void XViewMatrices::UpdateViewMatrix(const XVector3& ViewLocation, const XVector
 	TranslatedViewMatrixCom.r[3] = g_XMIdentityR3.v;
 	TranslatedViewMatrixCom = XMMatrixTranspose(TranslatedViewMatrixCom);
 	XMStoreFloat4x4(&TranslatedViewMatrix, TranslatedViewMatrixCom);//NOTE
-	XMStoreFloat4x4(&TranslatedViewMatrixTranspose, TranslatedViewMatrixCom);
+	//XMStoreFloat4x4(&TranslatedViewMatrixTranspose, TranslatedViewMatrixCom);
 
 	XMMATRIX ViewMatrixCom;
 	ViewMatrixCom.r[0] = XMVectorSelect(NegQU, UNormalize, g_XMSelect1110.v);
 	ViewMatrixCom.r[1] = XMVectorSelect(NegQV, VNormalize, g_XMSelect1110.v);
 	ViewMatrixCom.r[2] = XMVectorSelect(NegQW, WNormalize, g_XMSelect1110.v);
 	ViewMatrixCom.r[3] = g_XMIdentityR3.v;
-	XMStoreFloat4x4(&ViewMatrixTranspose, ViewMatrixCom);
+	//XMStoreFloat4x4(&ViewMatrixTranspose, ViewMatrixCom);
 	ViewMatrixCom = XMMatrixTranspose(ViewMatrixCom);
 	XMStoreFloat4x4(&ViewMatrix, ViewMatrixCom);
 
 	XMMATRIX ProjectionMatrixCom = XMLoadFloat4x4(&ProjectionMatrix);
-	XMStoreFloat4x4(&ProjectionMatrixTranspose, XMMatrixTranspose(ProjectionMatrixCom));
+	//XMStoreFloat4x4(&ProjectionMatrixTranspose, XMMatrixTranspose(ProjectionMatrixCom));
 
 	XMMATRIX ViewProjectionMatrixCom = XMMatrixMultiply(ViewMatrixCom, ProjectionMatrixCom);
 	XMMATRIX TranslatedViewProjectionMatrixCom = XMMatrixMultiply(TranslatedViewMatrixCom, ProjectionMatrixCom);
 
 
-	StoreMat_Transpose_Inverse(
+	StoreMat_Inverse(
 		&ViewProjectionMatrix,
-		&ViewProjectionMatrixTranspose,
+		//&ViewProjectionMatrixTranspose,
 		&ViewProjectionMatrixInverse,
 		ViewProjectionMatrixCom
 	);
 	
-	StoreMat_Transpose_Inverse(
+	StoreMat_Inverse(
 		&TranslatedViewProjectionMatrix,
-		&TranslatedViewProjectionMatrixTranspose,
+		//&TranslatedViewProjectionMatrixTranspose,
 		&TranslatedViewProjectionMatrixInverse,
 		TranslatedViewProjectionMatrixCom
 	);
 }
 
-XMatrix XViewMatrices::GetScreenToTranslatedWorldTranPose()
+//XMatrix XViewMatrices::GetScreenToTranslatedWorldTranPose()
+//{
+//	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
+//	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
+//	ScreenToClip.m[3][2] = ProjectionMatrix.m[3][2];
+//	ScreenToClip.m[2][3] = 1.0f;
+//	ScreenToClip.m[3][3] = 0.0f;
+//
+//	XMMATRIX ScreenToTranslatedWorldCom = XMLoadFloat4x4(&ScreenToClip);
+//	ScreenToTranslatedWorldCom = XMMatrixMultiply(ScreenToTranslatedWorldCom, XMLoadFloat4x4(&TranslatedViewProjectionMatrixInverse));
+//	
+//	DirectX::XMFLOAT4X4 Ret;
+//	XMStoreFloat4x4(&Ret, XMMatrixTranspose(ScreenToTranslatedWorldCom));
+//	return Ret;
+//}
+
+XMatrix XViewMatrices::GetScreenToTranslatedWorld()
 {
 	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
 	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
@@ -126,13 +142,29 @@ XMatrix XViewMatrices::GetScreenToTranslatedWorldTranPose()
 
 	XMMATRIX ScreenToTranslatedWorldCom = XMLoadFloat4x4(&ScreenToClip);
 	ScreenToTranslatedWorldCom = XMMatrixMultiply(ScreenToTranslatedWorldCom, XMLoadFloat4x4(&TranslatedViewProjectionMatrixInverse));
-	
+
 	DirectX::XMFLOAT4X4 Ret;
-	XMStoreFloat4x4(&Ret, XMMatrixTranspose(ScreenToTranslatedWorldCom));
+	XMStoreFloat4x4(&Ret, ScreenToTranslatedWorldCom);
 	return Ret;
 }
 
-XMatrix XViewMatrices::GetScreenToWorldTranPose()
+//XMatrix XViewMatrices::GetScreenToWorldTranPose()
+//{
+//	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
+//	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
+//	ScreenToClip.m[3][2] = ProjectionMatrix.m[3][2];
+//	ScreenToClip.m[2][3] = 1.0f;
+//	ScreenToClip.m[3][3] = 0.0f;
+//
+//	XMMATRIX ScreenToWorldCom = XMLoadFloat4x4(&ScreenToClip);
+//	ScreenToWorldCom = XMMatrixMultiply(ScreenToWorldCom, XMLoadFloat4x4(&ViewProjectionMatrixInverse));
+//
+//	DirectX::XMFLOAT4X4 Ret;
+//	XMStoreFloat4x4(&Ret, XMMatrixTranspose(ScreenToWorldCom));
+//	return Ret;
+//}
+
+XMatrix XViewMatrices::GetScreenToWorld()
 {
 	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
 	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
@@ -144,7 +176,7 @@ XMatrix XViewMatrices::GetScreenToWorldTranPose()
 	ScreenToWorldCom = XMMatrixMultiply(ScreenToWorldCom, XMLoadFloat4x4(&ViewProjectionMatrixInverse));
 
 	DirectX::XMFLOAT4X4 Ret;
-	XMStoreFloat4x4(&Ret, XMMatrixTranspose(ScreenToWorldCom));
+	XMStoreFloat4x4(&Ret, ScreenToWorldCom);
 	return Ret;
 }
 
