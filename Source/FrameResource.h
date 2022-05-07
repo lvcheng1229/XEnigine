@@ -8,9 +8,9 @@ struct ObjectConstants
 {
     DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
     DirectX::XMFLOAT3 BoundingBoxCenter;
-    float padding0;
+    float padding0 = 1.0f;
     DirectX::XMFLOAT3 BoundingBoxExtent;
-    float padding1;
+    float padding1 = 1.0f;
 };
 
 

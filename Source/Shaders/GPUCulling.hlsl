@@ -25,7 +25,17 @@ cbuffer cbCullingParameters
 {
     float commandCount; 
 }
-//StructuredBuffer<SceneConstantBuffer> cbv                : register(t0); ???
+
+struct SceneConstantBuffer
+{
+    float4x4 gWorld;
+    float3 BoundingBoxCenter;
+    float a;
+    float3 BoundingBoxExtent;
+    float b;
+};
+
+StructuredBuffer<SceneConstantBuffer> SceneConstantBufferIN;
 StructuredBuffer<DepthIndirectCommand> inputCommands;            //: register(t1);    // SRV: Indirect commands
 AppendStructuredBuffer<DepthIndirectCommand> outputCommands;    //: register(u0);    // UAV: Processed indirect commands
 
@@ -35,6 +45,13 @@ void CSMain(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex)
     uint index = (groupId.x * ThreadBlockSize) + groupIndex;
     if (index < commandCount)
     {
-        outputCommands.Append(inputCommands[index]);
+        DepthIndirectCommand cmd = inputCommands[index];
+        if(SceneConstantBufferIN[index].BoundingBoxExtent.y>1.7f)
+        {
+            //why?
+            cmd.IndexCountPerInstance =(uint)0;
+            cmd.InstanceCount =(uint)0;
+        }
+        outputCommands.Append(cmd);
     }
 }

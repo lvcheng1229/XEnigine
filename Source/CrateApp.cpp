@@ -55,6 +55,7 @@
 #include "Runtime/HAL/FileManagerGeneric.h"
 #include "Runtime/Core/Misc/Path.h"
 
+#include "Runtime/Core/ComponentNode/Camera.h"
 
 #include "Runtime/Engine/Classes/Material.h"
 #include "Runtime/Engine/ResourcecConverter.h"
@@ -311,21 +312,25 @@ public:
 	{
 		outputCommands.Bind(Initializer.ShaderParameterMap, "outputCommands");
 		inputCommands.Bind(Initializer.ShaderParameterMap, "inputCommands");
+		SceneConstantBufferIN.Bind(Initializer.ShaderParameterMap, "SceneConstantBufferIN");
 		cbCullingParameters.Bind(Initializer.ShaderParameterMap, "cbCullingParameters");
 	}
 
 	void SetParameters(XRHICommandList& RHICommandList,
 		XRHIUnorderedAcessView* OutputCommandsUAV,
 		XRHIShaderResourceView* InputCommandsSRV,
+		XRHIShaderResourceView* SceneConstantBufferINView,
 		XRHIConstantBuffer* CullingParametersCBV)
 	{
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, outputCommands, OutputCommandsUAV);
 		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, inputCommands, InputCommandsSRV);
+		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, SceneConstantBufferIN, SceneConstantBufferINView);
 		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbCullingParameters, CullingParametersCBV);
 	}
 
 	UAVParameterType outputCommands;
 	SRVParameterType inputCommands;
+	SRVParameterType SceneConstantBufferIN;
 	CBVParameterType cbCullingParameters;
 };
 DepthGPUCullingCS::ShaderInfos DepthGPUCullingCS::StaticShaderInfos(
@@ -804,7 +809,7 @@ public:
 		XMStoreFloat3(&mLook, XMVector3TransformNormal(XMLoadFloat3(&mLook), R));
 	}
 
-	void Strafe(float d)
+	void WalkWS(float d)
 	{
 		XMVECTOR s = XMVectorReplicate(d);
 		XMVECTOR r = XMLoadFloat3(&mRight);
@@ -878,7 +883,8 @@ private:
 
 	BoundSphere BuildBoundSphere(float FoVAngleY, float WHRatio, float SplirNear, float SplitFar);
 
-	Camera cam_ins;
+	GCamera CamIns;
+	//Camera cam_ins;
 	RendererViewInfo RViewInfo;
 
 	XVector3 LightDir = { -1,1,1 };
@@ -896,10 +902,12 @@ private:
 	ComPtr<ID3D12CommandSignature> m_commandSignature;
 
 	std::shared_ptr<XRHIStructBuffer>CmdBufferNoCulling;
+	std::shared_ptr<XRHIStructBuffer>GlobalObjectStructBuffer;
 
 	uint32 CounterOffset;
 	std::shared_ptr<XRHIStructBuffer>CmdBufferCulled;
 
+	std::shared_ptr<XRHIShaderResourceView>GlobalObjectStructBufferSRV;
 	std::shared_ptr<XRHIShaderResourceView>CmdBufferShaderResourceView;
 	std::shared_ptr<XRHIUnorderedAcessView> CmdBufferUnorderedAcessView;
 
@@ -1197,8 +1205,8 @@ BoundSphere CrateApp::BuildBoundSphere(float FoVAngleY, float WHRatio, float Spl
 	XMVECTOR FarVOffsetCom = XMLoadFloat3(&FarVOffset);
 
 
-	XMVECTOR EyePosCom = XMLoadFloat3(GetRValuePtr(cam_ins.GetEyePosition()));
-	XMVECTOR TargetPosCom = XMLoadFloat3(GetRValuePtr(cam_ins.GetTargetPosition()));
+	XMVECTOR EyePosCom = XMLoadFloat3(GetRValuePtr(CamIns.GetEyePosition()));
+	XMVECTOR TargetPosCom = XMLoadFloat3(GetRValuePtr(CamIns.GetTargetPosition()));
 	XMVECTOR CameraDirection = DirectX::XMVector3Normalize(TargetPosCom - EyePosCom);
 
 	XMVECTOR CascadeFrustumVerts[8];
@@ -1242,7 +1250,7 @@ void CrateApp::OnResize()
 	XMMATRIX P = XDirectx::XXMMatrixPerspectiveFovLH(FoVAngleY, AspectRatio(), Near, Far);
 
 	XMStoreFloat4x4(&mProj, P);
-	ViewMatrix.Create(mProj, cam_ins.GetEyePosition(), cam_ins.GetTargetPosition());
+	ViewMatrix.Create(mProj, CamIns.GetEyePosition(), CamIns.GetTargetPosition());
 
 
 }
@@ -1294,6 +1302,8 @@ void CrateApp::TestExecute()
 	std::vector<DepthPassIndirectCommand> commands;
 	commands.resize(mOpaqueRitems.size());
 	
+	//ObjectConstants
+
 	for (int i = 0; i < mOpaqueRitems.size(); i++)
 	{
 		auto& ri = mOpaqueRitems[i];
@@ -1311,12 +1321,53 @@ void CrateApp::TestExecute()
 		commands[i].DrawArguments.StartInstanceLocation = 0;
 	}
 	
+	
+	//std::vector<ObjectConstants>ObjConstVec;
+	//ObjConstVec.resize(mOpaqueRitems.size());
+	
+	//for (int i = 0; i < mOpaqueRitems.size(); i++)
+	//{
+	//	auto& ri = mOpaqueRitems[i];
+	//	XMMATRIX world = XMLoadFloat4x4(&ri->World);
+	//	XMStoreFloat4x4(&ObjConstVec[i].World, XMMatrixTranspose(world));
+	//	ObjConstVec[i].BoundingBoxCenter = ri->BoundingBox.Center;
+	//	ObjConstVec[i].BoundingBoxExtent = ri->BoundingBox.Extents;
+	//}
+	
+	uint32 ObjConstVecSize = sizeof(ObjectConstants) * mOpaqueRitems.size();
+	ObjectConstants* ConstantArray = (ObjectConstants*)std::malloc(ObjConstVecSize);
+	for (int i = 0; i < mOpaqueRitems.size(); i++)
+	{
+		auto& ri = mOpaqueRitems[i];
+		ConstantArray[i].BoundingBoxCenter = ri->BoundingBox.Center;
+		ConstantArray[i].BoundingBoxExtent = ri->BoundingBox.Extents;
+		XMMATRIX world = XMLoadFloat4x4(&ri->World);
+		XMStoreFloat4x4(&ConstantArray[i].World, XMMatrixTranspose(world));
+	}
+	{
+
+		FResourceVectorUint8 ObjectStructBufferData;
+		ObjectStructBufferData.Data = ConstantArray;
+		ObjectStructBufferData.SetResourceDataSize(ObjConstVecSize);
+		XRHIResourceCreateData ObjectStructBufferResourceData(&ObjectStructBufferData);
+		
+		GlobalObjectStructBuffer = RHIcreateStructBuffer(
+			sizeof(ObjectConstants),
+			ObjConstVecSize,
+			EBufferUsage((int)EBufferUsage::BUF_ShaderResource),
+			ObjectStructBufferResourceData);
+
+		GlobalObjectStructBufferSRV = RHICreateShaderResourceView(GlobalObjectStructBuffer.get());
+	}
+
 	//Create Command Buffer
 	uint32 IndirectBufferDataSize = sizeof(DepthPassIndirectCommand) * commands.size();
 	{
-		
 		void* IndirectBufferDataPtr = std::malloc(IndirectBufferDataSize);
-		memcpy(IndirectBufferDataPtr, commands.data(), IndirectBufferDataSize);
+		if (IndirectBufferDataPtr != nullptr)
+		{
+			memcpy(IndirectBufferDataPtr, commands.data(), IndirectBufferDataSize);
+		}
 		FResourceVectorUint8 IndirectBufferData;
 		IndirectBufferData.Data = IndirectBufferDataPtr;
 		IndirectBufferData.SetResourceDataSize(IndirectBufferDataSize);
@@ -1373,18 +1424,34 @@ void CrateApp::Renderer(const GameTimer& gt)
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 		RHIResetStructBufferCounter(CmdBufferCulled.get(), CounterOffset);
+		
+		//D3D12_RESOURCE_BARRIER barrier0 = CD3DX12_RESOURCE_BARRIER::Transition(mCulledCommandBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		//mCommandList->ResourceBarrier(1, &barrier0);
+		
 		Shader->SetParameters(
 			RHICmdList, 
 			CmdBufferUnorderedAcessView.get(),
 			CmdBufferShaderResourceView.get(),
+			GlobalObjectStructBufferSRV.get(),
 			cbCullingParameters.get());
-		RHICmdList.RHIDispatchComputeShader(128, 1, 1);
+		//RHICmdList.RHIDispatchComputeShader(128, 1, 1);
+		RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ceil(mOpaqueRitems.size() / float(128))), 1, 1);
+		//RHICmdList.RHIDispatchComputeShader(8, 1, 1);
 		
-
+		//D3D12_RESOURCE_BARRIER barrier1 = CD3DX12_RESOURCE_BARRIER::Transition(mCulledCommandBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+		//mCommandList->ResourceBarrier(1, &barrier1);
 
 		mCommandList->EndEvent();
 	}
 
+	//direct_ctx->CloseCmdList();
+	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	//direct_cmd_queue->CommandQueueWaitFlush();
+	//
+	//pass_state_manager->SetHeapDesc();
+	//direct_ctx->ResetCmdAlloc();
+	//direct_ctx->OpenCmdList();
 
 
 	//Pass1 DepthPrePass
@@ -2005,12 +2072,13 @@ void CrateApp::OnMouseMove(WPARAM btnState, int x, int y)
 {
 	if ((btnState & MK_LBUTTON) != 0)
 	{
+		CamIns.ProcessMouseMove(static_cast<float>(x - mLastMousePos.x), static_cast<float>(y - mLastMousePos.y));
 		// Make each pixel correspond to a quarter of a degree.
-		float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
-		float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
-
-		cam_ins.Pitch(dy);
-		cam_ins.RotateY(dx);
+		//float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		//float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+		//
+		//cam_ins.Pitch(dy);
+		//cam_ins.RotateY(dx);
 	}
 
 
@@ -2023,16 +2091,16 @@ void CrateApp::OnKeyboardInput(const GameTimer& gt)
 	const float dt = gt.DeltaTime();
 
 	if (GetAsyncKeyState('W') & 0x8000)
-		cam_ins.Walk(10.0f * dt);
+		CamIns.WalkWS(10.0f * dt);
 
 	if (GetAsyncKeyState('S') & 0x8000)
-		cam_ins.Walk(-10.0f * dt);
+		CamIns.WalkWS(-10.0f * dt);
 
 	if (GetAsyncKeyState('A') & 0x8000)
-		cam_ins.Strafe(-10.0f * dt);
+		CamIns.WalkAD(-10.0f * dt);
 
 	if (GetAsyncKeyState('D') & 0x8000)
-		cam_ins.Strafe(10.0f * dt);
+		CamIns.WalkAD(10.0f * dt);
 }
 
 void CrateApp::UpdateShadowTransform(const GameTimer& gt)
@@ -2045,7 +2113,7 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 	//mEyePos.x = mRadius*sinf(mPhi)*cosf(mTheta);
 	//mEyePos.z = mRadius*sinf(mPhi)*sinf(mTheta);
 	//mEyePos.y = mRadius*cosf(mPhi);
-	ViewMatrix.UpdateViewMatrix(cam_ins.GetEyePosition(), cam_ins.GetTargetPosition());
+	ViewMatrix.UpdateViewMatrix(CamIns.GetEyePosition(), CamIns.GetTargetPosition());
 
 	//------------------------------------
 	float NearFarLength = Far - Near;
@@ -2211,8 +2279,8 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 		const float CmToSkyUnit = 0.00001f;			// Centimeters to Kilometers
 		const float SkyUnitToCm = 1.0f / 0.00001f;	// Kilometers to Centimeters
 
-		XVector3 CametaWorldOrigin = cam_ins.GetEyePosition();
-		XVector3 CametaTargetPos = cam_ins.GetTargetPosition();
+		XVector3 CametaWorldOrigin = CamIns.GetEyePosition();
+		XVector3 CametaTargetPos = CamIns.GetTargetPosition();
 
 
 		XMVECTOR Forward = XMLoadFloat3(GetRValuePtr(XVector3(CametaTargetPos.x - CametaWorldOrigin.x,

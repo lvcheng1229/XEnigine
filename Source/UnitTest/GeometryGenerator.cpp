@@ -224,7 +224,9 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSphere(float radius, uint32
 	}
 
 	meshData.BoundBoxMax = BoundingBoxMaxVar + XVector3(0.1, 0.1, 0.1);
+	meshData.BoundBoxMax = XVector3(ceilf(meshData.BoundBoxMax.x), ceilf(meshData.BoundBoxMax.y), ceilf(meshData.BoundBoxMax.y));
 	meshData.BoundBoxMin = BoundingBoxMinVar - XVector3(0.1, 0.1, 0.1);
+	meshData.BoundBoxMax = XVector3(floorf(meshData.BoundBoxMax.x), floorf(meshData.BoundBoxMax.y), floorf(meshData.BoundBoxMax.y));
 	std::cout << "bounding box min -=0.1" << std::endl;
 	std::cout << "bounding box max +=0.1" << std::endl;
     return meshData;
@@ -641,9 +643,12 @@ GeometryGenerator::MeshData GeometryGenerator::CreateGrid(float width, float dep
 		}
 	}
 	meshData.BoundBoxMax = BoundingBoxMaxVar + XVector3(0.1, 0.1, 0.1);
+	meshData.BoundBoxMax = XVector3(ceilf(meshData.BoundBoxMax.x), ceilf(meshData.BoundBoxMax.y), ceilf(meshData.BoundBoxMax.y));
+	meshData.BoundBoxMax.y = 5.0f;
 	meshData.BoundBoxMin = BoundingBoxMinVar - XVector3(0.1, 0.1, 0.1);
-	std::cout << "bounding box min -=0.1" << std::endl;
-	std::cout << "bounding box max +=0.1" << std::endl;
+	meshData.BoundBoxMax = XVector3(floorf(meshData.BoundBoxMax.x), floorf(meshData.BoundBoxMax.y), floorf(meshData.BoundBoxMax.y));
+	std::cout << "bounding box min -=0.1 ceil why??BoundingBoxExtent" << std::endl;
+	std::cout << "bounding box max +=0.1 ceil why??BoundingBoxExtent" << std::endl;
     return meshData;
 }
 

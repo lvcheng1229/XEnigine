@@ -1,9 +1,9 @@
 cbuffer cbPerObject
 {
     float4x4 gWorld;
-    float3 BoundBoxMax;
+    float3 BoundingBoxCenter;
     float padding0;
-    float3 BoundBoxMin;
+    float3 BoundingBoxExtent;
     float padding1;
 }
 

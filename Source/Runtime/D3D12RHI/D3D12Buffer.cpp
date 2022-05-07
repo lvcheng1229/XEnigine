@@ -117,6 +117,7 @@ XD3D12ShaderResourceView* XD3D12AbstractDevice::RHICreateShaderResourceView(XRHI
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Buffer.FirstElement = 0;
 	srvDesc.Buffer.NumElements = StructuredBuffer->GetSize() / StructuredBuffer->GetStride();
 	srvDesc.Buffer.StructureByteStride = StructuredBuffer->GetStride();
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
