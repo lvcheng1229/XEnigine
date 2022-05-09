@@ -1118,7 +1118,7 @@ private://sky atmosphere PreCompute
 private:
 	struct VSMTileMaskStruct
 	{
-		XMFLOAT4X4 ScreenToShadowMatrix;
+		XMatrix LighgViewProject;
 
 		float ClientWidth;
 		float ClientHeight;
@@ -1586,16 +1586,13 @@ void CrateApp::Renderer(const GameTimer& gt)
 	}
 
 	pass_state_manager->ResetState();
-
+	
 	{
-		
-
 		TShaderReference<VSMTileMaskCS> Shader = GetGlobalShaderMapping()->GetShader<VSMTileMaskCS>();
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 		XD3D12TextureBase* VirtualSMFlagsTex = GetD3D12TextureFromRHITexture(VirtualSMFlags.get());
-
-
+		
 		Shader->SetParameters(
 			RHICmdList,
 			RViewInfo.ViewConstantBuffer.get(),
@@ -1603,9 +1600,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			VirtualSMFlagsTex->GeUnorderedAcessView(0),
 			TextureDepthStencil.get());
 		RHICmdList.RHIDispatchComputeShader(mClientWidth / 16, mClientHeight / 16, 1);
-
-		uint32 a = mClientWidth / 16;
-		uint32 b = mClientHeight / 16;
+		//RHICmdList.RHIDispatchComputeShader(4, 4, 1);
 	}
 	
 	{
@@ -1736,7 +1731,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			static_cast<XD3D12Texture2D*>(ShadowTexture0.get())->GeDepthStencilView());
 		direct_ctx->RHIClearMRT(false, true, nullptr, 0.0f, 0);
 		
-		//direct_ctx->RHISetViewport(0, 0, 0, 1024, 1024, 1.0f);
+		direct_ctx->RHISetViewport(0, 0, 0, 1024, 1024, 1.0f);
 
 		for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
 		{
@@ -2255,7 +2250,7 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 		float NearFarLength = Far - Near;
 		BoundSphere BoundSphere0;
 		BoundSphere0.Center = XVector3(0, 0, 0);
-		BoundSphere0.Radius = 100.0f;
+		BoundSphere0.Radius = 300.0f;
 		
 		//Compute Project Matrix
 		float l = BoundSphere0.Center.x - BoundSphere0.Radius;
@@ -2355,12 +2350,12 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0f / mClientWidth, 1.0f / mClientHeight);
 
-	XMatrix TempProject = ViewMatrix.GetProjectionMatrix();
-	XMatrix ScreenToClip = XMatrix::Identity;
-	ScreenToClip.m[2][2] = TempProject.m[2][2];
-	ScreenToClip.m[3][2] = TempProject.m[3][2];
-	ScreenToClip.m[2][3] = 1.0f;
-	ScreenToClip.m[3][3] = 0.0f;
+	//XMatrix TempProject = ViewMatrix.GetProjectionMatrix();
+	//XMatrix ScreenToClip = XMatrix::Identity;
+	//ScreenToClip.m[2][2] = TempProject.m[2][2];
+	//ScreenToClip.m[3][2] = TempProject.m[3][2];
+	//ScreenToClip.m[2][3] = 1.0f;
+	//ScreenToClip.m[3][3] = 0.0f;
 
 	
 	VSMTileMaskConstantBuffer->UpdateData(&mLightViewProj, sizeof(XMatrix), 0);

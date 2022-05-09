@@ -52,7 +52,9 @@ float Pow2(float x)
 {
     return x*x;
 }
-float ConvertFromDeviceZ_To_NDCZBeforeDivdeW(float DeviceZ)
+
+//https://blog.csdn.net/dengyibing/article/details/80793209
+float ConvertFromDeviceZ_To_ViewZBeforeDivdeW(float DeviceZ)
 {
     //from near to far
     //DeviceZ * View_InvDeviceZToWorldZTransform[0] + View_InvDeviceZToWorldZTransform[1] orth

@@ -4,7 +4,9 @@ using namespace DirectX;
 
 XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix)
 {
-	// DeviceZ = A + B / WorldZ
+	// DeviceZ = A + B / ViewZ
+	// ViewZ = 1.0/((DeviceZ - A)/B)
+	// ViewZ = 1.0/(DeviceZ /B - A/B)
 
 	float DepthMul = ProjMatrix.m[2][2];
 	float DepthAdd = ProjMatrix.m[3][2];

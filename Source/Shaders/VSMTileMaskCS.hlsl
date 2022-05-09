@@ -5,6 +5,7 @@ RWTexture2D<uint> VirtualSMFlags;
 
 cbuffer cbShadowViewInfo
 {
+    //float4x4 LightViewProjectMatrix;
     row_major float4x4 LightViewProjectMatrix;
 
     float ClientWidth;
@@ -14,27 +15,32 @@ cbuffer cbShadowViewInfo
 }
 
 [numthreads(16, 16, 1)]
-void VSMTileMaskCS(
-	uint2 GroupId : SV_GroupID,
-	uint GroupThreadIndex : SV_GroupIndex,
-    uint2 DispatchThreadID :SV_DispatchThreadID)
+void VSMTileMaskCS(uint2 DispatchThreadID :SV_DispatchThreadID)
 {
     float DeviceZ = TextureSampledInput.Load(int3(DispatchThreadID,0));
+    
     if(DeviceZ == 0.0)
     {
         return;
     }
-
     
-    float NDCZ=ConvertFromDeviceZ_To_NDCZBeforeDivdeW(DeviceZ);
     float2 UV = DispatchThreadID * View_BufferSizeAndInvSize.zw;
     float2 ScreenPos = UV * 2.0f - 1.0f; ScreenPos.y *= -1.0f;
 
-    float4 NDCPosNoDivdeW = float4(ScreenPos * NDCZ, NDCZ, 1);
-    float4 WorldPosition = mul_x(NDCPosNoDivdeW,cbView_ViewPorjectionMatrixInverse);
+    //https://blog.csdn.net/dengyibing/article/details/80793209
+    float4 NDCPosNoDivdeW = float4(ScreenPos , DeviceZ , 1.0);
+    float4 WorldPosition = mul(cbView_ViewPorjectionMatrixInverse,NDCPosNoDivdeW);
+    WorldPosition.xyz/=WorldPosition.w;
+
     float4 ShadowScreenPOS = mul(float4(WorldPosition.xyz,1.0),LightViewProjectMatrix);
-    float2 UVOut = ShadowScreenPOS.xy * 0.5 +0.5f;
+    ShadowScreenPOS.xyz/=ShadowScreenPOS.w;
+    float2 UVOut = ShadowScreenPOS.xy; 
     UVOut.y*=-1.0;
-    //ShadowScreenPOS.xyz/=ShadowScreenPOS.w;
+    UVOut = UVOut* 0.5 + 0.5f;
+    
+    //float a = ClientWidth + UVOut.x + UVOut.y;
+    //a*=0.0;
+    //VirtualSMFlags[DispatchThreadID] = 0 + a;
+    
     InterlockedCompareStore(VirtualSMFlags[uint2(UVOut * 8 * 8)],0,1);
 }

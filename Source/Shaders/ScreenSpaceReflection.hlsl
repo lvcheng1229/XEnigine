@@ -175,8 +175,8 @@ void PS(float4 SvPosition : SV_POSITION
     float2 ScreenPos = UV * 2.0f - 1.0f; ScreenPos.y *= -1.0f;
 
     float DeviceZ = SceneTexturesStruct_SceneDepthTexture.Sample(gsamPointWarp, UV).r;
-    const float NDCZ = ConvertFromDeviceZ_To_NDCZBeforeDivdeW(DeviceZ);
-    const float3 PositionTranslatedWorld = mul_x(float4(ScreenPos * NDCZ, NDCZ, 1), cbView_ScreenToTranslatedWorld).xyz;
+    const float ViewZ = ConvertFromDeviceZ_To_ViewZBeforeDivdeW(DeviceZ);
+    const float3 PositionTranslatedWorld = mul_x(float4(ScreenPos * ViewZ, ViewZ, 1), cbView_ScreenToTranslatedWorld).xyz;
     const float3 V = normalize(float3(0, 0, 0) - PositionTranslatedWorld);
 
     FGBufferData GBuffer = GetGbufferData(SvPosition.xy);
@@ -199,7 +199,7 @@ void PS(float4 SvPosition : SV_POSITION
         float2 E = Hammersley(i, NumRays, Random);
         float3 H = mul(ImportanceSampleVisibleGGX(UniformSampleDisk(E), Roughness * Roughness, TangentV).xyz, TangentBasis);
         float3 L = 2 * dot(V, H) * H - V;
-        FSSRTRay SSRRay = InitScreenSpaceRayFromWorldSpace(PositionTranslatedWorld, L, NDCZ);
+        FSSRTRay SSRRay = InitScreenSpaceRayFromWorldSpace(PositionTranslatedWorld, L, ViewZ);
         bool bHit = CastRay(SSRRay, NumSteps, 0.001f * abs(dot(L, N)), Roughness, OutHitUVz);
         if (bHit)
         {
