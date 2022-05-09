@@ -45,6 +45,11 @@ void XD3D12Fence::WaitCPU(uint64 cpu_fence)
 	}
 }
 
+void XD3D12Fence::WaitGPU(XD3D12CommandQueue* cmd_queue)
+{
+	cmd_queue->GetDXCommandQueue()->Wait(d3d12_fence.Get(), curr_cpu_fence);
+}
+
 
 void XD3D12CommandQueue::Create(XD3D12PhysicDevice* device)
 {
@@ -59,6 +64,16 @@ void XD3D12CommandQueue::CommandQueueWaitFlush()
 {
 	d3d12_fence.SignalGPU(this);
 	d3d12_fence.WaitCPU();
+}
+
+void XD3D12CommandQueue::SignalGPU()
+{
+	d3d12_fence.SignalGPU(this);
+}
+
+void XD3D12CommandQueue::WaitGPU()
+{
+	d3d12_fence.WaitGPU(this);
 }
 
 void XD3D12CommandQueue::ExecuteCommandListInteral(std::vector<XD3D12DirectCommandList>& Lists)

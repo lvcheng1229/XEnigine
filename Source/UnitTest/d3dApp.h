@@ -109,7 +109,7 @@ protected:
     DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	
-	int mClientWidth = 1920;
-	int mClientHeight = 1080;
+	const int mClientWidth = 1540;
+	const int mClientHeight = 845;
 };
 

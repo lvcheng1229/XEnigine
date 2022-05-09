@@ -788,7 +788,7 @@ void RenderSkyAtmosphereRayMarchingPS(
     float2 PixPos = SVPos.xy;
     float2 UvBuffer = PixPos * View_BufferSizeAndInvSize.zw;
     float DeviceZ = SceneTexturesStruct_SceneDepthTexture.Sample(gsamPointWarp, UvBuffer).r;
-    float WorldZ = ConvertFromDeviceZ(DeviceZ);
+    //float NDCZ = ConvertFromDeviceZ_To_NDCZBeforeDivdeW(DeviceZ);
 
     float3 WorldPos = GetCameraPlanetPos();
     float3 WorldDir = GetScreenWorldDir(SVPos);

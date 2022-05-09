@@ -126,8 +126,7 @@ void DeferredLightPixelMain(
 		OutColor=float4(0,0,0,0);
 		return;
 	}
-	float WorldZ=ConvertFromDeviceZ(DeviceZ);
-	float3 WorldPosition = ScreenVector * WorldZ + View_WorldCameraOrigin;
+	//float NDCZ=ConvertFromDeviceZ_To_NDCZBeforeDivdeW(DeviceZ);
 	float3 CameraVector = normalize(ScreenVector);
 
 	float tempres=0.0f;
@@ -149,7 +148,8 @@ void DeferredLightPixelMain(
 		GBuffer.DiffuseColor = GBuffer.BaseColor - GBuffer.BaseColor * GBuffer.Metallic;
 		tempres+=(GbufferA.x+GbufferB.x+GbufferA.x+GbufferC.x+GbufferD.x);
 	}
-	tempres+=WorldPosition.x*0.0001f+WorldPosition.y*0.0001f+WorldPosition.z*0.0001f;
+	//tempres+=WorldPosition.x*0.0001f+WorldPosition.y*0.0001f+WorldPosition.z*0.0001f;
+	tempres+=View_WorldCameraOrigin.x;
 	tempres*=0.00000000000f;
 	//DeferredLightingCommon.ush
 	float4 SurfaceLighting;

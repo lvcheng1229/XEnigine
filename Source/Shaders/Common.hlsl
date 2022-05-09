@@ -9,6 +9,7 @@ cbuffer cbView
     float4x4 cbView_ViewToClip;
     float4x4 cbView_ScreenToWorld;
     float4x4 cbView_ViewPorjectionMatrix;
+    float4x4 cbView_ViewPorjectionMatrixInverse;
     
     float4 View_InvDeviceZToWorldZTransform;
     float3 View_WorldCameraOrigin;
@@ -26,6 +27,8 @@ cbuffer cbView
 
     float4 View_ViewSizeAndInvSize;
     
+    float  Far;
+    float Near;
 };
 
 #define PI 3.141592653589
@@ -49,8 +52,12 @@ float Pow2(float x)
 {
     return x*x;
 }
-float ConvertFromDeviceZ(float DeviceZ)
+float ConvertFromDeviceZ_To_NDCZBeforeDivdeW(float DeviceZ)
 {
+    //from near to far
+    //DeviceZ * View_InvDeviceZToWorldZTransform[0] + View_InvDeviceZToWorldZTransform[1] orth
+    //1.0f / (DeviceZ * View_InvDeviceZToWorldZTransform[2] - View_InvDeviceZToWorldZTransform[3]); persipective
+    //https://zhuanlan.zhihu.com/p/509056079
 	return DeviceZ * View_InvDeviceZToWorldZTransform[0] + View_InvDeviceZToWorldZTransform[1] + 1.0f / (DeviceZ * View_InvDeviceZToWorldZTransform[2] - View_InvDeviceZToWorldZTransform[3]);
 }
 

@@ -52,7 +52,13 @@ public:
 	XD3D12StructBuffer* DeviceCreateStructBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
 		uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
 
+	//void DeviceClearBufferRegion(XD3D12DirectCommandList* D3D12CmdList, XRHIUnorderedAcessView* UAV, uint32 NumBytes);
 	void DeviceResetStructBufferCounter(XD3D12DirectCommandList* D3D12CmdList, XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset);
+	void DeviceCopyTextureRegion(XD3D12DirectCommandList* D3D12CmdList,
+		XRHITexture* RHITextureDst,
+		XRHITexture* RHITextureSrc,
+		uint32 DstX, uint32 DstY, uint32 DstZ,
+		uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ);
 	XD3D12ShaderResourceView* RHICreateShaderResourceView(XRHIStructBuffer* StructuredBuffer);
 	XD3D12UnorderedAcessView* RHICreateUnorderedAccessView(XRHIStructBuffer* StructuredBuffer, bool bUseUAVCounter, bool bAppendBuffer, uint64 CounterOffsetInBytes);
 private:
@@ -65,6 +71,7 @@ private:
 	XD3D12PhysicDevice* PhysicalDevice;
 
 	XDxRefCount<ID3D12Resource> ID3D12ZeroStructBuffer;
+	//XDxRefCount<ID3D12Resource> ID3D12ZeroTex2DR32Uint;
 
 	XD3D12CommandQueue* DirectxCmdQueue;;
 	XD3D12CommandQueue* ComputeCmdQueue;

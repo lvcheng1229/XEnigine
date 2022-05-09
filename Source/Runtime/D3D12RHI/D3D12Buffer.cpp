@@ -93,6 +93,61 @@ XD3D12StructBuffer* XD3D12AbstractDevice::DeviceCreateStructBuffer(XD3D12DirectC
 	return BufferRet;
 }
 
+//void XD3D12AbstractDevice::DeviceClearBufferRegion(XD3D12DirectCommandList* D3D12CmdList, XRHIUnorderedAcessView* UAV, uint32 NumBytes)
+//{
+//	//XD3D12UnorderedAcessView* UnorderView = static_cast<XD3D12UnorderedAcessView*>(UAV);
+//	//XD3D12Resource* D3D12Resource = UnorderView->GetResource();
+//	//ID3D12Resource* DestResource = D3D12Resource->GetResource();
+//	//D3D12_RESOURCE_STATES ResourceStateBefore = D3D12Resource->GetResourceState().GetResourceState();
+//	//
+//	//D3D12CmdList->GetDXCmdList()->CopyTextureRegion();
+//	//D3D12CmdList->GetDXCmdList()->CopyBufferRegion(DestResource, 0, ID3D12ZeroStructBuffer.Get(), 0, NumBytes);
+//	//D3D12CmdList->CmdListAddTransition(D3D12Resource, D3D12_RESOURCE_STATE_COPY_DEST, ResourceStateBefore);
+//}
+
+void XD3D12AbstractDevice::DeviceCopyTextureRegion(XD3D12DirectCommandList* D3D12CmdList,
+	XRHITexture* RHITextureDst, 
+	XRHITexture* RHITextureSrc, 
+	uint32 DstX, uint32 DstY, uint32 DstZ, 
+	uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ)
+{
+	
+	D3D12_RESOURCE_STATES ResourceState;
+	D3D12_TEXTURE_COPY_LOCATION Dst;
+	XD3D12Resource* DstResource;
+	{
+		XD3D12TextureBase* D3DTexture2D = (XD3D12TextureBase*)RHITextureDst->GetTextureBaseRHI();;
+		XD3D12ShaderResourceView* SRV = D3DTexture2D->GetShaderResourceView(0);
+
+		DstResource = SRV->GetResource();
+		Dst.pResource = DstResource->GetResource();
+		Dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+
+		ResourceState = SRV->GetResource()->GetResourceState().GetResourceState();
+	}
+
+
+	D3D12_TEXTURE_COPY_LOCATION Src;
+	{
+		XD3D12TextureBase* D3DTexture2D = (XD3D12TextureBase*)RHITextureSrc->GetTextureBaseRHI();;
+		XD3D12ShaderResourceView* SRV = D3DTexture2D->GetShaderResourceView(0);
+
+		Src.pResource = SRV->GetResource()->GetResource();
+		Src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	}
+
+	Dst.SubresourceIndex = 0;
+	Src.SubresourceIndex = 0;
+
+	CD3DX12_BOX SourceBoxD3D(0, 0, 0, 0 + OffsetX, 0 + OffsetY, 0 + OffsetZ);
+	XD3D12PlatformRHI::Base_TransitionResource(*D3D12CmdList, DstResource, D3D12_RESOURCE_STATE_COPY_DEST);
+	D3D12CmdList->CmdListFlushBarrier();
+	D3D12CmdList->GetDXCmdList()->CopyTextureRegion(&Dst,DstX,DstY,DstZ,&Src,&SourceBoxD3D);
+	
+	//Temp!!!!!!!!!!!
+	//XD3D12PlatformRHI::Base_TransitionResource(*D3D12CmdList, DstResource, D3D12_RESOURCE_STATE_GENERIC_READ);
+	//D3D12CmdList->CmdListFlushBarrier();
+}
 void XD3D12AbstractDevice::DeviceResetStructBufferCounter(XD3D12DirectCommandList* D3D12CmdList, XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset)
 {
 	const XD3D12ResourcePtr_CPUGPU& DestResourcePtr = static_cast<XD3D12StructBuffer*>(RHIStructBuffer)->ResourcePtr;
@@ -109,6 +164,15 @@ void XD3D12PlatformRHI::RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructB
 {
 	AbsDevice->DeviceResetStructBufferCounter(AbsDevice->GetDirectContex(0)->GetCmdList(), RHIStructBuffer, CounterOffset);
 }
+
+void XD3D12PlatformRHI::RHICopyTextureRegion(XRHITexture* RHITextureDst,XRHITexture* RHITextureSrc, uint32 DstX, uint32 DstY, uint32 DstZ, uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ)
+{
+	AbsDevice->DeviceCopyTextureRegion(AbsDevice->GetDirectContex(0)->GetCmdList(), RHITextureDst, RHITextureSrc, DstX, DstY, DstZ, OffsetX, OffsetY, OffsetZ);
+}
+//void XD3D12PlatformRHI::RHIClearTextureRegion(XRHIUnorderedAcessView* UAV, uint32 NumBytes)
+//{
+//	AbsDevice->DeviceClearBufferRegion(AbsDevice->GetDirectContex(0)->GetCmdList(), UAV, NumBytes);
+//}
 
 XD3D12ShaderResourceView* XD3D12AbstractDevice::RHICreateShaderResourceView(XRHIStructBuffer* StructuredBuffer)
 {
@@ -128,9 +192,10 @@ XD3D12ShaderResourceView* XD3D12AbstractDevice::RHICreateShaderResourceView(XRHI
 	uint32 index_of_heap;
 	CBV_SRV_UAVDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
 	D3D12_CPU_DESCRIPTOR_HANDLE CPU_PTR = CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap);
+	D3D12_GPU_DESCRIPTOR_HANDLE GPU_PTR = CBV_SRV_UAVDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap);
 
 	XD3D12ShaderResourceView* ShaderResourceView = new  XD3D12ShaderResourceView();
-	ShaderResourceView->Create(PhysicalDevice, BackResource, srvDesc, CPU_PTR);
+	ShaderResourceView->Create(PhysicalDevice, BackResource, srvDesc, CPU_PTR, GPU_PTR);
 	return ShaderResourceView;
 }
 
@@ -154,8 +219,9 @@ XD3D12UnorderedAcessView* XD3D12AbstractDevice::RHICreateUnorderedAccessView(XRH
 	uint32 index_of_heap;
 	CBV_SRV_UAVDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
 	D3D12_CPU_DESCRIPTOR_HANDLE CPU_PTR = CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap);
+	D3D12_GPU_DESCRIPTOR_HANDLE GPU_PTR = CBV_SRV_UAVDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap);
 	XD3D12UnorderedAcessView* UnorderedAcessView = new  XD3D12UnorderedAcessView();
-	UnorderedAcessView->Create(PhysicalDevice, D3D12Resource, D3D12Resource, uavDesc, CPU_PTR);
+	UnorderedAcessView->Create(PhysicalDevice, D3D12Resource, D3D12Resource, uavDesc, CPU_PTR, GPU_PTR);
 	
 	X_Assert(bUseUAVCounter == true);
 	X_Assert(bAppendBuffer == true);

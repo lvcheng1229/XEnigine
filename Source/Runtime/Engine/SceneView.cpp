@@ -70,15 +70,17 @@ void XViewMatrices::GetPlanes(XPlane Planes[(int)ECameraPlane::CP_MAX])
 	Planes[(int)ECameraPlane::CP_LEFT] = XVector4::Transform(LeftPlane, ViewProjectionMatrixTranspose);
 	Planes[(int)ECameraPlane::CP_LEFT].NegNormal();
 
-	//Near Plane z = 1;   -> reflect normal
-	XVector4 NearPlane = XVector4::Zero; NearPlane.z = 1; NearPlane.w = -1;
-	Planes[(int)ECameraPlane::CP_NEAR] = XVector4::Transform(NearPlane, ViewProjectionMatrixTranspose);
-	Planes[(int)ECameraPlane::CP_NEAR].NegNormal();
+	{
+		//Near Plane z = 1;   -> reflect normal <- error ,do culling in Cartesian coordinates ,whic is right hand
+		XVector4 NearPlane = XVector4::Zero; NearPlane.z = 1; NearPlane.w = -1;
+		Planes[(int)ECameraPlane::CP_NEAR] = XVector4::Transform(NearPlane, ViewProjectionMatrixTranspose);
+		Planes[(int)ECameraPlane::CP_NEAR];
 
-	// FarPlane z = 0;
-	XVector4 FarPlane = XVector4::Zero; FarPlane.z = 1;
-	Planes[(int)ECameraPlane::CP_FAR] = XVector4::Transform(FarPlane, ViewProjectionMatrixTranspose);
-	//Planes[(int)ECameraPlane::CP_FAR]
+		// FarPlane z = 0; -> reflect normal <- right
+		XVector4 FarPlane = XVector4::Zero; FarPlane.z = 1;
+		Planes[(int)ECameraPlane::CP_FAR] = XVector4::Transform(FarPlane, ViewProjectionMatrixTranspose);
+		Planes[(int)ECameraPlane::CP_FAR].NegNormal();
+	}
 
 	//Top Plane y = 1 ;
 	XVector4 TopPlane = XVector4::Zero; TopPlane.y = 1; TopPlane.w = -1;

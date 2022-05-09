@@ -13,6 +13,7 @@ public:
 	void SignalGPU(XD3D12CommandQueue* cmd_queue, uint64 fence);
 	void WaitCPU();
 	void WaitCPU(uint64 fence);
+	void WaitGPU(XD3D12CommandQueue* cmd_queue);
 
 	inline uint64 CurrentCPUFence() { return curr_cpu_fence; }
 	inline uint64 CurrentGPUFence() { return curr_gpu_fence; }
@@ -30,6 +31,9 @@ public:
 	void Create(XD3D12PhysicDevice* device);
 	void CommandQueueWaitFlush();
 	
+	void SignalGPU();
+	void WaitGPU();
+
 	inline void Signal() { d3d12_fence.SignalGPU(this); }
 	inline void Signal(uint64 fence) { d3d12_fence.SignalGPU(this, fence); }
 	inline void Wait() { d3d12_fence.WaitCPU(); }

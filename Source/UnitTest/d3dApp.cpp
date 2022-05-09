@@ -161,8 +161,8 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	// WM_SIZE is sent when the user resizes the window.  
 	case WM_SIZE:
 		// Save the new client area dimensions.
-		mClientWidth  = LOWORD(lParam);
-		mClientHeight = HIWORD(lParam);
+		//mClientWidth  = LOWORD(lParam);
+		//mClientHeight = HIWORD(lParam);
 		if( md3dDevice )
 		{
 			if( wParam == SIZE_MINIMIZED )

@@ -360,7 +360,7 @@ public:
 		FurthestHZBOutput_3.Bind(Initializer.ShaderParameterMap, "FurthestHZBOutput_3");
 		FurthestHZBOutput_4.Bind(Initializer.ShaderParameterMap, "FurthestHZBOutput_4");
 
-		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
+		//VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
 	}
 
 	void SetParameters(
@@ -372,9 +372,9 @@ public:
 		XRHIUnorderedAcessView* InFurthestHZBOutput_1,
 		XRHIUnorderedAcessView* InFurthestHZBOutput_2,
 		XRHIUnorderedAcessView* InFurthestHZBOutput_3,
-		XRHIUnorderedAcessView* InFurthestHZBOutput_4,
+		XRHIUnorderedAcessView* InFurthestHZBOutput_4//,
 
-		XRHIUnorderedAcessView* VirtualSMFlagsIn
+		//XRHIUnorderedAcessView* VirtualSMFlagsIn
 	)
 	{
 		SetShaderValue(RHICommandList, EShaderType::SV_Compute, DispatchThreadIdToBufferUV, InDispatchThreadIdToBufferUV);
@@ -386,7 +386,7 @@ public:
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, FurthestHZBOutput_3, InFurthestHZBOutput_3);
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, FurthestHZBOutput_4, InFurthestHZBOutput_4);
 		
-		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
+		//SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
 	}
 
 	XShaderVariableParameter DispatchThreadIdToBufferUV;
@@ -398,13 +398,123 @@ public:
 	UAVParameterType FurthestHZBOutput_3;
 	UAVParameterType FurthestHZBOutput_4;
 
-	UAVParameterType VirtualSMFlags;
+	//UAVParameterType VirtualSMFlags;
 };
 
 XHZBPassCS::ShaderInfos XHZBPassCS::StaticShaderInfos(
 	"HZBBuildCS", L"E:/XEngine/XEnigine/Source/Shaders/HZB.hlsl",
 	"HZBBuildCS", EShaderType::SV_Compute, XHZBPassCS::CustomConstrucFunc,
 	XHZBPassCS::ModifyShaderCompileSettings);
+
+
+class VSMTileMaskClearCS :public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new VSMTileMaskClearCS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+public:
+	VSMTileMaskClearCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
+	}
+
+	void SetParameters(
+		XRHICommandList& RHICommandList,
+		XRHIUnorderedAcessView* VirtualSMFlagsIn)
+	{
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
+	}
+	UAVParameterType VirtualSMFlags;
+};
+VSMTileMaskClearCS::ShaderInfos VSMTileMaskClearCS::StaticShaderInfos(
+	"VSMTileMaskClearCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskClearCS.hlsl",
+	"VSMTileMaskClearCS", EShaderType::SV_Compute, VSMTileMaskClearCS::CustomConstrucFunc,
+	VSMTileMaskClearCS::ModifyShaderCompileSettings);
+
+
+class VSMPageTableGenCS :public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new VSMPageTableGenCS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+public:
+	VSMPageTableGenCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
+		PagetableInfos.Bind(Initializer.ShaderParameterMap, "PagetableInfos");
+	}
+
+	void SetParameters(
+		XRHICommandList& RHICommandList,
+		XRHIShaderResourceView* VirtualSMFlagsIn,
+		XRHIUnorderedAcessView* PagetableInfosIn
+		)
+	{
+		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, PagetableInfos, PagetableInfosIn);
+	}
+	SRVParameterType VirtualSMFlags;
+	UAVParameterType PagetableInfos;
+};
+VSMPageTableGenCS::ShaderInfos VSMPageTableGenCS::StaticShaderInfos(
+	"VSMPageTableGenCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMPagetableGen.hlsl",
+	"VSMPageTableGenCS", EShaderType::SV_Compute, VSMPageTableGenCS::CustomConstrucFunc,
+	VSMPageTableGenCS::ModifyShaderCompileSettings);
+
+
+
+
+class VSMTileMaskCS :public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new VSMTileMaskCS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+public:
+	VSMTileMaskCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		TextureSampledInput.Bind(Initializer.ShaderParameterMap, "TextureSampledInput");
+		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
+		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
+		cbShadowViewInfo.Bind(Initializer.ShaderParameterMap, "cbShadowViewInfo");
+	}
+
+	void SetParameters(
+		XRHICommandList& RHICommandList,
+		XRHIConstantBuffer* IncbView,
+		XRHIConstantBuffer* cbShadowViewInfoIn,
+		XRHIUnorderedAcessView* VirtualSMFlagsIn,
+		XRHITexture* InTextureSampledInput
+	)
+	{
+		SetTextureParameter(RHICommandList, EShaderType::SV_Compute, TextureSampledInput, InTextureSampledInput);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbView, IncbView);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbShadowViewInfo, cbShadowViewInfoIn);
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
+	}
+	UAVParameterType TextureSampledInput;
+	CBVParameterType cbView;
+	CBVParameterType cbShadowViewInfo;
+	UAVParameterType VirtualSMFlags;
+};
+
+VSMTileMaskCS::ShaderInfos VSMTileMaskCS::StaticShaderInfos(
+	"VSMTileMaskCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskCS.hlsl",
+	"VSMTileMaskCS", EShaderType::SV_Compute, VSMTileMaskCS::CustomConstrucFunc,
+	VSMTileMaskCS::ModifyShaderCompileSettings);
+
+
 
 //XRenderTransmittanceLutCS
 class XRenderTransmittanceLutCS :public XGloablShader
@@ -879,7 +989,9 @@ private:
 	XEditorUI EditorUI;
 	//BasePass
 private:
-	std::shared_ptr <XRHITexture2D> TileUsedFlagUAV;
+	std::shared_ptr <XRHITexture2D> VirtualSMFlags;
+	std::shared_ptr <XRHITexture2D> PagetableInfos;
+	std::shared_ptr <XRHITexture2D> VirtualSMFlagsEmptyCopySrc;
 
 	XLocalVertexFactory LocalVertexFactory;
 
@@ -938,21 +1050,23 @@ private://Shadow Pass
 
 	struct ShadowPassConstants
 	{
-		DirectX::XMFLOAT4X4 View = MathHelper::Identity4x4();
-		DirectX::XMFLOAT4X4 Proj = MathHelper::Identity4x4();
+		DirectX::XMFLOAT4X4 ViewProject = MathHelper::Identity4x4();
+		//DirectX::XMFLOAT4X4 Proj = MathHelper::Identity4x4();
 	};
 
 
-	XViewMatrices LightMatrix[4];
+	//XViewMatrices LightMatrix[4];
+	//XViewMatrices ShadowLightMatrix;
 
-	//ShadowPassConstants ShadowPassConstant[4];
+	ShadowPassConstants ShadowPassConstant;
 	ComPtr<ID3D12PipelineState> ShadowPSO = nullptr;
 	XD3D12RootSignature ShadowPassRootSig;
 	//std::shared_ptr<XRHIConstantBuffer>ShadowPassConstantBuffer[4];
 	std::shared_ptr<XRHITexture2D>ShadowTexture0;
+	std::shared_ptr<XRHIConstantBuffer>ShadowPassConstantBuffer;
 
 	float ShadowMapHeight = 1024;
-	float ShadowMapWidth = 1024 * 4;
+	float ShadowMapWidth = 1024;
 	float ShadowViewportWidth = 1024;
 
 private: //HZBPass 
@@ -1000,18 +1114,28 @@ private://sky atmosphere PreCompute
 	std::shared_ptr <XRHITexture2D> SkyViewLutUAV;
 	std::shared_ptr <XRHITexture3D> CameraAerialPerspectiveVolumeUAV;
 
-
-private://Shadow Mask Pass 
-	struct cbShadowMaskNoCommonBuffer
+	// Shadow Mask Pass
+private:
+	struct VSMTileMaskStruct
 	{
 		XMFLOAT4X4 ScreenToShadowMatrix;
-		float x_offset;
-		XVector3 padding0;
-	};
-	cbShadowMaskNoCommonBuffer cbShadowMaskNoCommon[4];
-	std::shared_ptr<XRHIConstantBuffer>ShadowMaskNoCommonConstantBuffer[4];
-	std::shared_ptr<XRHITexture2D>ShadowMaskTexture;
 
+		float ClientWidth;
+		float ClientHeight;
+		float padding0;
+		float padding1;
+	};
+	std::shared_ptr<XRHIConstantBuffer>VSMTileMaskConstantBuffer;
+private://Shadow Mask Pass 
+	//struct cbShadowMaskNoCommonBuffer
+	//{
+	//	XMFLOAT4X4 ScreenToShadowMatrix;
+	//	float x_offset;
+	//	XVector3 padding0;
+	//};
+	//cbShadowMaskNoCommonBuffer cbShadowMaskNoCommon[4];
+	//std::shared_ptr<XRHIConstantBuffer>ShadowMaskNoCommonConstantBuffer[4];
+	std::shared_ptr<XRHITexture2D>ShadowMaskTexture;
 private://Depth Only
 	XD3D12RootSignature PrePassRootSig;
 	ComPtr<ID3D12PipelineState> mDepthOnlyPSO = nullptr;
@@ -1040,6 +1164,7 @@ private:
 	std::vector<RenderItem*> mOpaqueRitems;
 	//PassConstants mMainPassCB;
 	XMatrix mLightProj = XMatrix::Identity;
+	XMatrix mLightView = XMatrix::Identity;
 	POINT mLastMousePos;
 };
 
@@ -1090,14 +1215,16 @@ bool CrateApp::Initialize()
 
 	//for (uint32 i = 0; i < 4; i++)
 	//{
-	//	ShadowPassConstantBuffer[i] = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
+		ShadowPassConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
 	//}
 
 
-	for (uint32 i = 0; i < 4; i++)
-	{
-		ShadowMaskNoCommonConstantBuffer[i] = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbShadowMaskNoCommonBuffer)));
-	}
+	//for (uint32 i = 0; i < 4; i++)
+	//{
+	//	ShadowMaskNoCommonConstantBuffer[i] = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbShadowMaskNoCommonBuffer)));
+	//}
+	//ShadowMaskNoCommonConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbShadowMaskNoCommonBuffer)));
+	VSMTileMaskConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(VSMTileMaskStruct)));
 
 	cbCullingParameters = RHICreateConstantBuffer(sizeof(cbCullingParametersStruct));
 	RHICbSkyAtmosphere = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbSkyAtmosphere)));
@@ -1355,7 +1482,7 @@ void CrateApp::TestExecute()
 	CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(CmdBufferCulled.get(), true, true, CounterOffset);
 	
 	float SizeFloat = commands.size();
-	cbCullingParameters->UpdateData(&SizeFloat, sizeof(float), 0);
+	cbCullingParameters->UpdateData(&SizeFloat, sizeof(float), sizeof(XPlane) * (int)ECameraPlane::CP_MAX);
 	
 	
 
@@ -1400,8 +1527,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 		mCommandList->EndEvent();
 	}
 
-
-
+	
+	//direct_cmd_queue->CommandQueueWaitFlush();
+	//direct_cmd_queue->SignalGPU();
+	//direct_cmd_queue->WaitGPU();
 
 	//Pass1 DepthPrePass
 	{		
@@ -1458,6 +1587,53 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	pass_state_manager->ResetState();
 
+	{
+		
+
+		TShaderReference<VSMTileMaskCS> Shader = GetGlobalShaderMapping()->GetShader<VSMTileMaskCS>();
+		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
+		XD3D12TextureBase* VirtualSMFlagsTex = GetD3D12TextureFromRHITexture(VirtualSMFlags.get());
+
+
+		Shader->SetParameters(
+			RHICmdList,
+			RViewInfo.ViewConstantBuffer.get(),
+			VSMTileMaskConstantBuffer.get(),
+			VirtualSMFlagsTex->GeUnorderedAcessView(0),
+			TextureDepthStencil.get());
+		RHICmdList.RHIDispatchComputeShader(mClientWidth / 16, mClientHeight / 16, 1);
+
+		uint32 a = mClientWidth / 16;
+		uint32 b = mClientHeight / 16;
+	}
+	
+	{
+		TShaderReference<VSMPageTableGenCS> Shader = GetGlobalShaderMapping()->GetShader<VSMPageTableGenCS>();
+		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
+		XD3D12TextureBase* VirtualSMFlagsTex = GetD3D12TextureFromRHITexture(VirtualSMFlags.get());
+		XD3D12TextureBase* PagetableInfosTex = GetD3D12TextureFromRHITexture(PagetableInfos.get());
+	
+		Shader->SetParameters(
+			RHICmdList,
+			VirtualSMFlagsTex->GetShaderResourceView(0),
+			PagetableInfosTex->GeUnorderedAcessView(0));
+		RHICmdList.RHIDispatchComputeShader(1, 1, 1);
+	
+		//RHICopyTextureRegion(VirtualSMFlags.get(), VirtualSMFlagsEmptyCopySrc.get(), 0, 0, 0, 8 * 16, 8 * 16, 1);
+	}
+
+	{
+		//Clear Pass
+		TShaderReference<VSMTileMaskClearCS> Shader = GetGlobalShaderMapping()->GetShader<VSMTileMaskClearCS>();
+		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
+		XD3D12TextureBase* VirtualSMFlagsTex = GetD3D12TextureFromRHITexture(VirtualSMFlags.get());
+		Shader->SetParameters(RHICmdList, VirtualSMFlagsTex->GeUnorderedAcessView(0));
+		RHICmdList.RHIDispatchComputeShader(8 * 8 / 16, 8 * 8 / 16, 1);
+	}
+
 	//Pass2 HZB Pass
 	{
 		TShaderReference<XHZBPassCS> Shader = GetGlobalShaderMapping()->GetShader<XHZBPassCS>();
@@ -1465,6 +1641,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 
 		XD3D12TextureBase* HZBOutTex = GetD3D12TextureFromRHITexture(FurthestHZBOutput0.get());
+		//XD3D12TextureBase* VirtualSMFlagsTex = GetD3D12TextureFromRHITexture(VirtualSMFlags.get());
+		//
+		//RHIClearBufferRegion(VirtualSMFlagsTex->GeUnorderedAcessView(0), 8 * 16 * 8 * 16 * sizeof(UINT));
+
 		Shader->SetParameters(RHICmdList,
 			XMFLOAT4(1.0 / 512.0, 1.0 / 512.0, 1.0, 1.0),
 			TextureDepthStencil.get(),
@@ -1473,10 +1653,13 @@ void CrateApp::Renderer(const GameTimer& gt)
 			HZBOutTex->GeUnorderedAcessView(2),
 			HZBOutTex->GeUnorderedAcessView(3),
 			HZBOutTex->GeUnorderedAcessView(4)
+			//VirtualSMFlagsTex->GeUnorderedAcessView(0)
 		);
 		RHICmdList.RHIDispatchComputeShader(512 / 16, 512 / 16, 1);
 	}
-
+	
+	
+	
 	//Pass2.5 SkyAtmosPhere PreCompute
 	{
 		{
@@ -1536,47 +1719,44 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	}
 
+
+
 	pass_state_manager->ResetState();
 
 	//Pass3 ShadowPass
-	//{
-	//	mCommandList->BeginEvent(1, "ShadowPass", sizeof("ShadowPass"));
-	//	mCommandList->SetPipelineState(ShadowPSO.Get());
-	//	pass_state_manager->SetRootSignature(&ShadowPassRootSig);
-	//	pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["ShadowPassVS"]);
-	//	pass_state_manager->SetShader<EShaderType::SV_Pixel>(&mShaders["ShadowPassPS"]);
-	//	pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
-	//
-	//	direct_ctx->RHISetRenderTargets(0, nullptr,
-	//		static_cast<XD3D12Texture2D*>(ShadowTexture0.get())->GeDepthStencilView());
-	//	direct_ctx->RHIClearMRT(false, true, nullptr, 0.0f, 0);
-	//
-	//	for (uint32 CSMIndex = 0; CSMIndex < 4; CSMIndex++)
-	//	{
-	//		direct_ctx->RHISetViewport(CSMIndex * ShadowViewportWidth, 0.0f, 0.0f,
-	//			CSMIndex * ShadowViewportWidth + ShadowViewportWidth,
-	//			ShadowViewportWidth, 1.0f);
-	//
-	//		for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
-	//		{
-	//			auto& ri = mOpaqueRitems[i];
-	//			direct_ctx->RHISetShaderConstantBuffer(
-	//				EShaderType::SV_Vertex, 0,
-	//				mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
-	//
-	//			direct_ctx->RHISetShaderConstantBuffer(
-	//				EShaderType::SV_Vertex, 1,
-	//				ShadowPassConstantBuffer[CSMIndex].get());
-	//
-	//			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr((ri->Geo->VertexBufferView())));
-	//			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
-	//			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-	//			mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
-	//		}
-	//
-	//	}
-	//	mCommandList->EndEvent();
-	//}
+	{
+		mCommandList->BeginEvent(1, "ShadowPass", sizeof("ShadowPass"));
+		mCommandList->SetPipelineState(ShadowPSO.Get());
+		pass_state_manager->SetRootSignature(&ShadowPassRootSig);
+		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["ShadowPassVS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Pixel>(&mShaders["ShadowPassPS"]);
+		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
+	
+		direct_ctx->RHISetRenderTargets(0, nullptr,
+			static_cast<XD3D12Texture2D*>(ShadowTexture0.get())->GeDepthStencilView());
+		direct_ctx->RHIClearMRT(false, true, nullptr, 0.0f, 0);
+		
+		//direct_ctx->RHISetViewport(0, 0, 0, 1024, 1024, 1.0f);
+
+		for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
+		{
+			auto& ri = mOpaqueRitems[i];
+			direct_ctx->RHISetShaderConstantBuffer(
+				EShaderType::SV_Vertex, 0,
+				mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
+
+			direct_ctx->RHISetShaderConstantBuffer(
+				EShaderType::SV_Vertex, 1,
+				ShadowPassConstantBuffer.get());
+
+			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr((ri->Geo->VertexBufferView())));
+			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
+			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
+			mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+		}
+		
+		mCommandList->EndEvent();
+	}
 
 
 
@@ -1848,6 +2028,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	}
 
+
+
 	//Pass8 ReflectionEnvironment Pass
 	{
 		XRHITexture* TextureSceneColor = TextureSceneColorDeffered.get();
@@ -2064,46 +2246,40 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 	//mEyePos.y = mRadius*cosf(mPhi);
 	ViewMatrix.UpdateViewMatrix(CamIns.GetEyePosition(), CamIns.GetTargetPosition());
 
+
+
 	//------------------------------------
-	float NearFarLength = Far - Near;
+	
 
-	int CascadeCount = 4;
-	float  Exp = 4.0f;
-	float Scale = 1.2;
-	float Piece = (1.0 - pow(Exp, CascadeCount)) / (1.0 - Exp);
-
-	float FarPre = Near;
-	float FrustumScale = 1.0 / Piece;
-	for (int i = 0; i < CascadeCount; ++i)
 	{
-
-		float NearNew = FarPre;
-		float FarNew = NearFarLength * FrustumScale * Scale;
-		FarPre = FarNew;
-
-		FrustumScale = FrustumScale * Exp;
-
-		//float Far0 = NearFarLength * (1.0 / 85.0) * Scale;
-		BoundSphere BoundSphere0 = BuildBoundSphere(FoVAngleY, AspectRatio(), NearNew, FarNew);
-
+		float NearFarLength = Far - Near;
+		BoundSphere BoundSphere0;
+		BoundSphere0.Center = XVector3(0, 0, 0);
+		BoundSphere0.Radius = 100.0f;
+		
 		//Compute Project Matrix
 		float l = BoundSphere0.Center.x - BoundSphere0.Radius;
 		float r = BoundSphere0.Center.x + BoundSphere0.Radius;
 		float t = BoundSphere0.Center.y + BoundSphere0.Radius;
 		float b = BoundSphere0.Center.y - BoundSphere0.Radius;
-		float n = BoundSphere0.Center.z - BoundSphere0.Radius;
-		float f = BoundSphere0.Center.z + BoundSphere0.Radius;
-		XMMATRIX lightProj = XDirectx::XXMMatrixOrthographicOffCenterLH(l, r, b, t, n, f);
+		float f = BoundSphere0.Radius * 2;
+		float n = 0.1f;
+		
+		XMMATRIX lightProj = DirectX::XMMatrixOrthographicOffCenterLH(l, r, b, t, f, n);
 		XMStoreFloat4x4(&mLightProj, lightProj);
-
+		
+		
 		//Compute Light Pos
 		XMVECTOR LightDirCom = DirectX::XMVector3Normalize(XMLoadFloat3(&LightDir));
-		XMVECTOR lightPos = XMLoadFloat3(&BoundSphere0.Center) + LightDirCom * BoundSphere0.Radius * 1.1;
+		XMVECTOR lightPos = LightDirCom * BoundSphere0.Radius * 1.0;
 		XVector3 lightPosStore; XMStoreFloat3(&lightPosStore, lightPos);
-		LightMatrix[i].Create(mLightProj, lightPosStore, BoundSphere0.Center);
+		
+		XVector3 ZeroTempp(0, 0, 0);
+		XVector3 upTempp(0, 1, 0);
+		XMMATRIX lightView = DirectX::XMMatrixLookAtLH(lightPos, ZeroTempp, upTempp);
+		
+		XMStoreFloat4x4(&mLightView, lightView);
 	}
-
-
 }
 
 void CrateApp::AnimateMaterials(const GameTimer& gt)
@@ -2168,15 +2344,14 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	RViewInfo.ViewCBCPUData.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(ViewMatrix.GetProjectionMatrix());
 	RViewInfo.ViewCBCPUData.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
 	RViewInfo.ViewCBCPUData.ViewProjectionMatrix = ViewMatrix.GetViewProjectionMatrix();
+	RViewInfo.ViewCBCPUData.ViewProjectionMatrixInverse = ViewMatrix.GetViewProjectionMatrixInverse();
 
 
-	//Shadow Pass
-	//for (uint32 i = 0; i < 4; i++)
-	//{
-	//	memcpy(&ShadowPassConstant[i].View, &LightMatrix[i].GetViewMatrixTranspose(), sizeof(XMatrix));
-	//	memcpy(&ShadowPassConstant[i].Proj, &LightMatrix[i].GetProjectionMatrixTranspose(), sizeof(XMatrix));
-	//	ShadowPassConstantBuffer[i].get()->UpdateData(&ShadowPassConstant[i], sizeof(ShadowPassConstants), 0);
-	//}
+	
+
+	XMatrix mLightViewProj = mLightView * mLightProj;
+	memcpy(&ShadowPassConstant.ViewProject, &mLightViewProj, sizeof(XMatrix));
+	ShadowPassConstantBuffer.get()->UpdateData(&ShadowPassConstant, sizeof(ShadowPassConstants), 0);
 
 	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0f / mClientWidth, 1.0f / mClientHeight);
 
@@ -2187,16 +2362,11 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	ScreenToClip.m[2][3] = 1.0f;
 	ScreenToClip.m[3][3] = 0.0f;
 
-	for (uint32 i = 0; i < 4; i++)
-	{
-		XMMATRIX ScreenToShadowMatrix = XMLoadFloat4x4(&ScreenToClip);
-		ScreenToShadowMatrix = XMMatrixMultiply(ScreenToShadowMatrix, XMLoadFloat4x4(&ViewMatrix.GetViewProjectionMatrixInverse()));
-		ScreenToShadowMatrix = XMMatrixMultiply(ScreenToShadowMatrix, XMLoadFloat4x4(&LightMatrix[i].GetViewProjectionMatrix()));
-		XMStoreFloat4x4(&cbShadowMaskNoCommon[i].ScreenToShadowMatrix, XMMatrixTranspose(ScreenToShadowMatrix));
-		cbShadowMaskNoCommon[i].x_offset = 0.25 * i;
-		ShadowMaskNoCommonConstantBuffer[i].get()->UpdateData(&cbShadowMaskNoCommon[i], sizeof(cbShadowMaskNoCommonBuffer), 0);
-	}
+	
+	VSMTileMaskConstantBuffer->UpdateData(&mLightViewProj, sizeof(XMatrix), 0);
 
+	XVector2 WidthAndHeight(mClientWidth, mClientHeight);
+	VSMTileMaskConstantBuffer->UpdateData(&WidthAndHeight, sizeof(XVector2), sizeof(XMatrix));
 	//cbSkyAtmosphere
 	{
 		// All distance here are in kilometer and scattering/absorptions coefficient in 1/kilometers.
@@ -2365,7 +2535,7 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 	XPlane Planes[(int)ECameraPlane::CP_MAX];
 	ViewMatrix.GetPlanes(Planes);
-	cbCullingParameters->UpdateData(Planes, sizeof(XPlane)* (int)ECameraPlane::CP_MAX, sizeof(float));
+	cbCullingParameters->UpdateData(Planes, sizeof(XPlane)* (int)ECameraPlane::CP_MAX, 0);
 
 }
 
@@ -2528,7 +2698,17 @@ void CrateApp::LoadTextures()
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		TileUsedFlagUAV = RHICreateTexture2D(8*16, 8*16, 1, false, false,
+		PagetableInfos = RHICreateTexture2D(8 * 8, 8 * 8, 1, false, false,
+			EPixelFormat::FT_R32G32B32A32_UINT
+			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
+			, nullptr);
+
+		VirtualSMFlags = RHICreateTexture2D(8*8, 8*8, 1, false, false,
+			EPixelFormat::FT_R32_UINT
+			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
+			, nullptr);
+
+		VirtualSMFlagsEmptyCopySrc = RHICreateTexture2D(8 * 8, 8 * 8, 1, false, false,
 			EPixelFormat::FT_R32_UINT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
@@ -2608,15 +2788,15 @@ void CrateApp::BuildShadersAndInputLayout()
 		mShaders["PrePassPS"].ShaderReflect();
 	}
 
-	//{
-	//	mShaders["ShadowPassVS"].CreateShader(EShaderType::SV_Vertex);
-	//	mShaders["ShadowPassVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowDepthShader.hlsl", nullptr, "VS", "vs_5_1");
-	//	mShaders["ShadowPassVS"].ShaderReflect();
-	//
-	//	mShaders["ShadowPassPS"].CreateShader(EShaderType::SV_Pixel);
-	//	mShaders["ShadowPassPS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowDepthShader.hlsl", nullptr, "PS", "ps_5_1");
-	//	mShaders["ShadowPassPS"].ShaderReflect();
-	//}
+	{
+		mShaders["ShadowPassVS"].CreateShader(EShaderType::SV_Vertex);
+		mShaders["ShadowPassVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowDepthShader.hlsl", nullptr, "VS", "vs_5_1");
+		mShaders["ShadowPassVS"].ShaderReflect();
+	
+		mShaders["ShadowPassPS"].CreateShader(EShaderType::SV_Pixel);
+		mShaders["ShadowPassPS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/ShadowDepthShader.hlsl", nullptr, "PS", "ps_5_1");
+		mShaders["ShadowPassPS"].ShaderReflect();
+	}
 
 	//{
 	//	mShaders["standardVS"].CreateShader(EShaderType::SV_Vertex);
@@ -2806,37 +2986,37 @@ void CrateApp::BuildPSOs()
 	}
 
 	//ShadowPass
-	//{
-	//	D3D12_GRAPHICS_PIPELINE_STATE_DESC ShadowPSODesc;
-	//
-	//	ZeroMemory(&ShadowPSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-	//	ShadowPSODesc.InputLayout = { mBasePassLayout.data(), (UINT)mBasePassLayout.size() };
-	//	ShadowPSODesc.pRootSignature = PrePassRootSig.GetDXRootSignature();
-	//	ShadowPSODesc.VS =
-	//	{
-	//		reinterpret_cast<BYTE*>(mShaders["ShadowPassVS"].GetByteCode()->GetBufferPointer()),
-	//		mShaders["ShadowPassVS"].GetByteCode()->GetBufferSize()
-	//	};
-	//	ShadowPSODesc.PS =
-	//	{
-	//		reinterpret_cast<BYTE*>(mShaders["ShadowPassPS"].GetByteCode()->GetBufferPointer()),
-	//		mShaders["ShadowPassPS"].GetByteCode()->GetBufferSize()
-	//	};
-	//
-	//	//TODO
-	//	ShadowPSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	//	ShadowPSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	//	ShadowPSODesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	//	ShadowPSODesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
-	//
-	//	ShadowPSODesc.SampleMask = UINT_MAX;
-	//	ShadowPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	//	ShadowPSODesc.NumRenderTargets = 0;
-	//	ShadowPSODesc.SampleDesc.Count = 1;
-	//	ShadowPSODesc.SampleDesc.Quality = 0;
-	//	ShadowPSODesc.DSVFormat = mDepthStencilFormat;
-	//	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
-	//}
+	{
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC ShadowPSODesc;
+	
+		ZeroMemory(&ShadowPSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+		ShadowPSODesc.InputLayout = { mBasePassLayout.data(), (UINT)mBasePassLayout.size() };
+		ShadowPSODesc.pRootSignature = ShadowPassRootSig.GetDXRootSignature();
+		ShadowPSODesc.VS =
+		{
+			reinterpret_cast<BYTE*>(mShaders["ShadowPassVS"].GetByteCode()->GetBufferPointer()),
+			mShaders["ShadowPassVS"].GetByteCode()->GetBufferSize()
+		};
+		ShadowPSODesc.PS =
+		{
+			reinterpret_cast<BYTE*>(mShaders["ShadowPassPS"].GetByteCode()->GetBufferPointer()),
+			mShaders["ShadowPassPS"].GetByteCode()->GetBufferSize()
+		};
+	
+		//TODO
+		ShadowPSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		ShadowPSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		ShadowPSODesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		ShadowPSODesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
+	
+		ShadowPSODesc.SampleMask = UINT_MAX;
+		ShadowPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		ShadowPSODesc.NumRenderTargets = 0;
+		ShadowPSODesc.SampleDesc.Count = 1;
+		ShadowPSODesc.SampleDesc.Quality = 0;
+		ShadowPSODesc.DSVFormat = mDepthStencilFormat;
+		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
+	}
 
 	//SphereGMaterial.CreateGMaterial(XPath::ProjectMaterialSavedDir()+L"/Material.hlsl");
 	SphereMaterial.BeginCompileShaderMap();

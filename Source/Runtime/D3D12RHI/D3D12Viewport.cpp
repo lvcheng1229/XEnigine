@@ -78,7 +78,9 @@ void XD3D12Viewport::Resize(
         back_buffer_resources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON);
         back_buffer_resources[i].GetResource()->SetName(L"BackBuffer");
         back_rt_views[i].Create(PhysicalDevice,&back_buffer_resources[i], rt_desc,
-            device->GetRenderTargetDescArrayManager()->compute_cpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt));
+            device->GetRenderTargetDescArrayManager()->compute_cpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt),
+            device->GetRenderTargetDescArrayManager()->compute_gpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt)
+        );
     }
 
     directx_ctx->CloseCmdList();

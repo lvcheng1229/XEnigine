@@ -120,7 +120,11 @@ private:
 	//End
 	
 public:
-	XD3D12ResourcePtr_CPUGPU() :buddy_alloc(nullptr), mapped_resource_cpu_ptr(nullptr), CommitBackResource(nullptr) {}
+	XD3D12ResourcePtr_CPUGPU() :
+		buddy_alloc(nullptr),
+		mapped_resource_cpu_ptr(nullptr),
+		CommitBackResource(nullptr),
+		OffsetBytesFromBaseResource(0) {}
 
 	/// for mannual suballocation
 	inline void SetOffsetByteFromBaseResource(uint64 Value) { OffsetBytesFromBaseResource = Value; }

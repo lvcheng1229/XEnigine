@@ -77,11 +77,11 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	//}
 
 	{
-		
+		UINT64 SizeBuffer = sizeof(UINT) * 1024 * 1024;
 		ThrowIfFailed(PhysicalDevice->GetDXDevice()->CreateCommittedResource(
 			GetRValuePtr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD)),
 			D3D12_HEAP_FLAG_NONE,
-			GetRValuePtr(CD3DX12_RESOURCE_DESC::Buffer(sizeof(UINT))),
+			GetRValuePtr(CD3DX12_RESOURCE_DESC::Buffer(SizeBuffer)),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&ID3D12ZeroStructBuffer)));
@@ -89,9 +89,26 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 		UINT8* pMappedCounterReset = nullptr;
 		CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
 		ThrowIfFailed(ID3D12ZeroStructBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pMappedCounterReset)));
-		ZeroMemory(pMappedCounterReset, sizeof(UINT));
+		ZeroMemory(pMappedCounterReset, SizeBuffer);
 		ID3D12ZeroStructBuffer->Unmap(0, nullptr);
 	}
+
+	//{
+	//	UINT64 SizeBuffer = sizeof(UINT) * 1024 * 1024;
+	//	ThrowIfFailed(PhysicalDevice->GetDXDevice()->CreateCommittedResource(
+	//		GetRValuePtr(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD)),
+	//		D3D12_HEAP_FLAG_NONE,
+	//		GetRValuePtr(CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT::DXGI_FORMAT_R32_UINT,1024,1024)),
+	//		D3D12_RESOURCE_STATE_COPY_SOURCE,
+	//		nullptr,
+	//		IID_PPV_ARGS(&ID3D12ZeroTex2DR32Uint)));
+	//
+	//	UINT8* pMappedCounterReset = nullptr;
+	//	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
+	//	ThrowIfFailed(ID3D12ZeroTex2DR32Uint->Map(0, &readRange, reinterpret_cast<void**>(&pMappedCounterReset)));
+	//	ZeroMemory(pMappedCounterReset, SizeBuffer);
+	//	ID3D12ZeroTex2DR32Uint->Unmap(0, nullptr);
+	//}
 }
 
 std::shared_ptr<XD3D12ConstantBuffer> XD3D12AbstractDevice::CreateUniformBuffer(uint32 size)

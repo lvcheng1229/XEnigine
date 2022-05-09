@@ -24,8 +24,8 @@ struct DepthIndirectCommand
 
 cbuffer cbCullingParameters
 {
-    float commandCount; 
     float4 Planes[6];
+    float commandCount; 
 }
 
 struct SceneConstantBuffer

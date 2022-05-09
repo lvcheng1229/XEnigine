@@ -53,13 +53,13 @@ void PS(
     WorldNormal=normalize(WorldNormal);
 
     float DeviceZ=SceneTexturesStruct_SceneDepthTexture.Sample(gsamPointWarp,ScreenUV).r;
-	float ViewZ=ConvertFromDeviceZ(DeviceZ);
+	float NDC_Z=ConvertFromDeviceZ_To_NDCZBeforeDivdeW(DeviceZ);
     ScreenUV*=2.0f;
     ScreenUV-=1.0f;
     ScreenUV.y=ScreenUV.y*-1.0f;
 
     //float2 ScreenPosition = ( ScreenUV.xy - View.ScreenPositionScaleBias.wz ) / View.ScreenPositionScaleBias.xy;
-	float4 ShadowPosition = mul(float4(ScreenUV * ViewZ,ViewZ,1), ScreenToShadowMatrix);
+	float4 ShadowPosition = mul(float4(ScreenUV * NDC_Z,NDC_Z,1), ScreenToShadowMatrix);
     ShadowPosition.xy/=ShadowPosition.w;//[-1,1]
     ShadowPosition.xy+=1.0f;
     ShadowPosition.xy*=0.5f;

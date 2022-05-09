@@ -212,6 +212,18 @@ inline void RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer,uint32
 	GPlatformRHI->RHIResetStructBufferCounter(RHIStructBuffer, CounterOffset);
 }
 
+//inline void RHIClearTextureRegion(XRHIUnorderedAcessView* UAV, 
+//	uint32 DstX,uint32 DstY, uint32 DstZ,
+//	uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ)
+//{
+//	GPlatformRHI->RHIClearTextureRegion(UAV, DstX, DstY, DstZ, OffsetX, OffsetY, OffsetZ);
+//}
+
+inline void RHICopyTextureRegion(XRHITexture* RHITextureDst, XRHITexture* RHITextureSrc, uint32 DstX, uint32 DstY, uint32 DstZ, uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ)
+{
+	GPlatformRHI->RHICopyTextureRegion(RHITextureDst, RHITextureSrc, DstX, DstY, DstZ, OffsetX, OffsetY, OffsetZ);
+}
+
 inline std::shared_ptr<XRHIUnorderedAcessView> RHICreateUnorderedAccessView(XRHIStructBuffer* StructuredBuffer, bool bUseUAVCounter, bool bAppendBuffer, uint64 CounterOffsetInBytes)
 {
 	return GPlatformRHI->RHICreateUnorderedAccessView(StructuredBuffer, bUseUAVCounter, bAppendBuffer, CounterOffsetInBytes);

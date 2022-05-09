@@ -20,7 +20,9 @@ void XD3D12ResourceBarrierManager::AddTransition(XD3D12Resource* pResource, D3D1
 			//Subresource == Last.Transition.Subresource &&
 			Before == Last.Transition.StateAfter &&
 			After == Last.Transition.StateBefore && Last.Type == D3D12_RESOURCE_BARRIER_TYPE_TRANSITION) {
-			X_Assert(false);
+			barriers.pop_back();
+			//X_Assert(false);
+			return;
 		}
 	}
 
