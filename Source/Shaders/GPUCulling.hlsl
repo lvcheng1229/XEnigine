@@ -4,6 +4,7 @@
 struct DepthIndirectCommand
 {
     uint2 CbWorldAddress;
+    uint2 CbGlobalShadowViewProjectAddress; // Used For VSM
     
     uint2 VertexBufferLoacation;
     uint VertexSizeInBytes;
@@ -24,6 +25,7 @@ struct DepthIndirectCommand
 
 cbuffer cbCullingParameters
 {
+    float4x4 ShadowViewProject;
     float4 Planes[6];
     float commandCount; 
 }

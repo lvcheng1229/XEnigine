@@ -147,6 +147,9 @@ uint32 XD3D12RootSignature::GetUADescTableBindSlot(EShaderType shader_type) cons
 	case EShaderType::SV_Compute:
 		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_UAVs];
 		break;
+	case EShaderType::SV_Pixel:
+		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_UAVs];
+		break;
 	default:
 		X_Assert(false);
 		return 0;
@@ -283,6 +286,9 @@ void XD3D12RootSignature::SetUAVDescTableTBindSlot(EShaderType shader_type, uint
 	switch (shader_type)
 	{
 	case EShaderType::SV_Compute:
+		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_UAVs];
+		break;
+	case EShaderType::SV_Pixel:
 		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_UAVs];
 		break;
 	default:

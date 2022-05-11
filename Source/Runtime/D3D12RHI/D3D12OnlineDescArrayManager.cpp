@@ -37,6 +37,15 @@ template void XD3D12OnlineDescArrayManager::SetDescTableUAVs<EShaderType::SV_Com
 	XD3D12PassUnorderedAcessManager* UAVManager, 
 	uint32& slot_start, uint16& slot_mask);
 
+template void XD3D12OnlineDescArrayManager::SetDescTableUAVs<EShaderType::SV_Pixel>(
+	const XD3D12RootSignature* root_signature,
+	XD3D12PassUnorderedAcessManager* UAVManager,
+	uint32& slot_start, uint16& slot_mask);
+
+template void XD3D12OnlineDescArrayManager::SetDescTableUAVs<EShaderType::SV_Vertex>(
+	const XD3D12RootSignature* root_signature,
+	XD3D12PassUnorderedAcessManager* UAVManager,
+	uint32& slot_start, uint16& slot_mask);
 void XD3D12OnlineDescArrayManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in)
 {
 	device = device_in;
@@ -47,7 +56,7 @@ void XD3D12OnlineDescArrayManager::Create(XD3D12PhysicDevice* device_in, XD3DDir
 template<EShaderType shader_type>
 void XD3D12OnlineDescArrayManager::SetDescTableUAVs(const XD3D12RootSignature* root_signature, XD3D12PassUnorderedAcessManager* UAVManager, uint32& slot_start, uint16& slot_mask)
 {
-	X_Assert(shader_type == EShaderType::SV_Compute);
+	//X_Assert(shader_type == EShaderType::SV_Compute);
 
 	uint32 first_slot_index = slot_start; unsigned long slotnum;
 	if (_BitScanReverse(&slotnum, slot_mask) == 0) { slotnum = -1; }; slotnum++; slot_start += slotnum;

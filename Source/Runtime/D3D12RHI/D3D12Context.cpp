@@ -41,9 +41,20 @@ void XD3DDirectContex::CloseCmdList()
 
 void XD3DDirectContex::RHISetShaderUAV(EShaderType ShaderType, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)
 {
-	X_Assert(ShaderType == EShaderType::SV_Compute);
 	XD3D12UnorderedAcessView* D3DUAVPtr = static_cast<XD3D12UnorderedAcessView*>(UAV);
-	PassStateManager.SetUAV<EShaderType::SV_Compute>(D3DUAVPtr, TextureIndex);
+	switch (ShaderType)
+	{
+	case EShaderType::SV_Pixel:
+		PassStateManager.SetUAV<EShaderType::SV_Pixel>(D3DUAVPtr, TextureIndex);
+		break;
+	case EShaderType::SV_Compute:
+		PassStateManager.SetUAV<EShaderType::SV_Compute>(D3DUAVPtr, TextureIndex);
+		break;
+	default:
+		X_Assert(false);
+		break;
+	}
+	
 }
 
 void XD3DDirectContex::RHISetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* NewTextureRHI)

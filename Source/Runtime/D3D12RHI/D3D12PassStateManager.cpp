@@ -181,6 +181,25 @@ void XD3D12PassStateManager::ApplyCurrentStateToPipeline()
 				PipelineState.Common.UAVManager.Mask[EShaderType_Underlying(EShaderType::SV_Compute)]);
 		}
 	}
+	else if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
+	{
+		if (PipelineState.Common.UAVManager.Mask[EShaderType_Underlying(EShaderType::SV_Pixel)])
+		{
+			pipe_curr_desc_array_manager.SetDescTableUAVs<EShaderType::SV_Pixel>(
+				PipelineState.Common.RootSignature,
+				&PipelineState.Common.UAVManager,
+				DescArraySlotStart,
+				PipelineState.Common.UAVManager.Mask[EShaderType_Underlying(EShaderType::SV_Pixel)]);
+		}
+		else if (PipelineState.Common.UAVManager.Mask[EShaderType_Underlying(EShaderType::SV_Vertex)])
+		{
+			pipe_curr_desc_array_manager.SetDescTableUAVs<EShaderType::SV_Vertex>(
+				PipelineState.Common.RootSignature,
+				&PipelineState.Common.UAVManager,
+				DescArraySlotStart,
+				PipelineState.Common.UAVManager.Mask[EShaderType_Underlying(EShaderType::SV_Vertex)]);
+		}
+	}
 
 	if (PipelineType == ED3D12PipelineType::D3D12PT_Graphics)
 	{

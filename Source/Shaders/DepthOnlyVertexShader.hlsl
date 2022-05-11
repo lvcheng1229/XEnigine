@@ -8,6 +8,11 @@ cbuffer cbPerObject
     float padding1;
 }
 
+cbuffer NoUse
+{
+    float4 PlaceHolder[4];
+}
+
 #include "common.hlsl"
 
 struct FVertexFactoryInput
@@ -21,6 +26,9 @@ void VS(FVertexFactoryInput Input,
 {
     float4 PositionW=mul_x(Input.Position, gWorld);
     Position=mul_x(PositionW, cbView_ViewPorjectionMatrix);
+
+    float Temp = PlaceHolder[0].x;
+    Position.x += Temp*0.0;
 }
 
 void PS()
