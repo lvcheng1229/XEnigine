@@ -26,11 +26,17 @@ void ShadowMaskGenCS(uint2 DispatchThreadID :SV_DispatchThreadID)
     float DeviceZ = SceneDepthInput.Load(int3(DispatchThreadID,0));
     float2 UV = DispatchThreadID * View_BufferSizeAndInvSize.zw;
 
-    if(DeviceZ == 0.0 || UV.x > 1.0f || UV.y > 1.0f)
+    if(UV.x > 1.0f || UV.y > 1.0f)
     {
         return;
     }
 
+    if(DeviceZ == 0.0)
+    {
+        VsmShadowMaskTex[DispatchThreadID] =0.0f;
+        return;
+    }
+    
     float2 ScreenPos = UV * 2.0f - 1.0f; ScreenPos.y *= -1.0f;
 
     float4 NDCPosNoDivdeW = float4(ScreenPos , DeviceZ , 1.0);
@@ -58,8 +64,13 @@ void ShadowMaskGenCS(uint2 DispatchThreadID :SV_DispatchThreadID)
     uint ShadowDepth = PhysicalShadowDepthTexture[uint2(ShadowDepthPos)].x;
     uint ObjectShadowDepth = ShadowScreenPOS.z * (1<<30);
 
-    if(ShadowDepth > ObjectShadowDepth)
+    //inverse z
+    if(ShadowDepth < ObjectShadowDepth)
     {
-        VsmShadowMaskTex[DispatchThreadID] = 1.0f;
+        VsmShadowMaskTex[DispatchThreadID] = (ObjectShadowDepth - ShadowDepth) / float( 1 << 10);
+    }
+    else
+    {
+        VsmShadowMaskTex[DispatchThreadID] = (ShadowDepth - ObjectShadowDepth) / float( 1 << 10);
     }
 }

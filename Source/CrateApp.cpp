@@ -1856,6 +1856,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	pass_state_manager->ResetState();
 	{
+		mCommandList->BeginEvent(1, "VSMTileMaskCS", sizeof("VSMTileMaskCS"));
 		TShaderReference<VSMTileMaskCS> Shader = GetGlobalShaderMapping()->GetShader<VSMTileMaskCS>();
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
@@ -1870,9 +1871,11 @@ void CrateApp::Renderer(const GameTimer& gt)
 		RHICmdList.RHIDispatchComputeShader(
 			static_cast<uint32>(ceil(mClientWidth  / 16)),
 			static_cast<uint32>(ceil(mClientHeight / 16)), 1);
+		mCommandList->EndEvent();
 	}
 	
 	{
+		mCommandList->BeginEvent(1, "VSMPageTableGenCS", sizeof("VSMPageTableGenCS"));
 		TShaderReference<VSMPageTableGenCS> Shader = GetGlobalShaderMapping()->GetShader<VSMPageTableGenCS>();
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
@@ -1884,6 +1887,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			VirtualSMFlagsTex->GetShaderResourceView(0),
 			PagetableInfosTex->GeUnorderedAcessView(0));
 		RHICmdList.RHIDispatchComputeShader(1, 1, 1);
+		mCommandList->EndEvent();
 	}
 
 	{
@@ -1966,8 +1970,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 			D3D12_RESOURCE_STATE_COMMON) };
 			mCommandList->ResourceBarrier(_countof(barriers), barriers);
 		}
+		mCommandList->EndEvent();
 	}
 
+	pass_state_manager->ResetState();
 	{
 		mCommandList->BeginEvent(1, "ShadowMaskGenCS", sizeof("ShadowMaskGenCS"));
 		TShaderReference<ShadowMaskGenCS> Shader = GetGlobalShaderMapping()->GetShader<ShadowMaskGenCS>();
@@ -2028,7 +2034,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		);
 		RHICmdList.RHIDispatchComputeShader(512 / 16, 512 / 16, 1);
 	}
-	
 	
 	
 	//Pass2.5 SkyAtmosPhere PreCompute
@@ -2283,45 +2288,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		mCommandList->EndEvent();
 	}
 
-	//Pass5 Shadow Mask Pass
-	//{
-	//	XRHITexture* SceneColorRTs = ShadowMaskTexture.get();
-	//	XRHIRenderPassInfo RPInfos(1, &SceneColorRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
-	//	RHICmdList.RHIBeginRenderPass(RPInfos, L"ShadowMaskPass");
-	//	RHICmdList.CacheActiveRenderTargets(RPInfos);
-	//
-	//	XGraphicsPSOInitializer GraphicsPSOInit;
-	//	GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
-	//	GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-	//
-	//	TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
-	//	TShaderReference<XShadowMaskPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XShadowMaskPassPS>();
-	//	GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
-	//	GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
-	//	GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
-	//
-	//	RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-	//	SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-	//
-	//	PixelShader->SetParameter(RHICmdList,
-	//		RViewInfo.ViewConstantBuffer.get(),
-	//		ShadowTexture0.get(),
-	//		TextureGBufferA.get(),
-	//		TextureDepthStencil.get());
-	//
-	//	RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
-	//
-	//	for (int CSMindex = 3; CSMindex >= 0; CSMindex--)
-	//	{
-	//		PixelShader->SetShaderShadowMatrixBuffer(RHICmdList,
-	//			ShadowMaskNoCommonConstantBuffer[CSMindex].get());
-	//
-	//		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
-	//	}
-	//
-	//	mCommandList->EndEvent();
-	//}
-
 	//Pass6 LightPass
 	{
 		{
@@ -2467,9 +2433,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	}
 
-
-
-
 	//ToneMapping
 	{
 		XRHITexture* TextureSceneColor = TextureSceneColorDefferedPingPong.get();
@@ -2494,7 +2457,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
 		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
-
 	}
 
 	XRHITexture* CurrentPingPongTextureSceneColorTarget = TextureSceneColorDefferedPingPong.get();
@@ -2507,10 +2469,9 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 		bool show_demo_window = true;
 		EditorUI.OnTick();
-		//ImGui::ShowDemoWindow(&show_demo_window);
 		ImGui::Render();
 		EditorUI.ImGui_Impl_RHI_RenderDrawData(ImGui::GetDrawData(), &RHICmdList, CurrentPingPongTextureSceneColorTarget);
-		////ImGUI End
+		//ImGUI End
 	}
 
 	//Pass9 FinalPass
@@ -2734,13 +2695,10 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 	FrameNum++;
 	RViewInfo.ViewCBCPUData.StateFrameIndexMod8 = FrameNum % 8;
-
-	//Current For LightPass , will combine to BasePass for future
 	RViewInfo.ViewCBCPUData.ViewSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0 / mClientWidth, 1.0 / mClientHeight);
 	float LenSqrt = sqrt(LightDir.x * LightDir.x + LightDir.y * LightDir.y + LightDir.z * LightDir.z);
 	RViewInfo.ViewCBCPUData.AtmosphereLightDirection = XMFLOAT4(LightDir.x / LenSqrt, LightDir.y / LenSqrt, LightDir.z / LenSqrt, 1.0f);
 	RViewInfo.ViewCBCPUData.ViewToClip = ViewMatrix.GetProjectionMatrix();
-
 	RViewInfo.ViewCBCPUData.TranslatedViewProjectionMatrix = ViewMatrix.GetTranslatedViewProjectionMatrix();
 	RViewInfo.ViewCBCPUData.ScreenToWorld = ViewMatrix.GetScreenToWorld();
 	RViewInfo.ViewCBCPUData.ScreenToTranslatedWorld = ViewMatrix.GetScreenToTranslatedWorld();
@@ -2748,18 +2706,16 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	RViewInfo.ViewCBCPUData.WorldCameraOrigin = ViewMatrix.GetViewOrigin();
 	RViewInfo.ViewCBCPUData.ViewProjectionMatrix = ViewMatrix.GetViewProjectionMatrix();
 	RViewInfo.ViewCBCPUData.ViewProjectionMatrixInverse = ViewMatrix.GetViewProjectionMatrixInverse();
+	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0f / mClientWidth, 1.0f / mClientHeight);
 	
-
 	XMatrix mLightViewProj = mLightView * mLightProj;
 	memcpy(&ShadowPassConstant.ViewProject, &mLightViewProj, sizeof(XMatrix));
 	ShadowPassConstantBuffer.get()->UpdateData(&ShadowPassConstant, sizeof(ShadowPassConstants), 0);
 
-	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0f / mClientWidth, 1.0f / mClientHeight);
-	
-	VSMTileMaskConstantBuffer->UpdateData(&mLightViewProj, sizeof(XMatrix), 0);
-
 	XVector2 WidthAndHeight(mClientWidth, mClientHeight);
 	VSMTileMaskConstantBuffer->UpdateData(&WidthAndHeight, sizeof(XVector2), sizeof(XMatrix));
+	VSMTileMaskConstantBuffer->UpdateData(&mLightViewProj, sizeof(XMatrix), 0);
+	
 	//cbSkyAtmosphere
 	{
 		// All distance here are in kilometer and scattering/absorptions coefficient in 1/kilometers.
@@ -2915,8 +2871,6 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 	RViewInfo.ViewConstantBuffer.get()->UpdateData(&RViewInfo.ViewCBCPUData, sizeof(ViewConstantBufferData), 0);
 
-
-	
 	ViewMatrix.GetPlanes(CullingParametersIns.Planes);
 	CullingParametersIns.ShdowViewProject = mLightViewProj;
 	cbCullingParameters->UpdateData(&CullingParametersIns, sizeof(cbCullingParametersStruct), 0);
@@ -3217,15 +3171,6 @@ void CrateApp::BuildShadersAndInputLayout()
 		mShaders["ShadowPassPS"].ShaderReflect();
 	}
 
-	//{
-	//	mShaders["standardVS"].CreateShader(EShaderType::SV_Vertex);
-	//	mShaders["standardVS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader.hlsl", nullptr, "VS", "vs_5_1");
-	//	mShaders["standardVS"].ShaderReflect();
-	//
-	//	mShaders["opaquePS"].CreateShader(EShaderType::SV_Pixel);
-	//	mShaders["opaquePS"].CompileShader(L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader.hlsl", nullptr, "PS", "ps_5_1");
-	//	mShaders["opaquePS"].ShaderReflect();
-	//}
 
 	{
 		mShaders["fullScreenVS"].CreateShader(EShaderType::SV_Vertex);
