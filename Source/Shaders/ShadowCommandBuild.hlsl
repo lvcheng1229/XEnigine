@@ -26,10 +26,11 @@ UINT64 UINT64_ADD(UINT64 InValue , uint InAdd)
     return Ret;
 }
 
-struct DepthIndirectCommand
+struct ShadowIndirectCommand
 {
     uint2 CbWorldAddress;
-    UINT64 CbGlobalShadowViewProjectAddress; // Used For VSM
+    UINT64 CbGlobalShadowViewProjectAddressVS; // Used For VSM
+    UINT64 CbGlobalShadowViewProjectAddressPS; // Used For VSM
     
     uint2 VertexBufferLoacation;
     uint VertexSizeInBytes;
@@ -49,8 +50,8 @@ struct DepthIndirectCommand
 };
 
 StructuredBuffer<SceneConstantBuffer> SceneConstantBufferIN;
-StructuredBuffer<DepthIndirectCommand> inputCommands; 
-AppendStructuredBuffer<DepthIndirectCommand> outputCommands;
+StructuredBuffer<ShadowIndirectCommand> inputCommands; 
+AppendStructuredBuffer<ShadowIndirectCommand> outputCommands;
 Texture2D<uint> VirtualSMFlags;
 
 cbuffer cbCullingParameters
@@ -132,8 +133,9 @@ void ShadowCommandBuildCS(uint3 groupId : SV_GroupID, uint groupIndex : SV_Group
                 if(Masked == 1)
                 {
                     uint AddValue = indexY * TileWidth * (4*4*4 + 4*4) + IndexX * (4*4*4 + 4*4);
-                    DepthIndirectCommand cmd = inputCommands[index];
-                    cmd.CbGlobalShadowViewProjectAddress = UINT64_ADD(inputCommands[index].CbGlobalShadowViewProjectAddress,AddValue);
+                    ShadowIndirectCommand cmd = inputCommands[index];
+                    cmd.CbGlobalShadowViewProjectAddressVS = UINT64_ADD(inputCommands[index].CbGlobalShadowViewProjectAddressVS,AddValue);
+                    cmd.CbGlobalShadowViewProjectAddressPS = cmd.CbGlobalShadowViewProjectAddressVS;
                     outputCommands.Append(cmd);
                 }
             }

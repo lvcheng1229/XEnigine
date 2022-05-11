@@ -468,15 +468,19 @@ public:
 	VSMTileMaskClearCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
 	{
 		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
+		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
 	}
 
 	void SetParameters(
 		XRHICommandList& RHICommandList,
-		XRHIUnorderedAcessView* VirtualSMFlagsIn)
+		XRHIUnorderedAcessView* VirtualSMFlagsIn,
+		XRHIUnorderedAcessView* PhysicalShadowDepthTextureIn)
 	{
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, PhysicalShadowDepthTextureIn);
 	}
 	UAVParameterType VirtualSMFlags;
+	UAVParameterType PhysicalShadowDepthTexture;
 };
 VSMTileMaskClearCS::ShaderInfos VSMTileMaskClearCS::StaticShaderInfos(
 	"VSMTileMaskClearCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskClearCS.hlsl",
@@ -562,6 +566,64 @@ VSMTileMaskCS::ShaderInfos VSMTileMaskCS::StaticShaderInfos(
 	"VSMTileMaskCS", EShaderType::SV_Compute, VSMTileMaskCS::CustomConstrucFunc,
 	VSMTileMaskCS::ModifyShaderCompileSettings);
 
+
+
+class ShadowMaskGenCS :public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new ShadowMaskGenCS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+public:
+	ShadowMaskGenCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
+		cbShadowViewInfo.Bind(Initializer.ShaderParameterMap, "cbShadowViewInfo");
+		
+		VsmShadowMaskTex.Bind(Initializer.ShaderParameterMap, "VsmShadowMaskTex");
+		
+		SceneDepthInput.Bind(Initializer.ShaderParameterMap, "SceneDepthInput");
+		PagetableInfos.Bind(Initializer.ShaderParameterMap, "PagetableInfos");
+		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
+	}
+
+	void SetParameters(
+		XRHICommandList& RHICommandList,
+		XRHIConstantBuffer* IncbView,
+		XRHIConstantBuffer* IncbShadowViewInfo,
+		
+		XRHIUnorderedAcessView* InVsmShadowMaskTex,
+
+		XRHIShaderResourceView* InSceneDepthInput,
+		XRHIShaderResourceView* InPagetableInfos,
+		XRHIShaderResourceView* InPhysicalShadowDepthTexture)
+	{
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbView, IncbView);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbShadowViewInfo, IncbShadowViewInfo);
+
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VsmShadowMaskTex, InVsmShadowMaskTex);
+
+		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, SceneDepthInput, InSceneDepthInput);
+		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, PagetableInfos, InPagetableInfos);
+		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, InPhysicalShadowDepthTexture);
+	}
+
+	CBVParameterType cbView;
+	CBVParameterType cbShadowViewInfo;
+
+	UAVParameterType VsmShadowMaskTex;
+
+	SRVParameterType SceneDepthInput;
+	SRVParameterType PagetableInfos;
+	SRVParameterType PhysicalShadowDepthTexture;
+};
+ShadowMaskGenCS::ShaderInfos ShadowMaskGenCS::StaticShaderInfos(
+	"ShadowMaskGenCS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowMaskGenCS.hlsl",
+	"ShadowMaskGenCS", EShaderType::SV_Compute, ShadowMaskGenCS::CustomConstrucFunc,
+	ShadowMaskGenCS::ModifyShaderCompileSettings);
 
 //Only PS , VS using InDirect Draw;
 
@@ -1258,16 +1320,8 @@ private:
 		float padding1;
 	};
 	std::shared_ptr<XRHIConstantBuffer>VSMTileMaskConstantBuffer;
-private://Shadow Mask Pass 
-	//struct cbShadowMaskNoCommonBuffer
-	//{
-	//	XMFLOAT4X4 ScreenToShadowMatrix;
-	//	float x_offset;
-	//	XVector3 padding0;
-	//};
-	//cbShadowMaskNoCommonBuffer cbShadowMaskNoCommon[4];
-	//std::shared_ptr<XRHIConstantBuffer>ShadowMaskNoCommonConstantBuffer[4];
-	std::shared_ptr<XRHITexture2D>ShadowMaskTexture;
+	std::shared_ptr<XRHITexture2D>VSMShadowMaskTexture;
+
 private://Depth Only
 	XD3D12RootSignature PrePassRootSig;
 	ComPtr<ID3D12PipelineState> mDepthOnlyPSO = nullptr;
@@ -1330,8 +1384,6 @@ bool CrateApp::Initialize()
 
 	mFrameResource = std::make_unique<FrameResource>();
 
-	//mFrameResource.get()->PassConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants)));
-
 	for (int i = 0; i < mMaterials.size(); i++)
 	{
 		mFrameResource.get()->MaterialConstantBuffer.push_back(RHICreateConstantBuffer(sizeof(MaterialConstants)));
@@ -1343,19 +1395,8 @@ bool CrateApp::Initialize()
 	}
 
 	RViewInfo.ViewConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferData)));
-
-
-	//for (uint32 i = 0; i < 4; i++)
-	//{
-		ShadowPassConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
-	//}
-
-
-	//for (uint32 i = 0; i < 4; i++)
-	//{
-	//	ShadowMaskNoCommonConstantBuffer[i] = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbShadowMaskNoCommonBuffer)));
-	//}
-	//ShadowMaskNoCommonConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbShadowMaskNoCommonBuffer)));
+	
+	ShadowPassConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
 	VSMTileMaskConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(VSMTileMaskStruct)));
 
 	cbCullingParameters = RHICreateConstantBuffer(sizeof(cbCullingParametersStruct));
@@ -1374,7 +1415,7 @@ bool CrateApp::Initialize()
 	direct_cmd_queue->CommandQueueWaitFlush();
 	OutputDebugString(L"2222\n");
 
-	////ImGUI Begin
+	//ImGUI Begin
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -1515,7 +1556,7 @@ void CrateApp::VirtualShadow()
 	argumentDescs[1].ConstantBufferView.RootParameterIndex = 3;//cbPerObject
 
 	argumentDescs[2].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
-	argumentDescs[2].ConstantBufferView.RootParameterIndex = 3;//cbPerObject
+	argumentDescs[2].ConstantBufferView.RootParameterIndex = 4;//cbPerObject
 
 	argumentDescs[3].Type = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
 	argumentDescs[3].VertexBuffer.Slot = 0;
@@ -1526,7 +1567,7 @@ void CrateApp::VirtualShadow()
 	D3D12_COMMAND_SIGNATURE_DESC CommandSignatureDesc = {};
 	CommandSignatureDesc.pArgumentDescs = argumentDescs;
 	CommandSignatureDesc.NumArgumentDescs = _countof(argumentDescs);
-	CommandSignatureDesc.ByteStride = sizeof(DepthPassIndirectCommand);
+	CommandSignatureDesc.ByteStride = sizeof(ShdadowPassIndirectCommand);
 
 	ThrowIfFailed(md3dDevice->CreateCommandSignature(&CommandSignatureDesc, VSMPassRootSig.GetDXRootSignature(), IID_PPV_ARGS(&m_commandShadowSignature)));
 
@@ -1576,7 +1617,7 @@ void CrateApp::VirtualShadow()
 		IndirectBufferData.SetResourceDataSize(IndirectBufferDataSize);
 		XRHIResourceCreateData IndirectBufferResourceData(&IndirectBufferData);
 		ShadowCmdBufferNoCulling = RHIcreateStructBuffer(
-			sizeof(DepthPassIndirectCommand),
+			sizeof(ShdadowPassIndirectCommand),
 			IndirectBufferDataSize,
 			EBufferUsage(int(EBufferUsage::BUF_DrawIndirect) | (int)EBufferUsage::BUF_ShaderResource),
 			IndirectBufferResourceData);
@@ -1743,7 +1784,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 	}
 
 	//Pass0 GPU Culling
-	
 	{
 		mCommandList->BeginEvent(1, "GPUCulling", sizeof("GPUCulling"));
 	
@@ -1761,9 +1801,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ceil(mOpaqueRitems.size() / float(128))), 1, 1);
 		mCommandList->EndEvent();
 	}
-
-	
-
 
 	//Pass1 DepthPrePass
 	{		
@@ -1789,6 +1826,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT) };
 			mCommandList->ResourceBarrier(_countof(barriers), barriers);
 		}
+
 		{
 			direct_ctx->RHISetShaderConstantBuffer(
 				EShaderType::SV_Vertex, 2,
@@ -1803,6 +1841,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 				mCulledCommandBuffer.Get(),
 				CounterOffset);
 		}
+
 		{
 			D3D12_RESOURCE_BARRIER barriers[1] = {
 			CD3DX12_RESOURCE_BARRIER::Transition(
@@ -1811,11 +1850,11 @@ void CrateApp::Renderer(const GameTimer& gt)
 			D3D12_RESOURCE_STATE_COMMON) };
 			mCommandList->ResourceBarrier(_countof(barriers), barriers);
 		}
+
 		mCommandList->EndEvent();
 	}
 
 	pass_state_manager->ResetState();
-	
 	{
 		TShaderReference<VSMTileMaskCS> Shader = GetGlobalShaderMapping()->GetShader<VSMTileMaskCS>();
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
@@ -1828,8 +1867,9 @@ void CrateApp::Renderer(const GameTimer& gt)
 			VSMTileMaskConstantBuffer.get(),
 			VirtualSMFlagsTex->GeUnorderedAcessView(0),
 			TextureDepthStencil.get());
-		RHICmdList.RHIDispatchComputeShader(mClientWidth / 16, mClientHeight / 16, 1);
-		//RHICmdList.RHIDispatchComputeShader(4, 4, 1);
+		RHICmdList.RHIDispatchComputeShader(
+			static_cast<uint32>(ceil(mClientWidth  / 16)),
+			static_cast<uint32>(ceil(mClientHeight / 16)), 1);
 	}
 	
 	{
@@ -1852,14 +1892,14 @@ void CrateApp::Renderer(const GameTimer& gt)
 		TShaderReference<ShadowCommandBuildCS> Shader = GetGlobalShaderMapping()->GetShader<ShadowCommandBuildCS>();
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
-		RHIResetStructBufferCounter(CmdBufferCulled.get(), CounterOffset);
+		RHIResetStructBufferCounter(ShadowCmdBufferCulled.get(), ShadowCounterOffset);
 
 		XD3D12TextureBase* VirtualSMFlagsTex = GetD3D12TextureFromRHITexture(VirtualSMFlags.get());
 		
 		Shader->SetParameters(
 			RHICmdList,
-			CmdBufferUnorderedAcessView.get(),
-			CmdBufferShaderResourceView.get(),
+			CulledCmdBufferUAV.get(),
+			NoCullCmdBufferSRV.get(),
 			GlobalObjectStructBufferSRV.get(),
 			cbCullingParameters.get(),
 			VirtualSMFlagsTex->GetShaderResourceView(0));
@@ -1901,29 +1941,27 @@ void CrateApp::Renderer(const GameTimer& gt)
 		{
 			D3D12_RESOURCE_BARRIER barriers[1] = {
 			CD3DX12_RESOURCE_BARRIER::Transition(
-			mCulledCommandBuffer.Get(),
+			D3DShadowCulledCommandBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT) };
 			mCommandList->ResourceBarrier(_countof(barriers), barriers);
 		}
 		{
-			//direct_ctx->RHISetShaderConstantBuffer(
-			//	EShaderType::SV_Vertex, 2,
-			//	RViewInfo.ViewConstantBuffer.get());
 			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 			direct_ctx->GetCmdList()->CmdListFlushBarrier();
 			mCommandList->ExecuteIndirect(
 				m_commandShadowSignature.Get(),
 				mOpaqueRitems.size() * 16,
-				mCulledCommandBuffer.Get(),
+				D3DShadowCulledCommandBuffer.Get(),
 				0,
-				mCulledCommandBuffer.Get(),
-				CounterOffset);
+				D3DShadowCulledCommandBuffer.Get(),
+				ShadowCounterOffset);
 		}
+
 		{
 			D3D12_RESOURCE_BARRIER barriers[1] = {
 			CD3DX12_RESOURCE_BARRIER::Transition(
-			mCulledCommandBuffer.Get(),
+			D3DShadowCulledCommandBuffer.Get(),
 			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
 			D3D12_RESOURCE_STATE_COMMON) };
 			mCommandList->ResourceBarrier(_countof(barriers), barriers);
@@ -1931,13 +1969,45 @@ void CrateApp::Renderer(const GameTimer& gt)
 	}
 
 	{
-		//Clear Pass
+		mCommandList->BeginEvent(1, "ShadowMaskGenCS", sizeof("ShadowMaskGenCS"));
+		TShaderReference<ShadowMaskGenCS> Shader = GetGlobalShaderMapping()->GetShader<ShadowMaskGenCS>();
+		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
+
+		XD3D12TextureBase* D3DVSMShadowMaskTexture = GetD3D12TextureFromRHITexture(VSMShadowMaskTexture.get());
+		XD3D12TextureBase* D3DShadowTexture0 = GetD3D12TextureFromRHITexture(TextureDepthStencil.get());
+		XD3D12TextureBase* PagetableInfosTex = GetD3D12TextureFromRHITexture(PagetableInfos.get());
+		XD3D12TextureBase* PhysicalShadowDepthTex = GetD3D12TextureFromRHITexture(PhysicalShadowDepthTexture.get());
+		Shader->SetParameters(
+			RHICmdList,
+			RViewInfo.ViewConstantBuffer.get(),
+			VSMTileMaskConstantBuffer.get(),
+			D3DVSMShadowMaskTexture->GeUnorderedAcessView(0),
+			D3DShadowTexture0->GetShaderResourceView(0),
+			PagetableInfosTex->GetShaderResourceView(0),
+			PhysicalShadowDepthTex->GetShaderResourceView(0));
+
+		RHICmdList.RHIDispatchComputeShader(
+			static_cast<uint32>(ceil(mClientWidth / 16)),
+			static_cast<uint32>(ceil(mClientHeight / 16)), 1);
+		mCommandList->EndEvent();
+	}
+
+	{
+		mCommandList->BeginEvent(1, "VSMTileMaskClearCS", sizeof("VSMTileMaskClearCS"));
 		TShaderReference<VSMTileMaskClearCS> Shader = GetGlobalShaderMapping()->GetShader<VSMTileMaskClearCS>();
 		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 		XD3D12TextureBase* VirtualSMFlagsTex = GetD3D12TextureFromRHITexture(VirtualSMFlags.get());
-		Shader->SetParameters(RHICmdList, VirtualSMFlagsTex->GeUnorderedAcessView(0));
+
+		XD3D12TextureBase* PhysicalShadowDepthTex = GetD3D12TextureFromRHITexture(PhysicalShadowDepthTexture.get());
+		Shader->SetParameters(
+			RHICmdList, 
+			VirtualSMFlagsTex->GeUnorderedAcessView(0),
+			PhysicalShadowDepthTex->GeUnorderedAcessView(0)
+		);
 		RHICmdList.RHIDispatchComputeShader(8 * 8 / 16, 8 * 8 / 16, 1);
+		mCommandList->EndEvent();
 	}
 
 	//Pass2 HZB Pass
@@ -1947,10 +2017,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 
 		XD3D12TextureBase* HZBOutTex = GetD3D12TextureFromRHITexture(FurthestHZBOutput0.get());
-		//XD3D12TextureBase* VirtualSMFlagsTex = GetD3D12TextureFromRHITexture(VirtualSMFlags.get());
-		//
-		//RHIClearBufferRegion(VirtualSMFlagsTex->GeUnorderedAcessView(0), 8 * 16 * 8 * 16 * sizeof(UINT));
-
 		Shader->SetParameters(RHICmdList,
 			XMFLOAT4(1.0 / 512.0, 1.0 / 512.0, 1.0, 1.0),
 			TextureDepthStencil.get(),
@@ -1959,7 +2025,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 			HZBOutTex->GeUnorderedAcessView(2),
 			HZBOutTex->GeUnorderedAcessView(3),
 			HZBOutTex->GeUnorderedAcessView(4)
-			//VirtualSMFlagsTex->GeUnorderedAcessView(0)
 		);
 		RHICmdList.RHIDispatchComputeShader(512 / 16, 512 / 16, 1);
 	}
@@ -2024,7 +2089,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		}
 
 	}
-
 
 
 	pass_state_manager->ResetState();
@@ -2288,7 +2352,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 				TextureGBufferC.get(),
 				TextureGBufferD.get(),
 				TextureDepthStencil.get(),
-				ShadowMaskTexture.get());
+				VSMShadowMaskTexture.get());
 
 		}
 
@@ -2546,19 +2610,9 @@ void CrateApp::UpdateShadowTransform(const GameTimer& gt)
 }
 void CrateApp::UpdateCamera(const GameTimer& gt)
 {
-	// Convert Spherical to Cartesian coordinates.
-	//mEyePos.x = mRadius*sinf(mPhi)*cosf(mTheta);
-	//mEyePos.z = mRadius*sinf(mPhi)*sinf(mTheta);
-	//mEyePos.y = mRadius*cosf(mPhi);
 	ViewMatrix.UpdateViewMatrix(CamIns.GetEyePosition(), CamIns.GetTargetPosition());
 
-
-
-	//------------------------------------
-	
-
 	{
-		float NearFarLength = Far - Near;
 		BoundSphere BoundSphere0;
 		BoundSphere0.Center = XVector3(0, 0, 0);
 		BoundSphere0.Radius = 300.0f;
@@ -2573,7 +2627,6 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 		
 		XMMATRIX lightProj = DirectX::XMMatrixOrthographicOffCenterLH(l, r, b, t, f, n);
 		XMStoreFloat4x4(&mLightProj, lightProj);
-		
 		
 		//Compute Light Pos
 		XMVECTOR LightDirCom = DirectX::XMVector3Normalize(XMLoadFloat3(&LightDir));
@@ -2590,16 +2643,15 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 		XVector3 VDir = WDir.Cross(UDir); VDir.Normalize();
 
 		float TileSize = BoundSphere0.Radius * 2 / (float)TileNumWidthPerVirtualTex;
+
 		for (uint32 IndexX = 0; IndexX < TileNumWidthPerVirtualTex; IndexX++)
 		{
 			for (uint32 IndexY = 0; IndexY < TileNumWidthPerVirtualTex; IndexY++)
 			{
-				float SubL = l + (r - l) * (IndexX / float(TileNumWidthPerVirtualTex));
+				float SubL = l + (r - l) * ((IndexX + 0.5)/ float(TileNumWidthPerVirtualTex));
 				float SubR = SubL + TileSize;
-				float SubT = t - (t - b) * (IndexY / float(TileNumWidthPerVirtualTex));
+				float SubT = t - (t - b) * ((IndexY + 0.5) / float(TileNumWidthPerVirtualTex));
 				float SubB = SubT - TileSize;
-				//float SubB = b + (t - b) * (IndexY / float(TileNumWidthPerVirtualTex));
-				//float SubT = SubB + TileSize;
 				
 				XMatrix TempSubLightProj;
 				XMMATRIX TempSubLightProjCom = DirectX::XMMatrixOrthographicOffCenterLH(SubL, SubR, SubB, SubT, f, n);
@@ -2632,8 +2684,6 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 			}
 		}
 	}
-
-
 	
 }
 
@@ -2647,7 +2697,6 @@ void CrateApp::UpdateObjectCBs(const GameTimer& gt)
 	for (auto& e : mAllRitems)
 	{
 		XMMATRIX world = XMLoadFloat4x4(&e->World);
-		//XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
 
 		ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.World, world);
@@ -2667,7 +2716,6 @@ void CrateApp::UpdateMaterialCBs(const GameTimer& gt)
 
 		MaterialConstants matConstants;
 		matConstants.Metallic = mat->Metallic;
-		//matConstants.Specular = mat->Specular;
 		matConstants.Roughness = mat->Roughness;
 		matConstants.TextureScale = mat->TextureScale;
 		mFrameResource.get()->MaterialConstantBuffer[mat->MatCBIndex].get()->
@@ -2800,18 +2848,11 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 			Forward = XMVector3Cross(SkyUp, SkyLeft);
 			Forward = XMVector3Normalize(Forward);
 		}
+
 		XMFLOAT4 SkyViewRow0; XMStoreFloat4(&SkyViewRow0, SkyLeft);
-		//SkyViewRow0.x *= -1.0;
-		//SkyViewRow0.y *= -1.0;
-		//SkyViewRow0.z *= -1.0;
+
 		XMFLOAT4 SkyViewRow1; XMStoreFloat4(&SkyViewRow1, SkyUp);
 		XMFLOAT4 SkyViewRow2; XMStoreFloat4(&SkyViewRow2, Forward);
-
-		//XMFLOAT4X4 SkyViewLutReferentialTransposed(
-		//	SkyViewRow0.x, SkyViewRow1.x, SkyViewRow2.x, 0,
-		//	SkyViewRow0.y, SkyViewRow1.y, SkyViewRow2.y, 0,
-		//	SkyViewRow0.z, SkyViewRow1.z, SkyViewRow2.z, 0,
-		//	0, 0, 0, 0);
 
 		XMFLOAT4X4 SkyViewLutReferential(
 			SkyViewRow0.x, SkyViewRow0.y, SkyViewRow0.z, 0,
@@ -3021,11 +3062,6 @@ void CrateApp::LoadTextures()
 			, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		ShadowMaskTexture = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
-			EPixelFormat::FT_R8G8B8A8_UNORM
-			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
-			, nullptr);
-
 		FurthestHZBOutput0 = RHICreateTexture2D(512, 512, 1, false, false,
 			EPixelFormat::FT_R16_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 5
@@ -3053,6 +3089,11 @@ void CrateApp::LoadTextures()
 
 		VirtualSMFlags = RHICreateTexture2D(8*8, 8*8, 1, false, false,
 			EPixelFormat::FT_R32_UINT
+			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
+			, nullptr);
+
+		VSMShadowMaskTexture = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
+			EPixelFormat::FT_R16_FLOAT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
 			, nullptr);
 

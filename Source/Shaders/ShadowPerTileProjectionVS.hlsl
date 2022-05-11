@@ -23,12 +23,10 @@ struct FVertexFactoryInput
 
 
 void VS(FVertexFactoryInput Input,
-    //out nointerpolation uint2 IndexXY : ATTRIBUTE1,
     out float4 Position : SV_POSITION)
 {
     float4 PositionW=mul(Input.Position, gWorld);
     Position=mul(PositionW, LightViewProjectMatrix);
-    //IndexXY = uint2(IndexX,IndexY);
 }
 
 

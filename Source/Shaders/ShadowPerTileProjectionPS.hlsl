@@ -14,10 +14,7 @@ cbuffer LightProjectMatrix
 #define PhysicalSize 1024
 #define TileSize 128
 
-
-
 void PS(
-    //nointerpolation uint2 IndexXY : ATTRIBUTE1,
     in float4 PositionIn: SV_POSITION,
     out float4 PlaceHolderTarget : SV_TARGET)
 {
@@ -27,8 +24,7 @@ void PS(
         return;
     }
 
-    //uint2 IndexXY = IndexXY;
-    uint2 IndexXY = uint2(IndexX,IndexY);
+    float2 IndexXY = uint2(IndexX,IndexY);
 
     uint PageTableIndex = PagetableInfos[IndexXY].x;//TODO : Move To Vertex Shader
     uint PhysicalIndexX = PageTableIndex % uint(PhysicalTileWidthNum);
@@ -40,11 +36,10 @@ void PS(
     WritePos/=PhysicalTileWidthNum;
     WritePos*=PhysicalSize;
 
-    uint UintDepth = PositionIn.z * (1<<32);
+    uint UintDepth = PositionIn.z * (1<<30);
     InterlockedMax(PhysicalShadowDepthTexture[uint2(WritePos)],UintDepth);//TODO Need A Clear Pass
-    ////PhysicalShadowDepthTexture[uint2(WritePos)]=UintDepth;
-    //float TempValue = UintDepth + WritePos.x + WritePos.y;
-    //TempValue*=0.0f; 
-    PlaceHolderTarget = float4(IndexXY,PageTableIndex,PositionIn.z);
+
+    float2 WritePosF = WritePos / float(1024.0);
+    PlaceHolderTarget = float4(WritePosF,0,PositionIn.z);
     return;
 }

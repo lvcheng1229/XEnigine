@@ -18,13 +18,13 @@ cbuffer cbShadowViewInfo
 void VSMTileMaskCS(uint2 DispatchThreadID :SV_DispatchThreadID)
 {
     float DeviceZ = TextureSampledInput.Load(int3(DispatchThreadID,0));
+    float2 UV = DispatchThreadID * View_BufferSizeAndInvSize.zw;
     
-    if(DeviceZ == 0.0)
+    if(DeviceZ == 0.0 || UV.x > 1.0f || UV.y > 1.0f)
     {
         return;
     }
     
-    float2 UV = DispatchThreadID * View_BufferSizeAndInvSize.zw;
     float2 ScreenPos = UV * 2.0f - 1.0f; ScreenPos.y *= -1.0f;
 
     //https://blog.csdn.net/dengyibing/article/details/80793209
