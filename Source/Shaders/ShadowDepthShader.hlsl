@@ -26,11 +26,7 @@ struct FVertexFactoryInput
 void VS(FVertexFactoryInput Input,
     out float4 Position : SV_POSITION)
 {
-    //float4 PositionW=mul_x(Input.Position, gWorld);
-    //float4 PositionW=mul(gWorld,Input.Position);
     float4 PositionW=mul(Input.Position,gWorld);
-    //float4 PositionV=mul_x(float4(PositionW.xyz,1.0), gView);
-    //Position=mul_x(float4(PositionW.xyz,1.0), gViewProj);
     Position=mul(float4(PositionW.xyz,1.0),gViewProj);
 }
 

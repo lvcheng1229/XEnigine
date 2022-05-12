@@ -56,7 +56,7 @@ Texture2D<uint> VirtualSMFlags;
 
 cbuffer cbCullingParameters
 {
-    float4x4 ShadowViewProject;
+    row_major float4x4 ShadowViewProject;
     float4 Planes[6];
     float commandCount; 
 }
@@ -84,8 +84,14 @@ void ShadowCommandBuildCS(uint3 groupId : SV_GroupID, uint groupIndex : SV_Group
     return;
 
     float4 Corner[8];
+    float3 Center = SceneConstantBufferIN[index].BoundingBoxCenter;
+    float3 Extent = SceneConstantBufferIN[index].BoundingBoxExtent;
+    float4 Temp= float4(Center,0)  + float4(Extent,0) * BoundingBoxOffset[0];
+    Corner[0]  = Temp;
+
+
     [unroll]
-    for(uint i = 0; i < 8 ; i++)
+    for(uint i = 1; i < 8 ; i++)
     {
         Corner[i] = float4(SceneConstantBufferIN[index].BoundingBoxCenter ,0)  + float4(SceneConstantBufferIN[index].BoundingBoxExtent,0) * BoundingBoxOffset[i];
     }
@@ -93,8 +99,23 @@ void ShadowCommandBuildCS(uint3 groupId : SV_GroupID, uint groupIndex : SV_Group
     float2 UVMin = float2(1.1,1.1);
     float2 UVMax = float2(-0.1,-0.1);
     
+    {
+        float4 ScreenPosition = mul(float4(Corner[0].xyz,1.0f),ShadowViewProject);
+        ScreenPosition.xyz/=ScreenPosition.w;
+
+        float2 ScreenUV = ScreenPosition.xy;
+        ScreenUV.y*=-1.0;
+        ScreenUV = ScreenUV* 0.5 + 0.5f;
+
+        UVMin.x = ScreenUV.x > UVMin.x ? UVMin.x : ScreenUV.x;
+        UVMin.y = ScreenUV.y > UVMin.y ? UVMin.y : ScreenUV.y;
+
+        UVMax.x = ScreenUV.x > UVMax.x ? ScreenUV.x : UVMax.x;
+        UVMax.y = ScreenUV.y > UVMax.y ? ScreenUV.y : UVMax.y;
+    }
+
     [unroll]
-    for(uint j = 0; j < 8 ; j++)
+    for(uint j = 1; j < 8 ; j++)
     {
         float4 ScreenPosition = mul(float4(Corner[j].xyz,1.0f),ShadowViewProject);
         ScreenPosition.xyz/=ScreenPosition.w;

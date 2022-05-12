@@ -50,27 +50,29 @@ void ShadowMaskGenCS(uint2 DispatchThreadID :SV_DispatchThreadID)
     UVShadowSpace.y*=-1.0;
     UVShadowSpace = UVShadowSpace* 0.5 + 0.5f;
 
-    uint2 TileIndexXY = uint2(UVShadowSpace * PageNum);
+    uint2 TileIndexXY = uint2(UVShadowSpace * PageNum /*- 0.5f*/);
     uint PageTableIndex = PagetableInfos[TileIndexXY].x;
 
     uint PhysicalIndexX = PageTableIndex % uint(PhysicalTileWidthNum);
     uint PhysicalIndexY = PageTableIndex / uint(PhysicalTileWidthNum);
 
-    float2 SubTileUV = UVShadowSpace * PageNum - uint2(UVShadowSpace * PageNum);
+    float2 SubTileUV = (UVShadowSpace * PageNum) - uint2(UVShadowSpace * PageNum);
     float2 ShadowDepthPos = float2(PhysicalIndexX,PhysicalIndexY) + SubTileUV; //float [0,8]
     ShadowDepthPos/=PhysicalTileWidthNum; //[0,1]
     ShadowDepthPos*=PhysicalSize;//[0,1024]
     
     uint ShadowDepth = PhysicalShadowDepthTexture[uint2(ShadowDepthPos)].x;
-    uint ObjectShadowDepth = ShadowScreenPOS.z * (1<<30);
+    uint ObjectShadowDepth = (ShadowScreenPOS.z)* (1<<30);
+
+    //ObjectShadowDepth <= ShadowDepth ,if in shadow
 
     //inverse z
-    if(ShadowDepth < ObjectShadowDepth)
-    {
-        VsmShadowMaskTex[DispatchThreadID] = (ObjectShadowDepth - ShadowDepth) / float( 1 << 10);
-    }
-    else
+    if(ObjectShadowDepth < ShadowDepth) // InShadow
     {
         VsmShadowMaskTex[DispatchThreadID] = (ShadowDepth - ObjectShadowDepth) / float( 1 << 10);
+    }
+    else  //Not In Shadow
+    {
+        VsmShadowMaskTex[DispatchThreadID] =  (ShadowDepth - ObjectShadowDepth) / float( 1 << 15);
     }
 }

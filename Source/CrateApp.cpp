@@ -2576,7 +2576,7 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 	{
 		BoundSphere BoundSphere0;
 		BoundSphere0.Center = XVector3(0, 0, 0);
-		BoundSphere0.Radius = 300.0f;
+		BoundSphere0.Radius = 96.0f;
 		
 		//Compute Project Matrix
 		float l = BoundSphere0.Center.x - BoundSphere0.Radius;
@@ -2609,15 +2609,16 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 		{
 			for (uint32 IndexY = 0; IndexY < TileNumWidthPerVirtualTex; IndexY++)
 			{
-				float SubL = l + (r - l) * ((IndexX + 0.5)/ float(TileNumWidthPerVirtualTex));
-				float SubR = SubL + TileSize;
-				float SubT = t - (t - b) * ((IndexY + 0.5) / float(TileNumWidthPerVirtualTex));
-				float SubB = SubT - TileSize;
-				
+				XMMATRIX TempSubLightProjCom = DirectX::XMMatrixOrthographicOffCenterLH(
+					-TileSize *0.5, TileSize * 0.5,
+					-TileSize * 0.5, TileSize * 0.5, f, n);
 				XMatrix TempSubLightProj;
-				XMMATRIX TempSubLightProjCom = DirectX::XMMatrixOrthographicOffCenterLH(SubL, SubR, SubB, SubT, f, n);
 				XMStoreFloat4x4(&TempSubLightProj, TempSubLightProjCom);
 
+				float SubL = l + (r - l) * ((IndexX) / float(TileNumWidthPerVirtualTex));
+				float SubR = SubL + TileSize;
+				float SubT = t - (t - b) * ((IndexY) / float(TileNumWidthPerVirtualTex));
+				float SubB = SubT - TileSize;
 				XVector3 SubLightPos = lightPosStore + UDir * (SubL + SubR) * 0.5 + VDir * (SubB + SubT) * 0.5;
 				XMatrix SubLightMatrix = mLightView;
 
@@ -3203,7 +3204,7 @@ void CrateApp::BuildShapeGeometry()
 	GeometryGenerator geoGen;
 	{
 		GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5, 20, 20);//geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
-		GeometryGenerator::MeshData grid = geoGen.CreateGrid(50.0f, 50.0f, 60, 40);
+		GeometryGenerator::MeshData grid = geoGen.CreateGrid(10.0f, 10.0f, 10, 10);
 
 		//step2
 		UINT sphereVertexOffset = 0;
