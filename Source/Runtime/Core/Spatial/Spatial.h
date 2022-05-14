@@ -11,6 +11,24 @@ protected:
 	GSpatial* ParentSpatial;
 	XBoundingBox BoundingBox;
 public:
+	inline XBoundingBox& GetBoudingBox()
+	{
+		return BoundingBox;
+	}
+
+	inline void SetBoundingBox(XBoundingBox& BoundingBoxIn)
+	{
+		BoundingBox = BoundingBoxIn;
+	}
+
+	inline void SetBoundingBox(XVector3 Center,XVector3 Extent)
+	{
+		BoundingBox.Center = Center;
+		BoundingBox.Extents = Extent;
+	}
+
+
+
 	inline XTransform& GetWorldTransform()
 	{
 		return WorldTransform;

@@ -1,5 +1,6 @@
 #include "MainInit.h"
 #include "Runtime/CoreGObject/GObjtect/PermanentMemAlloc.h"
+#include "Runtime/ResourceManager/ResourceManager.h"
 
 static std::vector<InitPropertyFunPtr>InitPropertyFunArray;
 
@@ -10,9 +11,17 @@ void MainInit::PushToInitPropertyFunArray(InitPropertyFunPtr FunPtrIn)
 
 void MainInit::Init()
 {
+	//Reflection Init
 	GlobalGObjectPermanentMemAlloc.AllocatePermanentMemPool(1 << 20);
 	for (auto& t : InitPropertyFunArray)
 	{
 		(*t)(nullptr);
 	}
+
+}
+
+void MainInit::TempInit2()
+{
+	//Material Init
+	BegineCompileRMaterialInResourceManager();
 }

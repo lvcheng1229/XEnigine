@@ -2,14 +2,8 @@
 #include "Runtime/RenderCore/Shader.h"
 #include "Runtime/Engine/Classes/EngineTypes.h"
 #include "Runtime/Render/MaterialShader.h"
-#include "Runtime/Engine/Classes/Material.h"
 
 class RMaterial;
-//class RMaterialRenderProxy
-//{
-//public:
-//	RMaterial* GetMaterial()const;
-//};
 
 enum class EMaterialDomain
 {
@@ -21,15 +15,11 @@ struct XMaterialShaderParameters_ForIndex
 {
 	EMaterialDomain MaterialDomain;
 	XMaterialShadingModelField ShadingModels;
-
-	uint64 bHasNormalConnected : 1;
-	uint64 bHasEmissiveColorConnected : 1;
 };
 
 class XMaterialShaderMappingToXShaders :public XShaderMappingToXShaders
 {
 public:
-
 };
 
 class XMaterialShaderMapping_MatUnit :public TShaderMapping<XMaterialShaderMappingToXShaders>
@@ -43,16 +33,12 @@ class RMaterial
 public:
 	void BeginCompileShaderMap();
 	void GetShaderInfos(const XMaterialShaderInfo_Set& ShaderInfos, XMaterialShader_Set& ShaderOut);
+	inline void SetCodePath(const std::wstring& CodePathIn)
+	{
+		CodePath = CodePathIn;
+	}
 private:
 	std::shared_ptr<XMaterialShaderMapping_MatUnit>RThreadShaderMap;
-
-	GMaterial* Material;
+	std::wstring CodePath;
 };
 
-class XMaterialResource :public RMaterial
-{
-public:
-private:
-	//UMaterial* Material;
-	//UMaterialInstance* MaterialInstance;
-};

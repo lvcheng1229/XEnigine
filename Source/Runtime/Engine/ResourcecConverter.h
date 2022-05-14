@@ -11,7 +11,8 @@ std::shared_ptr<GTexture2D> CreateTextureFromImageFileAndSave(const std::string&
 
 std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn);
 
+std::shared_ptr<GGeomertry> CreateDefualtSphereGeo(float Radius, uint32 SliceCount, uint32 StackCount);
 std::shared_ptr<GGeomertry> CreateDefualtQuadGeo();
 
-
+std::shared_ptr<GGeomertry> TempCreateSphereGeoWithMat();
 std::shared_ptr<GGeomertry> TempCreateQuadGeoWithMat();

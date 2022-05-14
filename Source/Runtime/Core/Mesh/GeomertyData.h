@@ -37,6 +37,10 @@ public:
 	{
 		return DataStore.data();
 	}
+	inline uint64 GetDataNum()
+	{
+		return DataNum;
+	}
 protected:
 	EVertexElementType  DataType;
 	std::vector<uint8>DataStore;
@@ -91,6 +95,7 @@ private:
 
 class GIndexBuffer : public GObject
 {
+	friend class GGeomertry;
 public:
 	void CreateRHIBufferChecked();
 	inline void SetData(std::shared_ptr<GDataBuffer>DataBufferIn)
@@ -126,6 +131,11 @@ private:
 class GGeomertry :public GSpatial
 {
 public:
+	inline uint64 GetIndexCount()const
+	{
+		return MeshDataPtr->IndexBufferPtr->IndexBufferPtr->GetDataNum();
+	}
+
 	inline std::shared_ptr<GVertexBuffer> GetGVertexBuffer()const
 	{
 		return MeshDataPtr->VertexBufferPtr;
@@ -162,12 +172,14 @@ public:
 		MaterialInstancePtr = MaterialInstancePtrIn;
 	}
 
-	inline std::shared_ptr<GMaterialInstance> GetMaterialInstance()
+	inline std::shared_ptr<GMaterialInstance>& GetMaterialInstance()
 	{
 		return MaterialInstancePtr;
 	}
 
 	std::shared_ptr<XRHIConstantBuffer> GetPerObjectVertexCBuffer();
+	std::shared_ptr<GGeomertry> CreateGeoInstanceNoMatAndTrans();
+	std::shared_ptr<GGeomertry> CreateGeoInstancewithMat();
 private:
 	std::shared_ptr<GMeshData>MeshDataPtr;
 	std::shared_ptr<GMaterialInstance>MaterialInstancePtr;

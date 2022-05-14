@@ -2,6 +2,8 @@
 #include "ResourcecConverter.h"
 #include "ThirdParty/stb_image.h"
 #include <d3dcompiler.h>
+#include "Runtime/Engine/Material/MaterialShared.h"
+#include "Runtime/ResourceManager/ResourceManager.h"
 
 std::shared_ptr<GTexture2D> CreateTextureFromImageFile(const std::string& FilePath, bool bSRGB)
 {
@@ -37,6 +39,14 @@ std::shared_ptr<GTexture2D> CreateTextureFromImageFile(const std::string& FilePa
 std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn)
 {
 	std::shared_ptr<GMaterial> MaterialResult = std::make_shared<GMaterial>();
+	MaterialResult->CodePath = CodePathIn;
+	
+	std::shared_ptr<RMaterial> RMaterialPtr = std::make_shared<RMaterial>();
+	AddRMaterialToResourceManager(RMaterialPtr);
+
+	MaterialResult->RMaterialPtr = RMaterialPtr;
+	MaterialResult->RMaterialPtr->SetCodePath(CodePathIn);
+
 	XDxRefCount<ID3DBlob> BeforeCompressed;
 	{
 #if defined(DEBUG) || defined(_DEBUG)  
@@ -92,6 +102,163 @@ std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn
 		}
 	}
 	return MaterialResult;
+}
+
+std::shared_ptr<GGeomertry> CreateDefualtSphereGeo(float Radius, uint32 SliceCount, uint32 StackCount)
+{
+	std::vector<XVector4>Positions;
+	std::vector<XVector3>TangentXs;
+	std::vector<XVector4>TangentYs;
+	std::vector<XVector2>TextureCoords;
+	std::vector<uint16>Indices;
+
+
+	XVector3 BoundingBoxMaxVar((std::numeric_limits<float>::min)(), (std::numeric_limits<float>::min)(), (std::numeric_limits<float>::min)());
+	XVector3 BoundingBoxMinVar((std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)());
+
+	XVector4 TopPosition(0.0f, Radius, 0.0f, 1.0f);
+	BoundingBoxMinVar.x = (BoundingBoxMinVar.x < TopPosition.x) ? BoundingBoxMinVar.x : TopPosition.x;
+	BoundingBoxMinVar.y = (BoundingBoxMinVar.y < TopPosition.y) ? BoundingBoxMinVar.y : TopPosition.y;
+	BoundingBoxMinVar.z = (BoundingBoxMinVar.z < TopPosition.z) ? BoundingBoxMinVar.z : TopPosition.z;
+
+	BoundingBoxMaxVar.x = (BoundingBoxMaxVar.x > TopPosition.x) ? BoundingBoxMaxVar.x : TopPosition.x;
+	BoundingBoxMaxVar.y = (BoundingBoxMaxVar.y > TopPosition.y) ? BoundingBoxMaxVar.y : TopPosition.y;
+	BoundingBoxMaxVar.z = (BoundingBoxMaxVar.z > TopPosition.z) ? BoundingBoxMaxVar.z : TopPosition.z;
+
+
+	XVector3 TopTangentX(1, 0, 0);
+	XVector4 TopTangentY(0, 1, 0, 1);
+	XVector2 TopTexCoord(0, 0);
+
+	Positions.push_back(TopPosition);
+	TangentXs.push_back(TopTangentX);
+	TangentYs.push_back(TopTangentY);
+	TextureCoords.push_back(TopTexCoord);
+
+
+
+	float PhiStep = X_PI / StackCount;
+	float ThetaStep = 2.0f * X_PI / SliceCount;
+	for (uint32 i = 1; i <= StackCount - 1; ++i)
+	{
+		float Phi = i * PhiStep;
+		for (uint32 j = 0; j <= SliceCount; ++j)
+		{
+			float Theta = j * ThetaStep;
+
+			XVector4 Position = XVector4(Radius * sinf(Phi) * cosf(Theta), Radius * cosf(Phi), Radius * sinf(Phi) * sinf(Theta), 1.0);
+			Positions.push_back(Position);
+
+			BoundingBoxMinVar.x = (BoundingBoxMinVar.x < Position.x) ? BoundingBoxMinVar.x : Position.x;
+			BoundingBoxMinVar.y = (BoundingBoxMinVar.y < Position.y) ? BoundingBoxMinVar.y : Position.y;
+			BoundingBoxMinVar.z = (BoundingBoxMinVar.z < Position.z) ? BoundingBoxMinVar.z : Position.z;
+
+			BoundingBoxMaxVar.x = (BoundingBoxMaxVar.x > Position.x) ? BoundingBoxMaxVar.x : Position.x;
+			BoundingBoxMaxVar.y = (BoundingBoxMaxVar.y > Position.y) ? BoundingBoxMaxVar.y : Position.y;
+			BoundingBoxMaxVar.z = (BoundingBoxMaxVar.z > Position.z) ? BoundingBoxMaxVar.z : Position.z;
+
+			XVector3 TangentX(-Radius * sinf(Phi) * sinf(Theta), 0.0f, Radius * sinf(Phi) * cosf(Theta));
+			TangentX.Normalize();
+			TangentXs.push_back(TangentX);
+
+			XVector3 Position3(Position.x, Position.y, Position.z);
+			Position3.Normalize();
+			XVector4 Normal(Position3.x, Position3.y, Position3.z, 1.0f);
+			TangentYs.push_back(Normal);
+
+			XVector2 TexCoord(Theta / X_2PI, Phi / X_PI);
+			TextureCoords.push_back(TexCoord);
+
+		}
+	}
+
+
+	XVector4 BottomPosition(0.0f, -Radius, 0.0f, 1.0f);
+	BoundingBoxMinVar.x = (BoundingBoxMinVar.x < BottomPosition.x) ? BoundingBoxMinVar.x : BottomPosition.x;
+	BoundingBoxMinVar.y = (BoundingBoxMinVar.y < BottomPosition.y) ? BoundingBoxMinVar.y : BottomPosition.y;
+	BoundingBoxMinVar.z = (BoundingBoxMinVar.z < BottomPosition.z) ? BoundingBoxMinVar.z : BottomPosition.z;
+
+	BoundingBoxMaxVar.x = (BoundingBoxMaxVar.x > BottomPosition.x) ? BoundingBoxMaxVar.x : BottomPosition.x;
+	BoundingBoxMaxVar.y = (BoundingBoxMaxVar.y > BottomPosition.y) ? BoundingBoxMaxVar.y : BottomPosition.y;
+	BoundingBoxMaxVar.z = (BoundingBoxMaxVar.z > BottomPosition.z) ? BoundingBoxMaxVar.z : BottomPosition.z;
+
+
+	XVector3 BottomTangentX(1, 0, 0);
+	XVector4 BottomTangentY(0, -1, 0, 1);
+	XVector2 BottomTexCoord(0, 1);
+
+	Positions.push_back(BottomPosition);
+	TangentXs.push_back(BottomTangentX);
+	TangentYs.push_back(BottomTangentY);
+	TextureCoords.push_back(BottomTexCoord);
+
+	for (uint32 i = 1; i <= SliceCount; ++i)
+	{
+		Indices.push_back(0);
+		Indices.push_back(i + 1);
+		Indices.push_back(i);
+	}
+
+	uint32 baseIndex = 1;
+	uint32 ringVertexCount = SliceCount + 1;
+	for (uint32 i = 0; i < StackCount - 2; ++i)
+	{
+		for (uint32 j = 0; j < SliceCount; ++j)
+		{
+			Indices.push_back(baseIndex + i * ringVertexCount + j);
+			Indices.push_back(baseIndex + i * ringVertexCount + j + 1);
+			Indices.push_back(baseIndex + (i + 1) * ringVertexCount + j);
+			
+			Indices.push_back(baseIndex + (i + 1) * ringVertexCount + j);
+			Indices.push_back(baseIndex + i * ringVertexCount + j + 1);
+			Indices.push_back(baseIndex + (i + 1) * ringVertexCount + j + 1);
+		}
+	}
+
+	uint32 southPoleIndex = (uint32)Positions.size() - 1;
+	baseIndex = southPoleIndex - ringVertexCount;
+
+	for (uint32 i = 0; i < SliceCount; ++i)
+	{
+		Indices.push_back(southPoleIndex);
+		Indices.push_back(baseIndex + i);
+		Indices.push_back(baseIndex + i + 1);
+	}
+
+	std::shared_ptr<GDataBuffer> PositionDataBuffer = std::make_shared<GDataBuffer>();
+	PositionDataBuffer->SetData((uint8*)Positions.data(), Positions.size(), EVertexElementType::VET_Float4);
+
+	std::shared_ptr<GDataBuffer> TangentXDataBuffer = std::make_shared<GDataBuffer>();
+	TangentXDataBuffer->SetData((uint8*)TangentXs.data(), TangentXs.size(), EVertexElementType::VET_Float3);
+
+	std::shared_ptr<GDataBuffer> TangentYDataBuffer = std::make_shared<GDataBuffer>();
+	TangentYDataBuffer->SetData((uint8*)TangentYs.data(), TangentYs.size(), EVertexElementType::VET_Float4);
+
+	std::shared_ptr<GDataBuffer> TextureCoordsDataBuffer = std::make_shared<GDataBuffer>();
+	TextureCoordsDataBuffer->SetData((uint8*)TextureCoords.data(), TextureCoords.size(), EVertexElementType::VET_Float2);
+
+	std::shared_ptr<GDataBuffer> IndexDataBuffer = std::make_shared<GDataBuffer>();
+	IndexDataBuffer->SetData((uint8*)Indices.data(), Indices.size(), EVertexElementType::VET_UINT16);
+
+	std::shared_ptr<GVertexBuffer>VertexBuffer = std::make_shared<GVertexBuffer>();
+	VertexBuffer->SetData(PositionDataBuffer, EVertexAttributeType::VAT_POSITION);
+	VertexBuffer->SetData(TangentXDataBuffer, EVertexAttributeType::VAT_TANGENT);
+	VertexBuffer->SetData(TangentYDataBuffer, EVertexAttributeType::VAT_NORMAL);
+	VertexBuffer->SetData(TextureCoordsDataBuffer, EVertexAttributeType::VAT_TEXCOORD);
+
+	std::shared_ptr<GIndexBuffer> IndexBuffer = std::make_shared<GIndexBuffer>();
+	IndexBuffer->SetData(IndexDataBuffer);
+
+	std::shared_ptr<GMeshData>MeshData = std::make_shared<GMeshData>();
+	MeshData->SetVertexBuffer(VertexBuffer);
+	MeshData->SetIndexBuffer(IndexBuffer);
+
+	std::shared_ptr<GGeomertry>Geomertry = std::make_shared<GGeomertry>();
+	Geomertry->SetMeshData(MeshData);
+
+	XVector3 BoundingBoxCenter = BoundingBoxMaxVar - BoundingBoxMinVar;
+	Geomertry->SetBoundingBox(BoundingBoxCenter, BoundingBoxMaxVar - BoundingBoxCenter);
+	return Geomertry;
 }
 
 std::shared_ptr<GGeomertry> CreateDefualtQuadGeo()
@@ -162,7 +329,38 @@ std::shared_ptr<GGeomertry> CreateDefualtQuadGeo()
 	std::shared_ptr<GGeomertry>Geomertry = std::make_shared<GGeomertry>();
 	Geomertry->SetMeshData(MeshData);
 
+	Geomertry->SetBoundingBox(XVector3(0, 0, 0), XVector3(8, 0.1, 8));
 	return Geomertry;
+}
+
+std::shared_ptr<GGeomertry> TempCreateSphereGeoWithMat()
+{
+	std::shared_ptr<GGeomertry> Result = CreateDefualtSphereGeo(0.5, 36, 36);
+	std::shared_ptr<GMaterial> MaterialPtr = CreateMaterialFromCode(L"E:/XEngine/XEnigine/MaterialShaders/Material.hlsl");
+	std::shared_ptr<GMaterialInstance> MaterialIns = std::make_shared<GMaterialInstance>(MaterialPtr);
+	MaterialIns->SetMaterialValueFloat("Metallic", 0.8f);
+	MaterialIns->SetMaterialValueFloat("Roughness", 0.4f);
+	MaterialIns->SetMaterialValueFloat("TextureScale", 1.0f);
+
+	std::shared_ptr<GTexture2D> TexBaseColor =
+		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Metal_Gold_D.TGA", true);
+
+	std::shared_ptr<GTexture2D> TexRouhness =
+		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_MacroVariation.TGA", false);
+
+	std::shared_ptr<GTexture2D> TexNormal =
+		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Metal_Gold_N.TGA", false);
+
+	TexBaseColor->CreateRHITexture();
+	TexRouhness->CreateRHITexture();
+	TexNormal->CreateRHITexture();
+
+	MaterialIns->SetMaterialTexture2D("BaseColorMap", TexBaseColor);
+	MaterialIns->SetMaterialTexture2D("RoughnessMap", TexRouhness);
+	MaterialIns->SetMaterialTexture2D("NormalMap", TexNormal);
+
+	Result->SetMaterialPtr(MaterialIns);
+	return Result;
 }
 
 std::shared_ptr<GGeomertry> TempCreateQuadGeoWithMat()
@@ -172,7 +370,7 @@ std::shared_ptr<GGeomertry> TempCreateQuadGeoWithMat()
 	std::shared_ptr<GMaterialInstance> MaterialIns = std::make_shared<GMaterialInstance>(MaterialPtr);
 	MaterialIns->SetMaterialValueFloat("Metallic",0.0f);
 	MaterialIns->SetMaterialValueFloat("Roughness",0.8f);
-	MaterialIns->SetMaterialValueFloat("TextureScale",10.0f);
+	MaterialIns->SetMaterialValueFloat("TextureScale",6.0f);
 	
 	std::shared_ptr<GTexture2D> TexBaseColor = 
 		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Rock_Sandstone_D.TGA", true);

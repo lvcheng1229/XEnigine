@@ -112,8 +112,15 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSphere(float radius, uint32
 	// Poles: note that there will be texture coordinate distortion as there is
 	// not a unique point on the texture map to assign to the pole when mapping
 	// a rectangular texture onto a sphere.
-	Vertex topVertex(0.0f, +radius, 0.0f, 0.0f, +1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	Vertex bottomVertex(0.0f, -radius, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	Vertex topVertex(
+		0.0f, +radius, 0.0f, 
+		0.0f, +1.0f, 0.0f,  // n
+		1.0f, 0.0f, 0.0f,  //tan u
+		0.0f, 0.0f);
+	Vertex bottomVertex(0.0f, -radius, 0.0f,
+		0.0f, -1.0f, 0.0f, 
+		1.0f, 0.0f, 0.0f, 
+		0.0f, 1.0f);
 
 
 	XVector3 BoundingBoxMaxVar((std::numeric_limits<float>::min)(), (std::numeric_limits<float>::min)(), (std::numeric_limits<float>::min)());

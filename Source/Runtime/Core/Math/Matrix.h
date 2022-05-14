@@ -7,6 +7,7 @@ namespace DirectX
     {
         
 
+
         struct LMatrix : public XMFLOAT4X4
         {
             static const LMatrix Identity;

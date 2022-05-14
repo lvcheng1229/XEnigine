@@ -25,14 +25,11 @@ public:
 };
 
 
-
-//struct FMaterialShaderTypes
 struct XMaterialShaderInfo_Set
 {
 	XShaderInfo* ShaderInfoSet[(int)EShaderType::SV_ShaderCount];
 };
 
-//struct FMaterialShaders
 struct XMaterialShader_Set
 {
 	const XShaderMappingBase* ShaderMap;

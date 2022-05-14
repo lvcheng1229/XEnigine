@@ -2,17 +2,11 @@
 #include "MaterialShared.h"
 #include "MaterialShaderMapSet.h"
 
-
-//temp
+//Temp
 #include <filesystem>
 #include <fstream>
 //
 
-#define TEMP_MATERIAL_PATH L"E:/XEngine/XEnigine/MaterialShaders"
-
-
-
-#define TEMP_SHADER_PATH L"E:/XEngine/XEnigine/MaterialShaders/Material.hlsl"
 void RMaterial::BeginCompileShaderMap()
 {
 	std::shared_ptr<XMaterialShaderMapping_MatUnit> NewShaderMap = std::make_shared<XMaterialShaderMapping_MatUnit>();
@@ -20,20 +14,19 @@ void RMaterial::BeginCompileShaderMap()
 
 	NewShaderMap->AssignShaderMappingXShader(new XShaderMappingToXShaders());
 
-	std::string TemplShaderCode;
-	{
-		std::ifstream FileCode(std::filesystem::path(TEMP_SHADER_PATH), std::ios::ate);
-		std::ifstream::pos_type FileSize = FileCode.tellg();
-		FileCode.seekg(0, std::ios_base::beg);
-		TemplShaderCode.resize(FileSize, '\n');
-		FileCode.read(TemplShaderCode.data(), FileSize);
-		FileCode.close();
-	}
-	
-	MaterialCompileSetting->IncludePathToCode["Generated/Material.hlsl"] = TemplShaderCode;
+	//Read Material Shader Code
+	std::string MaterialShaderCode;
+	std::ifstream FileCode(std::filesystem::path(CodePath), std::ios::ate);
+	std::ifstream::pos_type FileSize = FileCode.tellg();
+	FileCode.seekg(0, std::ios_base::beg);
+	MaterialShaderCode.resize(FileSize, '\n');
+	FileCode.read(MaterialShaderCode.data(), FileSize);
+	FileCode.close();
+
+	MaterialCompileSetting->IncludePathToCode["Generated/Material.hlsl"] = MaterialShaderCode;
 	NewShaderMap->Compile(*MaterialCompileSetting);
 
-	//set shader mapping
+	//Set Shader Mapping
 	RThreadShaderMap = NewShaderMap;
 }
 

@@ -81,6 +81,10 @@ public:
 
 	inline std::shared_ptr<XRHITexture2D> GetRHITexture2D()
 	{
+		if (RHITexturePrivate.get() == nullptr)
+		{
+			CreateRHITexture();
+		}
 		return RHITexturePrivate;
 	}
 private:

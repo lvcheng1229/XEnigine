@@ -1,6 +1,8 @@
 #include "GeomertyData.h"
 #include "Runtime/Core/ResourceCreateDataInterface.h"
 #include "Runtime/RHI/RHICommandList.h"
+#include "Runtime/Engine/Classes/Material.h"
+
 uint32 GDataBuffer::DataTypeByteSize[(int)EVertexElementType::VET_MAX] =
 {
 	0,
@@ -100,6 +102,11 @@ void GIndexBuffer::CreateRHIBufferChecked()
 struct VertexCBufferStruct
 {
 	XMatrix WorldMatrix;
+	
+	XVector3 BoundBoxMax;
+	float padding0;
+	XVector3 BoundBoxMin;
+	float padding1;
 };
 
 std::shared_ptr<XRHIConstantBuffer> GGeomertry::GetPerObjectVertexCBuffer()
@@ -109,7 +116,35 @@ std::shared_ptr<XRHIConstantBuffer> GGeomertry::GetPerObjectVertexCBuffer()
 		PerObjectVertexCBuffer = RHICreateConstantBuffer(sizeof(VertexCBufferStruct));
 	}
 
-	PerObjectVertexCBuffer->UpdateData(GetRValuePtr(GetWorldTransform().GetCombineMatrixTranspose()), sizeof(XMatrix), 0);
+	VertexCBufferStruct VertexCB;
+	VertexCB.WorldMatrix = GetWorldTransform().GetCombineMatrix();
+	VertexCB.BoundBoxMax = GetBoudingBox().Center + GetBoudingBox().Extents;
+	VertexCB.BoundBoxMin = GetBoudingBox().Center - GetBoudingBox().Extents;
+
+	PerObjectVertexCBuffer->UpdateData(&VertexCB, sizeof(VertexCBufferStruct), 0);
 
 	return PerObjectVertexCBuffer;
+}
+
+std::shared_ptr<GGeomertry> GGeomertry::CreateGeoInstanceNoMatAndTrans()
+{
+	std::shared_ptr<GGeomertry> RetGeo = std::make_shared<GGeomertry>();
+	RetGeo->MeshDataPtr = this->MeshDataPtr;
+	RetGeo->MaterialInstancePtr = std::make_shared<GMaterialInstance>(this->MaterialInstancePtr->MaterialPtr);
+	RetGeo->PerObjectVertexCBuffer = nullptr;
+	RetGeo->SetBoundingBox(this->GetBoudingBox());
+	return RetGeo;
+}
+
+std::shared_ptr<GGeomertry> GGeomertry::CreateGeoInstancewithMat()
+{
+	std::shared_ptr<GGeomertry> RetGeo = std::make_shared<GGeomertry>();
+	RetGeo->MeshDataPtr = this->MeshDataPtr;
+	RetGeo->MaterialInstancePtr = std::make_shared<GMaterialInstance>(this->MaterialInstancePtr->MaterialPtr);
+	RetGeo->MaterialInstancePtr->MaterialFloatArray = this->MaterialInstancePtr->MaterialFloatArray;
+	RetGeo->MaterialInstancePtr->MaterialTextureArray = this->MaterialInstancePtr->MaterialTextureArray;
+
+	RetGeo->PerObjectVertexCBuffer = nullptr;
+	RetGeo->SetBoundingBox(this->GetBoudingBox());
+	return RetGeo;
 }

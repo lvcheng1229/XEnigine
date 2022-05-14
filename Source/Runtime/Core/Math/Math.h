@@ -8,9 +8,14 @@ using XVector4 = DirectX::SimpleMath::Vector4;
 using XMatrix = DirectX::SimpleMath::LMatrix;
 using XPlane = DirectX::SimpleMath::Plane;
 
-//using XQuaternion = DirectX::SimpleMath::XQuaternion;
-using XBoundingBox = DirectX::BoundingBox;
+struct XBoundingBox : public DirectX::BoundingBox
+{
+    XVector3 Center;
+    XVector3 Extent;
+};
 
+constexpr float X_PI = 3.141592654f;
+constexpr float X_2PI = 6.283185307f;
 inline constexpr float XDegreeToRadians(float Degree)
 {
 	return Degree * (DirectX::XM_PI / 180.0f);

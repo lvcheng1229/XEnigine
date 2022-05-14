@@ -8,4 +8,5 @@ public:
 	std::vector<XShaderInfo*>ShaderInfos;
 };
 
-const XMaterialShaderMapSet& GetMaterialShaderMapSet(const XMaterialShaderParameters_ForIndex& MaterialParameters);
+//Only Has Base Pass Shader Map Set
+const XMaterialShaderMapSet& GetMaterialShaderMapSet();

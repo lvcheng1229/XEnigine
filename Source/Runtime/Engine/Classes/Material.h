@@ -2,6 +2,7 @@
 #include "Texture.h"
 #include "Runtime/Core/Math/Math.h"
 
+
 struct MaterialValueParas
 {
 	std::string Name;
@@ -24,12 +25,8 @@ class GMaterial :public GObject
 public:
 	std::vector<MaterialValueParas>MaterialValueArray;
 	std::vector<MaterialTexParas>MaterialTextureArray;
+	std::shared_ptr<RMaterial> RMaterialPtr;
 	std::wstring CodePath;
-	//void CreateGMaterial(const std::wstring& CodePathIn);
-
-	//void CompileRMaterial()const;
-	//RMaterial* GetRMaterial()const;
-	//RMaterial* MaterialRender;
 };
 
 //attach to mesh
@@ -44,6 +41,17 @@ public:
 		MaterialTextureArray = MaterialPtrIn->MaterialTextureArray;
 	}
 
+	inline std::shared_ptr<GTexture2D>& TempGetGTexPtrByIndex(uint32 Index)
+	{
+		for (auto iter = MaterialTextureArray.begin(); iter != MaterialTextureArray.end(); iter++)
+		{
+			if (iter->ResourceIndex == Index)
+			{
+				return iter->TexturePtr;
+			}
+		}
+	}
+
 	void SetMaterialValueFloat(const std::string& ValueName, float Value);
 	void SetMaterialValueFloat2(const std::string& ValueName, XVector2 Value);
 	void SetMaterialValueFloat3(const std::string& ValueName, XVector3 Value);
@@ -55,8 +63,6 @@ public:
 	std::vector<MaterialTexParas>MaterialTextureArray;
 
 	std::shared_ptr<GMaterial>MaterialPtr;
-	//RMaterial* GetRMaterial()const;
-
 private:
 	bool bValueChanged;
 	std::shared_ptr<XRHIConstantBuffer> MaterialRHIConstantBuffer;
