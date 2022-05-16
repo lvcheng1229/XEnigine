@@ -67,6 +67,8 @@ public:
 
 };
 
+
+
 class ResourceState
 {
 private:
@@ -141,6 +143,13 @@ public:
 	inline void SetBuddyAllocator(XD3DBuddyAllocator* alloc_in) { buddy_alloc = alloc_in; };
 	inline XD3DBuddyAllocator* GetBuddyAllocator() { return buddy_alloc; };
 	inline BuddyAllocatorData& GetBuddyAllocData() { return buddy_alloc_data; };
+};
+
+
+class XD3DCommandRootSignature :public XRHICommandSignature
+{
+public:
+	XDxRefCount<ID3D12CommandSignature>DxCommandSignature;
 };
 
 //No Multi Inherit !!

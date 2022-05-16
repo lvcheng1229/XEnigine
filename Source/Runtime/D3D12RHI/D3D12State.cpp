@@ -40,6 +40,142 @@ static D3D12_BLEND TranslateBlendFactor(EBlendFactor BlendFactor)
 	};
 }
 
+void* XD3D12PlatformRHI::RHIGetCommandDataPtr(std::vector<XRHICommandData>& RHICmdData, uint32& OutCmdDataSize)
+{
+	OutCmdDataSize = 0;
+
+	uint32 NumVirtualAddres = RHICmdData[0].CBVs.size();
+	OutCmdDataSize += NumVirtualAddres * sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
+	OutCmdDataSize += sizeof(D3D12_VERTEX_BUFFER_VIEW);
+	OutCmdDataSize += sizeof(D3D12_INDEX_BUFFER_VIEW);
+	OutCmdDataSize += sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
+	OutCmdDataSize = AlignArbitrary(OutCmdDataSize, sizeof(uint64));
+
+	char* RetPtr = (char*)std::malloc(OutCmdDataSize * RHICmdData.size());
+	
+	uint32 Offset = 0;
+	for (int i = 0; i < RHICmdData.size(); i++)
+	{
+		for (int j = 0; j < RHICmdData[i].CBVs.size(); j++)
+		{
+			XD3D12ConstantBuffer* ConstantBuffer = static_cast<XD3D12ConstantBuffer*>(RHICmdData[i].CBVs[j]);
+			D3D12_GPU_VIRTUAL_ADDRESS VirtualPtr = ConstantBuffer->ResourceLocation.GetGPUVirtualPtr();
+			memcpy(RetPtr + Offset, &VirtualPtr, sizeof(D3D12_GPU_VIRTUAL_ADDRESS));
+			Offset += sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
+		}
+
+		XD3D12ResourcePtr_CPUGPU* VertexBufferPtr = &static_cast<XD3D12VertexBuffer*>(RHICmdData[i].VB)->ResourcePtr;
+
+		D3D12_VERTEX_BUFFER_VIEW VertexView;
+		VertexView.BufferLocation = VertexBufferPtr->GetGPUVirtualPtr();
+		VertexView.StrideInBytes = RHICmdData[i].VB->GetStride();
+		VertexView.SizeInBytes = RHICmdData[i].VB->GetSize();
+		
+		memcpy(RetPtr + Offset, &VertexView, sizeof(D3D12_VERTEX_BUFFER_VIEW));
+		Offset += sizeof(D3D12_VERTEX_BUFFER_VIEW);
+
+		XD3D12ResourcePtr_CPUGPU* IndexBufferPtr = &static_cast<XD3D12IndexBuffer*>(RHICmdData[i].IB)->ResourcePtr;
+		const DXGI_FORMAT Format = (RHICmdData[i].IB->GetStride() == sizeof(uint16) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT);
+
+		D3D12_INDEX_BUFFER_VIEW IndexView;
+		IndexView.BufferLocation = IndexBufferPtr->GetGPUVirtualPtr();
+		IndexView.Format = Format;
+		IndexView.SizeInBytes = RHICmdData[i].IB->GetSize();
+
+		memcpy(RetPtr + Offset, &IndexView, sizeof(D3D12_INDEX_BUFFER_VIEW));
+		Offset += sizeof(D3D12_INDEX_BUFFER_VIEW);
+
+		D3D12_DRAW_INDEXED_ARGUMENTS DrawArguments;
+		DrawArguments.IndexCountPerInstance = RHICmdData[i].IndexCountPerInstance;
+		DrawArguments.InstanceCount = RHICmdData[i].InstanceCount;
+		DrawArguments.StartIndexLocation = RHICmdData[i].StartIndexLocation;
+		DrawArguments.BaseVertexLocation = RHICmdData[i].BaseVertexLocation;
+		DrawArguments.StartInstanceLocation = RHICmdData[i].StartInstanceLocation;
+
+		memcpy(RetPtr + Offset, &DrawArguments, sizeof(D3D12_DRAW_INDEXED_ARGUMENTS));
+		Offset += sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
+	}
+
+	return RetPtr;
+}
+
+std::shared_ptr<XRHICommandSignature> XD3D12PlatformRHI::RHICreateCommandSignature(XRHIIndirectArg* RHIIndirectArg, uint32 ArgCount, XRHIVertexShader* VertexShader, XRHIPixelShader* PixelShader)
+{
+	XD3DCommandRootSignature* RetRes = new XD3DCommandRootSignature();
+
+	uint32 ByteStride = 0;
+	std::vector<D3D12_INDIRECT_ARGUMENT_DESC>ArgumentDescs;
+	for (int i = 0; i < ArgCount; i++)
+	{
+		D3D12_INDIRECT_ARGUMENT_DESC ArgDesc;
+		switch (RHIIndirectArg[i].type)
+		{
+		case IndirectArgType::Arg_CBV:
+			ArgDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
+			ArgDesc.ConstantBufferView.RootParameterIndex = RHIIndirectArg[i].CBV.RootParameterIndex;
+			ByteStride += sizeof(uint64);
+			break;
+		
+		case IndirectArgType::Arg_VBV:
+			ArgDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
+			ArgDesc.VertexBuffer.Slot = 0;
+			ByteStride += (sizeof(uint64) + sizeof(uint32) + sizeof(uint32));
+			break;
+
+		case IndirectArgType::Arg_IBV:
+			ArgDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW;
+			ByteStride += (sizeof(uint64) + sizeof(uint32) + sizeof(uint32));
+			break;
+		case IndirectArgType::Arg_Draw_Indexed:
+			ArgDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+			ByteStride += (sizeof(uint32) + sizeof(uint32) * 5);
+			break;
+		default:
+			X_Assert(false);
+			break;
+		}
+		ArgumentDescs.push_back(ArgDesc);
+	}
+
+	ByteStride = AlignArbitrary(ByteStride, sizeof(uint64));
+
+	D3D12_COMMAND_SIGNATURE_DESC CommandSignatureDesc = {};
+	CommandSignatureDesc.pArgumentDescs = ArgumentDescs.data();
+	CommandSignatureDesc.NumArgumentDescs = ArgumentDescs.size();
+	CommandSignatureDesc.ByteStride = ByteStride;
+
+	XPipelineRegisterBoundCount RegisterBoundCount;
+	memset(&RegisterBoundCount, 0, sizeof(XPipelineRegisterBoundCount));
+
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].UnorderedAccessCount
+		= static_cast<XD3D12VertexShader*>(VertexShader)->ResourceCount.NumUAV;
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].ShaderResourceCount
+		= static_cast<XD3D12VertexShader*>(VertexShader)->ResourceCount.NumSRV;
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Vertex].ConstantBufferCount
+		= static_cast<XD3D12VertexShader*>(VertexShader)->ResourceCount.NumCBV;
+
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].UnorderedAccessCount
+		= static_cast<XD3D12PixelShader*>(PixelShader)->ResourceCount.NumUAV;
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].ShaderResourceCount
+		= static_cast<XD3D12PixelShader*>(PixelShader)->ResourceCount.NumSRV;
+	RegisterBoundCount.register_count[(int)EShaderType::SV_Pixel].ConstantBufferCount
+		= static_cast<XD3D12PixelShader*>(PixelShader)->ResourceCount.NumCBV;
+
+	std::size_t BoundHash = std::hash<std::string>{}(std::string((char*)&RegisterBoundCount, sizeof(XPipelineRegisterBoundCount)));
+
+	auto RootIter = AbsDevice->GetRootSigMap().find(BoundHash);
+	if (RootIter == AbsDevice->GetRootSigMap().end())
+	{
+		std::shared_ptr<XD3D12RootSignature>RootSigPtr = std::make_shared<XD3D12RootSignature>();
+		RootSigPtr->Create(PhyDevice, RegisterBoundCount);
+		AbsDevice->GetRootSigMap()[BoundHash] = RootSigPtr;
+	}
+
+	ID3D12RootSignature*  RootSigPtr=AbsDevice->GetRootSigMap()[BoundHash]->GetDXRootSignature();
+	ThrowIfFailed(PhyDevice->GetDXDevice()->CreateCommandSignature(&CommandSignatureDesc, RootSigPtr, IID_PPV_ARGS(&RetRes->DxCommandSignature)));
+	return std::shared_ptr<XRHICommandSignature>(RetRes);
+}
+
 static void GetPSODescAndHash(
 	const XGraphicsPSOInitializer& PSOInit, 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc,

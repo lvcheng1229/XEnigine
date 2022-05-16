@@ -136,6 +136,10 @@ XToneMappingPassPS::ShaderInfos XToneMappingPassPS::StaticShaderInfos(
 	XToneMappingPassPS::ModifyShaderCompileSettings);
 
 
+class XLightPassVS :public XGloablShader
+{
+
+};
 
 
 //XLightPass
@@ -1170,10 +1174,6 @@ private:
 	XLocalVertexFactory LocalVertexFactory;
 
 	std::vector<std::shared_ptr<GGeomertry>>RenderGeos;
-
-	//std::shared_ptr<GGeomertry>TestQuadPtr;
-
-	std::shared_ptr<RMaterial> SphereMaterial;
 private:
 	uint64 FrameNum = 0;
 	float Far = 1000.0f;
@@ -1650,8 +1650,19 @@ void CrateApp::VirtualShadow()
 }
 void CrateApp::TestExecute()
 {
-	
-	
+	//std::vector<XRHIIndirectArg>IndirectArgs;
+	//IndirectArgs.resize(5);
+	//IndirectArgs[0].type = IndirectArgType::Arg_CBV;
+	//IndirectArgs[0].CBV.RootParameterIndex = 0;
+	//
+	//IndirectArgs[1].type = IndirectArgType::Arg_CBV;
+	//IndirectArgs[1].CBV.RootParameterIndex = 1;
+	//
+	//IndirectArgs[2].type = IndirectArgType::Arg_VBV;
+	//IndirectArgs[3].type = IndirectArgType::Arg_IBV;
+	//IndirectArgs[4].type = IndirectArgType::Arg_Draw_Indexed;
+
+
 	//----------------------------------------------
 	D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[5] = {};
 	argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
@@ -1772,10 +1783,6 @@ void CrateApp::TestExecute()
 	CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(CmdBufferCulled.get(), true, true, CounterOffset);
 	
 	CullingParametersIns.commandCount = commands.size();
-	//float SizeFloat = commands.size();
-	//cbCullingParameters->UpdateData(&SizeFloat, sizeof(float), sizeof(XPlane) * (int)ECameraPlane::CP_MAX);
-	//
-	
 }
 
 void CrateApp::Renderer(const GameTimer& gt)
@@ -1845,15 +1852,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 				0,
 				mCulledCommandBuffer.Get(),
 				CounterOffset);
-		}
-
-		{
-			D3D12_RESOURCE_BARRIER barriers[1] = {
-			CD3DX12_RESOURCE_BARRIER::Transition(
-			mCulledCommandBuffer.Get(),
-			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-			D3D12_RESOURCE_STATE_COMMON) };
-			mCommandList->ResourceBarrier(_countof(barriers), barriers);
 		}
 
 		mCommandList->EndEvent();
@@ -1967,14 +1965,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 				ShadowCounterOffset);
 		}
 
-		{
-			D3D12_RESOURCE_BARRIER barriers[1] = {
-			CD3DX12_RESOURCE_BARRIER::Transition(
-			D3DShadowCulledCommandBuffer.Get(),
-			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-			D3D12_RESOURCE_STATE_COMMON) };
-			mCommandList->ResourceBarrier(_countof(barriers), barriers);
-		}
 		mCommandList->EndEvent();
 	}
 
@@ -2062,43 +2052,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	pass_state_manager->ResetState();
 
-	//Pass3 ShadowPass
-	{
-		mCommandList->BeginEvent(1, "ShadowPass", sizeof("ShadowPass"));
-		mCommandList->SetPipelineState(ShadowPSO.Get());
-		pass_state_manager->SetRootSignature(&ShadowPassRootSig);
-		pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["ShadowPassVS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Pixel>(&mShaders["ShadowPassPS"]);
-		pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
-	
-		direct_ctx->RHISetRenderTargets(0, nullptr,
-			static_cast<XD3D12Texture2D*>(ShadowTexture0.get())->GeDepthStencilView());
-		direct_ctx->RHIClearMRT(false, true, nullptr, 0.0f, 0);
-		
-		direct_ctx->RHISetViewport(0, 0, 0, 1024, 1024, 1.0f);
-
-		for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
-		{
-			auto& ri = mOpaqueRitems[i];
-			direct_ctx->RHISetShaderConstantBuffer(
-				EShaderType::SV_Vertex, 0,
-				mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
-
-			direct_ctx->RHISetShaderConstantBuffer(
-				EShaderType::SV_Vertex, 1,
-				ShadowPassConstantBuffer.get());
-
-			mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr((ri->Geo->VertexBufferView())));
-			mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
-			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-			mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
-		}
-		
-		mCommandList->EndEvent();
-	}
-
-
-
 	//Pass4 GBufferPass BasePass
 	{
 		XRHITexture* RTTextures[4];
@@ -2109,68 +2062,17 @@ void CrateApp::Renderer(const GameTimer& gt)
 		XRHIRenderPassInfo RTInfos(4, RTTextures, ERenderTargetLoadAction::EClear, TextureDepthStencil.get(), EDepthStencilLoadAction::ELoad);
 		RHICmdList.RHIBeginRenderPass(RTInfos, L"GBufferPass");
 		RHICmdList.CacheActiveRenderTargets(RTInfos);
-		
-		
-		{
-			XGraphicsPSOInitializer_WithoutRT PassState;
-			{
-				//PassShaders
-				XRHIBoundShaderStateInput_WithoutRT PassShaders;
-				{
-					//GetBasePassShaders
-					XMaterialShaderInfo_Set ShaderInfos;
-					XMaterialShader_Set XShaders;
-
-					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
-					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = &TBasePassVS<false>::StaticShaderInfos;
-					ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
-
-
-					SphereMaterial->GetShaderInfos(ShaderInfos, XShaders);
-
-					TShaderReference<TBasePassVS<false>> BaseVertexShader = TShaderReference<TBasePassVS<false>>(
-						static_cast<TBasePassVS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Vertex]), XShaders.ShaderMap);
-
-					TShaderReference<TBasePassPS<false>> BasePixelShader = TShaderReference<TBasePassPS<false>>(
-						static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]), XShaders.ShaderMap);
-
-
-					std::shared_ptr<XRHIVertexLayout> RefVertexLayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default);
-					PassShaders.RHIVertexLayout = RefVertexLayout.get();
-
-					PassShaders.MappingRHIVertexShader = BaseVertexShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
-					PassShaders.IndexRHIVertexShader = BaseVertexShader->GetRHIShaderIndex();
-
-					PassShaders.MappingRHIPixelShader = BasePixelShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
-					PassShaders.IndexRHIPixelShader = BasePixelShader->GetRHIShaderIndex();
-				}
-				PassState.BoundShaderState = PassShaders;
-				PassState.BlendState = TStaticBlendState<>::GetRHI();
-				PassState.DepthStencilState = TStaticDepthStencilState<true, ECompareFunction::CF_GreaterEqual>::GetRHI();
-			}
-
-			//SubmitDraw
-			{
-				XGraphicsPSOInitializer PSOInitializer = PassState.TransToGraphicsPSOInitializer();
-				RHICmdList.ApplyCachedRenderTargets(PSOInitializer);
-
-				SetGraphicsPipelineStateFromPSOInit(RHICmdList, PSOInitializer);
-			}
-		}
 
 		for (int i = 0; i < RenderGeos.size(); i++)
 		{
 			std::shared_ptr<GGeomertry>& GeoInsPtr = RenderGeos[i];
 			std::shared_ptr<GMaterialInstance>& MaterialInstancePtr = GeoInsPtr->GetMaterialInstance();
-		
 
 			{
 				XGraphicsPSOInitializer_WithoutRT PassState;
 				{
-					//PassShaders
 					XRHIBoundShaderStateInput_WithoutRT PassShaders;
 					{
-						//GetBasePassShaders
 						XMaterialShaderInfo_Set ShaderInfos;
 						XMaterialShader_Set XShaders;
 
@@ -2186,6 +2088,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 						TShaderReference<TBasePassPS<false>> BasePixelShader = TShaderReference<TBasePassPS<false>>(
 							static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]), XShaders.ShaderMap);
 
+						//SetParameter
 						{
 							BaseVertexShader->SetParameter(RHICmdList, RViewInfo.ViewConstantBuffer.get(), GeoInsPtr->GetPerObjectVertexCBuffer().get());
 							BasePixelShader->SetParameter(RHICmdList, MaterialInstancePtr);
@@ -2205,7 +2108,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 					PassState.DepthStencilState = TStaticDepthStencilState<true, ECompareFunction::CF_GreaterEqual>::GetRHI();
 				}
 
-				//SubmitDraw
 				{
 					XGraphicsPSOInitializer PSOInitializer = PassState.TransToGraphicsPSOInitializer();
 					RHICmdList.ApplyCachedRenderTargets(PSOInitializer);
@@ -2213,115 +2115,10 @@ void CrateApp::Renderer(const GameTimer& gt)
 					SetGraphicsPipelineStateFromPSOInit(RHICmdList, PSOInitializer);
 				}
 			}
-
-			//direct_ctx->RHISetShaderConstantBuffer(EShaderType::SV_Vertex, 0,GeoInsPtr->GetPerObjectVertexCBuffer().get());
-			//direct_ctx->RHISetShaderConstantBuffer(EShaderType::SV_Vertex, 1,RViewInfo.ViewConstantBuffer.get());
-			//
-			//RHICmdList.SetConstantBuffer(EShaderType::SV_Pixel, 0, MaterialInstancePtr->GetRHIConstantBuffer().get());
-			//
-			//for (auto iter = MaterialInstancePtr->MaterialTextureArray.begin(); iter != MaterialInstancePtr->MaterialTextureArray.end(); iter++)
-			//{
-			//	RHICmdList.SetShaderTexture(EShaderType::SV_Pixel, iter->ResourceIndex, iter->TexturePtr->GetRHITexture2D().get());
-			//}
 		
 			RHICmdList.SetVertexBuffer(GeoInsPtr->GetGVertexBuffer()->GetRHIVertexBuffer().get(), 0, 0);
-			RHICmdList.RHIDrawIndexedPrimitive(
-				GeoInsPtr->GetGIndexBuffer()->GetRHIIndexBuffer().get(), 
-				GeoInsPtr->GetIndexCount(),
-				1, 0, 0, 0);
+			RHICmdList.RHIDrawIndexedPrimitive(GeoInsPtr->GetGIndexBuffer()->GetRHIIndexBuffer().get(), GeoInsPtr->GetIndexCount(), 1, 0, 0, 0);
 		}
-
-		//for (size_t i = 0; i < mOpaqueRitems.size(); ++i)
-		//{
-		//	auto& ri = mOpaqueRitems[i];
-		//
-		//	direct_ctx->RHISetShaderConstantBuffer(
-		//		EShaderType::SV_Vertex, 0,
-		//		mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
-		//
-		//	direct_ctx->RHISetShaderConstantBuffer(
-		//		EShaderType::SV_Vertex, 1,
-		//		RViewInfo.ViewConstantBuffer.get());
-		//
-		//
-		//	direct_ctx->RHISetShaderTexture(EShaderType::SV_Pixel, 0,
-		//		ri->Mat->TextureBaseColor.get());
-		//	direct_ctx->RHISetShaderTexture(EShaderType::SV_Pixel, 1,
-		//		ri->Mat->TextureNormal.get());
-		//	direct_ctx->RHISetShaderTexture(EShaderType::SV_Pixel, 2,
-		//		ri->Mat->TextureRoughness.get());
-		//
-		//	direct_ctx->RHISetShaderConstantBuffer(
-		//		EShaderType::SV_Pixel,
-		//		0,
-		//		mFrameResource.get()->MaterialConstantBuffer[ri->Mat->MatCBIndex].get());
-		//
-		//
-		//	mCommandList.Get()->IASetVertexBuffers(0, 1, GetRValuePtr(ri->Geo->VertexBufferView()));
-		//	mCommandList.Get()->IASetIndexBuffer(GetRValuePtr(ri->Geo->IndexBufferView()));
-		//	pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-		//
-		//	mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
-		//}
-
-		//{
-		//	XGraphicsPSOInitializer_WithoutRT PassState;
-		//	{
-		//		//PassShaders
-		//		XRHIBoundShaderStateInput_WithoutRT PassShaders;
-		//		{
-		//			//GetBasePassShaders
-		//			XMaterialShaderInfo_Set ShaderInfos;
-		//			XMaterialShader_Set XShaders;
-		//
-		//			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
-		//			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = &TBasePassVS<false>::StaticShaderInfos;
-		//			ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
-		//
-		//
-		//			SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
-		//
-		//			TShaderReference<TBasePassVS<false>> BaseVertexShader = TShaderReference<TBasePassVS<false>>(
-		//				static_cast<TBasePassVS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Vertex]), XShaders.ShaderMap);
-		//
-		//			TShaderReference<TBasePassPS<false>> BasePixelShader = TShaderReference<TBasePassPS<false>>(
-		//				static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]), XShaders.ShaderMap);
-		//
-		//			BaseVertexShader->SetParameter(RHICmdList, RViewInfo.ViewConstantBuffer.get(), TestQuadPtr->GetPerObjectVertexCBuffer().get());
-		//			BasePixelShader->SetParameter(RHICmdList, TestQuadPtr->GetMaterialInstance());
-		//
-		//			std::shared_ptr<XRHIVertexLayout> RefVertexLayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default);
-		//			PassShaders.RHIVertexLayout = RefVertexLayout.get();
-		//
-		//			PassShaders.MappingRHIVertexShader = BaseVertexShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
-		//			PassShaders.IndexRHIVertexShader = BaseVertexShader->GetRHIShaderIndex();
-		//
-		//			PassShaders.MappingRHIPixelShader = BasePixelShader.GetShaderMappingFileUnit()->GetRefShaderMapStoreRHIShaders();
-		//			PassShaders.IndexRHIPixelShader = BasePixelShader->GetRHIShaderIndex();
-		//
-		//
-		//		}
-		//		PassState.BoundShaderState = PassShaders;
-		//		PassState.BlendState = TStaticBlendState<>::GetRHI();
-		//		PassState.DepthStencilState = TStaticDepthStencilState<true, ECompareFunction::CF_GreaterEqual>::GetRHI();
-		//	}
-		//
-		//	//SubmitDraw
-		//	{
-		//		XGraphicsPSOInitializer PSOInitializer = PassState.TransToGraphicsPSOInitializer();
-		//		RHICmdList.ApplyCachedRenderTargets(PSOInitializer);
-		//
-		//		SetGraphicsPipelineStateFromPSOInit(RHICmdList, PSOInitializer);
-		//	}
-		//
-		//
-		//	//direct_ctx->RHISetShaderConstantBuffer(
-		//	//	EShaderType::SV_Vertex, 1,
-		//	//	RViewInfo.ViewConstantBuffer.get());
-		//
-		//	RHICmdList.SetVertexBuffer(TestQuadPtr->GetRHIVertexBuffer().get(), 0, 0);
-		//	RHICmdList.RHIDrawIndexedPrimitive(TestQuadPtr->GetRHIIndexBuffer().get(), 6, 1, 0, 0, 0);
-		//}
 
 		pass_state_manager->ResetState();
 		mCommandList->EndEvent();
@@ -2413,73 +2210,77 @@ void CrateApp::Renderer(const GameTimer& gt)
 		mCommandList->EndEvent();
 	}
 
-	//Pass7 SSRPass
+	if (false)
 	{
-		XRHITexture* SSRRTs = SSROutput.get();
-		XRHIRenderPassInfo RPInfos(1, &SSRRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
-		RHICmdList.RHIBeginRenderPass(RPInfos, L"SSRPassPS");
-		RHICmdList.CacheActiveRenderTargets(RPInfos);
+		//Pass7 SSRPass
+		{
+			XRHITexture* SSRRTs = SSROutput.get();
+			XRHIRenderPassInfo RPInfos(1, &SSRRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
+			RHICmdList.RHIBeginRenderPass(RPInfos, L"SSRPassPS");
+			RHICmdList.CacheActiveRenderTargets(RPInfos);
 
-		XGraphicsPSOInitializer GraphicsPSOInit;
-		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
-		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+			XGraphicsPSOInitializer GraphicsPSOInit;
+			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
+			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
 
-		TShaderReference<RFullScreenQuadVS> SSRVertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XSSRPassPS> SSRPixelShader = GetGlobalShaderMapping()->GetShader<XSSRPassPS>();
-		GraphicsPSOInit.BoundShaderState.RHIVertexShader = SSRVertexShader.GetVertexShader();
-		GraphicsPSOInit.BoundShaderState.RHIPixelShader = SSRPixelShader.GetPixelShader();
-		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
+			TShaderReference<RFullScreenQuadVS> SSRVertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+			TShaderReference<XSSRPassPS> SSRPixelShader = GetGlobalShaderMapping()->GetShader<XSSRPassPS>();
+			GraphicsPSOInit.BoundShaderState.RHIVertexShader = SSRVertexShader.GetVertexShader();
+			GraphicsPSOInit.BoundShaderState.RHIPixelShader = SSRPixelShader.GetPixelShader();
+			GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
 
-		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-		SSRPixelShader->SetParameter(RHICmdList,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
-			RViewInfo.ViewConstantBuffer.get(),
-			TextureSceneColorDeffered.get(),
-			TextureGBufferA.get(),
-			TextureGBufferB.get(),
-			TextureGBufferC.get(),
-			TextureGBufferD.get(),
-			TextureDepthStencil.get(),
-			FurthestHZBOutput0.get());
+			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+			SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
+			SSRPixelShader->SetParameter(RHICmdList,
+				XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+				RViewInfo.ViewConstantBuffer.get(),
+				TextureSceneColorDeffered.get(),
+				TextureGBufferA.get(),
+				TextureGBufferB.get(),
+				TextureGBufferC.get(),
+				TextureGBufferD.get(),
+				TextureDepthStencil.get(),
+				FurthestHZBOutput0.get());
 
-		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
-		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
+			RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+			RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 
-		mCommandList->EndEvent();
+			mCommandList->EndEvent();
 
+		}
+
+
+
+		//Pass8 ReflectionEnvironment Pass
+		{
+			XRHITexture* TextureSceneColor = TextureSceneColorDeffered.get();
+			XRHIRenderPassInfo RPInfos(1, &TextureSceneColor, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
+			RHICmdList.RHIBeginRenderPass(RPInfos, L"ReflectionEnvironmentPass");
+			RHICmdList.CacheActiveRenderTargets(RPInfos);
+
+			XGraphicsPSOInitializer GraphicsPSOInit;
+			GraphicsPSOInit.BlendState = TStaticBlendState<true, EBlendOperation::BO_Add, EBlendFactor::BF_One, EBlendFactor::BF_One>::GetRHI();
+			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+
+			TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+			TShaderReference<XReflectionEnvironmentPS> PixelShader = GetGlobalShaderMapping()->GetShader<XReflectionEnvironmentPS>();
+			GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
+			GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
+			GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
+
+			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+			SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
+			PixelShader->SetParameter(RHICmdList,
+				SSROutput.get()
+			);
+
+			RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+			RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
+
+			mCommandList->EndEvent();
+		}
 	}
-
-
-
-	//Pass8 ReflectionEnvironment Pass
-	{
-		XRHITexture* TextureSceneColor = TextureSceneColorDeffered.get();
-		XRHIRenderPassInfo RPInfos(1, &TextureSceneColor, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
-		RHICmdList.RHIBeginRenderPass(RPInfos, L"ReflectionEnvironmentPass");
-		RHICmdList.CacheActiveRenderTargets(RPInfos);
-
-		XGraphicsPSOInitializer GraphicsPSOInit;
-		GraphicsPSOInit.BlendState = TStaticBlendState<true, EBlendOperation::BO_Add, EBlendFactor::BF_One, EBlendFactor::BF_One>::GetRHI();
-		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-
-		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XReflectionEnvironmentPS> PixelShader = GetGlobalShaderMapping()->GetShader<XReflectionEnvironmentPS>();
-		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
-		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
-		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
-
-		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-		PixelShader->SetParameter(RHICmdList,
-			SSROutput.get()
-		);
-
-		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
-		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
-
-		mCommandList->EndEvent();
-	}
+	
 
 	//Pass8 SkyAtmosphere Combine Pass
 	{
@@ -2516,7 +2317,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 
 		mCommandList->EndEvent();
-
 	}
 
 	//ToneMapping
@@ -2547,17 +2347,13 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	XRHITexture* CurrentPingPongTextureSceneColorTarget = TextureSceneColorDefferedPingPong.get();
 	{
-
-		//ImGUI Begin
 		EditorUI.ImGui_Impl_RHI_NewFrame(&RHICmdList);
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		bool show_demo_window = true;
 		EditorUI.OnTick();
 		ImGui::Render();
 		EditorUI.ImGui_Impl_RHI_RenderDrawData(ImGui::GetDrawData(), &RHICmdList, CurrentPingPongTextureSceneColorTarget);
-		//ImGUI End
 	}
 
 	//Pass9 FinalPass
@@ -2988,98 +2784,25 @@ void CrateApp::LoadTextures()
 	RenderGeos.push_back(SphereInsRight);
 	RenderGeos.push_back(DefaultQuad);
 
-	SphereMaterial = DefaultSphere->GetMaterialInstance()->MaterialPtr->RMaterialPtr;
 	MainInit::TempInit2();
+	
 
-	{
-		int w, h, n;
-		unsigned char* BaseColorData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Metal_Gold_D.TGA", &w, &h, &n, 0);
-		if (n == 3) { X_Assert(false); }
+	//{
+	//	std::wstring FileName = XPath::ProjectResourceSavedDir() + L"/T_Rock_Sandstone_D.xtexture";
+	//	//std::shared_ptr<XArchiveBase>ArchiveWriterTex = XFileManagerGeneric::CreateFileWriter(FileName.c_str());
+	//	//std::shared_ptr<XArchiveBase>ArchiveReaderTex = XFileManagerGeneric::CreateFileReader(FileName.c_str());
+	//
+	//	std::shared_ptr<GTexture2D>TextureWoodTexture = CreateTextureFromImageFile(
+	//		"E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA", true);
+	//	//TextureWoodTexture.LoadTextureFromImage("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA");
+	//	//TextureWoodTexture->ArchiveImpl(*ArchiveReaderTex);
+	//	TextureWoodTexture->CreateRHITexture();
+	//	//ArchiveReaderTex->Close();
+	//
+	//	TextureWoodBaseColor = TextureWoodTexture->GetRHITexture2D();
+	//}
 
-		TextureMetalBaseColor = RHICreateTexture2D(w, h, 1, false, false,
-			EPixelFormat::FT_R8G8B8A8_UNORM_SRGB
-			, ETextureCreateFlags(TexCreate_SRGB), 1
-			, BaseColorData);
-		stbi_image_free(BaseColorData);
-	}
 
-	{
-		int w_n, h_n, n_n;
-		unsigned char* NormalMapData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Metal_Gold_N.TGA", &w_n, &h_n, &n_n, 0);
-		int NormalTexSize = w_n * h_n * 4;
-		unsigned char* FourChannelData = new unsigned char[NormalTexSize];
-		X_Assert(n_n == 3);
-		for (uint32 i = 0, k = 0; i < NormalTexSize; i += 4, k += 3)
-		{
-			FourChannelData[i + 0] = NormalMapData[k + 0];
-			FourChannelData[i + 1] = NormalMapData[k + 1];
-			FourChannelData[i + 2] = NormalMapData[k + 2];
-			FourChannelData[i + 3] = 0b11111111;
-		}
-		TextureMetalNormal = RHICreateTexture2D(w_n, h_n, 1, false, false,
-			EPixelFormat::FT_R8G8B8A8_UNORM
-			, ETextureCreateFlags(TexCreate_None), 1
-			, FourChannelData);
-		stbi_image_free(NormalMapData);
-		delete[] FourChannelData;
-	}
-
-	{
-		int w_r, h_r, n_r;
-		unsigned char* RoughnessMapData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_MacroVariation.TGA", &w_r, &h_r, &n_r, 0);
-		int RoughnessTexSize = w_r * h_r * 4;
-		unsigned char* FourChannelData = new unsigned char[RoughnessTexSize];
-		X_Assert(n_r == 3);
-		for (uint32 i = 0, k = 0; i < RoughnessTexSize; i += 4, k += 3)
-		{
-			FourChannelData[i + 0] = RoughnessMapData[k + 0];
-			FourChannelData[i + 1] = RoughnessMapData[k + 1];
-			FourChannelData[i + 2] = RoughnessMapData[k + 2];
-			FourChannelData[i + 3] = 0b11111111;
-		}
-		TextureRoughness = RHICreateTexture2D(w_r, h_r, 1, false, false,
-			EPixelFormat::FT_R8G8B8A8_UNORM
-			, ETextureCreateFlags(TexCreate_None), 1
-			, FourChannelData);
-		stbi_image_free(RoughnessMapData);
-		delete[] FourChannelData;
-	}
-
-	{
-		std::wstring FileName = XPath::ProjectResourceSavedDir() + L"/T_Rock_Sandstone_D.xtexture";
-		//std::shared_ptr<XArchiveBase>ArchiveWriterTex = XFileManagerGeneric::CreateFileWriter(FileName.c_str());
-		//std::shared_ptr<XArchiveBase>ArchiveReaderTex = XFileManagerGeneric::CreateFileReader(FileName.c_str());
-
-		std::shared_ptr<GTexture2D>TextureWoodTexture = CreateTextureFromImageFile(
-			"E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA", true);
-		//TextureWoodTexture.LoadTextureFromImage("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_D.TGA");
-		//TextureWoodTexture->ArchiveImpl(*ArchiveReaderTex);
-		TextureWoodTexture->CreateRHITexture();
-		//ArchiveReaderTex->Close();
-
-		TextureWoodBaseColor = TextureWoodTexture->GetRHITexture2D();
-	}
-
-	{
-		int w_n, h_n, n_n;
-		unsigned char* NormalMapData = stbi_load("E:/XEngine/XEnigine/Source/Shaders/T_Rock_Sandstone_N.TGA", &w_n, &h_n, &n_n, 0);
-		int NormalTexSize = w_n * h_n * 4;
-		unsigned char* FourChannelData = new unsigned char[NormalTexSize];
-		X_Assert(n_n == 3);
-		for (uint32 i = 0, k = 0; i < NormalTexSize; i += 4, k += 3)
-		{
-			FourChannelData[i + 0] = NormalMapData[k + 0];
-			FourChannelData[i + 1] = NormalMapData[k + 1];
-			FourChannelData[i + 2] = NormalMapData[k + 2];
-			FourChannelData[i + 3] = 0b11111111;
-		}
-		TextureWoodNormal = RHICreateTexture2D(w_n, h_n, 1, false, false,
-			EPixelFormat::FT_R8G8B8A8_UNORM
-			, ETextureCreateFlags(TexCreate_None), 1
-			, FourChannelData);
-		stbi_image_free(NormalMapData);
-		delete[] FourChannelData;
-	}
 
 
 	{

@@ -33,6 +33,8 @@ public:
 	inline XD3D12DescArrayManager*	GetShaderResourceDescArrayManager()		{ return &CBV_SRV_UAVDescArrayManager; }
 
 	inline std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>& GetRootSigMap() { return RootSignatureMap; }
+	inline std::unordered_map<std::size_t, std::shared_ptr<XD3DCommandRootSignature>>& 
+		GetCmdRootSigMap() { return CmdRootSignatureMap; }
 
 	XD3D12CommandQueue* GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE cmd_type);
 
@@ -67,6 +69,7 @@ private:
 	std::vector<XD3D12Resource>ResourceManagerTempVec;
 
 	std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>RootSignatureMap;
+	std::unordered_map<std::size_t, std::shared_ptr<XD3DCommandRootSignature>>CmdRootSignatureMap;
 
 	XD3D12PhysicDevice* PhysicalDevice;
 

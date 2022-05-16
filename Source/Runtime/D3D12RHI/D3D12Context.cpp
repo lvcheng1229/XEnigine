@@ -189,6 +189,30 @@ void XD3DDirectContex::SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32
 	PassStateManager.SetVertexBuffer(RHIVertexBuffer, VertexBufferSlot, OffsetFormVBBegin);
 }
 
+void XD3DDirectContex::RHIExecuteIndirect(XRHICommandSignature* RHICmdSig, uint32 CmdCount, XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset, XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset)
+{
+	if (VSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Vertex, VSGlobalConstantBuffer->BindSlotIndex, VSGlobalConstantBuffer.get());
+		VSGlobalConstantBuffer->ResetState();
+	}
+	if (PSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Pixel, PSGlobalConstantBuffer->BindSlotIndex, PSGlobalConstantBuffer.get());
+		PSGlobalConstantBuffer->ResetState();
+	}
+	if (CSGlobalConstantBuffer->HasValueBind)
+	{
+		this->RHISetShaderConstantBuffer(EShaderType::SV_Compute, CSGlobalConstantBuffer->BindSlotIndex, CSGlobalConstantBuffer.get());
+		CSGlobalConstantBuffer->ResetState();
+	}
+	PassStateManager.ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
+
+	ID3D12CommandSignature* CmdSig = static_cast<XD3DCommandRootSignature*>(RHICmdSig)->DxCommandSignature.Get();
+	ID3D12Resource* ArgRes=static_cast<XD3D12StructBuffer*>(ArgumentBuffer)->ResourcePtr.GetBackResource()->GetResource();
+	ID3D12Resource* CounterRes=static_cast<XD3D12StructBuffer*>(CountBuffer)->ResourcePtr.GetBackResource()->GetResource();
+	cmd_dirrect_list.GetDXCmdList()->ExecuteIndirect(CmdSig, CmdCount, ArgRes, ArgumentBufferOffset, CounterRes, CountBufferOffset);
+}
 void XD3DDirectContex::RHIDrawIndexedPrimitive(
 	XRHIIndexBuffer* IndexBuffer,
 	uint32 IndexCountPerInstance,

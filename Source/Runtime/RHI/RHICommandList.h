@@ -116,6 +116,14 @@ public:
 		GetContext()->RHIBeginRenderPass(InInfo, InName);
 	}
 
+	inline void RHIExecuteIndirect(
+		XRHICommandSignature* RHICmdSig,uint32 CmdCount,
+		XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset,
+		XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset)
+	{
+		GetContext()->RHIExecuteIndirect(RHICmdSig, CmdCount, ArgumentBuffer, ArgumentBufferOffset, CountBuffer, CountBufferOffset);
+	}
+
 	inline void RHIDrawIndexedPrimitive(
 		XRHIIndexBuffer* IndexBuffer,
 		uint32 IndexCountPerInstance,
@@ -166,6 +174,17 @@ public:
 //TODO
 
 
+inline void* RHIGetCommandDataPtr(std::vector<XRHICommandData>& RHICmdData,uint32& OutCmdDataSize)
+{
+	return GPlatformRHI->RHIGetCommandDataPtr(RHICmdData, OutCmdDataSize);
+}
+
+inline std::shared_ptr<XRHICommandSignature> RHICreateCommandSignature(
+	XRHIIndirectArg* RHIIndirectArg,uint32 ArgCount,XRHIVertexShader* VertexShader,XRHIPixelShader* PixelShader)
+{
+	return GPlatformRHI->RHICreateCommandSignature(RHIIndirectArg, ArgCount, VertexShader, PixelShader);
+}
+
 inline void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)
 {
 	return GPlatformRHI->LockVertexBuffer(VertexBuffer, Offset, SizeRHI);
@@ -211,13 +230,6 @@ inline void RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer,uint32
 {
 	GPlatformRHI->RHIResetStructBufferCounter(RHIStructBuffer, CounterOffset);
 }
-
-//inline void RHIClearTextureRegion(XRHIUnorderedAcessView* UAV, 
-//	uint32 DstX,uint32 DstY, uint32 DstZ,
-//	uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ)
-//{
-//	GPlatformRHI->RHIClearTextureRegion(UAV, DstX, DstY, DstZ, OffsetX, OffsetY, OffsetZ);
-//}
 
 inline void RHICopyTextureRegion(XRHITexture* RHITextureDst, XRHITexture* RHITextureSrc, uint32 DstX, uint32 DstY, uint32 DstZ, uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ)
 {

@@ -36,6 +36,10 @@ public:
 	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override;
 	
 	//DrawCall/DisPatch
+	void RHIExecuteIndirect(
+		XRHICommandSignature* RHICmdSig, uint32 CmdCount,
+		XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset,
+		XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset)override;
 	void RHIDrawIndexedPrimitive() final override;
 	void RHIDrawIndexedPrimitive(
 		XRHIIndexBuffer* IndexBuffer,

@@ -16,6 +16,10 @@ public:
 	virtual void SetShaderValue(EShaderType ShaderType, uint32 BufferIndex, uint32 VariableOffsetInBuffer, uint32 NumBytes, const void* NewValue) = 0;
 
 	//DrawCall/DisPatch
+	virtual void RHIExecuteIndirect(
+		XRHICommandSignature* RHICmdSig, uint32 CmdCount,
+		XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset,
+		XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset) = 0;
 	virtual void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) = 0;
 	virtual void RHIDrawIndexedPrimitive() = 0;
 	virtual void RHIDrawIndexedPrimitive(

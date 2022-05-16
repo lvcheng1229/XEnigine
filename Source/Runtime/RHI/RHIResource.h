@@ -6,6 +6,38 @@
 #include "Runtime/HAL/PlatformTypes.h"
 #include "Runtime/Core/PixelFormat.h"
 
+enum class IndirectArgType
+{
+	Arg_CBV,
+	Arg_VBV,
+	Arg_IBV,
+	Arg_Draw_Indexed,
+};
+
+struct XRHIIndirectArg
+{
+	IndirectArgType type;
+	union
+	{
+		struct
+		{
+			uint32 Slot;
+		}VertexBuffer;
+
+		struct
+		{
+			uint32 RootParameterIndex;
+		}CBV;
+	};
+};
+
+class XRHICommandSignature
+{
+public:
+};
+
+
+
 class XRHIVertexBuffer
 {
 public:
@@ -118,6 +150,19 @@ public:
 	virtual void UpdateData(const void* data, uint32 size, uint32 offset_byte) = 0;
 };
 
+struct XRHICommandData
+{
+	std::vector<XRHIConstantBuffer*>CBVs;
+	XRHIVertexBuffer* VB;
+	XRHIIndexBuffer* IB;
+
+	uint32 IndexCountPerInstance;
+	uint32 InstanceCount;
+	uint32 StartIndexLocation;
+	int32  BaseVertexLocation;
+	uint32 StartInstanceLocation;
+};
+
 
 class XRHIBlendState {};
 class XRHIDepthStencilState {};
@@ -206,6 +251,7 @@ public:
 		bClearDepth(false),
 		bClearStencil(false) {}
 };
+
 struct XRHIRenderPassInfo
 {
 	struct XColorTarget

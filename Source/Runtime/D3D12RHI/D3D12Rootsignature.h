@@ -74,3 +74,4 @@ public:
 
 	inline ID3D12RootSignature* GetDXRootSignature()const { return root_signature.Get(); }
 };
+
