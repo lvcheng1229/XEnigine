@@ -6,7 +6,7 @@
 #include <windows.h>
 #include "UnitTest/d3dApp.h"
 #include "UnitTest/MathHelper.h"
-#include "UnitTest/GeometryGenerator.h"
+//#include "UnitTest/GeometryGenerator.h"
 #include "FrameResource.h"
 
 
@@ -1087,23 +1087,23 @@ XRenderSkyAtmosphereRayMarchingPS::ShaderInfos XRenderSkyAtmosphereRayMarchingPS
 
 
 
-struct RenderItem
-{
-	RenderItem() = default;
-	XMatrix World = XMatrix::Identity;
-	XMatrix TexTransform = XMatrix::Identity;
-	//XMFLOAT4X4 World = MathHelper::Identity4x4();
-	//XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
-	UINT ObjCBIndex = -1;
-
-	Material* Mat = nullptr;
-	MeshGeometry* Geo = nullptr;
-	DirectX::BoundingBox BoundingBox;
-	// DrawIndexedInstanced parameters.
-	UINT IndexCount = 0;
-	UINT StartIndexLocation = 0;
-	int BaseVertexLocation = 0;
-};
+//struct RenderItem
+//{
+//	RenderItem() = default;
+//	XMatrix World = XMatrix::Identity;
+//	XMatrix TexTransform = XMatrix::Identity;
+//	//XMFLOAT4X4 World = MathHelper::Identity4x4();
+//	//XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
+//	UINT ObjCBIndex = -1;
+//
+//	Material* Mat = nullptr;
+//	MeshGeometry* Geo = nullptr;
+//	DirectX::BoundingBox BoundingBox;
+//	// DrawIndexedInstanced parameters.
+//	UINT IndexCount = 0;
+//	UINT StartIndexLocation = 0;
+//	int BaseVertexLocation = 0;
+//};
 
 struct BoundSphere
 {
@@ -1134,18 +1134,13 @@ private:
 
 	void OnKeyboardInput(const GameTimer& gt);
 	void UpdateCamera(const GameTimer& gt);
-	void UpdateShadowTransform(const GameTimer& gt);
-	void AnimateMaterials(const GameTimer& gt);
-	void UpdateObjectCBs(const GameTimer& gt);
-	void UpdateMaterialCBs(const GameTimer& gt);
 	void UpdateMainPassCB(const GameTimer& gt);
 
 	void LoadTextures();
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
-	void BuildShapeGeometry();
 	void BuildPSOs();
-	void BuildMaterials();
+	//void BuildMaterials();
 
 	void TestExecute();
 	void VirtualShadow();
@@ -1261,15 +1256,12 @@ private://Shadow Pass
 
 	std::shared_ptr<XRHIStructBuffer>ShadowCmdBufferNoCulling;
 	std::shared_ptr<XRHIStructBuffer>ShadowCmdBufferCulled;
-	//ComPtr<ID3D12Resource> D3DCommandBuffer;
 	uint64 ShadowCmdBufferOffset;
 	uint32 ShadowCounterOffset;
-	//ComPtr<ID3D12Resource> D3DShadowCulledCommandBuffer;
 
 	std::shared_ptr<XRHIShaderResourceView>ShadowNoCullCmdBufferSRV;
 	std::shared_ptr<XRHIUnorderedAcessView> ShadowCulledCmdBufferUAV;
 
-	//ComPtr<ID3D12CommandSignature> m_commandShadowSignature;
 	XD3D12RootSignature VSMPassRootSig;
 
 	std::shared_ptr<XRHITexture2D>PlaceHodeltarget;
@@ -1279,9 +1271,7 @@ private://Shadow Pass
 		DirectX::XMFLOAT4X4 ViewProject = MathHelper::Identity4x4();
 	};
 
-
 	ShadowPassConstants ShadowPassConstant;
-	ComPtr<ID3D12PipelineState> ShadowPSO = nullptr;
 	XD3D12RootSignature ShadowPassRootSig;
 	std::shared_ptr<XRHITexture2D>ShadowTexture0;
 	std::shared_ptr<XRHIConstantBuffer>ShadowPassConstantBuffer;
@@ -1350,10 +1340,8 @@ private:
 
 private://Depth Only
 	XD3D12RootSignature PrePassRootSig;
-	ComPtr<ID3D12PipelineState> mDepthOnlyPSO = nullptr;
 
 private:
-	std::unique_ptr<RenderItem> LightPassItem;
 	std::shared_ptr<XRHITexture2D> SSROutput;
 
 private:
@@ -1362,19 +1350,11 @@ private:
 
 private:
 	float clear_color[4] = { 0, 0, 0, 0 };
-	std::unique_ptr<FrameResource>mFrameResource;
-	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
-	std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
 	std::unordered_map<std::string, XShader> mShaders;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mFullScreenInputLayout;
-	std::vector<D3D12_INPUT_ELEMENT_DESC> mBasePassLayout;
 
-	ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
 
-	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
-	//std::vector<RenderItem*> mOpaqueRitems;
-	//PassConstants mMainPassCB;
 	XMatrix mLightProj = XMatrix::Identity;
 	XMatrix mLightView = XMatrix::Identity;
 	POINT mLastMousePos;
@@ -1403,30 +1383,20 @@ bool CrateApp::Initialize()
 	LoadTextures();
 	BuildShadersAndInputLayout();
 	BuildRootSignature();
-	BuildShapeGeometry();
-	BuildMaterials();
 	
 
-	mFrameResource = std::make_unique<FrameResource>();
 
-	for (int i = 0; i < mMaterials.size(); i++)
-	{
-		mFrameResource.get()->MaterialConstantBuffer.push_back(RHICreateConstantBuffer(sizeof(MaterialConstants)));
-	}
 
-	for (uint32 i = 0; i < mAllRitems.size(); ++i)
-	{
-		mFrameResource.get()->ObjectConstantBuffer.push_back(abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants))));
-	}
-
-	RViewInfo.ViewConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ViewConstantBufferData)));
 	
-	ShadowPassConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants)));
-	VSMTileMaskConstantBuffer = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(VSMTileMaskStruct)));
+
+	RViewInfo.ViewConstantBuffer = abstrtact_device.CreateUniformBuffer(sizeof(ViewConstantBufferData));
+	
+	ShadowPassConstantBuffer = abstrtact_device.CreateUniformBuffer(sizeof(ShadowPassConstants));
+	VSMTileMaskConstantBuffer = abstrtact_device.CreateUniformBuffer(sizeof(VSMTileMaskStruct));
 
 	cbCullingParameters = RHICreateConstantBuffer(sizeof(cbCullingParametersStruct));
-	RHICbSkyAtmosphere = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbSkyAtmosphere)));
-	RHIcbDefferedLight = abstrtact_device.CreateUniformBuffer(d3dUtil::CalcConstantBufferByteSize(sizeof(cbDefferedLight)));
+	RHICbSkyAtmosphere = abstrtact_device.CreateUniformBuffer(sizeof(cbSkyAtmosphere));
+	RHIcbDefferedLight = abstrtact_device.CreateUniformBuffer(sizeof(cbDefferedLight));
 
 	BuildPSOs();
 	TestExecute();
@@ -1540,10 +1510,6 @@ void CrateApp::Update(const GameTimer& gt)
 {
 	OnKeyboardInput(gt);
 	UpdateCamera(gt);
-
-	AnimateMaterials(gt);
-	UpdateObjectCBs(gt);
-	UpdateMaterialCBs(gt);
 	UpdateMainPassCB(gt);
 }
 
@@ -2300,12 +2266,6 @@ void CrateApp::OnMouseMove(WPARAM btnState, int x, int y)
 	if ((btnState & MK_LBUTTON) != 0)
 	{
 		CamIns.ProcessMouseMove(static_cast<float>(x - mLastMousePos.x), static_cast<float>(y - mLastMousePos.y));
-		// Make each pixel correspond to a quarter of a degree.
-		//float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
-		//float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
-		//
-		//cam_ins.Pitch(dy);
-		//cam_ins.RotateY(dx);
 	}
 
 
@@ -2330,10 +2290,7 @@ void CrateApp::OnKeyboardInput(const GameTimer& gt)
 		CamIns.WalkAD(10.0f * dt);
 }
 
-void CrateApp::UpdateShadowTransform(const GameTimer& gt)
-{
 
-}
 void CrateApp::UpdateCamera(const GameTimer& gt)
 {
 	ViewMatrix.UpdateViewMatrix(CamIns.GetEyePosition(), CamIns.GetTargetPosition());
@@ -2412,42 +2369,6 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 		}
 	}
 	
-}
-
-void CrateApp::AnimateMaterials(const GameTimer& gt)
-{
-
-}
-
-void CrateApp::UpdateObjectCBs(const GameTimer& gt)
-{
-	for (auto& e : mAllRitems)
-	{
-		XMMATRIX world = XMLoadFloat4x4(&e->World);
-
-		ObjectConstants objConstants;
-		XMStoreFloat4x4(&objConstants.World, world);
-		objConstants.BoundingBoxExtent = e->BoundingBox.Extents;
-		objConstants.BoundingBoxCenter = e->BoundingBox.Center;
-		mFrameResource.get()->ObjectConstantBuffer[e->ObjCBIndex].get()->
-			UpdateData(&objConstants, sizeof(ObjectConstants), 0);
-	}
-
-}
-
-void CrateApp::UpdateMaterialCBs(const GameTimer& gt)
-{
-	for (auto& e : mMaterials)
-	{
-		Material* mat = e.second.get();
-
-		MaterialConstants matConstants;
-		matConstants.Metallic = mat->Metallic;
-		matConstants.Roughness = mat->Roughness;
-		matConstants.TextureScale = mat->TextureScale;
-		mFrameResource.get()->MaterialConstantBuffer[mat->MatCBIndex].get()->
-			UpdateData(&matConstants, sizeof(MaterialConstants), 0);
-	}
 }
 
 void CrateApp::UpdateMainPassCB(const GameTimer& gt)
@@ -2895,13 +2816,7 @@ void CrateApp::BuildShadersAndInputLayout()
 		mShaders["fullScreenPS"].ShaderReflect();
 	}
 
-	mBasePassLayout =
-	{
-		{ "ATTRIBUTE", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "ATTRIBUTE", 1, DXGI_FORMAT_R32G32B32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "ATTRIBUTE", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "ATTRIBUTE", 3, DXGI_FORMAT_R32G32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	};
+
 
 	mFullScreenInputLayout =
 	{
@@ -2910,273 +2825,11 @@ void CrateApp::BuildShadersAndInputLayout()
 	};
 }
 
-void CrateApp::BuildShapeGeometry()
-{
-	//step1
-	GeometryGenerator geoGen;
-	{
-		GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5, 36, 36);//geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
-		GeometryGenerator::MeshData grid = geoGen.CreateGrid(8.0f, 8.0f, 10, 10);
-
-		//step2
-		UINT sphereVertexOffset = 0;
-		UINT gridVertexOffset = (UINT)sphere.Vertices.size();
-
-		UINT sphereIndexOffset = 0;
-		UINT gridIndexOffset = (UINT)sphere.Indices32.size();
-
-		//step3
-		SubmeshGeometry sphereSubmesh;
-		sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
-		sphereSubmesh.StartIndexLocation = 0;
-		sphereSubmesh.BaseVertexLocation = 0;
-		sphereSubmesh.Bounds.Center = DirectX::XMFLOAT3((sphere.BoundBoxMax + sphere.BoundBoxMin) * 0.5);
-		sphereSubmesh.Bounds.Extents = DirectX::XMFLOAT3((sphere.BoundBoxMax + sphere.BoundBoxMin) * 0.5 - sphere.BoundBoxMin);
-
-		SubmeshGeometry gridSubmesh;
-		gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
-		gridSubmesh.StartIndexLocation = gridIndexOffset;
-		gridSubmesh.BaseVertexLocation = gridVertexOffset;
-		gridSubmesh.Bounds.Center = DirectX::XMFLOAT3((grid.BoundBoxMax + grid.BoundBoxMin) * 0.5);
-		gridSubmesh.Bounds.Extents = DirectX::XMFLOAT3((grid.BoundBoxMax + grid.BoundBoxMin) * 0.5 - grid.BoundBoxMin);
-
-		//step4 vertices
-		auto totalVertexCount =
-			sphere.Vertices.size() +
-			grid.Vertices.size();
-
-		std::vector<Vertex> vertices(totalVertexCount);
-
-		uint32 k = 0;
-		for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
-		{
-			vertices[k].Position = DirectX::XMFLOAT4(
-				sphere.Vertices[i].Position.x,
-				sphere.Vertices[i].Position.y,
-				sphere.Vertices[i].Position.z,
-				1.0f);
-
-			vertices[k].TangentX = sphere.Vertices[i].TangentU;
-			vertices[k].TangentY = DirectX::XMFLOAT4(
-				sphere.Vertices[i].Normal.x,
-				sphere.Vertices[i].Normal.y,
-				sphere.Vertices[i].Normal.z,
-				1.0f);
-			vertices[k].TexCoord = sphere.Vertices[i].TexC;
-		}
-
-		for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
-		{
-			vertices[k].Position = DirectX::XMFLOAT4(
-				grid.Vertices[i].Position.x,
-				grid.Vertices[i].Position.y,
-				grid.Vertices[i].Position.z,
-				1.0f);
-
-			vertices[k].TangentX = grid.Vertices[i].TangentU;
-			vertices[k].TangentY = DirectX::XMFLOAT4(
-				grid.Vertices[i].Normal.x,
-				grid.Vertices[i].Normal.y,
-				grid.Vertices[i].Normal.z,
-				1.0f);
-			vertices[k].TexCoord = grid.Vertices[i].TexC;
-		}
-
-		//step4 indices
-		std::vector<std::uint16_t> indices;
-		indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
-		indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
-
-		const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-		const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-		auto geo = std::make_unique<MeshGeometry>();
-		geo->Name = "shapeGeo";
-
-		//CPU
-		ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-		CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-		ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-		CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-		//GPU
-		geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-			mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-
-		geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-			mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-
-		geo->VertexByteStride = sizeof(Vertex);
-		geo->VertexBufferByteSize = vbByteSize;
-		geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-		geo->IndexBufferByteSize = ibByteSize;
-
-		geo->DrawArgs["sphere"] = sphereSubmesh;
-		geo->DrawArgs["grid"] = gridSubmesh;
-		mGeometries[geo->Name] = std::move(geo);
-	}
-
-
-}
 
 void CrateApp::BuildPSOs()
 {
 	CompileGlobalShaderMap();
 
-	//PrePass
-	//ShadowPass 
-	//BasePass 
-	//FullScreenPass 
-
-	//PrePass
-	{
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC DepthOnlyPSODesc;
-
-		ZeroMemory(&DepthOnlyPSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		DepthOnlyPSODesc.InputLayout = { mBasePassLayout.data(), (UINT)mBasePassLayout.size() };
-		DepthOnlyPSODesc.pRootSignature = PrePassRootSig.GetDXRootSignature();
-		DepthOnlyPSODesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["PrePassVS"].GetByteCode()->GetBufferPointer()),
-			mShaders["PrePassVS"].GetByteCode()->GetBufferSize()
-		};
-		DepthOnlyPSODesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["PrePassPS"].GetByteCode()->GetBufferPointer()),
-			mShaders["PrePassPS"].GetByteCode()->GetBufferSize()
-		};
-
-		//TODO
-		DepthOnlyPSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		DepthOnlyPSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		DepthOnlyPSODesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		DepthOnlyPSODesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
-
-		DepthOnlyPSODesc.SampleMask = UINT_MAX;
-		DepthOnlyPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		DepthOnlyPSODesc.NumRenderTargets = 0;
-		DepthOnlyPSODesc.SampleDesc.Count = 1;
-		DepthOnlyPSODesc.SampleDesc.Quality = 0;
-		DepthOnlyPSODesc.DSVFormat = mDepthStencilFormat;
-		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&DepthOnlyPSODesc, IID_PPV_ARGS(&mDepthOnlyPSO)));
-	}
-
-	//ShadowPass
-	{
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC ShadowPSODesc;
-	
-		ZeroMemory(&ShadowPSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		ShadowPSODesc.InputLayout = { mBasePassLayout.data(), (UINT)mBasePassLayout.size() };
-		ShadowPSODesc.pRootSignature = ShadowPassRootSig.GetDXRootSignature();
-		ShadowPSODesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["ShadowPassVS"].GetByteCode()->GetBufferPointer()),
-			mShaders["ShadowPassVS"].GetByteCode()->GetBufferSize()
-		};
-		ShadowPSODesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mShaders["ShadowPassPS"].GetByteCode()->GetBufferPointer()),
-			mShaders["ShadowPassPS"].GetByteCode()->GetBufferSize()
-		};
-	
-		//TODO
-		ShadowPSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		ShadowPSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		ShadowPSODesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		ShadowPSODesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
-	
-		ShadowPSODesc.SampleMask = UINT_MAX;
-		ShadowPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		ShadowPSODesc.NumRenderTargets = 0;
-		ShadowPSODesc.SampleDesc.Count = 1;
-		ShadowPSODesc.SampleDesc.Quality = 0;
-		ShadowPSODesc.DSVFormat = mDepthStencilFormat;
-		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ShadowPSODesc, IID_PPV_ARGS(&ShadowPSO)));
-	}
-
-	//SphereGMaterial.CreateGMaterial(XPath::ProjectMaterialSavedDir()+L"/Material.hlsl");
-	//SphereMaterial.BeginCompileShaderMap();
-	//XD3D12PixelShader* BaseD3DPixelShader;
-	//XD3D12VertexShader* BaseD3DVertexShader;
-	//{
-	//	
-	//
-	//
-	//
-	//	//PassShaders
-	//	
-	//	TShaderReference<TBasePassPS<false>> BasePixelShader;
-	//	TShaderReference<TBasePassVS<false>> BaseVertexShader;
-	//	//GetBasePassShaders
-	//	{
-	//		XMaterialShaderInfo_Set ShaderInfos;
-	//		XMaterialShader_Set XShaders;
-	//
-	//		ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Compute] = nullptr;
-	//		ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Vertex] = &TBasePassVS<false>::StaticShaderInfos;
-	//		ShaderInfos.ShaderInfoSet[(int)EShaderType::SV_Pixel] = &TBasePassPS<false>::StaticShaderInfos;
-	//
-	//		
-	//		SphereMaterial.GetShaderInfos(ShaderInfos, XShaders);
-	//
-	//		BasePixelShader = TShaderReference<TBasePassPS<false>>(
-	//			static_cast<TBasePassPS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Pixel]),
-	//			XShaders.ShaderMap);
-	//
-	//		BaseVertexShader = TShaderReference<TBasePassVS<false>>(
-	//			static_cast<TBasePassVS<false>*>(XShaders.XShaderSet[(int32)EShaderType::SV_Vertex]),
-	//			XShaders.ShaderMap);
-	//	}
-	//	XRHIPixelShader* RHIPixelShader = BasePixelShader.GetPixelShader();
-	//	BaseD3DPixelShader = static_cast<XD3D12PixelShader*>(RHIPixelShader);
-	//
-	//	XRHIVertexShader* RHIVertexShader = BaseVertexShader.GetVertexShader();
-	//	BaseD3DVertexShader = static_cast<XD3D12VertexShader*>(RHIVertexShader);
-	//}
-
-
-
-	//BasePass
-	//{
-	//	XRHIVertexLayout* BaseRHILayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default).get();
-	//	XD3D12VertexLayout* BassLayout = static_cast<XD3D12VertexLayout*>(BaseRHILayout);
-	//	
-	//
-	//	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
-	//
-	//	ZeroMemory(&opaquePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-	//	opaquePsoDesc.InputLayout = { BassLayout->VertexElements.data(), (UINT)BassLayout->VertexElements.size()};
-	//	opaquePsoDesc.pRootSignature = d3d12_root_signature.GetDXRootSignature();
-	//	opaquePsoDesc.VS = BaseD3DVertexShader->D3DByteCode;
-	//	//{
-	//	//	reinterpret_cast<BYTE*>(mShaders["standardVS"].GetByteCode()->GetBufferPointer()),
-	//	//	mShaders["standardVS"].GetByteCode()->GetBufferSize()
-	//	//};
-	//	opaquePsoDesc.PS = BaseD3DPixelShader->D3DByteCode;
-	//	//{
-	//	//	reinterpret_cast<BYTE*>(mShaders["opaquePS"].GetByteCode()->GetBufferPointer()),
-	//	//	mShaders["opaquePS"].GetByteCode()->GetBufferSize()
-	//	//};
-	//
-	//	//TODO
-	//	opaquePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	//	opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	//	opaquePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	//	opaquePsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-	//
-	//	opaquePsoDesc.SampleMask = UINT_MAX;
-	//	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	//	opaquePsoDesc.NumRenderTargets = 4;
-	//	opaquePsoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	//	opaquePsoDesc.RTVFormats[1] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	//	opaquePsoDesc.RTVFormats[2] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	//	opaquePsoDesc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	//	opaquePsoDesc.SampleDesc.Count = 1;
-	//	opaquePsoDesc.SampleDesc.Quality = 0;
-	//	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
-	//	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mOpaquePSO)));
-	//}
 
 	//FullScreenPass
 	{
@@ -3210,40 +2863,6 @@ void CrateApp::BuildPSOs()
 		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&FullScreenPsoDesc, IID_PPV_ARGS(&FullScreenPSO)));
 	}
 }
-
-
-void CrateApp::BuildMaterials()
-{
-	{
-		auto metalmat = std::make_unique<Material>();
-		metalmat->Name = "metal";
-		metalmat->MatCBIndex = 0;
-		metalmat->Metallic = 0.8f;
-		metalmat->Specular = 0.0;
-		metalmat->Roughness = 0.4f;
-		metalmat->TextureScale = 1.0f;
-		metalmat->TextureBaseColor = TextureMetalBaseColor;
-		metalmat->TextureNormal = TextureMetalNormal;
-		metalmat->TextureRoughness = TextureRoughness;
-		mMaterials["metal"] = std::move(metalmat);
-	}
-
-	{
-		auto woodCrate = std::make_unique<Material>();
-		woodCrate->Name = "wood";
-		woodCrate->MatCBIndex = 1;
-		woodCrate->Metallic = 0.0;
-		woodCrate->Specular = 0.5;
-		woodCrate->Roughness = 0.8f;
-		woodCrate->TextureScale = 10.0f;
-		woodCrate->TextureBaseColor = TextureWoodBaseColor;
-		woodCrate->TextureNormal = TextureWoodNormal;
-		woodCrate->TextureRoughness = TextureRoughness;
-		mMaterials["wood"] = std::move(woodCrate);
-	}
-
-}
-
 
 void CrateApp::TempDelete()
 {
@@ -3284,7 +2903,6 @@ int main()
 	//_CrtSetBreakAlloc(304);
 	int* a = new int(5);
 
-	try
 	{
 		MainInit::Init();
 		TestReflectAndArchive();
@@ -3292,11 +2910,6 @@ int main()
 		CrateApp theApp;
 		if (!theApp.Initialize())return 0;
 		return theApp.Run();
-	}
-	catch (DxException& e)
-	{
-		MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
-		return 0;
 	}
 
 	_CrtDumpMemoryLeaks();

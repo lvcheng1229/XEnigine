@@ -20,7 +20,7 @@
 #include "Runtime/D3D12RHI/D3D12PassStateManager.h"
 #include "Runtime/D3D12RHI/D3D12Viewport.h"
 
-#include "d3dUtil.h"
+//#include "d3dUtil.h"
 #include "GameTimer.h"
 
 //ImGUI Begin

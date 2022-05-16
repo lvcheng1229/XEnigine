@@ -4,6 +4,10 @@
 
 #include "d3dApp.h"
 #include <WindowsX.h>
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
+#include <DirectXColors.h>
+#include <DirectXCollision.h>
 
 using Microsoft::WRL::ComPtr;
 using namespace std;

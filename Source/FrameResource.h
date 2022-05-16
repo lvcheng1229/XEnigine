@@ -1,6 +1,6 @@
 #pragma once
 
-#include "UnitTest/d3dUtil.h"
+//#include "UnitTest/d3dUtil.h"
 #include "UnitTest/MathHelper.h"
 #include "Runtime/D3D12RHI/D3D12Resource.h"
 
