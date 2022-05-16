@@ -206,11 +206,14 @@ void XD3DDirectContex::RHIExecuteIndirect(XRHICommandSignature* RHICmdSig, uint3
 		this->RHISetShaderConstantBuffer(EShaderType::SV_Compute, CSGlobalConstantBuffer->BindSlotIndex, CSGlobalConstantBuffer.get());
 		CSGlobalConstantBuffer->ResetState();
 	}
+	ID3D12CommandSignature* CmdSig = static_cast<XD3DCommandRootSignature*>(RHICmdSig)->DxCommandSignature.Get();
+	ID3D12Resource* ArgRes = static_cast<XD3D12StructBuffer*>(ArgumentBuffer)->ResourcePtr.GetBackResource()->GetResource();
+	ID3D12Resource* CounterRes = static_cast<XD3D12StructBuffer*>(CountBuffer)->ResourcePtr.GetBackResource()->GetResource();
+
+	XD3D12PlatformRHI::Base_TransitionResource(cmd_dirrect_list, static_cast<XD3D12StructBuffer*>(ArgumentBuffer)->ResourcePtr.GetBackResource(), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 	PassStateManager.ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 
-	ID3D12CommandSignature* CmdSig = static_cast<XD3DCommandRootSignature*>(RHICmdSig)->DxCommandSignature.Get();
-	ID3D12Resource* ArgRes=static_cast<XD3D12StructBuffer*>(ArgumentBuffer)->ResourcePtr.GetBackResource()->GetResource();
-	ID3D12Resource* CounterRes=static_cast<XD3D12StructBuffer*>(CountBuffer)->ResourcePtr.GetBackResource()->GetResource();
+	
 	cmd_dirrect_list.GetDXCmdList()->ExecuteIndirect(CmdSig, CmdCount, ArgRes, ArgumentBufferOffset, CounterRes, CountBufferOffset);
 }
 void XD3DDirectContex::RHIDrawIndexedPrimitive(
@@ -380,7 +383,7 @@ void XD3DDirectContex::SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRend
 
 	PassStateManager.SetRenderTarget(CurrentNumRT, RTPtrArrayPtr, DSVPtr);
 
-	if (RTPtrArrayPtr[0] != nullptr)
+	if (CurrentNumRT > 0 && RTPtrArrayPtr[0] != nullptr)
 	{
 		if (RTPtrArrayPtr[0]->GetDesc().ViewDimension == D3D12_RTV_DIMENSION_TEXTURE2D)
 		{
@@ -393,6 +396,13 @@ void XD3DDirectContex::SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRend
 		{
 			X_Assert(false);
 		}
+	}
+	else if (DSVPtr != nullptr)
+	{
+		RHISetViewport(0.0f, 0.0f, 0.0f,
+			DSVPtr->GetResource()->GetResource()->GetDesc().Width,
+			DSVPtr->GetResource()->GetResource()->GetDesc().Height,
+			1.0f);
 	}
 	else
 	{

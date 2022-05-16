@@ -15,7 +15,7 @@ class XVertexFactory :public XRenderResource
 
 public:
 	void InitLayout(const XRHIVertexLayoutArray& LayoutArray, ELayoutType LayoutType);
-	inline std::shared_ptr<XRHIVertexLayout> GetLayout(ELayoutType LayoutType = ELayoutType::Layout_Default)const
+	inline std::shared_ptr<XRHIVertexLayout>& GetLayout(ELayoutType LayoutType = ELayoutType::Layout_Default)
 	{
 		switch (LayoutType)
 		{

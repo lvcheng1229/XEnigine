@@ -173,6 +173,10 @@ public:
 
 //TODO
 
+inline uint64 RHIGetCmdBufferOffset(XRHIStructBuffer* RHIStructBuffer)
+{
+	return GPlatformRHI->RHIGetCmdBufferOffset(RHIStructBuffer);
+}
 
 inline void* RHIGetCommandDataPtr(std::vector<XRHICommandData>& RHICmdData,uint32& OutCmdDataSize)
 {

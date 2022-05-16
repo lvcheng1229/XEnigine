@@ -40,6 +40,11 @@ static D3D12_BLEND TranslateBlendFactor(EBlendFactor BlendFactor)
 	};
 }
 
+uint64 XD3D12PlatformRHI::RHIGetCmdBufferOffset(XRHIStructBuffer* RHIStructBuffer)
+{
+	return static_cast<XD3D12StructBuffer*>(RHIStructBuffer)->ResourcePtr.GetOffsetByteFromBaseResource();
+}
+
 void* XD3D12PlatformRHI::RHIGetCommandDataPtr(std::vector<XRHICommandData>& RHICmdData, uint32& OutCmdDataSize)
 {
 	OutCmdDataSize = 0;
@@ -94,6 +99,8 @@ void* XD3D12PlatformRHI::RHIGetCommandDataPtr(std::vector<XRHICommandData>& RHIC
 
 		memcpy(RetPtr + Offset, &DrawArguments, sizeof(D3D12_DRAW_INDEXED_ARGUMENTS));
 		Offset += sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
+
+		Offset = AlignArbitrary(Offset, sizeof(uint64));
 	}
 
 	return RetPtr;
@@ -128,7 +135,7 @@ std::shared_ptr<XRHICommandSignature> XD3D12PlatformRHI::RHICreateCommandSignatu
 			break;
 		case IndirectArgType::Arg_Draw_Indexed:
 			ArgDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
-			ByteStride += (sizeof(uint32) + sizeof(uint32) * 5);
+			ByteStride += (sizeof(int32) + sizeof(uint32) * 4);
 			break;
 		default:
 			X_Assert(false);

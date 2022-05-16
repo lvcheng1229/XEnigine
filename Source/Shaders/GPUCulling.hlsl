@@ -4,7 +4,7 @@
 struct DepthIndirectCommand
 {
     uint2 CbWorldAddress;
-    uint2 CbGlobalShadowViewProjectAddress; // Used For VSM
+    //uint2 CbGlobalShadowViewProjectAddress; // Used For VSM
     
     uint2 VertexBufferLoacation;
     uint VertexSizeInBytes;

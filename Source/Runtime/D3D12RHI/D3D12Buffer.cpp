@@ -155,9 +155,10 @@ void XD3D12AbstractDevice::DeviceResetStructBufferCounter(XD3D12DirectCommandLis
 	ID3D12Resource* DestResource = D3D12Resource->GetResource();
 	uint64 DestOffset = DestResourcePtr.GetOffsetByteFromBaseResource();
 	
-	D3D12_RESOURCE_STATES ResourceStateBefore = D3D12Resource->GetResourceState().GetResourceState();
+	//D3D12_RESOURCE_STATES ResourceStateBefore = D3D12Resource->GetResourceState().GetResourceState();
 	D3D12CmdList->GetDXCmdList()->CopyBufferRegion(DestResource, DestOffset + CounterOffset, ID3D12ZeroStructBuffer.Get(), 0, sizeof(UINT));
-	D3D12CmdList->CmdListAddTransition(D3D12Resource, D3D12_RESOURCE_STATE_COPY_DEST, ResourceStateBefore);
+	D3D12Resource->GetResourceState().SetResourceState(D3D12_RESOURCE_STATE_COPY_DEST);
+	//D3D12CmdList->CmdListAddTransition(D3D12Resource, D3D12_RESOURCE_STATE_COPY_DEST, ResourceStateBefore);
 }
 
 void XD3D12PlatformRHI::RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset)
