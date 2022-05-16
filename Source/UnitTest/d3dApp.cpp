@@ -339,7 +339,7 @@ bool D3DApp::InitDirect3D()
 	abstrtact_device.Create(&Device);
 	TempAbsDevice = &abstrtact_device;
 	
-	viewport.Create(&abstrtact_device, mClientWidth, mClientHeight, mBackBufferFormat, mhMainWnd);
+	
 	
 	DepthStencilDescArrayManager = abstrtact_device.GetDepthStencilDescArrayManager();
 	RenderTargetDescArrayManager = abstrtact_device.GetRenderTargetDescArrayManager();
@@ -353,6 +353,7 @@ bool D3DApp::InitDirect3D()
 
 	RHICmdList.SetContext(direct_ctx);
 	RHIInit();
+	viewport.Create(&abstrtact_device, mClientWidth, mClientHeight, BackBufferFormat, mhMainWnd);
 
 	pass_state_manager = direct_ctx->GetPassStateManager();
 	mDirectCmdListAlloc = direct_ctx->GetCmdAlloc()->GetDXAlloc();

@@ -182,6 +182,8 @@ void XD3DDirectContex::RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32
 
 	PassStateManager.ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
 	cmd_dirrect_list->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+
+	PassStateManager.ResetState();
 }
 
 void XD3DDirectContex::SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)

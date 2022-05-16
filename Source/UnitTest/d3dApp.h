@@ -106,7 +106,13 @@ protected:
 
 	// Derived class should set these in derived constructor to customize starting values.
 	std::wstring mMainWndCaption = L"d3d App";
-    DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+    //{
+        DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM;
+    //}
+
+
     DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	
 	const int mClientWidth = 1540;

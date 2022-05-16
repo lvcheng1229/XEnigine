@@ -8,6 +8,8 @@ public:
 	virtual void OpenCmdList() = 0;
 	virtual void CloseCmdList() = 0;
 
+	virtual void RHIBeginFrame() = 0;
+
 	//SetShaderParameter
 	virtual void RHISetShaderUAV(EShaderType ShaderType, uint32 TextureIndex, XRHIUnorderedAcessView* UAV) = 0;
 	virtual void RHISetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* NewTextureRHI) = 0;
@@ -16,6 +18,9 @@ public:
 	virtual void SetShaderValue(EShaderType ShaderType, uint32 BufferIndex, uint32 VariableOffsetInBuffer, uint32 NumBytes, const void* NewValue) = 0;
 
 	//DrawCall/DisPatch
+	virtual void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size) = 0;
+	virtual void RHIEndRenderPass() = 0;
+	virtual void RHIEventEnd() = 0;
 	virtual void RHIExecuteIndirect(
 		XRHICommandSignature* RHICmdSig, uint32 CmdCount,
 		XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset,
@@ -39,6 +44,6 @@ public:
 
 	//Misc
 	virtual void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ) = 0;
-	virtual void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName) = 0;
+	virtual void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo,const char* InName, uint32 Size) = 0;
 	virtual void SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRenderTargetView* RTViews,const XRHIDepthStencilView* DSView) = 0;
 };

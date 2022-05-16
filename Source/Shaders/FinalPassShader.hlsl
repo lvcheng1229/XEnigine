@@ -1,9 +1,9 @@
 
-struct VertexIn
-{
-	float2 PosIn    : POSITION;
-	float2 TexC    : TEXCOORD;
-};
+//struct VertexIn
+//{
+//	float2 PosIn    : POSITION;
+//	float2 TexC    : TEXCOORD;
+//};
 
 
 struct VertexOut
@@ -12,14 +12,14 @@ struct VertexOut
     float2 TexC    : TEXCOORD;
 };
 
-VertexOut VS(VertexIn vin)
-{
-	VertexOut vout = (VertexOut)0.0f;
-    vout.PosH = float4(vin.PosIn,0.0f,1.0f);
-    vout.TexC = vin.TexC;
-
-    return vout;
-}
+//VertexOut VS(VertexIn vin)
+//{
+//	VertexOut vout = (VertexOut)0.0f;
+//    vout.PosH = float4(vin.PosIn,0.0f,1.0f);
+//    vout.TexC = vin.TexC;
+//
+//    return vout;
+//}
 
 Texture2D    FullScreenMap;
 SamplerState gsamPointWarp  : register(s0,space1000);

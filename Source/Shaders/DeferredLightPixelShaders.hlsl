@@ -8,6 +8,7 @@ Texture2D SceneTexturesStruct_GBufferDTexture;
 
 Texture2D SceneTexturesStruct_SceneDepthTexture;
 
+Texture2D ShadowMaskTex;
 //Texture2D LightAttenuationTexture;
 
 cbuffer cbLightPass
@@ -154,9 +155,8 @@ void DeferredLightPixelMain(
 	//DeferredLightingCommon.ush
 	float4 SurfaceLighting;
 	{
-		//float Shadow=LightAttenuationTexture.Sample(gsamPointWarp,ScreenUV).r;
-		//Shadow*=0.0f;
-		SurfaceLighting=(1.0-0.0)*GetDynamicLighting(CameraVector,GBuffer,GBuffer.ShadingModelID);
+		float Shadow=ShadowMaskTex.Sample(gsamPointWarp,ScreenUV).r;
+		SurfaceLighting=(1.0-Shadow)*GetDynamicLighting(CameraVector,GBuffer,GBuffer.ShadingModelID);
 		
 	}
     OutColor=float4(SurfaceLighting.xyz,1.0f);

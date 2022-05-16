@@ -36,6 +36,16 @@ public:
 	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override;
 	
 	//DrawCall/DisPatch
+	void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size)override
+	{
+		cmd_dirrect_list->BeginEvent(1, pData, Size);
+	}
+
+	void RHIEventEnd()override
+	{
+		cmd_dirrect_list->EndEvent();
+	}
+
 	void RHIExecuteIndirect(
 		XRHICommandSignature* RHICmdSig, uint32 CmdCount,
 		XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset,
@@ -56,30 +66,35 @@ public:
 	//Misc
 	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
 	void SetRenderTargetsAndViewPort(uint32 NumRTs,const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)override;
-	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName)override
+	void RHIBeginFrame()override
 	{
-		cmd_dirrect_list->BeginEvent(1, InName,sizeof(InName));
+		PassStateManager.ResetDescHeapIndex();
+		PassStateManager.SetHeapDesc();
+		PassStateManager.ResetState();
+		this->ResetCmdAlloc();
+		this->OpenCmdList();
+	}
+	void RHIEndRenderPass()override
+	{
+		cmd_dirrect_list->EndEvent();
+		PassStateManager.ResetState();
+	}
+	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const char* InName ,uint32 Size)override
+	{
+		cmd_dirrect_list->BeginEvent(1, InName, Size);
 		XRHISetRenderTargetsInfo OutRTInfo;
 		InInfo.ConvertToRenderTargetsInfo(OutRTInfo);
 		SetRenderTargetsAndClear(OutRTInfo);
 	}
 
 
-	//TODO Remove ctx->CreateD3D12Texture2D
-	//Resource Create 
-	//std::shared_ptr<XRHITexture2D> CreateD3D12Texture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
-	//	bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
-	//
-	//std::shared_ptr<XRHITexture3D> CreateD3D12Texture3D(
-	//	uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
-	//	ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
-
 	//Deprecated in the future
+	
+private:
 	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);
 	void RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue);
 	void SetRenderTargetsAndClear(const XRHISetRenderTargetsInfo& RTInfos);
 	void ResetCmdAlloc();
-private:
 public:
 	inline XD3D12PassStateManager* GetPassStateManager() { return &PassStateManager; }
 	inline XD3D12DirectCommandList* GetCmdList() { return &cmd_dirrect_list; };

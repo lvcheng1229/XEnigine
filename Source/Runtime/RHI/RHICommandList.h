@@ -77,6 +77,16 @@ private:
 class XRHIComputeCommandList :public XRHICommandListBase
 {
 public:
+	inline void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size)
+	{
+		GetComputeContext()->RHIEventBegin(Metadata, pData, Size);
+	}
+
+	inline void RHIEventEnd()
+	{
+		GetComputeContext()->RHIEventEnd();
+	}
+
 	inline void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ)
 	{
 		GetComputeContext()->RHIDispatchComputeShader(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
@@ -111,9 +121,19 @@ public:
 class XRHICommandList : public XRHIComputeCommandList
 {
 public:
-	inline void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const wchar_t* InName)
+	inline void RHIBeginFrame()
 	{
-		GetContext()->RHIBeginRenderPass(InInfo, InName);
+		GetContext()->RHIBeginFrame();
+	}
+
+	inline void RHIEndRenderPass()
+	{
+		GetContext()->RHIEndRenderPass();
+	}
+
+	inline void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const char* InName, uint32 Size)
+	{
+		GetContext()->RHIBeginRenderPass(InInfo, InName, Size);
 	}
 
 	inline void RHIExecuteIndirect(
@@ -172,6 +192,16 @@ public:
 };
 
 //TODO
+
+inline XRHIUnorderedAcessView* GetRHIUAVFromTexture(XRHITexture* RHITexture, uint32 MipIndex = 0)
+{
+	return GPlatformRHI->GetRHIUAVFromTexture(RHITexture, MipIndex);
+}
+
+inline XRHIShaderResourceView* GetRHISRVFromTexture(XRHITexture* RHITexture, uint32 MipIndex = 0)
+{
+	return GPlatformRHI->GetRHISRVFromTexture(RHITexture, MipIndex);
+}
 
 inline uint64 RHIGetCmdBufferOffset(XRHIStructBuffer* RHIStructBuffer)
 {

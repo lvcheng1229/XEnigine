@@ -4,20 +4,22 @@ void XD3D12Viewport::Create(
     XD3D12AbstractDevice* device_in, 
     uint32 size_x_in, 
     uint32 size_y_in,
-    DXGI_FORMAT format_back_buffer_in, 
+    EPixelFormat EPixFormatIn,
     HWND WindowHandle_in)
 {
     device = device_in;
     size_x = size_x_in;
     size_y = size_y_in;
-    format = format_back_buffer_in;
+    Format = EPixFormatIn;
+
+    DXGI_FORMAT DxFormat = (DXGI_FORMAT)GPixelFormats[(int)Format].PlatformFormat;
 
     DXGI_SWAP_CHAIN_DESC sd;
     sd.BufferDesc.Width = size_x;
     sd.BufferDesc.Height = size_y;
     sd.BufferDesc.RefreshRate.Numerator = 60;
     sd.BufferDesc.RefreshRate.Denominator = 1;
-    sd.BufferDesc.Format = format;
+    sd.BufferDesc.Format = DxFormat;
     sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
     sd.SampleDesc.Count = 1;
@@ -42,6 +44,8 @@ void XD3D12Viewport::Resize(
     size_x = size_x_in;
     size_y = size_y_in;
 
+    DXGI_FORMAT DxFormat = (DXGI_FORMAT)GPixelFormats[(int)Format].PlatformFormat;
+
     XD3D12PhysicDevice* PhysicalDevice = device->GetPhysicalDevice();
     XD3D12CommandQueue* direct_cmd_queue = device->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
     XD3DDirectContex* directx_ctx = device->GetDirectContex(0);
@@ -58,12 +62,12 @@ void XD3D12Viewport::Resize(
     }
 
     ThrowIfFailed(mSwapChain->ResizeBuffers(BACK_BUFFER_COUNT_DX12, size_x, size_y,
-        format, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
+        DxFormat, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
     
     current_back_buffer = 0;
 
     D3D12_RENDER_TARGET_VIEW_DESC rt_desc;
-    rt_desc.Format = format;
+    rt_desc.Format = DxFormat;
     rt_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
     rt_desc.Texture2D.MipSlice = 0;
     rt_desc.Texture2D.PlaneSlice = 0;
@@ -81,6 +85,10 @@ void XD3D12Viewport::Resize(
             device->GetRenderTargetDescArrayManager()->compute_cpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt),
             device->GetRenderTargetDescArrayManager()->compute_gpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt)
         );
+
+        std::shared_ptr<XD3D12Texture2D>BackBufferTexture = std::make_shared<XD3D12Texture2D>(Format);
+        BackBufferTexture->SetRenderTargetView(back_rt_views[i]);
+        BackBufferTextures.push_back(BackBufferTexture);
     }
 
     directx_ctx->CloseCmdList();

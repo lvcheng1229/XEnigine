@@ -230,7 +230,7 @@ static void ImGui_Impl_RHI_SetupRenderState(ImDrawData* draw_data, XRHICommandLi
 
 
 	XRHIRenderPassInfo RPInfos(1, &SceneColorTex, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
-	RHICmdList->RHIBeginRenderPass(RPInfos, L"IMGUI_PASS");
+	RHICmdList->RHIBeginRenderPass(RPInfos, "IMGUI_PASS",sizeof("IMGUI_PASS"));
 	RHICmdList->CacheActiveRenderTargets(RPInfos);
 	RHICmdList->ApplyCachedRenderTargets(*BackendData->PSOInit);
 	SetGraphicsPipelineStateFromPSOInit(*RHICmdList, *BackendData->PSOInit);

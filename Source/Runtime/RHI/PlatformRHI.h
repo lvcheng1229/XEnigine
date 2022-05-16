@@ -21,6 +21,8 @@ public:
 	virtual void RHICopyTextureRegion(XRHITexture* RHITextureDst, XRHITexture* RHITextureSrc, uint32 DstX, uint32 DstY, uint32 DstZ, uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ) = 0;
 
 	//Command Signature
+	virtual XRHIUnorderedAcessView* GetRHIUAVFromTexture(XRHITexture* RHITexture, uint32 MipIndex = 0) = 0;
+	virtual XRHIShaderResourceView* GetRHISRVFromTexture(XRHITexture* RHITexture, uint32 MipIndex = 0) = 0;
 	virtual uint64 RHIGetCmdBufferOffset(XRHIStructBuffer* RHIStructBuffer) = 0;
 	virtual void* RHIGetCommandDataPtr(std::vector<XRHICommandData>&RHICmdData, uint32& OutCmdDataSize) = 0;
 	virtual std::shared_ptr<XRHICommandSignature> RHICreateCommandSignature(

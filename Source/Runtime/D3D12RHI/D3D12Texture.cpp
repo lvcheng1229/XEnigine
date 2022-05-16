@@ -4,6 +4,16 @@
 #include "D3D12AbstractDevice.h"
 #include "Runtime/RHI/RHICommandList.h"
 
+XRHIUnorderedAcessView* XD3D12PlatformRHI::GetRHIUAVFromTexture(XRHITexture* RHITexture ,uint32 MipIndex)
+{
+	return  GetD3D12TextureFromRHITexture(RHITexture)->GeUnorderedAcessView(MipIndex);
+}
+
+XRHIShaderResourceView* XD3D12PlatformRHI::GetRHISRVFromTexture(XRHITexture* RHITexture, uint32 MipIndex)
+{
+	return  GetD3D12TextureFromRHITexture(RHITexture)->GetShaderResourceView(MipIndex);
+}
+
 std::shared_ptr<XRHIConstantBuffer> XD3D12PlatformRHI::RHICreateConstantBuffer(uint32 size)
 {
 	return std::shared_ptr<XRHIConstantBuffer>(AbsDevice->CreateUniformBuffer(size));
