@@ -5,9 +5,6 @@
 #include <memory>
 #include <windows.h>
 #include "UnitTest/d3dApp.h"
-#include "UnitTest/MathHelper.h"
-//#include "UnitTest/GeometryGenerator.h"
-#include "FrameResource.h"
 
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -59,6 +56,9 @@
 
 #include "Runtime/Engine/Classes/Material.h"
 #include "Runtime/Engine/ResourcecConverter.h"
+
+#include "Runtime/Render/DeferredShadingRenderer.h"
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
@@ -1124,6 +1124,16 @@ private:
 	XVector3 LightColor = { 1,1,1 };
 	float LightIntensity = 7.0f;
 
+	struct ObjectConstants
+	{
+		XMatrix World;
+		DirectX::XMFLOAT3 BoundingBoxCenter;
+		float padding0 = 1.0f;
+		DirectX::XMFLOAT3 BoundingBoxExtent;
+		float padding1 = 1.0f;
+	};
+
+	XDeferredShadingRenderer DeferredShadingRenderer;
 private:
 	//GPU Driven New
 	std::shared_ptr<XRHICommandSignature> RHIDepthCommandSignature;
@@ -1163,7 +1173,7 @@ private:
 	uint64 FrameNum = 0;
 	float Far = 1000.0f;
 	float Near = 1.0f;
-	float FoVAngleY = 0.25f * MathHelper::Pi;
+	float FoVAngleY = 0.25f * X_PI;
 
 	std::shared_ptr<XRHITexture2D>TextureMetalBaseColor;
 	std::shared_ptr<XRHITexture2D>TextureMetalNormal;
@@ -1228,7 +1238,7 @@ private://Shadow Pass
 
 	struct ShadowPassConstants
 	{
-		DirectX::XMFLOAT4X4 ViewProject = MathHelper::Identity4x4();
+		XMatrix ViewProject;
 	};
 
 	ShadowPassConstants ShadowPassConstant;
@@ -1567,7 +1577,7 @@ void CrateApp::TestExecute()
 
 void CrateApp::Renderer(const GameTimer& gt)
 {
-	RHICmdList.RHIBeginFrame();
+	DeferredShadingRenderer.Rendering(RHICmdList);
 
 	//Pass0 GPU Culling
 	{

@@ -35,16 +35,7 @@ public:
 	void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)override;
 	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override;
 	
-	//DrawCall/DisPatch
-	void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size)override
-	{
-		cmd_dirrect_list->BeginEvent(1, pData, Size);
-	}
-
-	void RHIEventEnd()override
-	{
-		cmd_dirrect_list->EndEvent();
-	}
+	
 
 	void RHIExecuteIndirect(
 		XRHICommandSignature* RHICmdSig, uint32 CmdCount,
@@ -66,6 +57,18 @@ public:
 	//Misc
 	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override;
 	void SetRenderTargetsAndViewPort(uint32 NumRTs,const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)override;
+	
+	//DrawCall/DisPatch
+	void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size)override
+	{
+		cmd_dirrect_list->BeginEvent(1, pData, Size);
+	}
+
+	void RHIEventEnd()override
+	{
+		cmd_dirrect_list->EndEvent();
+	}
+
 	void RHIBeginFrame()override
 	{
 		PassStateManager.ResetDescHeapIndex();
@@ -74,11 +77,13 @@ public:
 		this->ResetCmdAlloc();
 		this->OpenCmdList();
 	}
+
 	void RHIEndRenderPass()override
 	{
 		cmd_dirrect_list->EndEvent();
 		PassStateManager.ResetState();
 	}
+
 	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const char* InName ,uint32 Size)override
 	{
 		cmd_dirrect_list->BeginEvent(1, InName, Size);
@@ -87,18 +92,17 @@ public:
 		SetRenderTargetsAndClear(OutRTInfo);
 	}
 
+public:
+	inline XD3D12PassStateManager* GetPassStateManager() { return &PassStateManager; }
+	inline XD3D12DirectCommandList* GetCmdList() { return &cmd_dirrect_list; };
+	inline XD3D12CommandAllocator* GetCmdAlloc() { return &cmd_direct_alloc; };
 
-	//Deprecated in the future
-	
 private:
 	void RHISetRenderTargets(uint32 num_rt, XRHIRenderTargetView** rt_array_ptr, XRHIDepthStencilView* ds_ptr);
 	void RHIClearMRT(bool ClearRT, bool ClearDS, float* ColorArray, float DepthValue, uint8 StencilValue);
 	void SetRenderTargetsAndClear(const XRHISetRenderTargetsInfo& RTInfos);
 	void ResetCmdAlloc();
-public:
-	inline XD3D12PassStateManager* GetPassStateManager() { return &PassStateManager; }
-	inline XD3D12DirectCommandList* GetCmdList() { return &cmd_dirrect_list; };
-	inline XD3D12CommandAllocator* GetCmdAlloc() { return &cmd_direct_alloc; };
+
 private:
 	XD3D12RenderTargetView* RTPtrArrayPtr[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
 	XD3D12DepthStencilView* DSVPtr = nullptr;
@@ -109,7 +113,8 @@ private:
 	XD3D12DirectCommandList cmd_dirrect_list;
 
 	XD3D12PassStateManager PassStateManager;
-private://TODO
+	
+	//TODO
 	D3D12_VIEWPORT Viewport;
 	D3D12_RECT ScissorRect;
 };

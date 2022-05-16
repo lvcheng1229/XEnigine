@@ -4,5 +4,8 @@
 class XDeferredShadingRenderer
 {
 public:
-	bool RenderHzb(XRHICommandList& RHICmdList);
+	void Rendering(XRHICommandList& RHICmdList);
+
+	void PreDepthSetup();
+	void PreDepthRendering(XRHICommandList& RHICmdList);
 };
