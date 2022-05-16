@@ -53,36 +53,30 @@ bool BoundingBoxInPlane(float3 BoundingBoxCenter,float3 BoundingBoxExtent , floa
     if(Plane.x>0)
     {
         MinTemp.x = MinBoundingBox.x;
-        //MaxTemp.x = MaxBoundingBox.x;
     }
     else
     {
         MinTemp.x = MaxBoundingBox.x;
-        //MaxTemp.x = MinBoundingBox.x;
     }
 
     
     if(Plane.y>0)
     {
         MinTemp.y = MinBoundingBox.y;
-        //MaxTemp.y = MaxBoundingBox.y;
     }
     else
     {
         MinTemp.y = MaxBoundingBox.y;
-        //MaxTemp.y = MinBoundingBox.y;
     }
 
 
     if(Plane.z>0)
     {
         MinTemp.z = MinBoundingBox.z;
-        //MaxTemp.z = MaxBoundingBox.z;
     }
     else
     {
         MinTemp.z = MaxBoundingBox.z;
-        //MaxTemp.z = MinBoundingBox.z;
     }
 
     float D = dot(Plane.xyz,MinTemp) + Plane.w;
@@ -115,3 +109,19 @@ void CSMain(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex)
         }
     }
 }
+
+//
+//uint32 ObjConstVecSize = sizeof(ObjectConstants) * RenderGeos.size();
+//	ObjectConstants* ConstantArray = (ObjectConstants*)std::malloc(ObjConstVecSize);
+//	
+//	for (int i = 0; i < RenderGeos.size(); i++)
+//	{
+//		auto& ri = RenderGeos[i];
+//		XBoundingBox BoudingBoxTans = ri->GetBoudingBoxWithTrans();
+//		//XMMATRIX world = XMLoadFloat4x4(&ri->World);
+//		//ri->BoundingBox.Transform(ri->BoundingBox,world);
+//		ConstantArray[i].BoundingBoxCenter = BoudingBoxTans.Center;
+//		ConstantArray[i].BoundingBoxExtent = BoudingBoxTans.Extent;
+//		ConstantArray[i].World = ri->GetWorldTransform().GetCombineMatrix();
+//		//XMStoreFloat4x4(&ConstantArray[i].World, world);
+//	}

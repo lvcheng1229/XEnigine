@@ -118,8 +118,8 @@ std::shared_ptr<XRHIConstantBuffer> GGeomertry::GetPerObjectVertexCBuffer()
 
 	VertexCBufferStruct VertexCB;
 	VertexCB.WorldMatrix = GetWorldTransform().GetCombineMatrix();
-	VertexCB.BoundBoxMax = GetBoudingBox().Center + GetBoudingBox().Extents;
-	VertexCB.BoundBoxMin = GetBoudingBox().Center - GetBoudingBox().Extents;
+	VertexCB.BoundBoxMax = GetBoudingBoxWithTrans().Center + GetBoudingBoxWithTrans().Extent;
+	VertexCB.BoundBoxMin = GetBoudingBoxWithTrans().Center - GetBoudingBoxWithTrans().Extent;
 
 	PerObjectVertexCBuffer->UpdateData(&VertexCB, sizeof(VertexCBufferStruct), 0);
 
@@ -132,7 +132,7 @@ std::shared_ptr<GGeomertry> GGeomertry::CreateGeoInstanceNoMatAndTrans()
 	RetGeo->MeshDataPtr = this->MeshDataPtr;
 	RetGeo->MaterialInstancePtr = std::make_shared<GMaterialInstance>(this->MaterialInstancePtr->MaterialPtr);
 	RetGeo->PerObjectVertexCBuffer = nullptr;
-	RetGeo->SetBoundingBox(this->GetBoudingBox());
+	RetGeo->SetBoundingBox(this->GetBoudingBoxNoTrans());
 	return RetGeo;
 }
 
@@ -145,6 +145,6 @@ std::shared_ptr<GGeomertry> GGeomertry::CreateGeoInstancewithMat()
 	RetGeo->MaterialInstancePtr->MaterialTextureArray = this->MaterialInstancePtr->MaterialTextureArray;
 
 	RetGeo->PerObjectVertexCBuffer = nullptr;
-	RetGeo->SetBoundingBox(this->GetBoudingBox());
+	RetGeo->SetBoundingBox(this->GetBoudingBoxNoTrans());
 	return RetGeo;
 }

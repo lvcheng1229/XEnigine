@@ -256,7 +256,7 @@ std::shared_ptr<GGeomertry> CreateDefualtSphereGeo(float Radius, uint32 SliceCou
 	std::shared_ptr<GGeomertry>Geomertry = std::make_shared<GGeomertry>();
 	Geomertry->SetMeshData(MeshData);
 
-	XVector3 BoundingBoxCenter = BoundingBoxMaxVar - BoundingBoxMinVar;
+	XVector3 BoundingBoxCenter = (BoundingBoxMaxVar + BoundingBoxMinVar) * 0.5f;
 	Geomertry->SetBoundingBox(BoundingBoxCenter, BoundingBoxMaxVar - BoundingBoxCenter);
 	return Geomertry;
 }

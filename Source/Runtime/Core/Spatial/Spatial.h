@@ -11,10 +11,16 @@ protected:
 	GSpatial* ParentSpatial;
 	XBoundingBox BoundingBox;
 public:
-	inline XBoundingBox& GetBoudingBox()
+	inline XBoundingBox& GetBoudingBoxNoTrans()
 	{
 		return BoundingBox;
 	}
+
+	inline XBoundingBox& GetBoudingBoxWithTrans()
+	{
+		return BoundingBox.Transform(WorldTransform.GetCombineMatrix());
+	}
+
 
 	inline void SetBoundingBox(XBoundingBox& BoundingBoxIn)
 	{
@@ -24,7 +30,7 @@ public:
 	inline void SetBoundingBox(XVector3 Center,XVector3 Extent)
 	{
 		BoundingBox.Center = Center;
-		BoundingBox.Extents = Extent;
+		BoundingBox.Extent = Extent;
 	}
 
 

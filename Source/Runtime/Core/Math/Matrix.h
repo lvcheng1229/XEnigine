@@ -42,6 +42,8 @@ namespace DirectX
             LMatrix(const XMFLOAT4X4& M) noexcept { memcpy(this, &M, sizeof(XMFLOAT4X4)); }
             LMatrix Transpose() const noexcept;
 
+            operator XMMATRIX() const noexcept { return XMLoadFloat4x4(this); }
+
             static LMatrix CreateScale(const Vector3& scales) noexcept;
             static LMatrix CreateTranslation(const Vector3& position) noexcept;
             static LMatrix MMatrixPerspectiveFovLH

@@ -4,9 +4,12 @@
 #include "UnitTest/MathHelper.h"
 #include "Runtime/D3D12RHI/D3D12Resource.h"
 
+#include "Runtime/Core/Math/Math.h"
+
 struct ObjectConstants
 {
-    DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
+    //DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
+    XMatrix World;
     DirectX::XMFLOAT3 BoundingBoxCenter;
     float padding0 = 1.0f;
     DirectX::XMFLOAT3 BoundingBoxExtent;

@@ -8,10 +8,12 @@ using XVector4 = DirectX::SimpleMath::Vector4;
 using XMatrix = DirectX::SimpleMath::LMatrix;
 using XPlane = DirectX::SimpleMath::Plane;
 
-struct XBoundingBox : public DirectX::BoundingBox
+struct XBoundingBox
 {
     XVector3 Center;
     XVector3 Extent;
+
+	XBoundingBox& Transform(XMatrix& MatrixIn);
 };
 
 constexpr float X_PI = 3.141592654f;

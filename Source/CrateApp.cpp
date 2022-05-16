@@ -1146,8 +1146,6 @@ private:
 	void BuildShapeGeometry();
 	void BuildPSOs();
 	void BuildMaterials();
-	void BuildRenderItems();
-
 
 	void TestExecute();
 	void VirtualShadow();
@@ -1375,7 +1373,7 @@ private:
 	ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
 
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
-	std::vector<RenderItem*> mOpaqueRitems;
+	//std::vector<RenderItem*> mOpaqueRitems;
 	//PassConstants mMainPassCB;
 	XMatrix mLightProj = XMatrix::Identity;
 	XMatrix mLightView = XMatrix::Identity;
@@ -1407,7 +1405,6 @@ bool CrateApp::Initialize()
 	BuildRootSignature();
 	BuildShapeGeometry();
 	BuildMaterials();
-	BuildRenderItems();
 	
 
 	mFrameResource = std::make_unique<FrameResource>();
@@ -1553,23 +1550,6 @@ void CrateApp::Update(const GameTimer& gt)
 static XGraphicsPSOInitializer static_RHIPSOINIT;
 static XD3DGraphicsPSO static_pso(static_RHIPSOINIT, nullptr, nullptr);
 
-//struct DepthPassIndirectCommand
-//{
-//	D3D12_GPU_VIRTUAL_ADDRESS CbWorld;
-//	D3D12_VERTEX_BUFFER_VIEW VertexBufferView;
-//	D3D12_INDEX_BUFFER_VIEW IndexBufferView;
-//	D3D12_DRAW_INDEXED_ARGUMENTS DrawArguments;
-//};
-
-struct ShdadowPassIndirectCommand
-{
-	D3D12_GPU_VIRTUAL_ADDRESS CbWorld;
-	D3D12_GPU_VIRTUAL_ADDRESS CbGlobalShadowViewProjectVS;
-	D3D12_GPU_VIRTUAL_ADDRESS CbGlobalShadowViewProjectPS;
-	D3D12_VERTEX_BUFFER_VIEW VertexBufferView;
-	D3D12_INDEX_BUFFER_VIEW IndexBufferView;
-	D3D12_DRAW_INDEXED_ARGUMENTS DrawArguments;
-};
 
 void CrateApp::VirtualShadow()
 {
@@ -1700,22 +1680,19 @@ void CrateApp::TestExecute()
 		CullingParametersIns.commandCount = RenderGeos.size();
 	}
 	
-
-
-
-
 	
-	uint32 ObjConstVecSize = sizeof(ObjectConstants) * mOpaqueRitems.size();
+	
+	uint32 ObjConstVecSize = sizeof(ObjectConstants) * RenderGeos.size();
 	ObjectConstants* ConstantArray = (ObjectConstants*)std::malloc(ObjConstVecSize);
 	
-	for (int i = 0; i < mOpaqueRitems.size(); i++)
+	for (int i = 0; i < RenderGeos.size(); i++)
 	{
-		auto& ri = mOpaqueRitems[i];
-		XMMATRIX world = XMLoadFloat4x4(&ri->World);
-		ri->BoundingBox.Transform(ri->BoundingBox,world);
-		ConstantArray[i].BoundingBoxCenter = ri->BoundingBox.Center;
-		ConstantArray[i].BoundingBoxExtent = ri->BoundingBox.Extents;
-		XMStoreFloat4x4(&ConstantArray[i].World, world);
+		auto& RG = RenderGeos[i];
+
+		XBoundingBox BoudingBoxTans = RG->GetBoudingBoxWithTrans();
+		ConstantArray[i].BoundingBoxCenter = BoudingBoxTans.Center;
+		ConstantArray[i].BoundingBoxExtent = BoudingBoxTans.Extent;
+		ConstantArray[i].World = RG->GetWorldTransform().GetCombineMatrix();
 	}
 
 
@@ -1762,7 +1739,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			GlobalObjectStructBufferSRV.get(),
 			cbCullingParameters.get());
 
-		RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ceil(mOpaqueRitems.size() / float(128))), 1, 1);
+		RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ceil(RenderGeos.size() / float(128))), 1, 1);
 		mCommandList->EndEvent();
 	}
 	
@@ -1851,7 +1828,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 			cbCullingParameters.get(),
 			VirtualSMFlagsTex->GetShaderResourceView(0));
 
-		RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ceil(mOpaqueRitems.size() / float(128))), 1, 1);
+		RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ceil(RenderGeos.size() / float(128))), 1, 1);
 
 		mCommandList->EndEvent();
 	}
@@ -3267,68 +3244,6 @@ void CrateApp::BuildMaterials()
 
 }
 
-void CrateApp::BuildRenderItems()
-{
-
-	{
-		auto sphereBackRitem = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&sphereBackRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, -0.5f, 0.0f));
-		//XMStoreFloat4x4(&sphereBackRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-		sphereBackRitem->ObjCBIndex = 0;
-		sphereBackRitem->Mat = mMaterials["metal"].get();
-		sphereBackRitem->Geo = mGeometries["shapeGeo"].get();
-		sphereBackRitem->IndexCount = sphereBackRitem->Geo->DrawArgs["sphere"].IndexCount;
-		sphereBackRitem->StartIndexLocation = sphereBackRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-		sphereBackRitem->BaseVertexLocation = sphereBackRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-		sphereBackRitem->BoundingBox = sphereBackRitem->Geo->DrawArgs["sphere"].Bounds;
-		mAllRitems.push_back(std::move(sphereBackRitem));
-
-		auto sphereRitem = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, 1.5f, 0.0f));
-		//XMStoreFloat4x4(&sphereRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-		sphereRitem->ObjCBIndex = 1;
-		sphereRitem->Mat = mMaterials["metal"].get();
-		sphereRitem->Geo = mGeometries["shapeGeo"].get();
-		sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-		sphereRitem->StartIndexLocation = sphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-		sphereRitem->BaseVertexLocation = sphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-		sphereRitem->BoundingBox = sphereRitem->Geo->DrawArgs["sphere"].Bounds;
-		mAllRitems.push_back(std::move(sphereRitem));
-
-
-		auto gridRitem = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&gridRitem->World, XMMatrixTranslation(0.0f, 1.0f, 0.0f));
-		//XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 1.0f, 8.0f) * XMMatrixTranslation(0.0f, 1.0f, 0.0f));
-		gridRitem->ObjCBIndex = 2;
-		gridRitem->Mat = mMaterials["wood"].get();
-		gridRitem->Geo = mGeometries["shapeGeo"].get();
-		gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
-		gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-		gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-		gridRitem->BoundingBox = gridRitem->Geo->DrawArgs["grid"].Bounds;
-		mAllRitems.push_back(std::move(gridRitem));
-
-
-		auto sphereRitem2 = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&sphereRitem2->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(2.0f, 1.5f, 0.0f));
-		//XMStoreFloat4x4(&sphereRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-		sphereRitem2->ObjCBIndex = 3;
-		sphereRitem2->Mat = mMaterials["metal"].get();
-		sphereRitem2->Geo = mGeometries["shapeGeo"].get();
-		sphereRitem2->IndexCount = sphereRitem2->Geo->DrawArgs["sphere"].IndexCount;
-		sphereRitem2->StartIndexLocation = sphereRitem2->Geo->DrawArgs["sphere"].StartIndexLocation;
-		sphereRitem2->BaseVertexLocation = sphereRitem2->Geo->DrawArgs["sphere"].BaseVertexLocation;
-		sphereRitem2->BoundingBox = sphereRitem2->Geo->DrawArgs["sphere"].Bounds;
-		mAllRitems.push_back(std::move(sphereRitem2));
-		// All the render items are opaque.
-		for (auto& e : mAllRitems)
-			mOpaqueRitems.push_back(e.get());
-	}
-
-
-
-
-}
 
 void CrateApp::TempDelete()
 {
