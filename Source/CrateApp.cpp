@@ -186,6 +186,51 @@ XPreDepthPassPS::ShaderInfos XPreDepthPassPS::StaticShaderInfos(
 	XPreDepthPassPS::ModifyShaderCompileSettings);
 
 
+//class XShadowProjectPassVS :public XGloablShader
+//{
+//public:
+//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+//	{
+//		return new XShadowProjectPassVS(Initializer);
+//	}
+//	static ShaderInfos StaticShaderInfos;
+//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+//public:
+//	XShadowProjectPassVS(const XShaderInitlizer& Initializer)
+//		:XGloablShader(Initializer) {}
+//
+//	void SetParameter(XRHICommandList& RHICommandList) {}
+//};
+//class XShadowProjectPassPS :public XGloablShader
+//{
+//public:
+//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+//	{
+//		return new XShadowProjectPassPS(Initializer);
+//	}
+//	static ShaderInfos StaticShaderInfos;
+//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+//public:
+//	XShadowProjectPassPS(const XShaderInitlizer& Initializer)
+//		:XGloablShader(Initializer) {}
+//
+//	void SetParameter(XRHICommandList& RHICommandList) {}
+//};
+//XShadowProjectPassVS::ShaderInfos XShadowProjectPassVS::StaticShaderInfos(
+//	"XShadowProjectPassVS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowPerTileProjectionVS.hlsl",
+//	"VS", EShaderType::SV_Vertex, XShadowProjectPassVS::CustomConstrucFunc,
+//	XShadowProjectPassVS::ModifyShaderCompileSettings);
+//XShadowProjectPassPS::ShaderInfos XShadowProjectPassPS::StaticShaderInfos(
+//	"XShadowProjectPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowPerTileProjectionPS.hlsl",
+//	"PS", EShaderType::SV_Pixel, XShadowProjectPassPS::CustomConstrucFunc,
+//	XShadowProjectPassPS::ModifyShaderCompileSettings);
+
+
+
+
+
+
+
 //XLightPass
 class XLightPassVS :public XGloablShader
 {
@@ -1125,17 +1170,6 @@ private:
 	uint64 DepthCmdBufferOffset;
 	uint64 DepthCounterOffset;
 
-	////GPU Driven
-	//uint64 m_commandBufferOffset;
-	//ComPtr<ID3D12Resource> m_commandBuffer;
-	//ComPtr<ID3D12Resource> mCulledCommandBuffer;
-	////ComPtr<ID3D12Resource> commandBufferUpload;
-	//ComPtr<ID3D12CommandSignature> m_commandSignature;
-	//
-	//uint32 CounterOffset;
-	//std::shared_ptr<XRHIStructBuffer>CmdBufferNoCulling;
-	//std::shared_ptr<XRHIStructBuffer>CmdBufferCulled;
-	//
 	std::shared_ptr<XRHIStructBuffer>GlobalObjectStructBuffer;
 	std::shared_ptr<XRHIShaderResourceView>GlobalObjectStructBufferSRV;
 	std::shared_ptr<XRHIShaderResourceView>CmdBufferShaderResourceView;
@@ -1190,8 +1224,6 @@ private:
 	std::shared_ptr<XRHITexture2D>TextureSceneColorDefferedPingPong;
 
 	XRHIRenderTargetView* RTViews[8];
-
-
 private:
 	uint32 TileNumWidthPerPhysicalTex = 8;
 	uint32 PhysicalTexNumWidthPerVirtualTex = 8;
@@ -1227,17 +1259,19 @@ private:
 	XViewMatrices ViewMatrix;
 
 private://Shadow Pass
+	std::shared_ptr<XRHICommandSignature>RHIShadowCommandSignature;
+
 	std::shared_ptr<XRHIStructBuffer>ShadowCmdBufferNoCulling;
 	std::shared_ptr<XRHIStructBuffer>ShadowCmdBufferCulled;
-	ComPtr<ID3D12Resource> D3DCommandBuffer;
+	//ComPtr<ID3D12Resource> D3DCommandBuffer;
 	uint64 ShadowCmdBufferOffset;
 	uint32 ShadowCounterOffset;
-	ComPtr<ID3D12Resource> D3DShadowCulledCommandBuffer;
+	//ComPtr<ID3D12Resource> D3DShadowCulledCommandBuffer;
 
-	std::shared_ptr<XRHIShaderResourceView>NoCullCmdBufferSRV;
-	std::shared_ptr<XRHIUnorderedAcessView> CulledCmdBufferUAV;
+	std::shared_ptr<XRHIShaderResourceView>ShadowNoCullCmdBufferSRV;
+	std::shared_ptr<XRHIUnorderedAcessView> ShadowCulledCmdBufferUAV;
 
-	ComPtr<ID3D12CommandSignature> m_commandShadowSignature;
+	//ComPtr<ID3D12CommandSignature> m_commandShadowSignature;
 	XD3D12RootSignature VSMPassRootSig;
 
 	std::shared_ptr<XRHITexture2D>PlaceHodeltarget;
@@ -1519,13 +1553,13 @@ void CrateApp::Update(const GameTimer& gt)
 static XGraphicsPSOInitializer static_RHIPSOINIT;
 static XD3DGraphicsPSO static_pso(static_RHIPSOINIT, nullptr, nullptr);
 
-struct DepthPassIndirectCommand
-{
-	D3D12_GPU_VIRTUAL_ADDRESS CbWorld;
-	D3D12_VERTEX_BUFFER_VIEW VertexBufferView;
-	D3D12_INDEX_BUFFER_VIEW IndexBufferView;
-	D3D12_DRAW_INDEXED_ARGUMENTS DrawArguments;
-};
+//struct DepthPassIndirectCommand
+//{
+//	D3D12_GPU_VIRTUAL_ADDRESS CbWorld;
+//	D3D12_VERTEX_BUFFER_VIEW VertexBufferView;
+//	D3D12_INDEX_BUFFER_VIEW IndexBufferView;
+//	D3D12_DRAW_INDEXED_ARGUMENTS DrawArguments;
+//};
 
 struct ShdadowPassIndirectCommand
 {
@@ -1539,104 +1573,71 @@ struct ShdadowPassIndirectCommand
 
 void CrateApp::VirtualShadow()
 {
+	//ShadowCommandSignature;
+	{
+		std::vector<XRHIIndirectArg>IndirectShadowArgs;
+		IndirectShadowArgs.resize(6);
+		IndirectShadowArgs[0].type = IndirectArgType::Arg_CBV;
+		IndirectShadowArgs[0].CBV.RootParameterIndex = 2;
 
-	//CBV is in the end of Root desc
-	D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[6] = {};
-	argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
-	argumentDescs[0].ConstantBufferView.RootParameterIndex = 2;//cbPerObject
+		IndirectShadowArgs[1].type = IndirectArgType::Arg_CBV;
+		IndirectShadowArgs[1].CBV.RootParameterIndex = 3;
 
-	argumentDescs[1].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
-	argumentDescs[1].ConstantBufferView.RootParameterIndex = 3;//cbPerObject
+		IndirectShadowArgs[2].type = IndirectArgType::Arg_CBV;
+		IndirectShadowArgs[2].CBV.RootParameterIndex = 4;
 
-	argumentDescs[2].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
-	argumentDescs[2].ConstantBufferView.RootParameterIndex = 4;//cbPerObject
+		IndirectShadowArgs[3].type = IndirectArgType::Arg_VBV;
+		IndirectShadowArgs[4].type = IndirectArgType::Arg_IBV;
+		IndirectShadowArgs[5].type = IndirectArgType::Arg_Draw_Indexed;
 
-	argumentDescs[3].Type = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
-	argumentDescs[3].VertexBuffer.Slot = 0;
-
-	argumentDescs[4].Type = D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW;
-	argumentDescs[5].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
-
+		TShaderReference<XShadowPerTileProjectionVS> VertexShader = GetGlobalShaderMapping()->GetShader<XShadowPerTileProjectionVS>();
+		TShaderReference<XShadowPerTileProjectionPS> PixelShader = GetGlobalShaderMapping()->GetShader<XShadowPerTileProjectionPS>();
+		RHIShadowCommandSignature = RHICreateCommandSignature(IndirectShadowArgs.data(), IndirectShadowArgs.size(), VertexShader.GetVertexShader(), PixelShader.GetPixelShader());
 	
-
-	D3D12_COMMAND_SIGNATURE_DESC CommandSignatureDesc = {};
-	CommandSignatureDesc.pArgumentDescs = argumentDescs;
-	CommandSignatureDesc.NumArgumentDescs = _countof(argumentDescs);
-	CommandSignatureDesc.ByteStride = sizeof(ShdadowPassIndirectCommand);
-
-	ThrowIfFailed(md3dDevice->CreateCommandSignature(&CommandSignatureDesc, VSMPassRootSig.GetDXRootSignature(), IID_PPV_ARGS(&m_commandShadowSignature)));
-
-
-	std::vector<ShdadowPassIndirectCommand> commands;
-	commands.resize(mOpaqueRitems.size());
-
-	for (int i = 0; i < mOpaqueRitems.size(); i++)
+	}
+	
+	void* DataPtrret;
 	{
-		auto& ri = mOpaqueRitems[i];
-
+		std::vector<XRHICommandData> RHICmdData;
+		RHICmdData.resize(RenderGeos.size());
+		for (int i = 0; i < RenderGeos.size(); i++)
 		{
-			XD3D12ConstantBuffer* ConstantBuffer = static_cast<XD3D12ConstantBuffer*>(
-				mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
-			commands[i].CbWorld = ConstantBuffer->ResourceLocation.GetGPUVirtualPtr();
+			auto& it = RenderGeos[i];
+			RHICmdData[i].CBVs.push_back(it->GetPerObjectVertexCBuffer().get());
+			RHICmdData[i].CBVs.push_back(GlobalShadowViewProjMatrix.get());
+			RHICmdData[i].CBVs.push_back(GlobalShadowViewProjMatrix.get());
+			
+			auto VertexBufferPtr = it->GetRHIVertexBuffer();
+			auto IndexBufferPtr = it->GetRHIIndexBuffer();
+			RHICmdData[i].VB = VertexBufferPtr.get();
+			RHICmdData[i].IB = IndexBufferPtr.get();
+			RHICmdData[i].IndexCountPerInstance = it->GetIndexCount();
+			RHICmdData[i].InstanceCount = 1;
+			RHICmdData[i].StartIndexLocation = 0;
+			RHICmdData[i].BaseVertexLocation = 0;
+			RHICmdData[i].StartInstanceLocation = 0;
 		}
 
-		{
-			XD3D12ConstantBuffer* ConstantBuffer = static_cast<XD3D12ConstantBuffer*>(GlobalShadowViewProjMatrix.get());
-			commands[i].CbGlobalShadowViewProjectVS = ConstantBuffer->ResourceLocation.GetGPUVirtualPtr();
-		}
+		uint32 OutCmdDataSize;
+		DataPtrret = RHIGetCommandDataPtr(RHICmdData, OutCmdDataSize);
 
-		{
-			XD3D12ConstantBuffer* ConstantBuffer = static_cast<XD3D12ConstantBuffer*>(GlobalShadowViewProjMatrix.get());
-			commands[i].CbGlobalShadowViewProjectPS = ConstantBuffer->ResourceLocation.GetGPUVirtualPtr();
-		}
+		uint32 ShadowPassIndirectBufferDataSize = OutCmdDataSize * (RHICmdData.size() * 12);
+		FResourceVectorUint8 ShadowIndirectBufferData;
+		ShadowIndirectBufferData.Data = DataPtrret;
+		ShadowIndirectBufferData.SetResourceDataSize(ShadowPassIndirectBufferDataSize);
+		XRHIResourceCreateData IndirectBufferResourceData(&ShadowIndirectBufferData);
+		ShadowCmdBufferNoCulling = RHIcreateStructBuffer(OutCmdDataSize, ShadowPassIndirectBufferDataSize,
+			EBufferUsage(int(EBufferUsage::BUF_DrawIndirect) | (int)EBufferUsage::BUF_ShaderResource), IndirectBufferResourceData);
 
-		commands[i].VertexBufferView = ri->Geo->VertexBufferView();
-		commands[i].IndexBufferView = ri->Geo->IndexBufferView();
+		ShadowCmdBufferOffset = RHIGetCmdBufferOffset(ShadowCmdBufferNoCulling.get());
+		ShadowCounterOffset = AlignArbitrary(ShadowPassIndirectBufferDataSize, D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT);
 
-		commands[i].DrawArguments.IndexCountPerInstance = ri->IndexCount;
-		commands[i].DrawArguments.InstanceCount = 1;
-		commands[i].DrawArguments.StartIndexLocation = ri->StartIndexLocation;
-		commands[i].DrawArguments.BaseVertexLocation = ri->BaseVertexLocation;
-		commands[i].DrawArguments.StartInstanceLocation = 0;
+		ShadowCmdBufferCulled = RHIcreateStructBuffer(ShadowPassIndirectBufferDataSize, ShadowCounterOffset + sizeof(UINT),
+			EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer) | int(EBufferUsage::BUF_UnorderedAccess)), nullptr);
+
+		ShadowNoCullCmdBufferSRV = RHICreateShaderResourceView(ShadowCmdBufferNoCulling.get());
+		ShadowCulledCmdBufferUAV = RHICreateUnorderedAccessView(ShadowCmdBufferCulled.get(), true, true, ShadowCounterOffset);
 	}
-
-	uint32 IndirectBufferDataSize = sizeof(ShdadowPassIndirectCommand) * (commands.size() * 16);
-	{
-		void* IndirectBufferDataPtr = std::malloc(IndirectBufferDataSize);
-		if (IndirectBufferDataPtr != nullptr)
-		{
-			memcpy(IndirectBufferDataPtr, commands.data(), IndirectBufferDataSize);
-		}
-		FResourceVectorUint8 IndirectBufferData;
-		IndirectBufferData.Data = IndirectBufferDataPtr;
-		IndirectBufferData.SetResourceDataSize(IndirectBufferDataSize);
-		XRHIResourceCreateData IndirectBufferResourceData(&IndirectBufferData);
-		ShadowCmdBufferNoCulling = RHIcreateStructBuffer(
-			sizeof(ShdadowPassIndirectCommand),
-			IndirectBufferDataSize,
-			EBufferUsage(int(EBufferUsage::BUF_DrawIndirect) | (int)EBufferUsage::BUF_ShaderResource),
-			IndirectBufferResourceData);
-		D3DCommandBuffer = static_cast<XD3D12StructBuffer*>(ShadowCmdBufferNoCulling.get())->ResourcePtr.GetBackResource()->GetResource();
-		ShadowCmdBufferOffset = static_cast<XD3D12StructBuffer*>(ShadowCmdBufferNoCulling.get())->ResourcePtr.GetOffsetByteFromBaseResource();
-	}
-
-
-	ShadowCounterOffset = AlignArbitrary(IndirectBufferDataSize, D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT);
-	{
-		ShadowCmdBufferCulled = RHIcreateStructBuffer(
-			sizeof(ShdadowPassIndirectCommand),
-			ShadowCounterOffset + sizeof(UINT),
-			EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer) | int(EBufferUsage::BUF_UnorderedAccess)),
-			nullptr);
-	}
-
-	{
-		D3DShadowCulledCommandBuffer = static_cast<XD3D12StructBuffer*>(ShadowCmdBufferCulled.get())->ResourcePtr.GetBackResource()->GetResource();
-	}
-
-
-	NoCullCmdBufferSRV = RHICreateShaderResourceView(ShadowCmdBufferNoCulling.get());
-	CulledCmdBufferUAV = RHICreateUnorderedAccessView(ShadowCmdBufferCulled.get(), true, true, ShadowCounterOffset);
 }
 void CrateApp::TestExecute()
 {
@@ -1653,8 +1654,6 @@ void CrateApp::TestExecute()
 		TShaderReference<XPreDepthPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XPreDepthPassPS>();
 		RHIDepthCommandSignature = RHICreateCommandSignature(IndirectPreDepthArgs.data(), 4, VertexShader.GetVertexShader(), PixelShader.GetPixelShader());
 	}
-
-
 	
 	//ObjectConstants
 	GlobalShadowViewProjMatrix = RHICreateConstantBuffer(TileNumWidthPerVirtualTex * TileNumWidthPerVirtualTex * sizeof(TiledInfoStruct));
@@ -1735,91 +1734,6 @@ void CrateApp::TestExecute()
 
 		GlobalObjectStructBufferSRV = RHICreateShaderResourceView(GlobalObjectStructBuffer.get());
 	}
-
-	//----------------------------------------------
-	//D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[4] = {};
-	//argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
-	//argumentDescs[0].ConstantBufferView.RootParameterIndex = 0;//cbPerObject
-	//
-	//argumentDescs[1].Type = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
-	//argumentDescs[1].VertexBuffer.Slot = 0;
-	//
-	//argumentDescs[2].Type = D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW;
-	//argumentDescs[3].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
-	//
-	//D3D12_COMMAND_SIGNATURE_DESC CommandSignatureDesc = {};
-	//CommandSignatureDesc.pArgumentDescs = argumentDescs;
-	//CommandSignatureDesc.NumArgumentDescs = _countof(argumentDescs);
-	//CommandSignatureDesc.ByteStride = sizeof(DepthPassIndirectCommand);
-	//
-	//ThrowIfFailed(md3dDevice->CreateCommandSignature(&CommandSignatureDesc,PrePassRootSig.GetDXRootSignature(), IID_PPV_ARGS(&m_commandSignature)));
-	
-	//std::vector<DepthPassIndirectCommand> commands;
-	//commands.resize(mOpaqueRitems.size());
-	// 
-	//for (int i = 0; i < mOpaqueRitems.size(); i++)
-	//{
-	//	auto& ri = mOpaqueRitems[i];
-	//	
-	//	{
-	//		XD3D12ConstantBuffer* ConstantBuffer = static_cast<XD3D12ConstantBuffer*>(
-	//			mFrameResource.get()->ObjectConstantBuffer[ri->ObjCBIndex].get());
-	//		commands[i].CbWorld = ConstantBuffer->ResourceLocation.GetGPUVirtualPtr();
-	//	}
-	//
-	//	commands[i].VertexBufferView = ri->Geo->VertexBufferView();
-	//	commands[i].IndexBufferView = ri->Geo->IndexBufferView();
-	//
-	//	commands[i].DrawArguments.IndexCountPerInstance = ri->IndexCount;
-	//	commands[i].DrawArguments.InstanceCount = 1;
-	//	commands[i].DrawArguments.StartIndexLocation = ri->StartIndexLocation;
-	//	commands[i].DrawArguments.BaseVertexLocation = ri->BaseVertexLocation;
-	//	commands[i].DrawArguments.StartInstanceLocation = 0;
-	//}
-
-
-	//Create Command Buffer
-	////uint32 IndirectBufferDataSize = sizeof(DepthPassIndirectCommand) * (commands.size());
-	//uint32 IndirectBufferDataSize = sizeof(DepthPassIndirectCommand) * (mOpaqueRitems.size());
-	//int aaa = sizeof(DepthPassIndirectCommand);
-	//{
-	//	//void* IndirectBufferDataPtr = std::malloc(IndirectBufferDataSize);
-	//	//if (IndirectBufferDataPtr != nullptr)
-	//	//{
-	//	//	memcpy(IndirectBufferDataPtr, commands.data(), IndirectBufferDataSize);
-	//	//}
-	//	FResourceVectorUint8 IndirectBufferData;
-	//	//IndirectBufferData.Data = IndirectBufferDataPtr;
-	//	IndirectBufferData.Data = DataPtrret;
-	//	IndirectBufferData.SetResourceDataSize(IndirectBufferDataSize);
-	//	XRHIResourceCreateData IndirectBufferResourceData(&IndirectBufferData);
-	//	CmdBufferNoCulling = RHIcreateStructBuffer(
-	//		sizeof(DepthPassIndirectCommand),
-	//		IndirectBufferDataSize,
-	//		EBufferUsage(int(EBufferUsage::BUF_DrawIndirect) | (int)EBufferUsage::BUF_ShaderResource),
-	//		IndirectBufferResourceData);
-	//	m_commandBuffer = static_cast<XD3D12StructBuffer*>(CmdBufferNoCulling.get())->ResourcePtr.GetBackResource()->GetResource();
-	//	m_commandBufferOffset = static_cast<XD3D12StructBuffer*>(CmdBufferNoCulling.get())->ResourcePtr.GetOffsetByteFromBaseResource();
-	//}
-	//
-	//CounterOffset = AlignArbitrary(IndirectBufferDataSize, D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT);
-	//{
-	//	CmdBufferCulled = RHIcreateStructBuffer(
-	//		sizeof(DepthPassIndirectCommand),
-	//		CounterOffset + sizeof(UINT),
-	//		EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer)|int(EBufferUsage::BUF_UnorderedAccess)),
-	//		nullptr);
-	//}
-	//
-	//{
-	//	mCulledCommandBuffer = static_cast<XD3D12StructBuffer*>(CmdBufferCulled.get())->ResourcePtr.GetBackResource()->GetResource();
-	//}
-	//
-	//CmdBufferShaderResourceView = RHICreateShaderResourceView(CmdBufferNoCulling.get());
-	//CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(CmdBufferCulled.get(), true, true, CounterOffset);
-	//
-	//CullingParametersIns.commandCount = RenderGeos.size();
-
 }
 
 void CrateApp::Renderer(const GameTimer& gt)
@@ -1881,57 +1795,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		mCommandList->EndEvent();
 	}
 
-	//Pass1 DepthPrePass
-	//{		
-	//	mCommandList->BeginEvent(1, "DepthPrePass", sizeof("DepthPrePass"));
-	//
-	//	direct_ctx->RHISetViewport(0.0f, 0.0f, 0.0f, mClientWidth, mClientHeight, 1.0f);
-	//	mCommandList->SetPipelineState(mDepthOnlyPSO.Get());
-	//	pass_state_manager->SetRootSignature(&PrePassRootSig);
-	//	
-	//	direct_ctx->RHISetRenderTargets(0, nullptr,
-	//		static_cast<XD3D12Texture2D*>(TextureDepthStencil.get())->GeDepthStencilView());
-	//	direct_ctx->RHIClearMRT(false, true, nullptr, 0.0f, 0);
-	//
-	//	pass_state_manager->SetShader<EShaderType::SV_Vertex>(&mShaders["PrePassVS"]);
-	//	pass_state_manager->SetShader<EShaderType::SV_Pixel>(&mShaders["PrePassPS"]);
-	//	pass_state_manager->SetShader<EShaderType::SV_Compute>(nullptr);
-	//	
-	//	ID3D12CommandSignature* CmdSig = static_cast<XD3DCommandRootSignature*>(RHIDepthCommandSignature.get())->DxCommandSignature.Get();
-	//	//ID3D12Resource* ArgRes = static_cast<XD3D12StructBuffer*>(DepthCmdBufferCulled.get())->ResourcePtr.GetBackResource()->GetResource();
-	//
-	//	{
-	//		D3D12_RESOURCE_BARRIER barriers[1] = {
-	//		CD3DX12_RESOURCE_BARRIER::Transition(
-	//		mCulledCommandBuffer.Get(),
-	//		//ArgRes,
-	//		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-	//		D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT) };
-	//		mCommandList->ResourceBarrier(_countof(barriers), barriers);
-	//	}
-	//
-	//	{
-	//		direct_ctx->RHISetShaderConstantBuffer(
-	//			EShaderType::SV_Vertex, 1,
-	//			RViewInfo.ViewConstantBuffer.get());
-	//		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-	//		direct_ctx->GetCmdList()->CmdListFlushBarrier();
-	//		mCommandList->ExecuteIndirect(
-	//			CmdSig,
-	//			//m_commandSignature.Get(),
-	//			mOpaqueRitems.size(),
-	//			mCulledCommandBuffer.Get(),
-	//			//ArgRes,
-	//			0,
-	//			mCulledCommandBuffer.Get(),
-	//			//ArgRes,
-	//			//DepthCounterOffset
-	//			CounterOffset
-	//		);
-	//	}
-	//
-	//	mCommandList->EndEvent();
-	//}
+	
 
 	pass_state_manager->ResetState();
 	{
@@ -1981,8 +1845,8 @@ void CrateApp::Renderer(const GameTimer& gt)
 		
 		Shader->SetParameters(
 			RHICmdList,
-			CulledCmdBufferUAV.get(),
-			NoCullCmdBufferSRV.get(),
+			ShadowCulledCmdBufferUAV.get(),
+			ShadowNoCullCmdBufferSRV.get(),
 			GlobalObjectStructBufferSRV.get(),
 			cbCullingParameters.get(),
 			VirtualSMFlagsTex->GetShaderResourceView(0));
@@ -2018,28 +1882,11 @@ void CrateApp::Renderer(const GameTimer& gt)
 		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
 		PixelShader->SetParameters(RHICmdList, PhysicalShadowDepthTex->GeUnorderedAcessView(0), PagetableInfosTex->GetShaderResourceView(0));
-		pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
 
-
-		{
-			D3D12_RESOURCE_BARRIER barriers[1] = {
-			CD3DX12_RESOURCE_BARRIER::Transition(
-			D3DShadowCulledCommandBuffer.Get(),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT) };
-			mCommandList->ResourceBarrier(_countof(barriers), barriers);
-		}
-		{
-			pass_state_manager->ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Graphics>();
-			direct_ctx->GetCmdList()->CmdListFlushBarrier();
-			mCommandList->ExecuteIndirect(
-				m_commandShadowSignature.Get(),
-				mOpaqueRitems.size() * 16,
-				D3DShadowCulledCommandBuffer.Get(),
-				0,
-				D3DShadowCulledCommandBuffer.Get(),
-				ShadowCounterOffset);
-		}
+		RHICmdList.RHIExecuteIndirect(
+			RHIShadowCommandSignature.get(), RenderGeos.size() * 12,
+			ShadowCmdBufferCulled.get(),ShadowCmdBufferOffset,
+			ShadowCmdBufferCulled.get(),ShadowCounterOffset);
 
 		mCommandList->EndEvent();
 	}
@@ -2106,23 +1953,6 @@ void CrateApp::Renderer(const GameTimer& gt)
 				MultiScatteredLuminanceLutUAV.get());
 			RHICmdList.RHIDispatchComputeShader(192 / 8, 104 / 8, 1);
 		}
-
-		//RenderCameraAerialPerspectiveVolumeCS
-		{
-			TShaderReference<XRenderCameraAerialPerspectiveVolumeCS> Shader = GetGlobalShaderMapping()->GetShader<XRenderCameraAerialPerspectiveVolumeCS>();
-			XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
-			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
-
-			XD3D12TextureBase* CameraAerialPerspectiveVolumeUAVTex = GetD3D12TextureFromRHITexture(CameraAerialPerspectiveVolumeUAV.get());
-			Shader->SetParameters(RHICmdList,
-				RViewInfo.ViewConstantBuffer.get(),
-				RHICbSkyAtmosphere.get(),
-				CameraAerialPerspectiveVolumeUAVTex->GeUnorderedAcessView(),
-				TransmittanceLutUAV.get(),
-				MultiScatteredLuminanceLutUAV.get());
-			RHICmdList.RHIDispatchComputeShader(32 / 8, 32 / 8, 16 / 8);
-		}
-
 	}
 
 
@@ -3109,7 +2939,7 @@ void CrateApp::BuildShapeGeometry()
 	GeometryGenerator geoGen;
 	{
 		GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5, 36, 36);//geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
-		GeometryGenerator::MeshData grid = geoGen.CreateGrid(10.0f, 10.0f, 10, 10);
+		GeometryGenerator::MeshData grid = geoGen.CreateGrid(8.0f, 8.0f, 10, 10);
 
 		//step2
 		UINT sphereVertexOffset = 0;
