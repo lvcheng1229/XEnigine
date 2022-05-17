@@ -52,6 +52,12 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 
 	ShadowMaskGenerate(RHICmdList);
 	VSMTileMaskClear(RHICmdList);
+
+	LightPass(RHICmdList);
+
+	SkyAtmoSphereCombine(RHICmdList);
+
+	PostProcessToneMapping(RHICmdList, SceneTargets.TextureSceneColorDeffered.get(), SceneTargets.TextureSceneColorDefferedPingPong.get());
 }
 
 

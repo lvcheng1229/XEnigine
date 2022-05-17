@@ -92,37 +92,37 @@ void XLocalVertexFactory::ReleaseRHI()
 
 
 //ToneMapping PS
-class XToneMappingPassPS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XToneMappingPassPS(Initializer);
-	}
-
-	static ShaderInfos StaticShaderInfos;
-
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-
-public:
-	XToneMappingPassPS(const XShaderInitlizer& Initializer)
-		:XGloablShader(Initializer)
-	{
-		FullScreenMap.Bind(Initializer.ShaderParameterMap, "FullScreenMap");
-	}
-
-	void SetParameter(
-		XRHICommandList& RHICommandList,
-		XRHITexture* InTexture)
-	{
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, FullScreenMap, InTexture);
-	}
-	TextureParameterType    FullScreenMap;
-};
-XToneMappingPassPS::ShaderInfos XToneMappingPassPS::StaticShaderInfos(
-	"XToneMappingPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ToneMapping.hlsl",
-	"ToneMapping_PS", EShaderType::SV_Pixel, XToneMappingPassPS::CustomConstrucFunc,
-	XToneMappingPassPS::ModifyShaderCompileSettings);
+//class XToneMappingPassPS :public XGloablShader
+//{
+//public:
+//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+//	{
+//		return new XToneMappingPassPS(Initializer);
+//	}
+//
+//	static ShaderInfos StaticShaderInfos;
+//
+//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+//
+//public:
+//	XToneMappingPassPS(const XShaderInitlizer& Initializer)
+//		:XGloablShader(Initializer)
+//	{
+//		FullScreenMap.Bind(Initializer.ShaderParameterMap, "FullScreenMap");
+//	}
+//
+//	void SetParameter(
+//		XRHICommandList& RHICommandList,
+//		XRHITexture* InTexture)
+//	{
+//		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, FullScreenMap, InTexture);
+//	}
+//	TextureParameterType    FullScreenMap;
+//};
+//XToneMappingPassPS::ShaderInfos XToneMappingPassPS::StaticShaderInfos(
+//	"XToneMappingPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ToneMapping.hlsl",
+//	"ToneMapping_PS", EShaderType::SV_Pixel, XToneMappingPassPS::CustomConstrucFunc,
+//	XToneMappingPassPS::ModifyShaderCompileSettings);
 
 class XFinalPassPS :public XGloablShader
 {
@@ -152,266 +152,6 @@ XFinalPassPS::ShaderInfos XFinalPassPS::StaticShaderInfos(
 	"XFinalPassPS", L"E:/XEngine/XEnigine/Source/Shaders/FinalPassShader.hlsl",
 	"PS", EShaderType::SV_Pixel, XFinalPassPS::CustomConstrucFunc,
 	XFinalPassPS::ModifyShaderCompileSettings);
-
-
-
-
-
-
-
-//XLightPass
-class XLightPassVS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XLightPassVS(Initializer);
-	}
-
-	static ShaderInfos StaticShaderInfos;
-
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-
-public:
-	XLightPassVS(const XShaderInitlizer& Initializer)
-		:XGloablShader(Initializer)
-	{
-		CBV_View.Bind(Initializer.ShaderParameterMap, "cbView");
-	}
-
-	void SetParameter(
-		XRHICommandList& RHICommandList,
-		XRHIConstantBuffer* ViewCB)
-	{
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Vertex, CBV_View, ViewCB);
-	}
-	CBVParameterType CBV_View;
-};
-
-class XLightPassPS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XLightPassPS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-
-public:
-	XLightPassPS(const XShaderInitlizer& Initializer)
-		:XGloablShader(Initializer)
-	{
-		CBV_View.Bind(Initializer.ShaderParameterMap, "cbView");
-		CBV_DefferedLight.Bind(Initializer.ShaderParameterMap, "cbLightPass");
-
-		GBufferATexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferATexture");
-		GBufferBTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferBTexture");
-		GBufferCTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferCTexture");
-		GBufferDTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferDTexture");
-		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
-		ShadowMakTex.Bind(Initializer.ShaderParameterMap, "ShadowMaskTex");
-	}
-
-	void SetParameter(
-		XRHICommandList& RHICommandList,
-		XRHIConstantBuffer* InCBV_View,
-		XRHIConstantBuffer* InCBV_DefferedLight,
-
-		XRHITexture* InGBufferATexture,
-		XRHITexture* InGBufferBTexture,
-		XRHITexture* InGBufferCTexture,
-		XRHITexture* InGBufferDTexture,
-		XRHITexture* InSceneDepthTexture,
-		XRHITexture* InLightAttenuationTexture)
-	{
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, CBV_View, InCBV_View);
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, CBV_DefferedLight, InCBV_DefferedLight);
-
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferATexture, InGBufferATexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferBTexture, InGBufferBTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferCTexture, InGBufferCTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferDTexture, InGBufferDTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, ShadowMakTex, InLightAttenuationTexture);
-	}
-
-	CBVParameterType CBV_View;
-	CBVParameterType CBV_DefferedLight;
-
-	TextureParameterType GBufferATexture;
-	TextureParameterType GBufferBTexture;
-	TextureParameterType GBufferCTexture;
-	TextureParameterType GBufferDTexture;
-	TextureParameterType SceneDepthTexture;
-	TextureParameterType ShadowMakTex;
-
-};
-
-XLightPassVS::ShaderInfos XLightPassVS::StaticShaderInfos(
-	"XLightPassVS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightVertexShaders.hlsl",
-	"DeferredLightVertexMain", EShaderType::SV_Vertex, XLightPassVS::CustomConstrucFunc,
-	XLightPassVS::ModifyShaderCompileSettings);
-XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
-	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightPixelShaders.hlsl",
-	"DeferredLightPixelMain", EShaderType::SV_Pixel, XLightPassPS::CustomConstrucFunc,
-	XLightPassPS::ModifyShaderCompileSettings);
-
-
-//class VSMTileMaskClearCS :public XGloablShader
-//{
-//public:
-//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-//	{
-//		return new VSMTileMaskClearCS(Initializer);
-//	}
-//	static ShaderInfos StaticShaderInfos;
-//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-//public:
-//	VSMTileMaskClearCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
-//	{
-//		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
-//		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
-//	}
-//
-//	void SetParameters(
-//		XRHICommandList& RHICommandList,
-//		XRHIUnorderedAcessView* VirtualSMFlagsIn,
-//		XRHIUnorderedAcessView* PhysicalShadowDepthTextureIn)
-//	{
-//		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
-//		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, PhysicalShadowDepthTextureIn);
-//	}
-//	UAVParameterType VirtualSMFlags;
-//	UAVParameterType PhysicalShadowDepthTexture;
-//};
-//VSMTileMaskClearCS::ShaderInfos VSMTileMaskClearCS::StaticShaderInfos(
-//	"VSMTileMaskClearCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskClearCS.hlsl",
-//	"VSMTileMaskClearCS", EShaderType::SV_Compute, VSMTileMaskClearCS::CustomConstrucFunc,
-//	VSMTileMaskClearCS::ModifyShaderCompileSettings);
-
-
-//class ShadowMaskGenCS :public XGloablShader
-//{
-//public:
-//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-//	{
-//		return new ShadowMaskGenCS(Initializer);
-//	}
-//	static ShaderInfos StaticShaderInfos;
-//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-//public:
-//	ShadowMaskGenCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
-//	{
-//		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
-//		cbShadowViewInfo.Bind(Initializer.ShaderParameterMap, "cbShadowViewInfo");
-//		
-//		VsmShadowMaskTex.Bind(Initializer.ShaderParameterMap, "VsmShadowMaskTex");
-//		
-//		GBufferNormal.Bind(Initializer.ShaderParameterMap, "GBufferNormal");
-//		SceneDepthInput.Bind(Initializer.ShaderParameterMap, "SceneDepthInput");
-//		PagetableInfos.Bind(Initializer.ShaderParameterMap, "PagetableInfos");
-//		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
-//	}
-//
-//	void SetParameters(
-//		XRHICommandList& RHICommandList,
-//		XRHIConstantBuffer* IncbView,
-//		XRHIConstantBuffer* IncbShadowViewInfo,
-//		
-//		XRHIUnorderedAcessView* InVsmShadowMaskTex,
-//
-//		XRHIShaderResourceView* InGBufferNormal,
-//		XRHIShaderResourceView* InSceneDepthInput,
-//		XRHIShaderResourceView* InPagetableInfos,
-//		XRHIShaderResourceView* InPhysicalShadowDepthTexture)
-//	{
-//		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbView, IncbView);
-//		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbShadowViewInfo, IncbShadowViewInfo);
-//
-//		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VsmShadowMaskTex, InVsmShadowMaskTex);
-//
-//		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, GBufferNormal, InGBufferNormal);
-//		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, SceneDepthInput, InSceneDepthInput);
-//		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, PagetableInfos, InPagetableInfos);
-//		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, InPhysicalShadowDepthTexture);
-//	}
-//
-//	CBVParameterType cbView;
-//	CBVParameterType cbShadowViewInfo;
-//
-//	UAVParameterType VsmShadowMaskTex;
-//
-//	SRVParameterType GBufferNormal;
-//	SRVParameterType SceneDepthInput;
-//	SRVParameterType PagetableInfos;
-//	SRVParameterType PhysicalShadowDepthTexture;
-//};
-//ShadowMaskGenCS::ShaderInfos ShadowMaskGenCS::StaticShaderInfos(
-//	"ShadowMaskGenCS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowMaskGenCS.hlsl",
-//	"ShadowMaskGenCS", EShaderType::SV_Compute, ShadowMaskGenCS::CustomConstrucFunc,
-//	ShadowMaskGenCS::ModifyShaderCompileSettings);
-
-//XRenderCameraAerialPerspectiveVolumeCS
-class XRenderCameraAerialPerspectiveVolumeCS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XRenderCameraAerialPerspectiveVolumeCS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings)
-	{
-		OutSettings.SetDefines("THREADGROUP_SIZE", "8");
-	}
-public:
-	XRenderCameraAerialPerspectiveVolumeCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
-	{
-		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
-		cbSkyAtmosphere.Bind(Initializer.ShaderParameterMap, "SkyAtmosphere");
-
-		CameraAerialPerspectiveVolume.Bind(Initializer.ShaderParameterMap, "CameraAerialPerspectiveVolumeUAV");
-
-		MultiScatteredLuminanceLutTexture.Bind(Initializer.ShaderParameterMap, "MultiScatteredLuminanceLutTexture");
-		TransmittanceLutTexture.Bind(Initializer.ShaderParameterMap, "TransmittanceLutTexture");
-	}
-
-	void SetParameters(
-		XRHICommandList& RHICommandList,
-		XRHIConstantBuffer* IncbView,
-		XRHIConstantBuffer* IncbSkyAtmosphere,
-
-		XRHIUnorderedAcessView* InCameraAerialPerspectiveVolumeUAV,
-
-		XRHITexture* InTransmittanceLutTexture,
-		XRHITexture* InMultiScatteredLuminanceLutTexture
-	)
-	{
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbView, IncbView);
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbSkyAtmosphere, IncbSkyAtmosphere);
-
-		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, CameraAerialPerspectiveVolume, InCameraAerialPerspectiveVolumeUAV);
-
-		SetTextureParameter(RHICommandList, EShaderType::SV_Compute, TransmittanceLutTexture, InTransmittanceLutTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Compute, MultiScatteredLuminanceLutTexture, InMultiScatteredLuminanceLutTexture);
-	}
-
-	CBVParameterType cbView;
-	CBVParameterType cbSkyAtmosphere;
-
-	UAVParameterType CameraAerialPerspectiveVolume;
-
-	TextureParameterType MultiScatteredLuminanceLutTexture;
-	TextureParameterType TransmittanceLutTexture;
-};
-
-XRenderCameraAerialPerspectiveVolumeCS::ShaderInfos XRenderCameraAerialPerspectiveVolumeCS::StaticShaderInfos(
-	"RenderCameraAerialPerspectiveVolumeCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
-	"RenderCameraAerialPerspectiveVolumeCS", EShaderType::SV_Compute, XRenderCameraAerialPerspectiveVolumeCS::CustomConstrucFunc,
-	XRenderCameraAerialPerspectiveVolumeCS::ModifyShaderCompileSettings);
-
 
 class XSSRPassPS :public XGloablShader
 {
@@ -515,55 +255,55 @@ XReflectionEnvironmentPS::ShaderInfos XReflectionEnvironmentPS::StaticShaderInfo
 	XReflectionEnvironmentPS::ModifyShaderCompileSettings);
 
 
-class XRenderSkyAtmosphereRayMarchingPS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XRenderSkyAtmosphereRayMarchingPS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-
-public:
-	XRenderSkyAtmosphereRayMarchingPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
-	{
-		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
-		SkyAtmosphere.Bind(Initializer.ShaderParameterMap, "SkyAtmosphere");
-
-		SkyViewLutTexture.Bind(Initializer.ShaderParameterMap, "SkyViewLutTexture");
-		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
-		TransmittanceLutTexture_Combine.Bind(Initializer.ShaderParameterMap, "TransmittanceLutTexture_Combine");
-	}
-
-	void SetParameter(
-		XRHICommandList& RHICommandList,
-		XRHIConstantBuffer* IncbView,
-		XRHIConstantBuffer* InSkyAtmosphere,
-		XRHITexture* InSkyViewLutTexture,
-		XRHITexture* InSceneDepthTexture,
-		XRHITexture* InTransmittanceLutTexture_Combine
-	)
-	{
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, cbView, IncbView);
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, SkyAtmosphere, InSkyAtmosphere);
-
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SkyViewLutTexture, InSkyViewLutTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, TransmittanceLutTexture_Combine, InTransmittanceLutTexture_Combine);
-	}
-
-	CBVParameterType cbView;
-	CBVParameterType SkyAtmosphere;
-
-	TextureParameterType SkyViewLutTexture;
-	TextureParameterType SceneDepthTexture;
-	TextureParameterType TransmittanceLutTexture_Combine;
-};
-XRenderSkyAtmosphereRayMarchingPS::ShaderInfos XRenderSkyAtmosphereRayMarchingPS::StaticShaderInfos(
-	"XRenderSkyAtmosphereRayMarchingPS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
-	"RenderSkyAtmosphereRayMarchingPS", EShaderType::SV_Pixel, XRenderSkyAtmosphereRayMarchingPS::CustomConstrucFunc,
-	XRenderSkyAtmosphereRayMarchingPS::ModifyShaderCompileSettings);
+//class XRenderSkyAtmosphereRayMarchingPS :public XGloablShader
+//{
+//public:
+//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+//	{
+//		return new XRenderSkyAtmosphereRayMarchingPS(Initializer);
+//	}
+//	static ShaderInfos StaticShaderInfos;
+//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+//
+//public:
+//	XRenderSkyAtmosphereRayMarchingPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+//	{
+//		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
+//		SkyAtmosphere.Bind(Initializer.ShaderParameterMap, "SkyAtmosphere");
+//
+//		SkyViewLutTexture.Bind(Initializer.ShaderParameterMap, "SkyViewLutTexture");
+//		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
+//		TransmittanceLutTexture_Combine.Bind(Initializer.ShaderParameterMap, "TransmittanceLutTexture_Combine");
+//	}
+//
+//	void SetParameter(
+//		XRHICommandList& RHICommandList,
+//		XRHIConstantBuffer* IncbView,
+//		XRHIConstantBuffer* InSkyAtmosphere,
+//		XRHITexture* InSkyViewLutTexture,
+//		XRHITexture* InSceneDepthTexture,
+//		XRHITexture* InTransmittanceLutTexture_Combine
+//	)
+//	{
+//		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, cbView, IncbView);
+//		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, SkyAtmosphere, InSkyAtmosphere);
+//
+//		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SkyViewLutTexture, InSkyViewLutTexture);
+//		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
+//		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, TransmittanceLutTexture_Combine, InTransmittanceLutTexture_Combine);
+//	}
+//
+//	CBVParameterType cbView;
+//	CBVParameterType SkyAtmosphere;
+//
+//	TextureParameterType SkyViewLutTexture;
+//	TextureParameterType SceneDepthTexture;
+//	TextureParameterType TransmittanceLutTexture_Combine;
+//};
+//XRenderSkyAtmosphereRayMarchingPS::ShaderInfos XRenderSkyAtmosphereRayMarchingPS::StaticShaderInfos(
+//	"XRenderSkyAtmosphereRayMarchingPS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
+//	"RenderSkyAtmosphereRayMarchingPS", EShaderType::SV_Pixel, XRenderSkyAtmosphereRayMarchingPS::CustomConstrucFunc,
+//	XRenderSkyAtmosphereRayMarchingPS::ModifyShaderCompileSettings);
 
 
 struct BoundSphere
@@ -666,9 +406,7 @@ private:
 	std::shared_ptr<XRHITexture2D>TextureWoodBaseColor;
 	std::shared_ptr<XRHITexture2D>TextureWoodNormal;
 
-
-	std::shared_ptr<XRHITexture2D>TextureSceneColorDeffered;
-	std::shared_ptr<XRHITexture2D>TextureSceneColorDefferedPingPong;
+	//std::shared_ptr<XRHITexture2D>TextureSceneColorDefferedPingPong;
 
 	XRHIRenderTargetView* RTViews[8];
 private:
@@ -676,21 +414,6 @@ private:
 	uint32 PhysicalTexNumWidthPerVirtualTex = 8;
 	uint32 TileNumWidthPerVirtualTex = 8 * 8;
 
-private://deffered light pass
-
-	struct cbDefferedLight
-	{
-		XVector3 LightDir;
-		float padding0 = 0;
-		XMFLOAT4 LightColorAndIntensityInLux;
-	};
-
-	cbDefferedLight cbDefferedLightIns;
-	std::shared_ptr<XRHIConstantBuffer> RHIcbDefferedLight;
-
-private:
-	//Full Screen Pass
-	//XViewMatrices ViewMatrix;
 
 private://Shadow Pass
 
@@ -708,8 +431,6 @@ private://Shadow Pass
 
 	// Shadow Mask Pass
 private:
-	//std::shared_ptr<XRHITexture2D>VSMShadowMaskTexture;
-
 	std::shared_ptr<XRHITexture2D> SSROutput;
 
 
@@ -751,7 +472,6 @@ bool CrateApp::Initialize()
 
 	ShadowPassConstantBuffer = abstrtact_device.CreateUniformBuffer(sizeof(ShadowPassConstants));
 	cbCullingParameters = RHICreateConstantBuffer(sizeof(cbCullingParametersStruct));
-	RHIcbDefferedLight = abstrtact_device.CreateUniformBuffer(sizeof(cbDefferedLight));
 
 	BuildPSOs();
 	TestExecute();
@@ -870,108 +590,9 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	RViewInfo = DeferredShadingRenderer.RViewInfo;
 	RViewInfo.ViewConstantBuffer.get()->UpdateData(&RViewInfo.ViewCBCPUData, sizeof(ViewConstantBufferData), 0);
-	
-	auto TextureDepthStencil = DeferredShadingRenderer.TempGetTextureDepthStencil();
-	auto TextureGBufferA= DeferredShadingRenderer.TempGetTextureGBufferA();
-	auto TextureGBufferB= DeferredShadingRenderer.TempGetTextureGBufferB();
-	auto TextureGBufferC= DeferredShadingRenderer.TempGetTextureGBufferC();
-	auto TextureGBufferD= DeferredShadingRenderer.TempGetTextureGBufferD();
-	auto VirtualSMFlags = DeferredShadingRenderer.TempGetVirtualSMFlags();
-	auto VSMTileMaskConstantBuffer = DeferredShadingRenderer.TempGetVSMTileMaskConstantBuffer();
-	auto PagetableInfos = DeferredShadingRenderer.TempGetPagetableInfos();
-	auto PhysicalShadowDepthTexture = DeferredShadingRenderer.TempGetPhysicalDepth();
-	auto TransmittanceLutUAV = DeferredShadingRenderer.TempGetTransmittanceLutUAV();
-	auto SkyViewLutUAV = DeferredShadingRenderer.TempGetSkyViewLutUAV();
-	auto RHICbSkyAtmosphere = DeferredShadingRenderer.TempGetRHICbSkyAtmosphere();
-	auto VSMShadowMaskTexture = DeferredShadingRenderer.TempGetVSMShadowMaskTexture();
 
-
-	//LightPass
-	{
-		XRHITexture* SceneColorRTs = TextureSceneColorDeffered.get();
-		XRHIRenderPassInfo RPInfos(1, &SceneColorRTs, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
-		RHICmdList.RHIBeginRenderPass(RPInfos, "LightPass", sizeof("LightPass"));
-		RHICmdList.CacheActiveRenderTargets(RPInfos);
-
-		XGraphicsPSOInitializer GraphicsPSOInit;
-		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
-		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-
-		TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMapping()->GetShader<XLightPassVS>();
-		TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XLightPassPS>();
-		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
-		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
-		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
-
-		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-
-		VertexShader->SetParameter(RHICmdList, RViewInfo.ViewConstantBuffer.get());
-		PixelShader->SetParameter(RHICmdList, RViewInfo.ViewConstantBuffer.get(), RHIcbDefferedLight.get(),
-			TextureGBufferA.get(), TextureGBufferB.get(), TextureGBufferC.get(), TextureGBufferD.get(),
-			TextureDepthStencil.get(), VSMShadowMaskTexture.get());
-
-		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
-		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
-		RHICmdList.RHIEndRenderPass();
-	}
-
-
-
-	//SkyAtmosphere Combine Pass
-	{
-		XRHITexture* TextureSceneColor = TextureSceneColorDeffered.get();
-		XRHIRenderPassInfo RPInfos(1, &TextureSceneColor, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
-		RHICmdList.RHIBeginRenderPass(RPInfos, "SkyAtmosphere Combine Pass",sizeof("SkyAtmosphere Combine Pass"));
-		RHICmdList.CacheActiveRenderTargets(RPInfos);
-
-		XGraphicsPSOInitializer GraphicsPSOInit;
-		GraphicsPSOInit.BlendState = TStaticBlendState<true,
-			EBlendOperation::BO_Add, EBlendFactor::BF_One, EBlendFactor::BF_One,
-			EBlendOperation::BO_Add, EBlendFactor::BF_One, EBlendFactor::BF_One>::GetRHI();
-		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-
-		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XRenderSkyAtmosphereRayMarchingPS> PixelShader = GetGlobalShaderMapping()->GetShader<XRenderSkyAtmosphereRayMarchingPS>();
-		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
-		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
-		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
-
-		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-		PixelShader->SetParameter(RHICmdList, RViewInfo.ViewConstantBuffer.get(), RHICbSkyAtmosphere.get(),
-			SkyViewLutUAV.get(), TextureDepthStencil.get(), TransmittanceLutUAV.get());
-
-		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
-		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
-		RHICmdList.RHIEndRenderPass();
-	}
-
-	//ToneMapping
-	{
-		XRHITexture* TextureSceneColor = TextureSceneColorDefferedPingPong.get();
-		XRHIRenderPassInfo RPInfos(1, &TextureSceneColor, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
-		RHICmdList.RHIBeginRenderPass(RPInfos, "PostProcess_ToneMapping",sizeof("PostProcess_ToneMapping"));
-		RHICmdList.CacheActiveRenderTargets(RPInfos);
-
-		XGraphicsPSOInitializer GraphicsPSOInit;
-		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-
-		TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XToneMappingPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XToneMappingPassPS>();
-		GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
-		GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
-		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
-
-		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-		PixelShader->SetParameter(RHICmdList, TextureSceneColorDeffered.get());
-
-		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
-		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
-		RHICmdList.RHIEndRenderPass();
-	}
+	auto TextureSceneColorDeffered = DeferredShadingRenderer.TempGetTextureSceneColorDeffered();
+	auto TextureSceneColorDefferedPingPong = DeferredShadingRenderer.TempGetTextureSceneColorDefferedPingPong();
 
 	XRHITexture* CurrentPingPongTextureSceneColorTarget = TextureSceneColorDefferedPingPong.get();
 	{
@@ -1105,12 +726,6 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 {
 
-	//for deffered light pass
-	cbDefferedLightIns.LightDir = LightDir;
-	cbDefferedLightIns.LightColorAndIntensityInLux = XMFLOAT4(LightColor.x, LightColor.y, LightColor.z, LightIntensity);
-	RHIcbDefferedLight->UpdateData(&cbDefferedLightIns, sizeof(cbDefferedLight), 0);
-
-
 	FrameNum++;
 	RViewInfo.ViewCBCPUData.StateFrameIndexMod8 = FrameNum % 8;
 	RViewInfo.ViewCBCPUData.ViewSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0 / mClientWidth, 1.0 / mClientHeight);
@@ -1173,25 +788,16 @@ void CrateApp::LoadTextures()
 	MainInit::TempInit2();
 
 	{
-		TextureSceneColorDeffered = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
-			EPixelFormat::FT_R16G16B16A16_FLOAT
-			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
-			, nullptr);
 
-		TextureSceneColorDefferedPingPong = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
-			EPixelFormat::FT_R16G16B16A16_FLOAT
-			, ETextureCreateFlags(TexCreate_RenderTargetable), 1
-			, nullptr);
+		//TextureSceneColorDefferedPingPong = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
+		//	EPixelFormat::FT_R16G16B16A16_FLOAT
+		//	, ETextureCreateFlags(TexCreate_RenderTargetable), 1
+		//	, nullptr);
 
 		SSROutput = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
 			EPixelFormat::FT_R8G8B8A8_UNORM
 			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
-
-		//VSMShadowMaskTexture = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
-		//	EPixelFormat::FT_R16_FLOAT
-		//	, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
-		//	, nullptr);
 	}
 
 }

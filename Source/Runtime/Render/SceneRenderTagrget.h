@@ -12,7 +12,9 @@ struct XSceneRenderTarget
 	std::shared_ptr<XRHITexture2D> PagetableInfos;
 	std::shared_ptr<XRHITexture2D> VSMShadowMaskTexture;
 
-
 	std::shared_ptr<XRHITexture2D> TextureDepthStencil;
 	std::shared_ptr<XRHITexture2D> FurthestHZBOutput;
+
+	std::shared_ptr<XRHITexture2D>TextureSceneColorDeffered;
+	std::shared_ptr<XRHITexture2D>TextureSceneColorDefferedPingPong;
 };

@@ -501,38 +501,3 @@ void XDeferredShadingRenderer::VSMSetup()
 	VirtualShadowMapResourece.ShadowNoCullCmdBufferSRV = RHICreateShaderResourceView(VirtualShadowMapResourece.ShadowCmdBufferNoCulling.get());
 	VirtualShadowMapResourece.ShadowCulledCmdBufferUAV = RHICreateUnorderedAccessView(VirtualShadowMapResourece.ShadowCmdBufferCulled.get(), true, true, VirtualShadowMapResourece.ShadowCounterOffset);
 }
-
-std::shared_ptr<XRHITexture2D> XDeferredShadingRenderer::TempGetVirtualSMFlags()
-{
-	return VirtualShadowMapResourece.VirtualSMFlags;
-}
-
-std::shared_ptr<XRHITexture2D> XDeferredShadingRenderer::TempGetPagetableInfos()
-{
-	return SceneTargets.PagetableInfos;
-}
-
-std::shared_ptr<XRHIConstantBuffer> XDeferredShadingRenderer::TempGetVSMTileMaskConstantBuffer()
-{
-	return VirtualShadowMapResourece.VSMTileMaskConstantBuffer;
-}
-
-uint32 XDeferredShadingRenderer::TempGetShadowCmdBufferOffset()
-{
-	return VirtualShadowMapResourece.ShadowCmdBufferOffset;
-}
-
-uint32 XDeferredShadingRenderer::TempGetShadowCounterOffset()
-{
-	return VirtualShadowMapResourece.ShadowCounterOffset;
-}
-
-std::shared_ptr<XRHIStructBuffer> XDeferredShadingRenderer::TempGetShadowCmdBufferCulled()
-{
-	return VirtualShadowMapResourece.ShadowCmdBufferCulled;
-}
-
-std::shared_ptr<XRHITexture2D> XDeferredShadingRenderer::TempGetPhysicalDepth()
-{
-	return SceneTargets.PhysicalShadowDepthTexture;
-}

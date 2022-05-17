@@ -5,6 +5,7 @@
 #include "Runtime/RHI/PipelineStateCache.h"
 #include "Runtime/RHI/RHIStaticStates.h"
 
+#include "Runtime/RenderCore/CommonRenderRresource.h"
 
 class XSkyAtmosphereResourece :public XRenderResource
 {
@@ -349,17 +350,83 @@ void XDeferredShadingRenderer::SkyAtmosPhereRendering(XRHICommandList& RHICmdLis
 	}
 }
 
-std::shared_ptr<XRHITexture2D> XDeferredShadingRenderer::TempGetTransmittanceLutUAV()
+
+class XRenderSkyAtmosphereRayMarchingPS :public XGloablShader
 {
-	return SkyAtmosphereResourece.TransmittanceLutUAV;
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new XRenderSkyAtmosphereRayMarchingPS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+
+public:
+	XRenderSkyAtmosphereRayMarchingPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
+		SkyAtmosphere.Bind(Initializer.ShaderParameterMap, "SkyAtmosphere");
+
+		SkyViewLutTexture.Bind(Initializer.ShaderParameterMap, "SkyViewLutTexture");
+		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
+		TransmittanceLutTexture_Combine.Bind(Initializer.ShaderParameterMap, "TransmittanceLutTexture_Combine");
+	}
+
+	void SetParameter(
+		XRHICommandList& RHICommandList,
+		XRHIConstantBuffer* IncbView,
+		XRHIConstantBuffer* InSkyAtmosphere,
+		XRHITexture* InSkyViewLutTexture,
+		XRHITexture* InSceneDepthTexture,
+		XRHITexture* InTransmittanceLutTexture_Combine
+	)
+	{
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, cbView, IncbView);
+		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, SkyAtmosphere, InSkyAtmosphere);
+
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SkyViewLutTexture, InSkyViewLutTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
+		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, TransmittanceLutTexture_Combine, InTransmittanceLutTexture_Combine);
+	}
+
+	CBVParameterType cbView;
+	CBVParameterType SkyAtmosphere;
+
+	TextureParameterType SkyViewLutTexture;
+	TextureParameterType SceneDepthTexture;
+	TextureParameterType TransmittanceLutTexture_Combine;
+};
+XRenderSkyAtmosphereRayMarchingPS::ShaderInfos XRenderSkyAtmosphereRayMarchingPS::StaticShaderInfos(
+	"XRenderSkyAtmosphereRayMarchingPS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
+	"RenderSkyAtmosphereRayMarchingPS", EShaderType::SV_Pixel, XRenderSkyAtmosphereRayMarchingPS::CustomConstrucFunc,
+	XRenderSkyAtmosphereRayMarchingPS::ModifyShaderCompileSettings);
+
+void XDeferredShadingRenderer::SkyAtmoSphereCombine(XRHICommandList& RHICmdList)
+{
+	XRHITexture* TextureSceneColor = SceneTargets.TextureSceneColorDeffered.get();
+	XRHIRenderPassInfo RPInfos(1, &TextureSceneColor, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
+	RHICmdList.RHIBeginRenderPass(RPInfos, "SkyAtmosphere Combine Pass", sizeof("SkyAtmosphere Combine Pass"));
+	RHICmdList.CacheActiveRenderTargets(RPInfos);
+
+	XGraphicsPSOInitializer GraphicsPSOInit;
+	GraphicsPSOInit.BlendState = TStaticBlendState<true,
+		EBlendOperation::BO_Add, EBlendFactor::BF_One, EBlendFactor::BF_One,
+		EBlendOperation::BO_Add, EBlendFactor::BF_One, EBlendFactor::BF_One>::GetRHI();
+	GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+
+	TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+	TShaderReference<XRenderSkyAtmosphereRayMarchingPS> PixelShader = GetGlobalShaderMapping()->GetShader<XRenderSkyAtmosphereRayMarchingPS>();
+	GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
+	GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
+	GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
+
+	RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+	SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
+	PixelShader->SetParameter(RHICmdList, RViewInfo.ViewConstantBuffer.get(), SkyAtmosphereResourece.RHICbSkyAtmosphere.get(),
+		SkyAtmosphereResourece.SkyViewLutUAV.get(), SceneTargets.TextureDepthStencil.get(), SkyAtmosphereResourece.TransmittanceLutUAV.get());
+
+	RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
+	RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
+	RHICmdList.RHIEndRenderPass();
 }
 
-std::shared_ptr<XRHITexture2D> XDeferredShadingRenderer::TempGetSkyViewLutUAV()
-{
-	return SkyAtmosphereResourece.SkyViewLutUAV;
-}
-
-std::shared_ptr<XRHIConstantBuffer> XDeferredShadingRenderer::TempGetRHICbSkyAtmosphere()
-{
-	return SkyAtmosphereResourece.RHICbSkyAtmosphere;
-}

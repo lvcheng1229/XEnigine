@@ -55,42 +55,24 @@ public:
 	void ShadowMaskGenerate(XRHICommandList& RHICmdList);
 	void VSMTileMaskClear(XRHICommandList& RHICmdList);
 
-	std::shared_ptr <XRHITexture2D> TempGetVirtualSMFlags();
-	std::shared_ptr<XRHITexture2D> TempGetPagetableInfos();
-	std::shared_ptr<XRHIConstantBuffer> TempGetVSMTileMaskConstantBuffer();
-	uint32 TempGetShadowCmdBufferOffset();
-	uint32 TempGetShadowCounterOffset();
-	std::shared_ptr<XRHIStructBuffer> TempGetShadowCmdBufferCulled();
-	std::shared_ptr<XRHITexture2D> TempGetPhysicalDepth();
-	inline std::shared_ptr <XRHITexture2D> TempGetTextureDepthStencil()
+	//LightPass
+	void LightPass(XRHICommandList& RHICmdList);
+
+	//SkyAtmoSphereCombine
+	void SkyAtmoSphereCombine(XRHICommandList& RHICmdList);
+
+	//PostProcessToneMapping
+	void PostProcessToneMapping(XRHICommandList& RHICmdList, XRHITexture* TextureSceneColorSrc, XRHITexture* TextureSceneColorDest);
+
+
+	inline std::shared_ptr<XRHITexture2D> TempGetTextureSceneColorDeffered()
 	{
-		return SceneTargets.TextureDepthStencil;
+		return SceneTargets.TextureSceneColorDeffered;
 	}
 
-	std::shared_ptr<XRHITexture2D> TempGetTransmittanceLutUAV();
-	std::shared_ptr<XRHITexture2D> TempGetSkyViewLutUAV();
-	std::shared_ptr<XRHIConstantBuffer> TempGetRHICbSkyAtmosphere();
-
-	inline std::shared_ptr<XRHITexture2D> TempGetVSMShadowMaskTexture()
+	inline std::shared_ptr<XRHITexture2D> TempGetTextureSceneColorDefferedPingPong()
 	{
-		return SceneTargets.VSMShadowMaskTexture;
-	}
-
-	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferA()
-	{
-		return SceneTargets.TextureGBufferA;
-	}
-	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferB()
-	{
-		return SceneTargets.TextureGBufferB;
-	}
-	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferC()
-	{
-		return SceneTargets.TextureGBufferC;
-	}
-	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferD()
-	{
-		return SceneTargets.TextureGBufferD;
+		return SceneTargets.TextureSceneColorDefferedPingPong;
 	}
 private:
 	XPreDepthPassResource PreDepthPassResource;

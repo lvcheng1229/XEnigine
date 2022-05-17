@@ -40,5 +40,13 @@ void XDeferredShadingRenderer::SceneTagetGen()
 
 	SceneTargets.FurthestHZBOutput = RHICreateTexture2D(512, 512, 1, false, false, EPixelFormat::FT_R16_FLOAT
 		, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 5, nullptr);
+
+	SceneTargets.TextureSceneColorDeffered = RHICreateTexture2D(RViewInfo.ViewWidth, RViewInfo.ViewHeight, 1, false, false,
+		EPixelFormat::FT_R16G16B16A16_FLOAT
+		, ETextureCreateFlags(TexCreate_RenderTargetable), 1
+		, nullptr);
+
+	SceneTargets.TextureSceneColorDefferedPingPong = RHICreateTexture2D(RViewInfo.ViewWidth, RViewInfo.ViewHeight, 1, false, false,
+		EPixelFormat::FT_R16G16B16A16_FLOAT, ETextureCreateFlags(TexCreate_RenderTargetable), 1, nullptr);
 }
 
