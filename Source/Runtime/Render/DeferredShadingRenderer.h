@@ -3,6 +3,7 @@
 #include "Runtime/Engine/SceneView.h"
 #include "Runtime/RenderCore/VertexFactory.h"
 #include "Runtime/Render/SceneRendering.h"
+#include "PreDepthPassGPUCulling.h"
 
 //Temps
 #include "Runtime/Core/Mesh/GeomertyData.h"
@@ -21,23 +22,43 @@ public:
 	void Setup();
 	void Rendering(XRHICommandList& RHICmdList);
 	
+	//Pre Depth Pass GPU Culling
 	void PreDepthPassGPUCullingSetup();
+
 	void PreDepthPassGPUCulling(XRHICommandList& RHICmdList);
 	void PreDepthPassRendering(XRHICommandList& RHICmdList);
 
-	std::vector<std::shared_ptr<GGeomertry>>RenderGeos;
+	//Virtual Shadow Map Generate
+	void VSMSetup();
+	void VSMUpdate();
+
+	void VSMTileMaskPass(XRHICommandList& RHICmdList);
+	void VSMPageTableGen(XRHICommandList& RHICmdList);
+	void VSMShadowCommandBuild(XRHICommandList& RHICmdList);
+	void VirtualShadowMapGen(XRHICommandList& RHICmdList);
+
+	//Shadow Mask Generate
+	
+	std::shared_ptr <XRHITexture2D> TempGetVirtualSMFlags();
+	std::shared_ptr<XRHITexture2D> TempGetPagetableInfos();
+	std::shared_ptr<XRHIConstantBuffer> TempGetVSMTileMaskConstantBuffer();
+
+	uint32 TempGetShadowCmdBufferOffset();
+	uint32 TempGetShadowCounterOffset();
+	std::shared_ptr<XRHIStructBuffer> TempGetShadowCmdBufferCulled();
+
 private:
-	//PreDepthPassGPUCulling
-	std::shared_ptr<XRHIStructBuffer> DepthCmdBufferCulled;//+
-	uint64 DepthCounterOffset;//+
+	XPreDepthPassResource PreDepthPassResource;
 
-	std::shared_ptr<XRHICommandSignature> RHIDepthCommandSignature;//+
-	std::shared_ptr<XRHIStructBuffer> DepthCmdBufferNoCulling;//+
-	uint64 DepthCmdBufferOffset;//+
-
-	std::shared_ptr<XRHIShaderResourceView>CmdBufferShaderResourceView;//+
-	std::shared_ptr<XRHIUnorderedAcessView> CmdBufferUnorderedAcessView;//+
 public:
+	XMatrix LightViewMat;
+	XMatrix LightProjMat;
+	XMatrix LightViewProjMat;
+
+	XBoundSphere SceneBoundingSphere;
+	XVector3 ShadowLightDir;
+
+	std::vector<std::shared_ptr<GGeomertry>>RenderGeos;
 	std::shared_ptr<XRHIShaderResourceView>GlobalObjectStructBufferSRV;
 	
 	std::shared_ptr<XRHIConstantBuffer>cbCullingParameters;

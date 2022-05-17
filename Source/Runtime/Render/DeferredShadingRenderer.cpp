@@ -21,15 +21,22 @@ void XDeferredShadingRenderer::Setup()
 {
 	//Temp
 	BeginInitResource(&DefaultVertexFactory);
-
 	PreDepthPassGPUCullingSetup();
+	VSMSetup();
 }
 
 void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 {
+	LightViewProjMat = LightViewMat * LightProjMat;
+
 	RHICmdList.RHIBeginFrame();
 	PreDepthPassGPUCulling(RHICmdList);
 	PreDepthPassRendering(RHICmdList);
+
+	VSMUpdate();
+	VSMTileMaskPass(RHICmdList);
+	VSMPageTableGen(RHICmdList);
+	VSMShadowCommandBuild(RHICmdList);
 }
 
 

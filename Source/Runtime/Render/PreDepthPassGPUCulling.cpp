@@ -45,7 +45,6 @@ DepthGPUCullingCS::ShaderInfos DepthGPUCullingCS::StaticShaderInfos(
 	"CSMain", EShaderType::SV_Compute, DepthGPUCullingCS::CustomConstrucFunc,
 	DepthGPUCullingCS::ModifyShaderCompileSettings);
 
-
 class XPreDepthPassVS :public XGloablShader
 {
 public:
@@ -71,7 +70,6 @@ public:
 	CBVParameterType CBV_View;
 };
 
-
 class XPreDepthPassPS :public XGloablShader
 {
 public:
@@ -92,11 +90,11 @@ XPreDepthPassVS::ShaderInfos XPreDepthPassVS::StaticShaderInfos(
 	"XPreDepthPassVS", L"E:/XEngine/XEnigine/Source/Shaders/DepthOnlyVertexShader.hlsl",
 	"VS", EShaderType::SV_Vertex, XPreDepthPassVS::CustomConstrucFunc,
 	XPreDepthPassVS::ModifyShaderCompileSettings);
+
 XPreDepthPassPS::ShaderInfos XPreDepthPassPS::StaticShaderInfos(
 	"XPreDepthPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DepthOnlyVertexShader.hlsl",
 	"PS", EShaderType::SV_Pixel, XPreDepthPassPS::CustomConstrucFunc,
 	XPreDepthPassPS::ModifyShaderCompileSettings);
-
 
 
 void XDeferredShadingRenderer::PreDepthPassGPUCullingSetup()
@@ -111,47 +109,41 @@ void XDeferredShadingRenderer::PreDepthPassGPUCullingSetup()
 
 	TShaderReference<XPreDepthPassVS> VertexShader = GetGlobalShaderMapping()->GetShader<XPreDepthPassVS>();
 	TShaderReference<XPreDepthPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XPreDepthPassPS>();
-	RHIDepthCommandSignature = RHICreateCommandSignature(IndirectPreDepthArgs.data(), 4, VertexShader.GetVertexShader(), PixelShader.GetPixelShader());
+	PreDepthPassResource.RHIDepthCommandSignature = RHICreateCommandSignature(IndirectPreDepthArgs.data(), 4, VertexShader.GetVertexShader(), PixelShader.GetPixelShader());
 
-	void* DataPtrret;
+	std::vector<XRHICommandData> RHICmdData;
+	RHICmdData.resize(RenderGeos.size());
+	for (int i = 0; i < RenderGeos.size(); i++)
 	{
-		std::vector<XRHICommandData> RHICmdData;
-		RHICmdData.resize(RenderGeos.size());
-		for (int i = 0; i < RenderGeos.size(); i++)
-		{
-			auto& it = RenderGeos[i];
-			RHICmdData[i].CBVs.push_back(it->GetPerObjectVertexCBuffer().get());
-			auto VertexBufferPtr = it->GetRHIVertexBuffer();
-			auto IndexBufferPtr = it->GetRHIIndexBuffer();
-			RHICmdData[i].VB = VertexBufferPtr.get();
-			RHICmdData[i].IB = IndexBufferPtr.get();
-			RHICmdData[i].IndexCountPerInstance = it->GetIndexCount();
-			RHICmdData[i].InstanceCount = 1;
-			RHICmdData[i].StartIndexLocation = 0;
-			RHICmdData[i].BaseVertexLocation = 0;
-			RHICmdData[i].StartInstanceLocation = 0;
-		}
-
-		uint32 OutCmdDataSize;
-		DataPtrret = RHIGetCommandDataPtr(RHICmdData, OutCmdDataSize);
-
-		uint32 DepthPassIndirectBufferDataSize = OutCmdDataSize * RHICmdData.size();
-		FResourceVectorUint8 DepthIndirectBufferData;
-		DepthIndirectBufferData.Data = DataPtrret;
-		DepthIndirectBufferData.SetResourceDataSize(DepthPassIndirectBufferDataSize);
-		XRHIResourceCreateData IndirectBufferResourceData(&DepthIndirectBufferData);
-		DepthCmdBufferNoCulling = RHIcreateStructBuffer(OutCmdDataSize, DepthPassIndirectBufferDataSize,
-			EBufferUsage(int(EBufferUsage::BUF_DrawIndirect) | (int)EBufferUsage::BUF_ShaderResource), IndirectBufferResourceData);
-
-		DepthCmdBufferOffset = RHIGetCmdBufferOffset(DepthCmdBufferNoCulling.get());
-		DepthCounterOffset = AlignArbitrary(DepthPassIndirectBufferDataSize, D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT);
-
-		DepthCmdBufferCulled = RHIcreateStructBuffer(DepthPassIndirectBufferDataSize, DepthCounterOffset + sizeof(UINT),
-			EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer) | int(EBufferUsage::BUF_UnorderedAccess)), nullptr);
-
-		CmdBufferShaderResourceView = RHICreateShaderResourceView(DepthCmdBufferNoCulling.get());
-		CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(DepthCmdBufferCulled.get(), true, true, DepthCounterOffset);
+		auto& it = RenderGeos[i];
+		RHICmdData[i].CBVs.push_back(it->GetPerObjectVertexCBuffer().get());
+		auto VertexBufferPtr = it->GetRHIVertexBuffer();
+		auto IndexBufferPtr = it->GetRHIIndexBuffer();
+		RHICmdData[i].VB = VertexBufferPtr.get();
+		RHICmdData[i].IB = IndexBufferPtr.get();
+		RHICmdData[i].IndexCountPerInstance = it->GetIndexCount();
+		RHICmdData[i].InstanceCount = 1;
+		RHICmdData[i].StartIndexLocation = 0;
+		RHICmdData[i].BaseVertexLocation = 0;
+		RHICmdData[i].StartInstanceLocation = 0;
 	}
+
+	uint32 OutCmdDataSize;
+	void*  DataPtrret = RHIGetCommandDataPtr(RHICmdData, OutCmdDataSize);
+
+	uint32 DepthPassIndirectBufferDataSize = OutCmdDataSize * RHICmdData.size();
+	FResourceVectorUint8 DepthIndirectBufferData;
+	DepthIndirectBufferData.Data = DataPtrret;
+	DepthIndirectBufferData.SetResourceDataSize(DepthPassIndirectBufferDataSize);
+	XRHIResourceCreateData IndirectBufferResourceData(&DepthIndirectBufferData);
+	PreDepthPassResource.DepthCmdBufferNoCulling = RHIcreateStructBuffer(OutCmdDataSize, DepthPassIndirectBufferDataSize, EBufferUsage(int(EBufferUsage::BUF_DrawIndirect) | (int)EBufferUsage::BUF_ShaderResource), IndirectBufferResourceData);
+	
+	PreDepthPassResource.DepthCmdBufferOffset = RHIGetCmdBufferOffset(PreDepthPassResource.DepthCmdBufferNoCulling.get());
+	PreDepthPassResource.DepthCounterOffset = AlignArbitrary(DepthPassIndirectBufferDataSize, D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT);
+
+	PreDepthPassResource.DepthCmdBufferCulled = RHIcreateStructBuffer(DepthPassIndirectBufferDataSize, PreDepthPassResource.DepthCounterOffset + sizeof(UINT), EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer) | int(EBufferUsage::BUF_UnorderedAccess)), nullptr);
+	PreDepthPassResource.CmdBufferShaderResourceView = RHICreateShaderResourceView(PreDepthPassResource.DepthCmdBufferNoCulling.get());
+	PreDepthPassResource.CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(PreDepthPassResource.DepthCmdBufferCulled.get(), true, true, PreDepthPassResource.DepthCounterOffset);
 }
 
 
@@ -161,10 +153,8 @@ void XDeferredShadingRenderer::PreDepthPassGPUCulling(XRHICommandList& RHICmdLis
 	TShaderReference<DepthGPUCullingCS> Shader = GetGlobalShaderMapping()->GetShader<DepthGPUCullingCS>();
 	XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 	SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
-	RHIResetStructBufferCounter(DepthCmdBufferCulled.get(), DepthCounterOffset);
-	Shader->SetParameters(RHICmdList, CmdBufferUnorderedAcessView.get(),
-		CmdBufferShaderResourceView.get(), GlobalObjectStructBufferSRV.get(), cbCullingParameters.get());
-
+	RHIResetStructBufferCounter(PreDepthPassResource.DepthCmdBufferCulled.get(), PreDepthPassResource.DepthCounterOffset);
+	Shader->SetParameters(RHICmdList, PreDepthPassResource.CmdBufferUnorderedAcessView.get(), PreDepthPassResource.CmdBufferShaderResourceView.get(), GlobalObjectStructBufferSRV.get(), cbCullingParameters.get());
 	RHICmdList.RHIDispatchComputeShader(static_cast<uint32>(ceil(RenderGeos.size() / float(128))), 1, 1);
 	RHICmdList.RHIEventEnd();
 }
@@ -176,7 +166,7 @@ void XDeferredShadingRenderer::PreDepthPassRendering(XRHICommandList& RHICmdList
 	RHICmdList.CacheActiveRenderTargets(RPInfos);
 
 	XGraphicsPSOInitializer GraphicsPSOInit;
-	GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
+	GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
 	GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<true, ECompareFunction::CF_GreaterEqual>::GetRHI();
 
 	TShaderReference<XPreDepthPassVS> VertexShader = GetGlobalShaderMapping()->GetShader<XPreDepthPassVS>();
@@ -190,7 +180,6 @@ void XDeferredShadingRenderer::PreDepthPassRendering(XRHICommandList& RHICmdList
 
 	VertexShader->SetParameter(RHICmdList, RViewInfo.ViewConstantBuffer.get());
 
-	RHICmdList.RHIExecuteIndirect(RHIDepthCommandSignature.get(), RenderGeos.size(), DepthCmdBufferCulled.get(),
-		DepthCmdBufferOffset, DepthCmdBufferCulled.get(), DepthCounterOffset);
+	RHICmdList.RHIExecuteIndirect(PreDepthPassResource.RHIDepthCommandSignature.get(), RenderGeos.size(), PreDepthPassResource.DepthCmdBufferCulled.get(), PreDepthPassResource.DepthCmdBufferOffset, PreDepthPassResource.DepthCmdBufferCulled.get(), PreDepthPassResource.DepthCounterOffset);
 	RHICmdList.RHIEventEnd();
 }

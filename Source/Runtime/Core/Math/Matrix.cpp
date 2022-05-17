@@ -27,6 +27,14 @@ namespace DirectX
             return R;
         }
 
+        LMatrix LMatrix::CreateOrthographicOffCenterLH(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept
+        {
+            using namespace DirectX;
+            Matrix R;
+            XMStoreFloat4x4(&R, XMMatrixOrthographicOffCenterLH(left, right, bottom, top, zNearPlane, zFarPlane));
+            return R;
+        }
+
         static XMMATRIX XM_CALLCONV SimpleMath_MMatrixPerspectiveFovLH(float FovAngleY, float AspectRatio, float NearZ, float FarZ)
         {
             assert(NearZ > 0.f && FarZ > 0.f);
@@ -128,5 +136,7 @@ namespace DirectX
             XMStoreFloat4x4(&Ret, P);
             return Ret;
         }
+
+
     }
 }

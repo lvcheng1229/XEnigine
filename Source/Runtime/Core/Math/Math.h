@@ -8,6 +8,12 @@ using XVector4 = DirectX::SimpleMath::Vector4;
 using XMatrix = DirectX::SimpleMath::LMatrix;
 using XPlane = DirectX::SimpleMath::Plane;
 
+struct XBoundSphere
+{
+	XVector3 Center;
+	float Radius;
+};
+
 struct XBoundingBox
 {
     XVector3 Center;

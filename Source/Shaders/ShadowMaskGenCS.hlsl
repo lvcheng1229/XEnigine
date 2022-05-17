@@ -31,7 +31,7 @@ static float2 UVOffset[5] =
     float2(-1.0f/VirtualTileSise,-1.0f/VirtualTileSise)
 };
 
-float ComputeShadowFactor(float2 UVShadowSpace ,float ObjectShadowDepth , float Bias)
+float ComputeShadowFactor(float2 UVShadowSpace ,uint ObjectShadowDepth , uint Bias)
 {
     uint2 TileIndexXY = uint2(UVShadowSpace * PageNum /*- 0.5f*/);
     uint PageTableIndex = PagetableInfos[TileIndexXY].x;
@@ -90,7 +90,7 @@ void ShadowMaskGenCS(uint2 DispatchThreadID :SV_DispatchThreadID)
     float3 LightDir = float3(-1,1,1);
     LightDir = normalize(LightDir);
     float NoL = dot(LightDir,Normal.xyz);
-    float Bias = NoL * 1000 * (1 << 10) + 500 * (1 << 10);
+    uint Bias = NoL * 1000 * (1 << 10) + 500 * (1 << 10);
     
     //if(abs(NoL) < 0.25)
     //{

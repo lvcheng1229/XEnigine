@@ -124,4 +124,7 @@ public:
 	std::shared_ptr<XRHIConstantBuffer>ViewConstantBuffer;
 	ViewConstantBufferData ViewCBCPUData;
 	XViewMatrices ViewMat;
+
+	uint32 ViewWidth;
+	uint32 ViewHeight;
 };
