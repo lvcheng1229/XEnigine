@@ -393,6 +393,52 @@ void XDeferredShadingRenderer::VirtualShadowMapGen(XRHICommandList& RHICmdList)
 	RHICmdList.RHIEndRenderPass();
 }
 
+class VSMTileMaskClearCS :public XGloablShader
+{
+public:
+	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+	{
+		return new VSMTileMaskClearCS(Initializer);
+	}
+	static ShaderInfos StaticShaderInfos;
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+public:
+	VSMTileMaskClearCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+	{
+		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
+		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
+	}
+
+	void SetParameters(
+		XRHICommandList& RHICommandList,
+		XRHIUnorderedAcessView* VirtualSMFlagsIn,
+		XRHIUnorderedAcessView* PhysicalShadowDepthTextureIn)
+	{
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, PhysicalShadowDepthTextureIn);
+	}
+	UAVParameterType VirtualSMFlags;
+	UAVParameterType PhysicalShadowDepthTexture;
+};
+VSMTileMaskClearCS::ShaderInfos VSMTileMaskClearCS::StaticShaderInfos(
+	"VSMTileMaskClearCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskClearCS.hlsl",
+	"VSMTileMaskClearCS", EShaderType::SV_Compute, VSMTileMaskClearCS::CustomConstrucFunc,
+	VSMTileMaskClearCS::ModifyShaderCompileSettings);
+
+void XDeferredShadingRenderer::VSMTileMaskClear(XRHICommandList& RHICmdList)
+{
+	RHICmdList.RHIEventBegin(1, "VSMTileMaskClearCS", sizeof("VSMTileMaskClearCS"));
+	TShaderReference<VSMTileMaskClearCS> Shader = GetGlobalShaderMapping()->GetShader<VSMTileMaskClearCS>();
+	XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
+	SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
+	Shader->SetParameters(RHICmdList, 
+		GetRHIUAVFromTexture(VirtualShadowMapResourece.VirtualSMFlags.get()), 
+		GetRHIUAVFromTexture(SceneTargets.PhysicalShadowDepthTexture.get()));
+	RHICmdList.RHIDispatchComputeShader(VirtualTileWidthNum / 16, VirtualTileWidthNum / 16, 1);
+	RHICmdList.RHIEventEnd();
+}
+
+
 void XDeferredShadingRenderer::VSMSetup()
 {
 	std::vector<XRHIIndirectArg>IndirectShadowArgs;

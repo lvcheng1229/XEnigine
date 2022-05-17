@@ -258,99 +258,99 @@ XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
 	XLightPassPS::ModifyShaderCompileSettings);
 
 
-class VSMTileMaskClearCS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new VSMTileMaskClearCS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-public:
-	VSMTileMaskClearCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
-	{
-		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
-		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
-	}
+//class VSMTileMaskClearCS :public XGloablShader
+//{
+//public:
+//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+//	{
+//		return new VSMTileMaskClearCS(Initializer);
+//	}
+//	static ShaderInfos StaticShaderInfos;
+//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+//public:
+//	VSMTileMaskClearCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+//	{
+//		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
+//		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
+//	}
+//
+//	void SetParameters(
+//		XRHICommandList& RHICommandList,
+//		XRHIUnorderedAcessView* VirtualSMFlagsIn,
+//		XRHIUnorderedAcessView* PhysicalShadowDepthTextureIn)
+//	{
+//		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
+//		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, PhysicalShadowDepthTextureIn);
+//	}
+//	UAVParameterType VirtualSMFlags;
+//	UAVParameterType PhysicalShadowDepthTexture;
+//};
+//VSMTileMaskClearCS::ShaderInfos VSMTileMaskClearCS::StaticShaderInfos(
+//	"VSMTileMaskClearCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskClearCS.hlsl",
+//	"VSMTileMaskClearCS", EShaderType::SV_Compute, VSMTileMaskClearCS::CustomConstrucFunc,
+//	VSMTileMaskClearCS::ModifyShaderCompileSettings);
 
-	void SetParameters(
-		XRHICommandList& RHICommandList,
-		XRHIUnorderedAcessView* VirtualSMFlagsIn,
-		XRHIUnorderedAcessView* PhysicalShadowDepthTextureIn)
-	{
-		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
-		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, PhysicalShadowDepthTextureIn);
-	}
-	UAVParameterType VirtualSMFlags;
-	UAVParameterType PhysicalShadowDepthTexture;
-};
-VSMTileMaskClearCS::ShaderInfos VSMTileMaskClearCS::StaticShaderInfos(
-	"VSMTileMaskClearCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskClearCS.hlsl",
-	"VSMTileMaskClearCS", EShaderType::SV_Compute, VSMTileMaskClearCS::CustomConstrucFunc,
-	VSMTileMaskClearCS::ModifyShaderCompileSettings);
 
-
-class ShadowMaskGenCS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new ShadowMaskGenCS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-public:
-	ShadowMaskGenCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
-	{
-		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
-		cbShadowViewInfo.Bind(Initializer.ShaderParameterMap, "cbShadowViewInfo");
-		
-		VsmShadowMaskTex.Bind(Initializer.ShaderParameterMap, "VsmShadowMaskTex");
-		
-		GBufferNormal.Bind(Initializer.ShaderParameterMap, "GBufferNormal");
-		SceneDepthInput.Bind(Initializer.ShaderParameterMap, "SceneDepthInput");
-		PagetableInfos.Bind(Initializer.ShaderParameterMap, "PagetableInfos");
-		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
-	}
-
-	void SetParameters(
-		XRHICommandList& RHICommandList,
-		XRHIConstantBuffer* IncbView,
-		XRHIConstantBuffer* IncbShadowViewInfo,
-		
-		XRHIUnorderedAcessView* InVsmShadowMaskTex,
-
-		XRHIShaderResourceView* InGBufferNormal,
-		XRHIShaderResourceView* InSceneDepthInput,
-		XRHIShaderResourceView* InPagetableInfos,
-		XRHIShaderResourceView* InPhysicalShadowDepthTexture)
-	{
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbView, IncbView);
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbShadowViewInfo, IncbShadowViewInfo);
-
-		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VsmShadowMaskTex, InVsmShadowMaskTex);
-
-		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, GBufferNormal, InGBufferNormal);
-		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, SceneDepthInput, InSceneDepthInput);
-		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, PagetableInfos, InPagetableInfos);
-		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, InPhysicalShadowDepthTexture);
-	}
-
-	CBVParameterType cbView;
-	CBVParameterType cbShadowViewInfo;
-
-	UAVParameterType VsmShadowMaskTex;
-
-	SRVParameterType GBufferNormal;
-	SRVParameterType SceneDepthInput;
-	SRVParameterType PagetableInfos;
-	SRVParameterType PhysicalShadowDepthTexture;
-};
-ShadowMaskGenCS::ShaderInfos ShadowMaskGenCS::StaticShaderInfos(
-	"ShadowMaskGenCS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowMaskGenCS.hlsl",
-	"ShadowMaskGenCS", EShaderType::SV_Compute, ShadowMaskGenCS::CustomConstrucFunc,
-	ShadowMaskGenCS::ModifyShaderCompileSettings);
+//class ShadowMaskGenCS :public XGloablShader
+//{
+//public:
+//	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+//	{
+//		return new ShadowMaskGenCS(Initializer);
+//	}
+//	static ShaderInfos StaticShaderInfos;
+//	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+//public:
+//	ShadowMaskGenCS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
+//	{
+//		cbView.Bind(Initializer.ShaderParameterMap, "cbView");
+//		cbShadowViewInfo.Bind(Initializer.ShaderParameterMap, "cbShadowViewInfo");
+//		
+//		VsmShadowMaskTex.Bind(Initializer.ShaderParameterMap, "VsmShadowMaskTex");
+//		
+//		GBufferNormal.Bind(Initializer.ShaderParameterMap, "GBufferNormal");
+//		SceneDepthInput.Bind(Initializer.ShaderParameterMap, "SceneDepthInput");
+//		PagetableInfos.Bind(Initializer.ShaderParameterMap, "PagetableInfos");
+//		PhysicalShadowDepthTexture.Bind(Initializer.ShaderParameterMap, "PhysicalShadowDepthTexture");
+//	}
+//
+//	void SetParameters(
+//		XRHICommandList& RHICommandList,
+//		XRHIConstantBuffer* IncbView,
+//		XRHIConstantBuffer* IncbShadowViewInfo,
+//		
+//		XRHIUnorderedAcessView* InVsmShadowMaskTex,
+//
+//		XRHIShaderResourceView* InGBufferNormal,
+//		XRHIShaderResourceView* InSceneDepthInput,
+//		XRHIShaderResourceView* InPagetableInfos,
+//		XRHIShaderResourceView* InPhysicalShadowDepthTexture)
+//	{
+//		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbView, IncbView);
+//		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbShadowViewInfo, IncbShadowViewInfo);
+//
+//		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VsmShadowMaskTex, InVsmShadowMaskTex);
+//
+//		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, GBufferNormal, InGBufferNormal);
+//		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, SceneDepthInput, InSceneDepthInput);
+//		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, PagetableInfos, InPagetableInfos);
+//		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, PhysicalShadowDepthTexture, InPhysicalShadowDepthTexture);
+//	}
+//
+//	CBVParameterType cbView;
+//	CBVParameterType cbShadowViewInfo;
+//
+//	UAVParameterType VsmShadowMaskTex;
+//
+//	SRVParameterType GBufferNormal;
+//	SRVParameterType SceneDepthInput;
+//	SRVParameterType PagetableInfos;
+//	SRVParameterType PhysicalShadowDepthTexture;
+//};
+//ShadowMaskGenCS::ShaderInfos ShadowMaskGenCS::StaticShaderInfos(
+//	"ShadowMaskGenCS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowMaskGenCS.hlsl",
+//	"ShadowMaskGenCS", EShaderType::SV_Compute, ShadowMaskGenCS::CustomConstrucFunc,
+//	ShadowMaskGenCS::ModifyShaderCompileSettings);
 
 //XRenderCameraAerialPerspectiveVolumeCS
 class XRenderCameraAerialPerspectiveVolumeCS :public XGloablShader
@@ -708,7 +708,7 @@ private://Shadow Pass
 
 	// Shadow Mask Pass
 private:
-	std::shared_ptr<XRHITexture2D>VSMShadowMaskTexture;
+	//std::shared_ptr<XRHITexture2D>VSMShadowMaskTexture;
 
 	std::shared_ptr<XRHITexture2D> SSROutput;
 
@@ -880,33 +880,11 @@ void CrateApp::Renderer(const GameTimer& gt)
 	auto VSMTileMaskConstantBuffer = DeferredShadingRenderer.TempGetVSMTileMaskConstantBuffer();
 	auto PagetableInfos = DeferredShadingRenderer.TempGetPagetableInfos();
 	auto PhysicalShadowDepthTexture = DeferredShadingRenderer.TempGetPhysicalDepth();
+	auto TransmittanceLutUAV = DeferredShadingRenderer.TempGetTransmittanceLutUAV();
+	auto SkyViewLutUAV = DeferredShadingRenderer.TempGetSkyViewLutUAV();
+	auto RHICbSkyAtmosphere = DeferredShadingRenderer.TempGetRHICbSkyAtmosphere();
+	auto VSMShadowMaskTexture = DeferredShadingRenderer.TempGetVSMShadowMaskTexture();
 
-	{
-		RHICmdList.RHIEventBegin(1, "ShadowMaskGenCS", sizeof("ShadowMaskGenCS"));
-		TShaderReference<ShadowMaskGenCS> Shader = GetGlobalShaderMapping()->GetShader<ShadowMaskGenCS>();
-		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
-		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
-		
-		Shader->SetParameters(RHICmdList,RViewInfo.ViewConstantBuffer.get(),VSMTileMaskConstantBuffer.get(),
-			GetRHIUAVFromTexture(VSMShadowMaskTexture.get()),
-			GetRHISRVFromTexture(TextureGBufferA.get()),
-			GetRHISRVFromTexture(TextureDepthStencil.get()),
-			GetRHISRVFromTexture(PagetableInfos.get()),
-			GetRHISRVFromTexture(PhysicalShadowDepthTexture.get()));
-		
-		RHICmdList.RHIDispatchComputeShader(static_cast<uint32>(ceil(mClientWidth / 16)), static_cast<uint32>(ceil(mClientHeight / 16)), 1);
-		mCommandList->EndEvent();
-	}
-
-	{
-		RHICmdList.RHIEventBegin(1, "VSMTileMaskClearCS", sizeof("VSMTileMaskClearCS"));
-		TShaderReference<VSMTileMaskClearCS> Shader = GetGlobalShaderMapping()->GetShader<VSMTileMaskClearCS>();
-		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
-		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
-		Shader->SetParameters(RHICmdList, GetRHIUAVFromTexture(VirtualSMFlags.get()), GetRHIUAVFromTexture(PhysicalShadowDepthTexture.get()));
-		RHICmdList.RHIDispatchComputeShader(8 * 8 / 16, 8 * 8 / 16, 1);
-		RHICmdList.RHIEventEnd();
-	}
 
 	//LightPass
 	{
@@ -938,9 +916,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 		RHICmdList.RHIEndRenderPass();
 	}
 
-	auto TransmittanceLutUAV= DeferredShadingRenderer.TempGetTransmittanceLutUAV();
-	auto SkyViewLutUAV = DeferredShadingRenderer.TempGetSkyViewLutUAV();
-	auto RHICbSkyAtmosphere = DeferredShadingRenderer.TempGetRHICbSkyAtmosphere();
+
 
 	//SkyAtmosphere Combine Pass
 	{
@@ -1212,10 +1188,10 @@ void CrateApp::LoadTextures()
 			, ETextureCreateFlags(TexCreate_RenderTargetable | TexCreate_ShaderResource), 1
 			, nullptr);
 
-		VSMShadowMaskTexture = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
-			EPixelFormat::FT_R16_FLOAT
-			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
-			, nullptr);
+		//VSMShadowMaskTexture = RHICreateTexture2D(mClientWidth, mClientHeight, 1, false, false,
+		//	EPixelFormat::FT_R16_FLOAT
+		//	, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
+		//	, nullptr);
 	}
 
 }

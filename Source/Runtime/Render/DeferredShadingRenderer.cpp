@@ -49,6 +49,9 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 	SkyAtmosPhereRendering(RHICmdList);
 
 	BasePassRendering(RHICmdList);
+
+	ShadowMaskGenerate(RHICmdList);
+	VSMTileMaskClear(RHICmdList);
 }
 
 

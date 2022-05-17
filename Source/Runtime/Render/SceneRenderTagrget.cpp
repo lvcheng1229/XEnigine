@@ -29,6 +29,11 @@ void XDeferredShadingRenderer::SceneTagetGen()
 	SceneTargets.PagetableInfos = RHICreateTexture2D(VirtualTileWidthNum, VirtualTileWidthNum, 1, false, false, EPixelFormat::FT_R32G32B32A32_UINT
 		, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1, nullptr);
 	
+	SceneTargets.VSMShadowMaskTexture = RHICreateTexture2D(RViewInfo.ViewWidth, RViewInfo.ViewHeight, 1, false, false,
+		EPixelFormat::FT_R16_FLOAT
+		, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1
+		, nullptr);
+
 	SceneTargets.TextureDepthStencil = RHICreateTexture2D(RViewInfo.ViewWidth, RViewInfo.ViewHeight, 1, false, false,
 		EPixelFormat::FT_R24G8_TYPELESS, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource)
 		, 1, nullptr);

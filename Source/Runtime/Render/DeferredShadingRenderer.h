@@ -52,8 +52,8 @@ public:
 	void BasePassRendering(XRHICommandList& RHICmdList);
 
 	//Shadow Mask Generate
-	
-
+	void ShadowMaskGenerate(XRHICommandList& RHICmdList);
+	void VSMTileMaskClear(XRHICommandList& RHICmdList);
 
 	std::shared_ptr <XRHITexture2D> TempGetVirtualSMFlags();
 	std::shared_ptr<XRHITexture2D> TempGetPagetableInfos();
@@ -70,6 +70,11 @@ public:
 	std::shared_ptr<XRHITexture2D> TempGetTransmittanceLutUAV();
 	std::shared_ptr<XRHITexture2D> TempGetSkyViewLutUAV();
 	std::shared_ptr<XRHIConstantBuffer> TempGetRHICbSkyAtmosphere();
+
+	inline std::shared_ptr<XRHITexture2D> TempGetVSMShadowMaskTexture()
+	{
+		return SceneTargets.VSMShadowMaskTexture;
+	}
 
 	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferA()
 	{

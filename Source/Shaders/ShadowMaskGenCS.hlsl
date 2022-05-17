@@ -11,10 +11,10 @@ cbuffer cbShadowViewInfo
 {
     row_major float4x4 LightViewProjectMatrix;
 
-    float ClientWidth;
-    float ClientHeight;
-    float padding0;
-    float padding1;
+    //float ClientWidth;
+    //float ClientHeight;
+    //float padding0;
+    //float padding1;
 }
 
 #define PageNum (8*8)
