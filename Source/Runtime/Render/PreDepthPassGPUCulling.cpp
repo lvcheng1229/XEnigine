@@ -4,6 +4,7 @@
 #include "Runtime/RHI/PipelineStateCache.h"
 #include "Runtime/RHI/RHIStaticStates.h"
 
+
 class DepthGPUCullingCS : public XGloablShader
 {
 public:
@@ -96,6 +97,8 @@ XPreDepthPassPS::ShaderInfos XPreDepthPassPS::StaticShaderInfos(
 	"PS", EShaderType::SV_Pixel, XPreDepthPassPS::CustomConstrucFunc,
 	XPreDepthPassPS::ModifyShaderCompileSettings);
 
+
+
 void XDeferredShadingRenderer::PreDepthPassGPUCullingSetup()
 {
 	std::vector<XRHIIndirectArg>IndirectPreDepthArgs;
@@ -148,13 +151,7 @@ void XDeferredShadingRenderer::PreDepthPassGPUCullingSetup()
 
 		CmdBufferShaderResourceView = RHICreateShaderResourceView(DepthCmdBufferNoCulling.get());
 		CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(DepthCmdBufferCulled.get(), true, true, DepthCounterOffset);
-
-		CullingParametersIns.commandCount = RenderGeos.size();
 	}
-
-
-	//ObjectConstants
-	GlobalShadowViewProjMatrix = RHICreateConstantBuffer(TileNumWidthPerVirtualTex * TileNumWidthPerVirtualTex * sizeof(TiledInfoStruct));
 }
 
 
@@ -168,7 +165,7 @@ void XDeferredShadingRenderer::PreDepthPassGPUCulling(XRHICommandList& RHICmdLis
 	Shader->SetParameters(RHICmdList, CmdBufferUnorderedAcessView.get(),
 		CmdBufferShaderResourceView.get(), GlobalObjectStructBufferSRV.get(), cbCullingParameters.get());
 
-	RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ceil(RenderGeos.size() / float(128))), 1, 1);
+	RHICmdList.RHIDispatchComputeShader(static_cast<uint32>(ceil(RenderGeos.size() / float(128))), 1, 1);
 	RHICmdList.RHIEventEnd();
 }
 
@@ -186,7 +183,7 @@ void XDeferredShadingRenderer::PreDepthPassRendering(XRHICommandList& RHICmdList
 	TShaderReference<XPreDepthPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XPreDepthPassPS>();
 	GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
 	GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
-	GraphicsPSOInit.BoundShaderState.RHIVertexLayout = LocalVertexFactory.GetLayout(ELayoutType::Layout_Default).get();
+	GraphicsPSOInit.BoundShaderState.RHIVertexLayout = DefaultVertexFactory.GetLayout(ELayoutType::Layout_Default).get();
 
 	RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 	SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);

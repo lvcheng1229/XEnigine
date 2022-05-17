@@ -1144,8 +1144,8 @@ private:
 
 	std::shared_ptr<XRHIStructBuffer>GlobalObjectStructBuffer;
 	std::shared_ptr<XRHIShaderResourceView>GlobalObjectStructBufferSRV;
-	std::shared_ptr<XRHIShaderResourceView>CmdBufferShaderResourceView;
-	std::shared_ptr<XRHIUnorderedAcessView> CmdBufferUnorderedAcessView;
+	//std::shared_ptr<XRHIShaderResourceView>CmdBufferShaderResourceView;
+	//std::shared_ptr<XRHIUnorderedAcessView> CmdBufferUnorderedAcessView;
 
 	struct cbCullingParametersStruct
 	{
@@ -1355,6 +1355,8 @@ bool CrateApp::Initialize()
 	BuildPSOs();
 	TestExecute();
 	VirtualShadow();
+	DeferredShadingRenderer.RenderGeos = RenderGeos;
+	DeferredShadingRenderer.Setup();
 
 	OutputDebugString(L"1111\n");
 
@@ -1497,8 +1499,6 @@ void CrateApp::TestExecute()
 	//	RHIDepthCommandSignature = RHICreateCommandSignature(IndirectPreDepthArgs.data(), 4, VertexShader.GetVertexShader(), PixelShader.GetPixelShader());
 	//}
 	//
-	////ObjectConstants
-	//GlobalShadowViewProjMatrix = RHICreateConstantBuffer(TileNumWidthPerVirtualTex * TileNumWidthPerVirtualTex * sizeof(TiledInfoStruct));
 	//
 	//void* DataPtrret;
 	//{
@@ -1538,41 +1538,41 @@ void CrateApp::TestExecute()
 	//
 	//	CmdBufferShaderResourceView = RHICreateShaderResourceView(DepthCmdBufferNoCulling.get());
 	//	CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(DepthCmdBufferCulled.get(), true, true, DepthCounterOffset);
-	//
-	//	CullingParametersIns.commandCount = RenderGeos.size();
 	//}
-	//
-	//
-	//
-	//uint32 ObjConstVecSize = sizeof(ObjectConstants) * RenderGeos.size();
-	//ObjectConstants* ConstantArray = (ObjectConstants*)std::malloc(ObjConstVecSize);
-	//
-	//for (int i = 0; i < RenderGeos.size(); i++)
-	//{
-	//	auto& RG = RenderGeos[i];
-	//
-	//	XBoundingBox BoudingBoxTans = RG->GetBoudingBoxWithTrans();
-	//	ConstantArray[i].BoundingBoxCenter = BoudingBoxTans.Center;
-	//	ConstantArray[i].BoundingBoxExtent = BoudingBoxTans.Extent;
-	//	ConstantArray[i].World = RG->GetWorldTransform().GetCombineMatrix();
-	//}
-	//
-	//
-	//{
-	//
-	//	FResourceVectorUint8 ObjectStructBufferData;
-	//	ObjectStructBufferData.Data = ConstantArray;
-	//	ObjectStructBufferData.SetResourceDataSize(ObjConstVecSize);
-	//	XRHIResourceCreateData ObjectStructBufferResourceData(&ObjectStructBufferData);
-	//	
-	//	GlobalObjectStructBuffer = RHIcreateStructBuffer(
-	//		sizeof(ObjectConstants),
-	//		ObjConstVecSize,
-	//		EBufferUsage((int)EBufferUsage::BUF_ShaderResource),
-	//		ObjectStructBufferResourceData);
-	//
-	//	GlobalObjectStructBufferSRV = RHICreateShaderResourceView(GlobalObjectStructBuffer.get());
-	//}
+	
+	//ObjectConstants
+	GlobalShadowViewProjMatrix = RHICreateConstantBuffer(TileNumWidthPerVirtualTex * TileNumWidthPerVirtualTex * sizeof(TiledInfoStruct));
+	CullingParametersIns.commandCount = RenderGeos.size();
+	
+	uint32 ObjConstVecSize = sizeof(ObjectConstants) * RenderGeos.size();
+	ObjectConstants* ConstantArray = (ObjectConstants*)std::malloc(ObjConstVecSize);
+	
+	for (int i = 0; i < RenderGeos.size(); i++)
+	{
+		auto& RG = RenderGeos[i];
+	
+		XBoundingBox BoudingBoxTans = RG->GetBoudingBoxWithTrans();
+		ConstantArray[i].BoundingBoxCenter = BoudingBoxTans.Center;
+		ConstantArray[i].BoundingBoxExtent = BoudingBoxTans.Extent;
+		ConstantArray[i].World = RG->GetWorldTransform().GetCombineMatrix();
+	}
+	
+	
+	{
+	
+		FResourceVectorUint8 ObjectStructBufferData;
+		ObjectStructBufferData.Data = ConstantArray;
+		ObjectStructBufferData.SetResourceDataSize(ObjConstVecSize);
+		XRHIResourceCreateData ObjectStructBufferResourceData(&ObjectStructBufferData);
+		
+		GlobalObjectStructBuffer = RHIcreateStructBuffer(
+			sizeof(ObjectConstants),
+			ObjConstVecSize,
+			EBufferUsage((int)EBufferUsage::BUF_ShaderResource),
+			ObjectStructBufferResourceData);
+	
+		GlobalObjectStructBufferSRV = RHICreateShaderResourceView(GlobalObjectStructBuffer.get());
+	}
 }
 
 void CrateApp::Renderer(const GameTimer& gt)
@@ -2359,6 +2359,13 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	CullingParametersIns.ShdowViewProject = mLightViewProj;
 	cbCullingParameters->UpdateData(&CullingParametersIns, sizeof(cbCullingParametersStruct), 0);
 
+
+	{
+		DeferredShadingRenderer.GlobalObjectStructBufferSRV = GlobalObjectStructBufferSRV;
+		DeferredShadingRenderer.cbCullingParameters = cbCullingParameters;
+		DeferredShadingRenderer.TextureDepthStencil = TextureDepthStencil;
+		DeferredShadingRenderer.RViewInfo = RViewInfo;
+	}
 }
 
 
