@@ -225,11 +225,10 @@ void XDeferredShadingRenderer::SkyAtmosPhereUpdata(XRHICommandList& RHICmdList)
 
 	const float DistanceToPlanetCenterWorld= PlanetCenterToCameraWorld.Length();
 
-	//X_Assert(DistanceToPlanetCenterWorld > (BottomRadiusWorld + Offset));
+	
 	// If the camera is below the planet surface, we snap it back onto the surface.
 	XVector3 SkyWorldCameraOrigin = DistanceToPlanetCenterWorld < (BottomRadiusWorld + Offset)
 		? PlanetCenterWorld + (BottomRadiusWorld + Offset) * (PlanetCenterToCameraWorld / DistanceToPlanetCenterWorld) :
-		//XMLoadFloat3(&mEyePos) * SkyUnitToCm;
 		CametaWorldOrigin;
 
 	float SkyViewHeight=(SkyWorldCameraOrigin - PlanetCenterWorld).Length();
@@ -239,8 +238,7 @@ void XDeferredShadingRenderer::SkyAtmosPhereUpdata(XRHICommandList& RHICmdList)
 
 	XVector3 SkyUp = (SkyWorldCameraOrigin - PlanetCenterWorld) * CmToSkyUnit;
 	SkyUp.Normalize();
-
-	//XMVECTOR SkyLeft = XMVector3Cross(Forward, SkyUp);
+	
 	XVector3 SkyLeft = SkyUp.Cross(CamForward);
 	SkyLeft.Normalize();
 
@@ -285,16 +283,12 @@ void XDeferredShadingRenderer::SkyAtmosPhereUpdata(XRHICommandList& RHICmdList)
 		RayleighScattering.w * RayleighScatteringScale);
 
 	cbSkyAtmosphereIns.MieScattering = XVector4(
-		MieScattering.x * MieScatteringScale,
-		MieScattering.y * MieScatteringScale,
-		MieScattering.z * MieScatteringScale,
-		MieScattering.w * MieScatteringScale);
+		MieScattering.x * MieScatteringScale,MieScattering.y * MieScatteringScale,
+		MieScattering.z * MieScatteringScale,MieScattering.w * MieScatteringScale);
 
 	cbSkyAtmosphereIns.MieAbsorption = XVector4(
-		MieAbsorption.x * MieAbsorptionScale,
-		MieAbsorption.y * MieAbsorptionScale,
-		MieAbsorption.z * MieAbsorptionScale,
-		MieAbsorption.w * MieAbsorptionScale);
+		MieAbsorption.x * MieAbsorptionScale, MieAbsorption.y * MieAbsorptionScale,
+		MieAbsorption.z * MieAbsorptionScale, MieAbsorption.w * MieAbsorptionScale);
 
 	cbSkyAtmosphereIns.MieExtinction = XVector4(
 		cbSkyAtmosphereIns.MieScattering.x + cbSkyAtmosphereIns.MieAbsorption.x,

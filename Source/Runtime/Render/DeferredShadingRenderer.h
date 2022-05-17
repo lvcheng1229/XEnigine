@@ -48,6 +48,9 @@ public:
 	void SkyAtmosPhereUpdata(XRHICommandList& RHICmdList);
 	void SkyAtmosPhereRendering(XRHICommandList& RHICmdList);
 
+	//BasePass Rendering
+	void BasePassRendering(XRHICommandList& RHICmdList);
+
 	//Shadow Mask Generate
 	
 
@@ -67,11 +70,27 @@ public:
 	std::shared_ptr<XRHITexture2D> TempGetTransmittanceLutUAV();
 	std::shared_ptr<XRHITexture2D> TempGetSkyViewLutUAV();
 	std::shared_ptr<XRHIConstantBuffer> TempGetRHICbSkyAtmosphere();
+
+	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferA()
+	{
+		return SceneTargets.TextureGBufferA;
+	}
+	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferB()
+	{
+		return SceneTargets.TextureGBufferB;
+	}
+	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferC()
+	{
+		return SceneTargets.TextureGBufferC;
+	}
+	inline std::shared_ptr<XRHITexture2D> TempGetTextureGBufferD()
+	{
+		return SceneTargets.TextureGBufferD;
+	}
 private:
 	XPreDepthPassResource PreDepthPassResource;
 	XSceneRenderTarget SceneTargets;
 	XSkyAtmosphereParams cbSkyAtmosphereIns;
-	//std::shared_ptr <XRHITexture2D> PhysicalShadowDepthTexture;//++
 public:
 	XMatrix LightViewMat;
 	XMatrix LightProjMat;

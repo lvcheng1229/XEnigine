@@ -47,6 +47,8 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 	HZBPass(RHICmdList);
 	
 	SkyAtmosPhereRendering(RHICmdList);
+
+	BasePassRendering(RHICmdList);
 }
 
 
