@@ -123,11 +123,11 @@ void D3DApp::OnResize()
 	direct_cmd_queue->CommandQueueWaitFlush();
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-	TextureDepthStencil = RHICreateTexture2D(mClientWidth, mClientHeight,1,false,false,
-		EPixelFormat::FT_R24G8_TYPELESS
-		, ETextureCreateFlags(TexCreate_DepthStencilTargetable| TexCreate_ShaderResource)
-		,1
-		, nullptr);
+	//TextureDepthStencil = RHICreateTexture2D(mClientWidth, mClientHeight,1,false,false,
+	//	EPixelFormat::FT_R24G8_TYPELESS
+	//	, ETextureCreateFlags(TexCreate_DepthStencilTargetable| TexCreate_ShaderResource)
+	//	,1
+	//	, nullptr);
 	
 	direct_ctx->CloseCmdList();
 

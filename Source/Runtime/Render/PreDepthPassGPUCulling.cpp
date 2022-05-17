@@ -161,7 +161,7 @@ void XDeferredShadingRenderer::PreDepthPassGPUCulling(XRHICommandList& RHICmdLis
 
 void XDeferredShadingRenderer::PreDepthPassRendering(XRHICommandList& RHICmdList)
 {
-	XRHIRenderPassInfo RPInfos(0, nullptr, ERenderTargetLoadAction::ENoAction, TextureDepthStencil.get(), EDepthStencilLoadAction::EClear);
+	XRHIRenderPassInfo RPInfos(0, nullptr, ERenderTargetLoadAction::ENoAction, SceneTargets.TextureDepthStencil.get(), EDepthStencilLoadAction::EClear);
 	RHICmdList.RHIBeginRenderPass(RPInfos, "PreDepthPass", sizeof("PreDepthPass"));
 	RHICmdList.CacheActiveRenderTargets(RPInfos);
 

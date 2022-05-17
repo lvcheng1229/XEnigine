@@ -104,7 +104,7 @@ void XViewMatrices::UpdateViewMatrix(const XVector3& ViewLocation, const XVector
 	XMVECTOR ViewTargetVec = XMVectorSet(ViewTargetPosition.x, ViewTargetPosition.y, ViewTargetPosition.z, 1.0f);
 	DirectX::XMVECTOR EyeDirection = DirectX::XMVectorSubtract(ViewTargetVec, ViewOriginVec);
 	XMVECTOR UpDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
+	EyeForwardDir = EyeDirection;
 	//Cartesian coordinates is right hand
 
 	//compute uvw

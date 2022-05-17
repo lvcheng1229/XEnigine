@@ -33,6 +33,7 @@ private:
 	//TODO Align
 	XVector3		ViewOrigin;
 	XVector3		PreViewTranslation;
+	XVector3		EyeForwardDir;
 
 	XMatrix		ProjectionMatrix;
 	XMatrix		ViewMatrix;
@@ -65,6 +66,7 @@ public:
 
 	inline const XVector3& GetViewOrigin()const { return ViewOrigin; };
 	inline const XVector3& GetPreViewTranslation()const { return PreViewTranslation; };
+	inline const XVector3& GetEyeForwarddDir()const { return EyeForwardDir; };
 
 	//common
 	inline const XMatrix& GetProjectionMatrix()const				{ return ProjectionMatrix; };
@@ -123,7 +125,7 @@ class XSceneView
 public:
 	std::shared_ptr<XRHIConstantBuffer>ViewConstantBuffer;
 	ViewConstantBufferData ViewCBCPUData;
-	XViewMatrices ViewMat;
+	XViewMatrices ViewMats;
 
 	uint32 ViewWidth;
 	uint32 ViewHeight;

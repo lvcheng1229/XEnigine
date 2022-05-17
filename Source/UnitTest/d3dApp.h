@@ -79,7 +79,7 @@ public:
 
     XD3D12PassStateManager* pass_state_manager;
 
-    std::shared_ptr<XRHITexture2D>TextureDepthStencil;
+    //std::shared_ptr<XRHITexture2D>TextureDepthStencil;
     //XRHIDepthStencilView* DsView;
     //XD3D12DepthStencilView ds_view;
     XD3D12Resource ds_resource;

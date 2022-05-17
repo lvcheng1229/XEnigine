@@ -17,10 +17,13 @@ void XDefaultVertexFactory::ReleaseRHI()
 	DefaultLayout.reset();
 }
 
+
+
 void XDeferredShadingRenderer::Setup()
 {
 	//Temp
 	BeginInitResource(&DefaultVertexFactory);
+	SceneTagetGen();
 	PreDepthPassGPUCullingSetup();
 	VSMSetup();
 }
@@ -28,6 +31,8 @@ void XDeferredShadingRenderer::Setup()
 void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 {
 	LightViewProjMat = LightViewMat * LightProjMat;
+	SkyAtmosPhereUpdata(RHICmdList);
+
 
 	RHICmdList.RHIBeginFrame();
 	PreDepthPassGPUCulling(RHICmdList);
@@ -37,6 +42,11 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 	VSMTileMaskPass(RHICmdList);
 	VSMPageTableGen(RHICmdList);
 	VSMShadowCommandBuild(RHICmdList);
+	VirtualShadowMapGen(RHICmdList);
+
+	HZBPass(RHICmdList);
+	
+	SkyAtmosPhereRendering(RHICmdList);
 }
 
 
