@@ -12,6 +12,12 @@ XWindowsApplication::XWindowsApplication()
 	XApplication::APPPtr = this;
 }
 
+XWindowsApplication::~XWindowsApplication()
+{
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+}
+
 bool XWindowsApplication::CreateAppWindow()
 {
 	WNDCLASS wc;
@@ -57,6 +63,29 @@ bool XWindowsApplication::InitRHI()
 void* XWindowsApplication::GetPlatformHandle()
 {
 	return WinHandle;
+}
+bool XWindowsApplication::UISetup()
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	io.ConfigDockingAlwaysTabBar = true;
+	io.ConfigWindowsMoveFromTitleBarOnly = true;
+
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowPadding = ImVec2(1.0, 0);
+	style.FramePadding = ImVec2(14.0, 2.0f);
+	style.ChildBorderSize = 0.0f;
+	style.FrameRounding = 5.0f;
+	style.FrameBorderSize = 1.5f;
+	ImGui_ImplWin32_Init(WinHandle);
+	return true;
+}
+bool XWindowsApplication::UINewFrame()
+{
+	ImGui_ImplWin32_NewFrame();
+	return true;
 }
 LRESULT WINAPI XWindowsApplication::WindowsMsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {

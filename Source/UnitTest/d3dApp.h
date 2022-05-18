@@ -73,11 +73,6 @@ protected:
     static D3DApp* mApp;
     
     HWND      mhMainWnd = nullptr; // main window handle
-	bool      mAppPaused = false;  // is the application paused?
-	bool      mMinimized = false;  // is the application minimized?
-	bool      mMaximized = false;  // is the application maximized?
-	bool      mResizing = false;   // are the resize bars being dragged?
-    bool      mFullscreenState = false;// fullscreen enabled
 
 	// Used to keep track of the “delta-time?and game time (?.4).
 	GameTimer mTimer;
@@ -85,13 +80,13 @@ protected:
 
 
    
-    DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-   EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM;
+   // DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+   //EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM;
    
 
 
 	
-	const int mClientWidth = 1540;
-	const int mClientHeight = 845;
+    //const int mClientWidth = 1540;
+	///const int mClientHeight = 845;
 };
 

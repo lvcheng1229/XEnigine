@@ -15,6 +15,7 @@ void RHIRelease()
 {
 	RHIModule->ReleaseRHI();
 	delete RHIModule;
+	delete GPlatformRHI;
 }
 
 void RHIInit(uint32 Width, uint32 Height)

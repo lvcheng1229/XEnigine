@@ -6,6 +6,7 @@
 class XApplication
 {
 	friend class D3DApp;
+	friend class CrateApp;
 public:
 	uint32 ClientWidth;
 	uint32 ClientHeight;
@@ -17,4 +18,7 @@ protected:
 	virtual void PreInitial();
 	virtual bool CreateAppWindow();
 	virtual bool InitRHI();
+
+	virtual bool UISetup() = 0;
+	virtual bool UINewFrame() = 0;
 };

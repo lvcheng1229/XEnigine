@@ -17,7 +17,10 @@ void XDefaultVertexFactory::ReleaseRHI()
 	DefaultLayout.reset();
 }
 
-
+XDeferredShadingRenderer::~XDeferredShadingRenderer()
+{
+	EditorUI.ImGui_Impl_RHI_Shutdown();
+}
 
 void XDeferredShadingRenderer::Setup()
 {
@@ -26,6 +29,10 @@ void XDeferredShadingRenderer::Setup()
 	SceneTagetGen();
 	PreDepthPassGPUCullingSetup();
 	VSMSetup();
+
+	EditorUI.SetDefaltStyle();
+	EditorUI.InitIOInfo(RViewInfo.ViewWidth, RViewInfo.ViewHeight);
+	EditorUI.ImGui_Impl_RHI_Init();
 }
 
 void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
@@ -58,6 +65,10 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 	SkyAtmoSphereCombine(RHICmdList);
 
 	PostProcessToneMapping(RHICmdList, SceneTargets.TextureSceneColorDeffered.get(), SceneTargets.TextureSceneColorDefferedPingPong.get());
+	TempUIRenderer(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
+	PresentPass(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
+
+	RHICmdList.RHIEndFrame();
 }
 
 

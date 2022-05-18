@@ -63,155 +63,6 @@ using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 
-class XLocalVertexFactory :public XVertexFactory
-{
-public:
-	void InitRHI()override;
-	void ReleaseRHI()override;
-};
-
-void XLocalVertexFactory::InitRHI()
-{
-	XRHIVertexLayoutArray LayoutArray;
-	LayoutArray.push_back(XVertexElement(0, EVertexElementType::VET_Float4, 0, 0));
-	LayoutArray.push_back(XVertexElement(1, EVertexElementType::VET_Float3, 0, 0 + sizeof(XVector4)));
-	LayoutArray.push_back(XVertexElement(2, EVertexElementType::VET_Float4, 0, 0 + sizeof(XVector4) + sizeof(XVector3)));
-	LayoutArray.push_back(XVertexElement(3, EVertexElementType::VET_Float2, 0, 0 + sizeof(XVector4) + sizeof(XVector3) + sizeof(XVector4)));
-
-	InitLayout(LayoutArray, ELayoutType::Layout_Default);
-}
-
-void XLocalVertexFactory::ReleaseRHI()
-{
-	DefaultLayout.reset();
-}
-
-
-class XFinalPassPS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XFinalPassPS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-public:
-	XFinalPassPS(const XShaderInitlizer& Initializer)
-		:XGloablShader(Initializer) 
-	{
-		FullScreenMap.Bind(Initializer.ShaderParameterMap, "FullScreenMap");
-	}
-
-	void SetParameter(
-		XRHICommandList& RHICommandList,
-		XRHITexture* InTexture)
-	{
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, FullScreenMap, InTexture);
-	}
-	TextureParameterType    FullScreenMap;
-};
-XFinalPassPS::ShaderInfos XFinalPassPS::StaticShaderInfos(
-	"XFinalPassPS", L"E:/XEngine/XEnigine/Source/Shaders/FinalPassShader.hlsl",
-	"PS", EShaderType::SV_Pixel, XFinalPassPS::CustomConstrucFunc,
-	XFinalPassPS::ModifyShaderCompileSettings);
-
-class XSSRPassPS :public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XSSRPassPS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-
-public:
-	XSSRPassPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
-	{
-
-		SSRParams.Bind(Initializer.ShaderParameterMap, "cbSSR_SSRParams");
-		CBV_View.Bind(Initializer.ShaderParameterMap, "cbView");
-
-		SceneColor.Bind(Initializer.ShaderParameterMap, "SceneColor");
-		GBufferATexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferATexture");
-		GBufferBTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferBTexture");
-		GBufferCTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferCTexture");
-		GBufferDTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_GBufferDTexture");
-		SceneDepthTexture.Bind(Initializer.ShaderParameterMap, "SceneTexturesStruct_SceneDepthTexture");
-		HZBTexture.Bind(Initializer.ShaderParameterMap, "HZBTexture");
-	}
-
-	void SetParameter(
-		XRHICommandList& RHICommandList,
-		DirectX::XMFLOAT4 InSSRParams,
-		XRHIConstantBuffer* ViewCB,
-		XRHITexture* InSceneColor,
-		XRHITexture* InGBufferATexture,
-		XRHITexture* InGBufferBTexture,
-		XRHITexture* InGBufferCTexture,
-		XRHITexture* InGBufferDTexture,
-		XRHITexture* InSceneDepthTexture,
-		XRHITexture* InHZBTexture)
-	{
-		SetShaderValue(RHICommandList, EShaderType::SV_Pixel, SSRParams, InSSRParams);
-		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Pixel, CBV_View, ViewCB);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneColor, InSceneColor);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferATexture, InGBufferATexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferBTexture, InGBufferBTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferCTexture, InGBufferCTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, GBufferDTexture, InGBufferDTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SceneDepthTexture, InSceneDepthTexture);
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, HZBTexture, InHZBTexture);
-	}
-
-
-	XShaderVariableParameter SSRParams;
-
-	CBVParameterType CBV_View;
-
-	TextureParameterType SceneColor;
-	TextureParameterType GBufferATexture;
-	TextureParameterType GBufferBTexture;
-	TextureParameterType GBufferCTexture;
-	TextureParameterType GBufferDTexture;
-	TextureParameterType SceneDepthTexture;
-	TextureParameterType HZBTexture;
-};
-XSSRPassPS::ShaderInfos XSSRPassPS::StaticShaderInfos(
-	"XSSRPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ScreenSpaceReflection.hlsl",
-	"PS", EShaderType::SV_Pixel, XSSRPassPS::CustomConstrucFunc, XSSRPassPS::ModifyShaderCompileSettings);
-
-class XReflectionEnvironmentPS : public XGloablShader
-{
-public:
-	static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
-	{
-		return new XReflectionEnvironmentPS(Initializer);
-	}
-	static ShaderInfos StaticShaderInfos;
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
-
-public:
-	XReflectionEnvironmentPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer)
-	{
-		SSRMap.Bind(Initializer.ShaderParameterMap, "SSRMap");
-	}
-
-	void SetParameter(
-		XRHICommandList& RHICommandList,
-		XRHITexture* InSSRMap)
-	{
-		SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, SSRMap, InSSRMap);
-	}
-
-	TextureParameterType SSRMap;
-};
-XReflectionEnvironmentPS::ShaderInfos XReflectionEnvironmentPS::StaticShaderInfos(
-	"XReflectionEnvironmentPS", L"E:/XEngine/XEnigine/Source/Shaders/ReflectionEnvironmentShader.hlsl",
-	"PS", EShaderType::SV_Pixel, XReflectionEnvironmentPS::CustomConstrucFunc,
-	XReflectionEnvironmentPS::ModifyShaderCompileSettings);
-
 
 struct BoundSphere
 {
@@ -236,7 +87,6 @@ private:
 	virtual void Update(const GameTimer& gt)override;
 	virtual void Renderer(const GameTimer& gt)override;
 
-	void OnKeyboardInput(const GameTimer& gt);
 	void UpdateCamera(const GameTimer& gt);
 	void UpdateMainPassCB(const GameTimer& gt);
 
@@ -277,14 +127,6 @@ private:
 	cbCullingParametersStruct CullingParametersIns;
 	std::shared_ptr<XRHIConstantBuffer>cbCullingParameters;
 private:
-	//UI
-	uint32 IMGUI_IndexOfDescInHeap;
-	uint32 IMGUI_IndexOfHeap;
-	XEditorUI EditorUI;
-	//BasePass
-private:
-	XLocalVertexFactory LocalVertexFactory;
-
 	std::vector<std::shared_ptr<GGeomertry>>RenderGeos;
 private:
 	uint64 FrameNum = 0;
@@ -300,7 +142,6 @@ private:
 
 CrateApp::CrateApp()
 {
-	BeginInitResource(&LocalVertexFactory);
 }
 
 CrateApp::~CrateApp()
@@ -316,19 +157,17 @@ bool CrateApp::Initialize()
 		return false;
 
 	RHICmdList.Open();
-	//direct_ctx->OpenCmdList();
 
 	LoadTextures();
 
 	RViewInfo.ViewConstantBuffer = RHICreateConstantBuffer(sizeof(ViewConstantBufferData));
-	RViewInfo.ViewWidth = mClientWidth;
-	RViewInfo.ViewHeight = mClientHeight;
+	RViewInfo.ViewWidth = Application->ClientWidth;
+	RViewInfo.ViewHeight = Application->ClientHeight;
 
 	cbCullingParameters = RHICreateConstantBuffer(sizeof(cbCullingParametersStruct));
 
 	BuildPSOs();
 	TestExecute();
-	VirtualShadow();
 
 	BoundSphere0.Center = XVector3(0, 0, 0);
 	BoundSphere0.Radius = 96.0f;
@@ -338,34 +177,13 @@ bool CrateApp::Initialize()
 	DeferredShadingRenderer.MainLightColor = LightColor;
 	DeferredShadingRenderer.LightIntensity = LightIntensity;
 	DeferredShadingRenderer.RenderGeos = RenderGeos;
-	DeferredShadingRenderer.RViewInfo.ViewWidth = mClientWidth;
-	DeferredShadingRenderer.RViewInfo.ViewHeight = mClientHeight;
+	DeferredShadingRenderer.RViewInfo.ViewWidth = Application->ClientWidth;
+	DeferredShadingRenderer.RViewInfo.ViewHeight = Application->ClientHeight;
+	
+	Application->UISetup();
 	DeferredShadingRenderer.Setup();
-
 	RHICmdList.Execute();
-
-	//ImGUI Begin
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	io.ConfigDockingAlwaysTabBar = true;
-	io.ConfigWindowsMoveFromTitleBarOnly = true;
-
-	ImGuiStyle& style = ImGui::GetStyle();
-	style.WindowPadding = ImVec2(1.0, 0);
-	style.FramePadding = ImVec2(14.0, 2.0f);
-	style.ChildBorderSize = 0.0f;
-	style.FrameRounding = 5.0f;
-	style.FrameBorderSize = 1.5f;
-
-	//ImGui::StyleColorsDark();
-	EditorUI.SetDefaltStyle();
-	EditorUI.InitIOInfo(mClientWidth, mClientHeight);
-
-	ImGui_ImplWin32_Init(mhMainWnd);
-	EditorUI.ImGui_Impl_RHI_Init();
-	//ImGUI End
+	
 
 	return true;
 }
@@ -383,7 +201,6 @@ void CrateApp::InitCamInfo()
 
 void CrateApp::Update(const GameTimer& gt)
 {
-	OnKeyboardInput(gt);
 	UpdateCamera(gt);
 	UpdateMainPassCB(gt);
 }
@@ -427,76 +244,14 @@ void CrateApp::TestExecute()
 
 void CrateApp::Renderer(const GameTimer& gt)
 {
+	//ImGui_ImplWin32_NewFrame();
+	Application->UINewFrame();
 	DeferredShadingRenderer.Rendering(RHICmdList);
 
 	RViewInfo = DeferredShadingRenderer.RViewInfo;
 	RViewInfo.ViewConstantBuffer.get()->UpdateData(&RViewInfo.ViewCBCPUData, sizeof(ViewConstantBufferData), 0);
-
-	auto TextureSceneColorDeffered = DeferredShadingRenderer.TempGetTextureSceneColorDeffered();
-	auto TextureSceneColorDefferedPingPong = DeferredShadingRenderer.TempGetTextureSceneColorDefferedPingPong();
-
-	XRHITexture* CurrentPingPongTextureSceneColorTarget = TextureSceneColorDefferedPingPong.get();
-	{
-		EditorUI.ImGui_Impl_RHI_NewFrame(&RHICmdList);
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
-		EditorUI.OnTick();
-		ImGui::Render();
-		EditorUI.ImGui_Impl_RHI_RenderDrawData(ImGui::GetDrawData(), &RHICmdList, CurrentPingPongTextureSceneColorTarget);
-	}
-
-	//Pass9 FinalPass
-	{
-		XRHITexture* BackTex = RHIGetCurrentBackTexture();
-		XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
-		RHICmdList.RHIBeginRenderPass(RPInfos, "FinalPass",sizeof("FinalPass"));
-		RHICmdList.CacheActiveRenderTargets(RPInfos);
-
-		XGraphicsPSOInitializer GraphicsPSOInit;
-		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
-		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-
-		TShaderReference<RFullScreenQuadVS> SSRVertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
-		TShaderReference<XFinalPassPS> SSRPixelShader = GetGlobalShaderMapping()->GetShader<XFinalPassPS>();
-		GraphicsPSOInit.BoundShaderState.RHIVertexShader = SSRVertexShader.GetVertexShader();
-		GraphicsPSOInit.BoundShaderState.RHIPixelShader = SSRPixelShader.GetPixelShader();
-		GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
-
-		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-		SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-		SSRPixelShader->SetParameter(RHICmdList, TextureSceneColorDefferedPingPong.get());
-
-		RHICmdList.SetVertexBuffer(GFullScreenVertexRHI.RHIVertexBuffer.get(), 0, 0);
-		RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
-		RHICmdList.RHIEndRenderPass();
-	}
-
-
-	{
-		RHICmdList.RHIEndFrame();
-	}
-
 }
 
-
-
-void CrateApp::OnKeyboardInput(const GameTimer& gt)
-{
-	const float dt = gt.DeltaTime();
-
-	if (GetAsyncKeyState('W') & 0x8000)
-		CamIns.WalkWS(10.0f * dt);
-
-	if (GetAsyncKeyState('S') & 0x8000)
-		CamIns.WalkWS(-10.0f * dt);
-
-	if (GetAsyncKeyState('A') & 0x8000)
-		CamIns.WalkAD(-10.0f * dt);
-
-	if (GetAsyncKeyState('D') & 0x8000)
-		CamIns.WalkAD(10.0f * dt);
-}
 
 static GCamera* camss = nullptr;
 static void TempUpdate2()
@@ -547,7 +302,9 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 	FrameNum++;
 	RViewInfo.ViewCBCPUData.StateFrameIndexMod8 = FrameNum % 8;
-	RViewInfo.ViewCBCPUData.ViewSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0 / mClientWidth, 1.0 / mClientHeight);
+	RViewInfo.ViewCBCPUData.ViewSizeAndInvSize = 
+		XMFLOAT4(Application->ClientWidth, Application->ClientHeight, 
+			1.0 / Application->ClientWidth, 1.0 / Application->ClientHeight);
 	float LenSqrt = sqrt(LightDir.x * LightDir.x + LightDir.y * LightDir.y + LightDir.z * LightDir.z);
 	RViewInfo.ViewCBCPUData.AtmosphereLightDirection = XMFLOAT4(LightDir.x / LenSqrt, LightDir.y / LenSqrt, LightDir.z / LenSqrt, 1.0f);
 	RViewInfo.ViewCBCPUData.ViewToClip = RViewInfo.ViewMats.GetProjectionMatrix();
@@ -558,7 +315,8 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 	RViewInfo.ViewCBCPUData.WorldCameraOrigin = RViewInfo.ViewMats.GetViewOrigin();
 	RViewInfo.ViewCBCPUData.ViewProjectionMatrix = RViewInfo.ViewMats.GetViewProjectionMatrix();
 	RViewInfo.ViewCBCPUData.ViewProjectionMatrixInverse = RViewInfo.ViewMats.GetViewProjectionMatrixInverse();
-	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = XMFLOAT4(mClientWidth, mClientHeight, 1.0f / mClientWidth, 1.0f / mClientHeight);
+	RViewInfo.ViewCBCPUData.BufferSizeAndInvSize = 
+		XMFLOAT4(Application->ClientWidth, Application->ClientHeight, 1.0f / Application->ClientWidth, 1.0f / Application->ClientHeight);
 	
 	DeferredShadingRenderer.LightViewMat = mLightView;
 	DeferredShadingRenderer.LightProjMat = mLightProj;
@@ -612,16 +370,8 @@ void CrateApp::BuildPSOs()
 
 void CrateApp::TempDelete()
 {
-	if (GPlatformRHI)
-		delete GPlatformRHI;
 	if (GGlobalShaderMapping)
 		delete GGlobalShaderMapping;
-
-	//ImGUI Begin
-	EditorUI.ImGui_Impl_RHI_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-	//ImGUI End
 }
 
 

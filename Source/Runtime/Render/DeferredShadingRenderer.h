@@ -7,6 +7,9 @@
 #include "SceneRenderTagrget.h"
 #include "SkyAtmosPhere.h"
 
+//!!!!!!!!!
+#include "Editor/EditorUI.h"
+
 //Temps
 #include "Runtime/Core/Mesh/GeomertyData.h"
 //
@@ -21,6 +24,7 @@ public:
 class XDeferredShadingRenderer
 {
 public:
+	~XDeferredShadingRenderer();
 	void SceneTagetGen();
 
 	void Setup();
@@ -64,6 +68,11 @@ public:
 	//PostProcessToneMapping
 	void PostProcessToneMapping(XRHICommandList& RHICmdList, XRHITexture* TextureSceneColorSrc, XRHITexture* TextureSceneColorDest);
 
+	//
+	void TempUIRenderer(XRHICommandList& RHICmdList, XRHITexture* DestTex);
+
+	//
+	void PresentPass(XRHICommandList& RHICmdList,XRHITexture* TexSrc);
 
 	inline std::shared_ptr<XRHITexture2D> TempGetTextureSceneColorDeffered()
 	{
@@ -78,6 +87,7 @@ private:
 	XPreDepthPassResource PreDepthPassResource;
 	XSceneRenderTarget SceneTargets;
 	XSkyAtmosphereParams cbSkyAtmosphereIns;
+	XEditorUI EditorUI;
 public:
 	XMatrix LightViewMat;
 	XMatrix LightProjMat;
