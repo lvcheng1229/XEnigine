@@ -28,6 +28,8 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 //ImGUI End
 
+#include "Runtime/ApplicationCore/Windows/WindowsApplication.h"
+
 class D3DApp
 {
 protected:
@@ -61,6 +63,10 @@ protected:
 	bool InitDirect3D();
 	void CalculateFrameStats();
     void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
+
+    //
+    XApplication* Application;
+
 public:
     XD3D12Adapter Adapter;
     XD3D12PhysicDevice Device;
@@ -105,7 +111,7 @@ protected:
     Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
 	// Derived class should set these in derived constructor to customize starting values.
-	std::wstring mMainWndCaption = L"d3d App";
+	std::wstring mMainWndCaption2 = L"d3d App";
 
     //{
         DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;

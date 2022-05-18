@@ -43,6 +43,8 @@ D3DApp::~D3DApp()
 {
 	if(md3dDevice != nullptr)
 		direct_cmd_queue->CommandQueueWaitFlush();
+
+	delete Application;
 }
 
 
@@ -248,6 +250,7 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
+		
 		OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
 	case WM_LBUTTONUP:
@@ -272,40 +275,46 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 bool D3DApp::InitMainWindow()
 {
-	WNDCLASS wc;
-	wc.style         = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc   = MainWndProc; 
-	wc.cbClsExtra    = 0;
-	wc.cbWndExtra    = 0;
-	wc.hInstance     = nullptr;
-	wc.hIcon         = LoadIcon(0, IDI_APPLICATION);
-	wc.hCursor       = LoadCursor(0, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
-	wc.lpszMenuName  = 0;
-	wc.lpszClassName = L"MainWnd";
-
-	if( !RegisterClass(&wc) )
-	{
-		MessageBox(0, L"RegisterClass Failed.", 0, 0);
-		return false;
-	}
-
-	// Compute window rectangle dimensions based on requested client area dimensions.
-	RECT R = { 0, 0, mClientWidth, mClientHeight };
-    AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
-	int width  = R.right - R.left;
-	int height = R.bottom - R.top;
-
-	mhMainWnd = CreateWindow(L"MainWnd", mMainWndCaption.c_str(), 
-		WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, nullptr, 0); 
-	if( !mhMainWnd )
-	{
-		MessageBox(0, L"CreateWindow Failed.", 0, 0);
-		return false;
-	}
-
-	ShowWindow(mhMainWnd, SW_SHOW);
-	UpdateWindow(mhMainWnd);
+	Application = new XWindowsApplication();
+	Application->PreInitial();
+	Application->CreateAppWindow();
+	mhMainWnd = (HWND)Application->GetPlatformHandle();
+	
+	//WNDCLASS wc;
+	//wc.style         = CS_HREDRAW | CS_VREDRAW;
+	//wc.lpfnWndProc   = MainWndProc; 
+	////wc.lpfnWndProc   = XWindowsApplication::WindowsMsgProc;
+	//wc.cbClsExtra    = 0;
+	//wc.cbWndExtra    = 0;
+	//wc.hInstance     = nullptr;
+	//wc.hIcon         = LoadIcon(0, IDI_APPLICATION);
+	//wc.hCursor       = LoadCursor(0, IDC_ARROW);
+	//wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
+	//wc.lpszMenuName  = 0;
+	//wc.lpszClassName = L"MainWnd";
+	//
+	//if( !RegisterClass(&wc) )
+	//{
+	//	MessageBox(0, L"RegisterClass Failed.", 0, 0);
+	//	return false;
+	//}
+	//
+	//// Compute window rectangle dimensions based on requested client area dimensions.
+	//RECT R = { 0, 0, mClientWidth, mClientHeight };
+    //AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
+	//int width  = R.right - R.left;
+	//int height = R.bottom - R.top;
+	//
+	//mhMainWnd = CreateWindow(L"MainWnd", mMainWndCaption2.c_str(),
+	//	WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, nullptr, 0); 
+	//if( !mhMainWnd )
+	//{
+	//	MessageBox(0, L"CreateWindow Failed.", 0, 0);
+	//	return false;
+	//}
+	//
+	//ShowWindow(mhMainWnd, SW_SHOW);
+	//UpdateWindow(mhMainWnd);
 
 	return true;
 }
@@ -387,7 +396,7 @@ void D3DApp::CalculateFrameStats()
         wstring fpsStr = to_wstring(fps);
         wstring mspfStr = to_wstring(mspf);
 
-        wstring windowText = mMainWndCaption +
+        wstring windowText = mMainWndCaption2 +
             L"    fps: " + fpsStr +
             L"   mspf: " + mspfStr;
 

@@ -506,8 +506,13 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 }
 
+static bool press = false;
+int DeltaX = 0;
+int DeltaY = 0;
+
 void CrateApp::OnMouseDown(WPARAM btnState, int x, int y)
 {
+	press = true;
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
 
@@ -519,13 +524,16 @@ void CrateApp::OnMouseUp(WPARAM btnState, int x, int y)
 	ReleaseCapture();
 }
 
+
+
 void CrateApp::OnMouseMove(WPARAM btnState, int x, int y)
 {
 	if ((btnState & MK_LBUTTON) != 0)
 	{
 		CamIns.ProcessMouseMove(static_cast<float>(x - mLastMousePos.x), static_cast<float>(y - mLastMousePos.y));
 	}
-
+	DeltaX = x - mLastMousePos.x;
+	DeltaY = y - mLastMousePos.y;
 
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
@@ -548,9 +556,20 @@ void CrateApp::OnKeyboardInput(const GameTimer& gt)
 		CamIns.WalkAD(10.0f * dt);
 }
 
+static GCamera* camss = nullptr;
+static void TempUpdate2()
+{
+	if (XAppInput::InputPtr->GetMousePressed(EInputKey::MOUSE_RIGHT))
+	{
+		camss->ProcessMouseMove(XAppInput::InputPtr->GetMouseDelta().X, XAppInput::InputPtr->GetMouseDelta().Y);
+	}
+}
+XAppInput::FunPtr XAppInput::TempUpFun = TempUpdate2;
 
 void CrateApp::UpdateCamera(const GameTimer& gt)
 {
+	camss = &CamIns;
+
 	RViewInfo.ViewMats.UpdateViewMatrix(CamIns.GetEyePosition(), CamIns.GetTargetPosition());
 
 	{
