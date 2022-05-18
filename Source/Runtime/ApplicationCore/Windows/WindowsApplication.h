@@ -13,10 +13,11 @@ private:
 	const wchar_t* WindowName = L"XEngine";
 public:
 	XWindowsApplication();
+	void* GetPlatformHandle()override;
 	static LRESULT WINAPI WindowsMsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 protected:
 	bool CreateAppWindow()override;
-	void* GetPlatformHandle()override;
+	bool InitRHI()override;
 };
 
 

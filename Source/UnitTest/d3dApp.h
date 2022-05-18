@@ -46,21 +46,15 @@ public:
 
 	int Run();
     virtual bool Initialize();
-    virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 protected:
-	virtual void OnResize(); 
+    virtual void InitCamInfo() = 0;
 	virtual void Update(const GameTimer& gt)=0;
     virtual void Renderer(const GameTimer& gt)=0;
 
-	// Convenience overrides for handling mouse input.
-	virtual void OnMouseDown(WPARAM btnState, int x, int y){ }
-	virtual void OnMouseUp(WPARAM btnState, int x, int y)  { }
-	virtual void OnMouseMove(WPARAM btnState, int x, int y){ }
-
 protected:
 	bool InitMainWindow();
-	bool InitDirect3D();
+	//bool InitDirect3D();
 	void CalculateFrameStats();
     void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 
@@ -68,27 +62,13 @@ protected:
     XApplication* Application;
 
 public:
-    XD3D12Adapter Adapter;
-    XD3D12PhysicDevice Device;
-    XD3D12AbstractDevice abstrtact_device;
-    XD3D12Viewport viewport;
+    
 
-    XD3D12CommandQueue* direct_cmd_queue;
-    XD3DDirectContex* direct_ctx;
     XRHICommandList RHICmdList;
 
 
-    XD3D12DescArrayManager* RenderTargetDescArrayManager;
-    XD3D12DescArrayManager* DepthStencilDescArrayManager;
-    XD3D12DescArrayManager* CBVSRVUAVDescArrayManager;
 
-
-    XD3D12PassStateManager* pass_state_manager;
-
-    //std::shared_ptr<XRHITexture2D>TextureDepthStencil;
-    //XRHIDepthStencilView* DsView;
-    //XD3D12DepthStencilView ds_view;
-    XD3D12Resource ds_resource;
+    
 protected:
     static D3DApp* mApp;
     
@@ -102,24 +82,14 @@ protected:
 	// Used to keep track of the “delta-time?and game time (?.4).
 	GameTimer mTimer;
 	
-    Microsoft::WRL::ComPtr<ID3D12Device> md3dDevice;
-    Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mDirectCmdListAlloc;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
-
-	static const int SwapChainBufferCount = 2;
-    Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
-
-	// Derived class should set these in derived constructor to customize starting values.
-	std::wstring mMainWndCaption2 = L"d3d App";
-
-    //{
-        DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-        EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM;
-    //}
 
 
-    DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+   
+    DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+   EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM;
+   
+
+
 	
 	const int mClientWidth = 1540;
 	const int mClientHeight = 845;

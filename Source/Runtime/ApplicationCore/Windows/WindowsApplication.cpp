@@ -1,5 +1,6 @@
 #ifdef X_PLATFORM_WIN
 #include "WindowsApplication.h"
+#include "Runtime/RHI/RHI.h"
 #include <backends/imgui_impl_win32.h>
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -46,6 +47,11 @@ bool XWindowsApplication::CreateAppWindow()
 	ShowWindow(WinHandle, SW_SHOW);
 	UpdateWindow(WinHandle);
 
+	return true;
+}
+bool XWindowsApplication::InitRHI()
+{
+	RHIInit(ClientWidth, ClientHeight);
 	return true;
 }
 void* XWindowsApplication::GetPlatformHandle()

@@ -21,6 +21,9 @@ public:
 	XD3DDirectContex(){};
 	void Create(XD3D12AbstractDevice* device_in);
 	
+	void ReseizeViewport(uint32 Width, uint32 Height)override;
+
+	void Execute()override;
 	void OpenCmdList()override;
 	void CloseCmdList()override;
 
@@ -68,6 +71,8 @@ public:
 	{
 		cmd_dirrect_list->EndEvent();
 	}
+
+	void RHIEndFrame()override;
 
 	void RHIBeginFrame()override
 	{

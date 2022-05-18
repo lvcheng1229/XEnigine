@@ -232,13 +232,9 @@ public:
 
 private:
 	void TempDelete()override;
-	virtual void OnResize()override;
+	virtual void InitCamInfo()override;
 	virtual void Update(const GameTimer& gt)override;
 	virtual void Renderer(const GameTimer& gt)override;
-
-	virtual void OnMouseDown(WPARAM btnState, int x, int y)override;
-	virtual void OnMouseUp(WPARAM btnState, int x, int y)override;
-	virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
 
 	void OnKeyboardInput(const GameTimer& gt);
 	void UpdateCamera(const GameTimer& gt);
@@ -248,7 +244,6 @@ private:
 	void BuildPSOs();
 
 	void TestExecute();
-	void VirtualShadow();
 
 	BoundSphere BoundSphere0;
 
@@ -310,7 +305,6 @@ CrateApp::CrateApp()
 
 CrateApp::~CrateApp()
 {
-	if (md3dDevice != nullptr)direct_cmd_queue->CommandQueueWaitFlush();
 }
 
 
@@ -321,11 +315,12 @@ bool CrateApp::Initialize()
 	if (!D3DApp::Initialize())
 		return false;
 
-	direct_ctx->OpenCmdList();
+	RHICmdList.Open();
+	//direct_ctx->OpenCmdList();
 
 	LoadTextures();
 
-	RViewInfo.ViewConstantBuffer = abstrtact_device.CreateUniformBuffer(sizeof(ViewConstantBufferData));
+	RViewInfo.ViewConstantBuffer = RHICreateConstantBuffer(sizeof(ViewConstantBufferData));
 	RViewInfo.ViewWidth = mClientWidth;
 	RViewInfo.ViewHeight = mClientHeight;
 
@@ -347,14 +342,7 @@ bool CrateApp::Initialize()
 	DeferredShadingRenderer.RViewInfo.ViewHeight = mClientHeight;
 	DeferredShadingRenderer.Setup();
 
-
-	OutputDebugString(L"1111\n");
-
-	direct_ctx->CloseCmdList();
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	direct_cmd_queue->CommandQueueWaitFlush();
-	OutputDebugString(L"2222\n");
+	RHICmdList.Execute();
 
 	//ImGUI Begin
 	IMGUI_CHECKVERSION();
@@ -383,9 +371,8 @@ bool CrateApp::Initialize()
 }
 
 
-void CrateApp::OnResize()
+void CrateApp::InitCamInfo()
 {
-	D3DApp::OnResize();
 
 	CamIns.SetPerspective(FoVAngleY, AspectRatio(), Near, Far);
 	XMatrix mProj = CamIns.GetProjectMatrix();
@@ -402,10 +389,6 @@ void CrateApp::Update(const GameTimer& gt)
 }
 
 
-void CrateApp::VirtualShadow()
-{
-
-}
 void CrateApp::TestExecute()
 {
 		
@@ -465,7 +448,7 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 	//Pass9 FinalPass
 	{
-		XRHITexture* BackTex = viewport.GetCurrentBackTexture();
+		XRHITexture* BackTex = RHIGetCurrentBackTexture();
 		XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
 		RHICmdList.RHIBeginRenderPass(RPInfos, "FinalPass",sizeof("FinalPass"));
 		RHICmdList.CacheActiveRenderTargets(RPInfos);
@@ -491,53 +474,12 @@ void CrateApp::Renderer(const GameTimer& gt)
 
 
 	{
-		XD3D12PlatformRHI::TransitionResource(
-			*direct_ctx->GetCmdList(),
-			viewport.GetCurrentBackTexture()->GetRenderTargetView(),
-			D3D12_RESOURCE_STATE_PRESENT);
-
-		direct_ctx->GetCmdList()->CmdListFlushBarrier();
-		direct_ctx->CloseCmdList();
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		direct_cmd_queue->CommandQueueWaitFlush();
-		viewport.Present();
+		RHICmdList.RHIEndFrame();
 	}
 
 }
 
-static bool press = false;
-int DeltaX = 0;
-int DeltaY = 0;
 
-void CrateApp::OnMouseDown(WPARAM btnState, int x, int y)
-{
-	press = true;
-	mLastMousePos.x = x;
-	mLastMousePos.y = y;
-
-	SetCapture(mhMainWnd);
-}
-
-void CrateApp::OnMouseUp(WPARAM btnState, int x, int y)
-{
-	ReleaseCapture();
-}
-
-
-
-void CrateApp::OnMouseMove(WPARAM btnState, int x, int y)
-{
-	if ((btnState & MK_LBUTTON) != 0)
-	{
-		CamIns.ProcessMouseMove(static_cast<float>(x - mLastMousePos.x), static_cast<float>(y - mLastMousePos.y));
-	}
-	DeltaX = x - mLastMousePos.x;
-	DeltaY = y - mLastMousePos.y;
-
-	mLastMousePos.x = x;
-	mLastMousePos.y = y;
-}
 
 void CrateApp::OnKeyboardInput(const GameTimer& gt)
 {
@@ -704,7 +646,7 @@ void TestReflectAndArchive()
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(304);
+	//_CrtSetBreakAlloc(403);
 	int* a = new int(5);
 
 	{

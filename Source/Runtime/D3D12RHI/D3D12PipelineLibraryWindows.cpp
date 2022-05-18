@@ -8,7 +8,7 @@ void XD3D12PipelineLibrary::DeserializingPSOLibrary(XD3D12PhysicDevice* InPhyDev
 {
 	PhyDevice = InPhyDevice;
 	MMappedFile.Init(FileName);
-    PhyDevice->GetDXDevice1()->CreatePipelineLibrary(MMappedFile.GetData(), MMappedFile.GetSize(), IID_PPV_ARGS(&m_pipelineLibrary));
+    ThrowIfFailed(PhyDevice->GetDXDevice1()->CreatePipelineLibrary(MMappedFile.GetData(), MMappedFile.GetSize(), IID_PPV_ARGS(&m_pipelineLibrary)));
 	Changed = false;
 }
 

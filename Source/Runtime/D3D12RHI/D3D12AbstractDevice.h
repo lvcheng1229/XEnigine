@@ -7,7 +7,7 @@
 #include "D3D12Buffer.h"
 #include <memory>
 
-
+class XD3D12Viewport;
 class XD3D12AbstractDevice
 {
 public:
@@ -54,7 +54,6 @@ public:
 	XD3D12StructBuffer* DeviceCreateStructBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
 		uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
 
-	//void DeviceClearBufferRegion(XD3D12DirectCommandList* D3D12CmdList, XRHIUnorderedAcessView* UAV, uint32 NumBytes);
 	void DeviceResetStructBufferCounter(XD3D12DirectCommandList* D3D12CmdList, XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset);
 	void DeviceCopyTextureRegion(XD3D12DirectCommandList* D3D12CmdList,
 		XRHITexture* RHITextureDst,
@@ -63,23 +62,25 @@ public:
 		uint32 OffsetX, uint32 OffsetY, uint32 OffsetZ);
 	XD3D12ShaderResourceView* RHICreateShaderResourceView(XRHIStructBuffer* StructuredBuffer);
 	XD3D12UnorderedAcessView* RHICreateUnorderedAccessView(XRHIStructBuffer* StructuredBuffer, bool bUseUAVCounter, bool bAppendBuffer, uint64 CounterOffsetInBytes);
+
+	inline XD3D12Viewport* GetViewPort() { return Viewport; }
+	inline void SetViewPort(XD3D12Viewport* VPIn) { Viewport = VPIn; }
 private:
 
 	uint64 TempResourceIndex;
 	std::vector<XD3D12Resource>ResourceManagerTempVec;
 
+
 	std::unordered_map<std::size_t, std::shared_ptr<XD3D12RootSignature>>RootSignatureMap;
 	std::unordered_map<std::size_t, std::shared_ptr<XD3DCommandRootSignature>>CmdRootSignatureMap;
 
+	XD3D12Viewport* Viewport;
 	XD3D12PhysicDevice* PhysicalDevice;
 
 	XDxRefCount<ID3D12Resource> ID3D12ZeroStructBuffer;
-	//XDxRefCount<ID3D12Resource> ID3D12ZeroTex2DR32Uint;
-
 	XD3D12CommandQueue* DirectxCmdQueue;;
 	XD3D12CommandQueue* ComputeCmdQueue;
 
-	//std::shared_ptr<XD3D12StructBuffer> D3D12ZeroStructBuffer;
 
 	XD3DBuddyAllocator VIBufferBufferAllocDefault;//manual+default +allow unrodered acess
 	//XD3DBuddyAllocator VIBufferBufferAllocUpload;//manual+upload ->uisng UploadHeapAlloc

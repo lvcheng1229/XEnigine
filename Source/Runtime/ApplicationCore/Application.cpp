@@ -24,6 +24,11 @@ bool XApplication::CreateAppWindow()
 	return false;
 }
 
+bool XApplication::InitRHI()
+{
+	return false;
+}
+
 void* XApplication::GetPlatformHandle()
 {
 	return nullptr;

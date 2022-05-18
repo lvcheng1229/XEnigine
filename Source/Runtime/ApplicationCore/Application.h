@@ -12,8 +12,9 @@ public:
 	static XApplication* APPPtr;
 	XApplication();
 	virtual ~XApplication();
+	virtual void* GetPlatformHandle();
 protected:
 	virtual void PreInitial();
 	virtual bool CreateAppWindow();
-	virtual void* GetPlatformHandle();
+	virtual bool InitRHI();
 };

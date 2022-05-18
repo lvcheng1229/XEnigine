@@ -49,6 +49,7 @@ public:
 
 	virtual std::shared_ptr<XRHIConstantBuffer> RHICreateConstantBuffer(uint32 size) = 0;
 
+	virtual XRHITexture* RHIGetCurrentBackTexture() = 0;
 	//Lock/UnLock Vertex Buffer
 	virtual void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI) = 0;
 	virtual void UnLockVertexBuffer(XRHIVertexBuffer* VertexBuffer) = 0;

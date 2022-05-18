@@ -12,7 +12,16 @@ struct FPixelFormatInfo
 	uint32 PlatformFormat;
 };
 
-extern void RHIInit();
+class XPlatformRHI;
+class XRHIModule
+{
+public:
+	virtual void ReleaseRHI() = 0;
+	virtual XPlatformRHI* CreateRHI() = 0;
+};
+
+extern void RHIRelease();
+extern void RHIInit(uint32 Width, uint32 Height);
 extern FPixelFormatInfo GPixelFormats[(int)EPixelFormat::FT_MAX];
 using EShaderType_Underlying = std::underlying_type<EShaderType>::type;
 

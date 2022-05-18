@@ -5,6 +5,9 @@
 class IRHIContext
 {
 public:
+	virtual void RHIEndFrame() = 0;
+	virtual void ReseizeViewport(uint32 Width, uint32 Height) = 0;
+	virtual void Execute() = 0;
 	virtual void OpenCmdList() = 0;
 	virtual void CloseCmdList() = 0;
 

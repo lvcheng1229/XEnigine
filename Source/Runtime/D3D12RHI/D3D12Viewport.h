@@ -3,7 +3,7 @@
 #include "D3D12AbstractDevice.h"
 #define BACK_BUFFER_COUNT_DX12 2
 
-class XD3D12Viewport
+class XD3D12Viewport :public XRHIViewport
 {
 public:
 	void Create(XD3D12AbstractDevice* device_in, uint32 size_x_in, uint32 size_y_in, 

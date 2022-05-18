@@ -12,6 +12,7 @@ protected:
 		std::array<XRHIRenderTargetView, 8>CachedRenderTargets;
 	} PSOContext;
 public:
+	virtual void Open() = 0;
 
 	void SetContext(IRHIContext* InContext)
 	{
@@ -77,6 +78,11 @@ private:
 class XRHIComputeCommandList :public XRHICommandListBase
 {
 public:
+	void Open()override
+	{
+		GetComputeContext()->OpenCmdList();
+	}
+
 	inline void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size)
 	{
 		GetComputeContext()->RHIEventBegin(Metadata, pData, Size);
@@ -121,9 +127,19 @@ public:
 class XRHICommandList : public XRHIComputeCommandList
 {
 public:
+	void Open()override
+	{
+		GetContext()->OpenCmdList();
+	}
+
 	inline void RHIBeginFrame()
 	{
 		GetContext()->RHIBeginFrame();
+	}
+	
+	inline void RHIEndFrame()
+	{
+		GetContext()->RHIEndFrame();
 	}
 
 	inline void RHIEndRenderPass()
@@ -189,9 +205,24 @@ public:
 	{
 		GetContext()->RHISetShaderSRV(ShaderType, SRVIndex, SRV);
 	}
+
+	inline void ReseizeViewport(uint32 Width, uint32 Height)
+	{
+		GetContext()->ReseizeViewport(Width, Height);
+	}
+
+	inline void Execute() 
+	{
+		GetContext()->Execute();
+	}
 };
 
-//TODO
+extern XRHICommandList GRHICmdList;
+
+inline XRHITexture* RHIGetCurrentBackTexture()
+{
+	return GPlatformRHI->RHIGetCurrentBackTexture();
+}
 
 inline XRHIUnorderedAcessView* GetRHIUAVFromTexture(XRHITexture* RHITexture, uint32 MipIndex = 0)
 {

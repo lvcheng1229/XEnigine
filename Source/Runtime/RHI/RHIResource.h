@@ -36,6 +36,10 @@ class XRHICommandSignature
 public:
 };
 
+class XRHIViewport
+{
+public:
+};
 
 
 class XRHIVertexBuffer

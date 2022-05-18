@@ -6,6 +6,15 @@
 #include "D3D12CommandList.h"
 
 class XD3D12AbstractDevice;
+
+class XD3D12RHIModule :public XRHIModule
+{
+	std::shared_ptr<XD3D12Adapter>D3DAdapterPtr;
+public:
+	void ReleaseRHI()override;
+	XPlatformRHI* CreateRHI()override;
+};
+
 class XD3D12PlatformRHI :public XPlatformRHI
 {
 public:
@@ -52,6 +61,7 @@ public:
 	std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)override;
 
+	XRHITexture* RHIGetCurrentBackTexture()override;
 
 	//Lock/UnLock Vertex Buffer
 	void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)override;

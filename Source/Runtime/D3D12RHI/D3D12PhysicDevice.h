@@ -16,7 +16,7 @@ public:
 	inline XD3D12Adapter*			GetAdapter()				{ return adapter; }
 	inline ID3D12Device*			GetDXDevice()				{ return d3d12_device.Get(); }
 	inline ID3D12Device1*			GetDXDevice1()				{ return ID3D12Device1Ptr.Get(); }
-	inline XD3D12PipelineLibrary*	GetD3D12PipelineLibrary()	{ return &D3D12PipelineLibrary; }
+	//inline XD3D12PipelineLibrary*	GetD3D12PipelineLibrary()	{ return &D3D12PipelineLibrary;}
 };
 
 class XD3D12DeviceChild

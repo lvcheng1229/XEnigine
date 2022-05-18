@@ -1,41 +1,5 @@
 #include "D3D12Viewport.h"
-
-void XD3D12Viewport::Create(
-    XD3D12AbstractDevice* device_in, 
-    uint32 size_x_in, 
-    uint32 size_y_in,
-    EPixelFormat EPixFormatIn,
-    HWND WindowHandle_in)
-{
-    device = device_in;
-    size_x = size_x_in;
-    size_y = size_y_in;
-    Format = EPixFormatIn;
-
-    DXGI_FORMAT DxFormat = (DXGI_FORMAT)GPixelFormats[(int)Format].PlatformFormat;
-
-    DXGI_SWAP_CHAIN_DESC sd;
-    sd.BufferDesc.Width = size_x;
-    sd.BufferDesc.Height = size_y;
-    sd.BufferDesc.RefreshRate.Numerator = 60;
-    sd.BufferDesc.RefreshRate.Denominator = 1;
-    sd.BufferDesc.Format = DxFormat;
-    sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-    sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-    sd.SampleDesc.Count = 1;
-    sd.SampleDesc.Quality = 0;
-    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
-    sd.BufferCount = BACK_BUFFER_COUNT_DX12;
-    sd.OutputWindow = WindowHandle_in;
-    sd.Windowed = true;
-    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-
-    device->GetPhysicalDevice()->GetAdapter()->GetDXFactory()->CreateSwapChain(
-        device->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT)->GetDXCommandQueue(),
-        &sd,
-        mSwapChain.GetAddressOf());
-}
+#include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
 
 void XD3D12Viewport::Resize(
     uint32 size_x_in, 
@@ -100,6 +64,17 @@ void XD3D12Viewport::Resize(
 
 void XD3D12Viewport::Present()
 {
+    XD3DDirectContex* DirectCtx = device->GetDirectContex(0);
+    XD3D12CommandQueue* DirectCmdQueue = device->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+    XD3D12PlatformRHI::TransitionResource(*DirectCtx->GetCmdList(), this->GetCurrentBackTexture()->GetRenderTargetView(), D3D12_RESOURCE_STATE_PRESENT);
+    DirectCtx->GetCmdList()->CmdListFlushBarrier();
+    DirectCtx->CloseCmdList();
+
+    ID3D12CommandList* cmdsLists[] = { DirectCtx->GetCmdList()->GetDXCmdList() };
+    DirectCmdQueue->GetDXCommandQueue()->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+    DirectCmdQueue->CommandQueueWaitFlush();
+
     ThrowIfFailed(mSwapChain->Present(0, 0));
     current_back_buffer = (current_back_buffer + 1) % BACK_BUFFER_COUNT_DX12;
 }

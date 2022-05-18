@@ -3,7 +3,7 @@
 #include "D3D12Texture.h"
 #include "D3D12AbstractDevice.h"
 #include "D3D12PlatformRHI.h"
-
+#include "D3D12Viewport.h"
 
 void XD3DDirectContex::Create(XD3D12AbstractDevice* device_in)
 {
@@ -27,6 +27,27 @@ void XD3DDirectContex::Create(XD3D12AbstractDevice* device_in)
 	//cmd_dirrect_list.Reset(&cmd_direct_alloc);
 	//direct_cmd_allc_manager = new XD3D12CommandAllocManger(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	//direct_cmd_allc_manager->Create(device_in);
+}
+
+void XD3DDirectContex::RHIEndFrame()
+{
+	XD3D12Viewport* ViewPort = AbsDevice->GetViewPort();
+	ViewPort->Present();
+}
+
+void XD3DDirectContex::ReseizeViewport(uint32 Width, uint32 Height)
+{
+	XD3D12Viewport* ViewPort = AbsDevice->GetViewPort();
+	ViewPort->Resize(Width, Height);
+}
+
+void XD3DDirectContex::Execute()
+{
+	XD3D12CommandQueue* DirectCmdQueue = AbsDevice->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
+	cmd_dirrect_list.Close();
+	ID3D12CommandList* CmdLists[] = { GetCmdList()->GetDXCmdList() };
+	DirectCmdQueue->GetDXCommandQueue()->ExecuteCommandLists(_countof(CmdLists), CmdLists);
+	DirectCmdQueue->CommandQueueWaitFlush();
 }
 
 void XD3DDirectContex::OpenCmdList()
