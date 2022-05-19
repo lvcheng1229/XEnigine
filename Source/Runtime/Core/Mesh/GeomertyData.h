@@ -128,6 +128,16 @@ private:
 	std::shared_ptr<GIndexBuffer>IndexBufferPtr;
 };
 
+struct VertexCBufferStruct
+{
+	XMatrix WorldMatrix;
+
+	XVector3 BoundBoxMax;
+	float padding0;
+	XVector3 BoundBoxMin;
+	float padding1;
+};
+
 class GGeomertry :public GSpatial
 {
 public:

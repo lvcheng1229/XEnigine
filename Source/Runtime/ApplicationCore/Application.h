@@ -7,6 +7,7 @@ class XApplication
 {
 	friend class D3DApp;
 	friend class CrateApp;
+	friend class TestMain;
 public:
 	uint32 ClientWidth;
 	uint32 ClientHeight;

@@ -9,5 +9,6 @@ class MainInit
 public:
 	static void PushToInitPropertyFunArray(InitPropertyFunPtr);
 	static void Init();
-	static void TempInit2();
+	static void InitAfterRHI();
+	static void Destroy();
 };

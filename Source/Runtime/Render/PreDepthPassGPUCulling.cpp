@@ -4,6 +4,28 @@
 #include "Runtime/RHI/PipelineStateCache.h"
 #include "Runtime/RHI/RHIStaticStates.h"
 
+struct CbCullingParametersStruct
+{
+	XMatrix  ShdowViewProject;
+	XPlane Planes[(int)ECameraPlane::CP_MAX];
+	float commandCount;
+};
+
+class XPreDepthCullResourece :public XRenderResource
+{
+public:
+	std::shared_ptr<XRHIConstantBuffer>RHICbCullingParameters;
+	void InitRHI()override
+	{
+		RHICbCullingParameters = RHICreateConstantBuffer(sizeof(CbCullingParametersStruct));
+	}
+	void ReleaseRHI()override
+	{
+
+	}
+};
+
+TGlobalResource<XPreDepthCullResourece>PreDepthCullResourece;
 
 class DepthGPUCullingCS : public XGloablShader
 {
@@ -144,6 +166,13 @@ void XDeferredShadingRenderer::PreDepthPassGPUCullingSetup()
 	PreDepthPassResource.DepthCmdBufferCulled = RHIcreateStructBuffer(DepthPassIndirectBufferDataSize, PreDepthPassResource.DepthCounterOffset + sizeof(UINT), EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer) | int(EBufferUsage::BUF_UnorderedAccess)), nullptr);
 	PreDepthPassResource.CmdBufferShaderResourceView = RHICreateShaderResourceView(PreDepthPassResource.DepthCmdBufferNoCulling.get());
 	PreDepthPassResource.CmdBufferUnorderedAcessView = RHICreateUnorderedAccessView(PreDepthPassResource.DepthCmdBufferCulled.get(), true, true, PreDepthPassResource.DepthCounterOffset);
+
+	CbCullingParametersStruct CbCullingParametersStructIns;
+	CbCullingParametersStructIns.commandCount = RenderGeos.size();
+	CbCullingParametersStructIns.ShdowViewProject = LightViewProjMat;
+	RViewInfo.ViewMats.GetPlanes(CbCullingParametersStructIns.Planes);
+
+	PreDepthCullResourece.RHICbCullingParameters->UpdateData(&CbCullingParametersStructIns, sizeof(CbCullingParametersStruct), 0);
 }
 
 
@@ -154,7 +183,7 @@ void XDeferredShadingRenderer::PreDepthPassGPUCulling(XRHICommandList& RHICmdLis
 	XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 	SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 	RHIResetStructBufferCounter(PreDepthPassResource.DepthCmdBufferCulled.get(), PreDepthPassResource.DepthCounterOffset);
-	Shader->SetParameters(RHICmdList, PreDepthPassResource.CmdBufferUnorderedAcessView.get(), PreDepthPassResource.CmdBufferShaderResourceView.get(), GlobalObjectStructBufferSRV.get(), cbCullingParameters.get());
+	Shader->SetParameters(RHICmdList, PreDepthPassResource.CmdBufferUnorderedAcessView.get(), PreDepthPassResource.CmdBufferShaderResourceView.get(), GlobalObjectStructBufferSRV.get(), PreDepthCullResourece.RHICbCullingParameters.get());
 	RHICmdList.RHIDispatchComputeShader(static_cast<uint32>(ceil(RenderGeos.size() / float(128))), 1, 1);
 	RHICmdList.RHIEventEnd();
 }

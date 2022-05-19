@@ -12,6 +12,7 @@
 
 //Temps
 #include "Runtime/Core/Mesh/GeomertyData.h"
+#include "Runtime/Core/ComponentNode/Camera.h"
 //
 
 class XDefaultVertexFactory :public XVertexFactory
@@ -27,8 +28,19 @@ public:
 	~XDeferredShadingRenderer();
 	void SceneTagetGen();
 
-	void ViewInfoSetup();
-	void Setup();
+	//Width Height CamIns
+	void ViewInfoSetup(uint32 Width,uint32 Height,GCamera& CameraIn);
+	void ViewInfoUpdate(GCamera& CameraIn);
+
+	void GlobalPerObjectBufferSetup();
+
+	void Setup(
+		std::vector<std::shared_ptr<GGeomertry>>& RenderGeosIn,
+		XBoundSphere SceneBoundingpSphere,
+		XVector3 ShadowLightDirIn,
+		XVector3 MainLightColorIn,
+		float LightIntensityIn);
+
 	void Rendering(XRHICommandList& RHICmdList);
 	
 	//Pre Depth Pass GPU Culling
@@ -75,24 +87,20 @@ public:
 	//
 	void PresentPass(XRHICommandList& RHICmdList,XRHITexture* TexSrc);
 
-	inline std::shared_ptr<XRHITexture2D> TempGetTextureSceneColorDeffered()
-	{
-		return SceneTargets.TextureSceneColorDeffered;
-	}
-
-	inline std::shared_ptr<XRHITexture2D> TempGetTextureSceneColorDefferedPingPong()
-	{
-		return SceneTargets.TextureSceneColorDefferedPingPong;
-	}
 private:
 	XPreDepthPassResource PreDepthPassResource;
 	XSceneRenderTarget SceneTargets;
 	XSkyAtmosphereParams cbSkyAtmosphereIns;
 	XEditorUI EditorUI;
+
+	std::shared_ptr<XRHIStructBuffer>GlobalObjectStructBuffer;
+	std::shared_ptr<XRHIShaderResourceView>GlobalObjectStructBufferSRV;
 public:
 	XMatrix LightViewMat;
 	XMatrix LightProjMat;
 	XMatrix LightViewProjMat;
+
+	uint64 FrameNum;
 
 	XBoundSphere SceneBoundingSphere;
 	XVector3 ShadowLightDir;
@@ -101,9 +109,6 @@ public:
 	float LightIntensity;
 
 	std::vector<std::shared_ptr<GGeomertry>>RenderGeos;
-	std::shared_ptr<XRHIShaderResourceView>GlobalObjectStructBufferSRV;
-	
-	std::shared_ptr<XRHIConstantBuffer>cbCullingParameters;
 	
 	XDefaultVertexFactory DefaultVertexFactory;
 	RendererViewInfo RViewInfo;

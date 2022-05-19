@@ -74,7 +74,7 @@ bool D3DApp::Initialize()
 	if(!InitMainWindow())
 		return false;
 
-	InitCamInfo();
+	//InitCamInfo();
 
 	return true;
 }
@@ -83,6 +83,8 @@ bool D3DApp::Initialize()
 
 bool D3DApp::InitMainWindow()
 {
+
+
 	Application = new XWindowsApplication();
 	Application->PreInitial();
 	Application->CreateAppWindow();

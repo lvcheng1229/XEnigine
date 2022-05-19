@@ -47,6 +47,7 @@ namespace DirectX
             static LMatrix CreateScale(const Vector3& scales) noexcept;
             static LMatrix CreateTranslation(const Vector3& position) noexcept;
             static LMatrix CreateOrthographicOffCenterLH(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
+            static LMatrix CreateMatrixLookAtLH(const Vector3& EyePos, const Vector3& TargetPos, const Vector3& UpDir);
             static LMatrix MMatrixPerspectiveFovLH
             (
                 float FovAngleY,

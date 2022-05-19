@@ -99,15 +99,7 @@ void GIndexBuffer::CreateRHIBufferChecked()
 	RHIIndexBuffer = RHICreateIndexBuffer(IndexBufferPtr->GetDataTypeSize(), IndexBufferPtr->DataByteSize, EBufferUsage::BUF_Static, CreateData);
 }
 
-struct VertexCBufferStruct
-{
-	XMatrix WorldMatrix;
-	
-	XVector3 BoundBoxMax;
-	float padding0;
-	XVector3 BoundBoxMin;
-	float padding1;
-};
+
 
 std::shared_ptr<XRHIConstantBuffer> GGeomertry::GetPerObjectVertexCBuffer()
 {

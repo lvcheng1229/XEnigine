@@ -26,6 +26,13 @@ struct TiledInfoStruct
 	uint32 Padding1;
 };
 
+struct CbCullingParametersStruct
+{
+	XMatrix  ShdowViewProject;
+	XPlane Planes[(int)ECameraPlane::CP_MAX];
+	float commandCount;
+};
+
 class XVirtualShadowMapResourece :public XRenderResource
 {
 public:
@@ -34,6 +41,8 @@ public:
 	std::shared_ptr<XRHIConstantBuffer>VSMTileMaskConstantBuffer;
 
 	//Shadow Command
+	std::shared_ptr<XRHIConstantBuffer>RHICbCullingParameters;
+
 	std::shared_ptr<XRHIStructBuffer>ShadowCmdBufferNoCulling;
 	std::shared_ptr<XRHIStructBuffer>ShadowCmdBufferCulled;
 	std::shared_ptr<XRHIShaderResourceView>ShadowNoCullCmdBufferSRV;
@@ -55,6 +64,8 @@ public:
 		
 		TilesShadowViewProjMatrixCB = RHICreateConstantBuffer(VirtualTileWidthNum * VirtualTileWidthNum * sizeof(TiledInfoStruct));
 		PlaceHodeltarget = RHICreateTexture2D(PhysicalTileSize, PhysicalTileSize, 1, false, false, EPixelFormat::FT_R8G8B8A8_UNORM, ETextureCreateFlags(TexCreate_RenderTargetable), 1, nullptr);
+
+		RHICbCullingParameters = RHICreateConstantBuffer(sizeof(CbCullingParametersStruct));
 	}
 	void ReleaseRHI()override
 	{
@@ -186,6 +197,13 @@ void XDeferredShadingRenderer::VSMUpdate()
 	TileMaskStructIns.ClientHeight = RViewInfo.ViewHeight;
 
 	VirtualShadowMapResourece.VSMTileMaskConstantBuffer->UpdateData(&TileMaskStructIns, sizeof(VSMTileMaskStruct), 0);
+
+	CbCullingParametersStruct CbCullingParametersStructIns;
+	CbCullingParametersStructIns.commandCount = RenderGeos.size();
+	CbCullingParametersStructIns.ShdowViewProject = LightViewProjMat;
+	RViewInfo.ViewMats.GetPlanes(CbCullingParametersStructIns.Planes);
+
+	VirtualShadowMapResourece.RHICbCullingParameters->UpdateData(&CbCullingParametersStructIns, sizeof(CbCullingParametersStruct), 0);
 }
 
 void XDeferredShadingRenderer::VSMTileMaskPass(XRHICommandList& RHICmdList)
@@ -306,7 +324,7 @@ void XDeferredShadingRenderer::VSMShadowCommandBuild(XRHICommandList& RHICmdList
 	SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 	RHIResetStructBufferCounter(VirtualShadowMapResourece.ShadowCmdBufferCulled.get(), VirtualShadowMapResourece.ShadowCounterOffset);
 	Shader->SetParameters(RHICmdList, VirtualShadowMapResourece.ShadowCulledCmdBufferUAV.get(), VirtualShadowMapResourece.ShadowNoCullCmdBufferSRV.get(),
-		GlobalObjectStructBufferSRV.get(), cbCullingParameters.get(), GetRHISRVFromTexture(VirtualShadowMapResourece.VirtualSMFlags.get()));
+		GlobalObjectStructBufferSRV.get(), VirtualShadowMapResourece.RHICbCullingParameters.get(), GetRHISRVFromTexture(VirtualShadowMapResourece.VirtualSMFlags.get()));
 	RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ceil(RenderGeos.size() / float(128))), 1, 1);
 	RHICmdList.RHIEventEnd();
 }

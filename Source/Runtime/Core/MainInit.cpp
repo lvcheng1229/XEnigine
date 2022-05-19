@@ -1,6 +1,7 @@
 #include "MainInit.h"
 #include "Runtime/CoreGObject/GObjtect/PermanentMemAlloc.h"
 #include "Runtime/ResourceManager/ResourceManager.h"
+#include "Runtime/RenderCore/GlobalShader.h"
 
 static std::vector<InitPropertyFunPtr>InitPropertyFunArray;
 
@@ -20,8 +21,17 @@ void MainInit::Init()
 
 }
 
-void MainInit::TempInit2()
+void MainInit::InitAfterRHI()
 {
 	//Material Init
 	BegineCompileRMaterialInResourceManager();
+
+	//Compile Global Shader Map
+	CompileGlobalShaderMap();
+}
+
+void MainInit::Destroy()
+{
+	if (GGlobalShaderMapping)
+		delete GGlobalShaderMapping;
 }

@@ -27,6 +27,16 @@ namespace DirectX
             return R;
         }
 
+        LMatrix DirectX::SimpleMath::LMatrix::CreateMatrixLookAtLH(const Vector3& EyePos, const Vector3& TargetPos, const Vector3& UpDir)
+        {
+            using namespace DirectX;
+            Matrix R;
+            const XMVECTOR eyev = XMLoadFloat3(&EyePos);
+            const XMVECTOR targetv = XMLoadFloat3(&TargetPos);
+            const XMVECTOR upv = XMLoadFloat3(&UpDir);
+            XMStoreFloat4x4(&R, XMMatrixLookAtLH(eyev, targetv, upv));
+            return R;
+        }
         LMatrix LMatrix::CreateOrthographicOffCenterLH(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept
         {
             using namespace DirectX;

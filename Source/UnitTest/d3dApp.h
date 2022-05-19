@@ -48,7 +48,6 @@ public:
     virtual bool Initialize();
 
 protected:
-    virtual void InitCamInfo() = 0;
 	virtual void Update(const GameTimer& gt)=0;
     virtual void Renderer(const GameTimer& gt)=0;
 
