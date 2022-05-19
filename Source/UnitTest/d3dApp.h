@@ -54,39 +54,14 @@ protected:
 
 protected:
 	bool InitMainWindow();
-	//bool InitDirect3D();
 	void CalculateFrameStats();
     void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 
-    //
-    XApplication* Application;
-
 public:
-    
-
+    XApplication* Application;
     XRHICommandList RHICmdList;
-
-
-
-    
-protected:
     static D3DApp* mApp;
-    
     HWND      mhMainWnd = nullptr; // main window handle
-
-	// Used to keep track of the “delta-time?and game time (?.4).
 	GameTimer mTimer;
-	
-
-
-   
-   // DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-   //EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM;
-   
-
-
-	
-    //const int mClientWidth = 1540;
-	///const int mClientHeight = 845;
 };
 

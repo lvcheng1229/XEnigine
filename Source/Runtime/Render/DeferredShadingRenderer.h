@@ -27,6 +27,7 @@ public:
 	~XDeferredShadingRenderer();
 	void SceneTagetGen();
 
+	void ViewInfoSetup();
 	void Setup();
 	void Rendering(XRHICommandList& RHICmdList);
 	
