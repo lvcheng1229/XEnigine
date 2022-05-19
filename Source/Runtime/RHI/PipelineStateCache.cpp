@@ -18,9 +18,8 @@ void SetGraphicsPipelineStateFromPSOInit(XRHICommandList& RHICmdList, const XGra
 
 static std::unordered_map<std::size_t, std::shared_ptr<XRHIComputePSO>>GComputePSOMap;
 static std::unordered_map<std::size_t, std::shared_ptr<XRHIGraphicsPSO>>GGraphicsPSOMap;
-
-
 static std::unordered_map<std::size_t, std::shared_ptr<XRHIVertexLayout>>GVertexLayout;
+
 namespace PipelineStateCache
 {
 	std::shared_ptr<XRHIVertexLayout> GetOrCreateVertexLayout(const XRHIVertexLayoutArray& LayoutArray)

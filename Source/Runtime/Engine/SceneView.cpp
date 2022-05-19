@@ -1,7 +1,5 @@
 #include "SceneView.h"
 
-using namespace DirectX;
-
 XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix)
 {
 	// DeviceZ = A + B / ViewZ
@@ -13,36 +11,18 @@ XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix)
 
 	if (DepthAdd == 0.f) { DepthAdd = 0.00000001f; }
 
-	// combined perspective and ortho equation in shader to handle either
-	//SceneView.cpp line 416
-
+	// combined perspective and ortho equation in shader to handle either SceneView.cpp line 416
 	bool bIsPerspectiveProjection = ProjMatrix.m[3][3] < 1.0f;
 	if (bIsPerspectiveProjection)
 	{
 		float SubtractValue = DepthMul / DepthAdd;
 		SubtractValue -= 0.00000001f;
-		return XMFLOAT4(0.0f, 0.0f, 1.0f / DepthAdd, SubtractValue);
+		return XVector4(0.0f, 0.0f, 1.0f / DepthAdd, SubtractValue);
 	}
 	else
 	{
-		return XMFLOAT4(
-			1.0f / ProjMatrix.m[2][2],
-			-ProjMatrix.m[3][2] / ProjMatrix.m[2][2] + 1.0f,
-			0.0f, 1.0f);
+		return XVector4(1.0f / ProjMatrix.m[2][2], -ProjMatrix.m[3][2] / ProjMatrix.m[2][2] + 1.0f, 0.0f, 1.0f);
 	}
-}
-
-static void StoreMat_Inverse(
-	XMFLOAT4X4* Common, 
-	XMFLOAT4X4* Tranpose, 
-	XMFLOAT4X4* Inverse, 
-	XMMATRIX& MatrixIn)
-{
-	XMStoreFloat4x4(Common, MatrixIn);
-	XMStoreFloat4x4(Tranpose, XMMatrixTranspose(MatrixIn));
-
-	DirectX::XMVECTOR Determinant = XMMatrixDeterminant(MatrixIn);
-	XMStoreFloat4x4(Inverse, XMMatrixInverse(&Determinant, MatrixIn));
 }
 
 void XViewMatrices::Create(const XMatrix& ProjectionMatrixIn, const XVector3& ViewLocation, const XVector3& ViewTargetPosition)
@@ -98,131 +78,70 @@ void XViewMatrices::GetPlanes(XPlane Planes[(int)ECameraPlane::CP_MAX])
 void XViewMatrices::UpdateViewMatrix(const XVector3& ViewLocation, const XVector3& ViewTargetPosition)
 {
 	ViewOrigin = ViewLocation;
-	PreViewTranslation = XMFLOAT3(-ViewOrigin.x, -ViewOrigin.y, -ViewOrigin.z);
+	PreViewTranslation = XVector3(-ViewOrigin.x, -ViewOrigin.y, -ViewOrigin.z);
 
-	XMVECTOR ViewOriginVec = XMVectorSet(ViewOrigin.x, ViewOrigin.y, ViewOrigin.z, 1.0f);
-	XMVECTOR ViewTargetVec = XMVectorSet(ViewTargetPosition.x, ViewTargetPosition.y, ViewTargetPosition.z, 1.0f);
-	DirectX::XMVECTOR EyeDirection = DirectX::XMVectorSubtract(ViewTargetVec, ViewOriginVec);
-	XMVECTOR UpDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	EyeForwardDir = EyeDirection;
+	XVector4 ViewOriginVec(ViewOrigin.x, ViewOrigin.y, ViewOrigin.z, 1.0f);
+	XVector4 ViewTargetVec(ViewTargetPosition.x, ViewTargetPosition.y, ViewTargetPosition.z, 1.0f);
+	XVector4 EyeDirection = ViewTargetVec - ViewOriginVec;
+	EyeForwardDir = XVector3(EyeDirection.x, EyeDirection.y, EyeDirection.z);
 	//Cartesian coordinates is right hand
-
+	
 	//compute uvw
-	XMVECTOR WNormalize = XMVector3Normalize(EyeDirection);
-	XMVECTOR UNormalize = XMVector3Cross(UpDirection, WNormalize);//??
-	//XMVECTOR UNormalize = XMVector3Cross(WNormalize,UpDirection);//??
-	UNormalize = XMVector3Normalize(UNormalize);
-	XMVECTOR VNormalize = XMVector3Cross(WNormalize, UNormalize);
-	//XMVECTOR VNormalize = XMVector3Cross(UNormalize, WNormalize);
+	XVector3 UpDirection(0.0f, 1.0f, 0.0f);
+	XVector3 WNormalize = EyeForwardDir; WNormalize.Normalize();
+	XVector3 UNormalize = UpDirection.Cross(WNormalize); UNormalize.Normalize();
+	XVector3 VNormalize = WNormalize.Cross(UNormalize);
 
 	//compute -qu
-	XMVECTOR NegEyePosition = XMVectorNegate(ViewOriginVec);
-	XMVECTOR NegQU = XMVector3Dot(UNormalize, NegEyePosition);
-	XMVECTOR NegQV = XMVector3Dot(VNormalize, NegEyePosition);
-	XMVECTOR NegQW = XMVector3Dot(WNormalize, NegEyePosition);
+	XVector3 NegEyePosition = XVector3(-ViewOriginVec.x, -ViewOriginVec.y, -ViewOriginVec.z);
+	float NegQU = UNormalize.Dot(NegEyePosition);
+	float NegQV = VNormalize.Dot(NegEyePosition);
+	float NegQW = WNormalize.Dot(NegEyePosition);
 
 	//
-	XMMATRIX TranslatedViewMatrixCom;
-	TranslatedViewMatrixCom.r[0] = XMVectorSelect(g_XMZero, UNormalize, g_XMSelect1110.v);
-	TranslatedViewMatrixCom.r[1] = XMVectorSelect(g_XMZero, VNormalize, g_XMSelect1110.v);
-	TranslatedViewMatrixCom.r[2] = XMVectorSelect(g_XMZero, WNormalize, g_XMSelect1110.v);
-	TranslatedViewMatrixCom.r[3] = g_XMIdentityR3.v;
-	TranslatedViewMatrixCom = XMMatrixTranspose(TranslatedViewMatrixCom);
-	XMStoreFloat4x4(&TranslatedViewMatrix, TranslatedViewMatrixCom);//NOTE
-	//XMStoreFloat4x4(&TranslatedViewMatrixTranspose, TranslatedViewMatrixCom);
+	XMatrix TranslatedViewMatrixCom(
+		UNormalize.x, UNormalize.y, UNormalize.z,0,
+		VNormalize.x, VNormalize.y, VNormalize.z,0,
+		WNormalize.x, WNormalize.y, WNormalize.z,0,
+		0,0,0,1);
 
-	XMMATRIX ViewMatrixCom;
-	ViewMatrixCom.r[0] = XMVectorSelect(NegQU, UNormalize, g_XMSelect1110.v);
-	ViewMatrixCom.r[1] = XMVectorSelect(NegQV, VNormalize, g_XMSelect1110.v);
-	ViewMatrixCom.r[2] = XMVectorSelect(NegQW, WNormalize, g_XMSelect1110.v);
-	ViewMatrixCom.r[3] = g_XMIdentityR3.v;
-	//XMStoreFloat4x4(&ViewMatrixTranspose, ViewMatrixCom);
-	ViewMatrixCom = XMMatrixTranspose(ViewMatrixCom);
-	XMStoreFloat4x4(&ViewMatrix, ViewMatrixCom);
+	TranslatedViewMatrix = TranslatedViewMatrixCom.Transpose();
 
-	XMMATRIX ProjectionMatrixCom = XMLoadFloat4x4(&ProjectionMatrix);
-	//XMStoreFloat4x4(&ProjectionMatrixTranspose, XMMatrixTranspose(ProjectionMatrixCom));
-
-	XMMATRIX ViewProjectionMatrixCom = XMMatrixMultiply(ViewMatrixCom, ProjectionMatrixCom);
-	XMMATRIX TranslatedViewProjectionMatrixCom = XMMatrixMultiply(TranslatedViewMatrixCom, ProjectionMatrixCom);
-
-
-	StoreMat_Inverse(
-		&ViewProjectionMatrix,
-		&ViewProjectionMatrixTranspose,
-		&ViewProjectionMatrixInverse,
-		ViewProjectionMatrixCom
+	XMatrix ViewMatrixCom(
+		UNormalize.x, UNormalize.y, UNormalize.z, NegQU,
+		VNormalize.x, VNormalize.y, VNormalize.z, NegQV,
+		WNormalize.x, WNormalize.y, WNormalize.z, NegQW,
+		0, 0, 0, 1
 	);
-	
-	StoreMat_Inverse(
-		&TranslatedViewProjectionMatrix,
-		&TranslatedViewProjectionMatrixTranspose,
-		&TranslatedViewProjectionMatrixInverse,
-		TranslatedViewProjectionMatrixCom
-	);
+	ViewMatrix = ViewMatrixCom.Transpose();
+
+	ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
+	ViewProjectionMatrixTranspose = ViewProjectionMatrix.Transpose();
+	ViewProjectionMatrixInverse = ViewProjectionMatrix.Invert();
+
+	TranslatedViewProjectionMatrix = TranslatedViewMatrix * ProjectionMatrix;
+	TranslatedViewProjectionMatrixTranspose = ViewProjectionMatrix.Transpose();
+	TranslatedViewProjectionMatrixInverse = ViewProjectionMatrix.Invert();
 }
-
-//XMatrix XViewMatrices::GetScreenToTranslatedWorldTranPose()
-//{
-//	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
-//	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
-//	ScreenToClip.m[3][2] = ProjectionMatrix.m[3][2];
-//	ScreenToClip.m[2][3] = 1.0f;
-//	ScreenToClip.m[3][3] = 0.0f;
-//
-//	XMMATRIX ScreenToTranslatedWorldCom = XMLoadFloat4x4(&ScreenToClip);
-//	ScreenToTranslatedWorldCom = XMMatrixMultiply(ScreenToTranslatedWorldCom, XMLoadFloat4x4(&TranslatedViewProjectionMatrixInverse));
-//	
-//	DirectX::XMFLOAT4X4 Ret;
-//	XMStoreFloat4x4(&Ret, XMMatrixTranspose(ScreenToTranslatedWorldCom));
-//	return Ret;
-//}
 
 XMatrix XViewMatrices::GetScreenToTranslatedWorld()
 {
-	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
+	XMatrix ScreenToClip ;
 	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
 	ScreenToClip.m[3][2] = ProjectionMatrix.m[3][2];
 	ScreenToClip.m[2][3] = 1.0f;
 	ScreenToClip.m[3][3] = 0.0f;
-
-	XMMATRIX ScreenToTranslatedWorldCom = XMLoadFloat4x4(&ScreenToClip);
-	ScreenToTranslatedWorldCom = XMMatrixMultiply(ScreenToTranslatedWorldCom, XMLoadFloat4x4(&TranslatedViewProjectionMatrixInverse));
-
-	DirectX::XMFLOAT4X4 Ret;
-	XMStoreFloat4x4(&Ret, ScreenToTranslatedWorldCom);
-	return Ret;
+	
+	return ScreenToClip * TranslatedViewProjectionMatrixInverse;
 }
-
-//XMatrix XViewMatrices::GetScreenToWorldTranPose()
-//{
-//	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
-//	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
-//	ScreenToClip.m[3][2] = ProjectionMatrix.m[3][2];
-//	ScreenToClip.m[2][3] = 1.0f;
-//	ScreenToClip.m[3][3] = 0.0f;
-//
-//	XMMATRIX ScreenToWorldCom = XMLoadFloat4x4(&ScreenToClip);
-//	ScreenToWorldCom = XMMatrixMultiply(ScreenToWorldCom, XMLoadFloat4x4(&ViewProjectionMatrixInverse));
-//
-//	DirectX::XMFLOAT4X4 Ret;
-//	XMStoreFloat4x4(&Ret, XMMatrixTranspose(ScreenToWorldCom));
-//	return Ret;
-//}
 
 XMatrix XViewMatrices::GetScreenToWorld()
 {
-	XMFLOAT4X4 ScreenToClip = XDirectx::GetIdentityMatrix();
+	XMatrix ScreenToClip;
 	ScreenToClip.m[2][2] = ProjectionMatrix.m[2][2];
 	ScreenToClip.m[3][2] = ProjectionMatrix.m[3][2];
 	ScreenToClip.m[2][3] = 1.0f;
 	ScreenToClip.m[3][3] = 0.0f;
-
-	XMMATRIX ScreenToWorldCom = XMLoadFloat4x4(&ScreenToClip);
-	ScreenToWorldCom = XMMatrixMultiply(ScreenToWorldCom, XMLoadFloat4x4(&ViewProjectionMatrixInverse));
-
-	DirectX::XMFLOAT4X4 Ret;
-	XMStoreFloat4x4(&Ret, ScreenToWorldCom);
-	return Ret;
+	return ScreenToClip * ViewProjectionMatrixInverse;
 }
 

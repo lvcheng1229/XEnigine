@@ -1,6 +1,7 @@
 #pragma once
 #include "Runtime/Core/Math/Math.h"
 #include "Runtime/RHI/RHIResource.h"
+
 XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix);
 
 enum class ECameraPlane
@@ -29,7 +30,7 @@ public:
 		const XVector3& ViewLocation,
 		const XVector3& ViewTargetPosition);
 private:
-	//TODO Align
+	
 	XVector3		ViewOrigin;
 	XVector3		PreViewTranslation;
 	XVector3		EyeForwardDir;
@@ -41,11 +42,7 @@ private:
 	XMatrix		TranslatedViewProjectionMatrix;
 	XMatrix		TranslatedWorldToClip;
 
-	//Transpose
-	//XMatrix		ProjectionMatrixTranspose;
-	//XMatrix		ViewMatrixTranspose;
 	XMatrix		ViewProjectionMatrixTranspose;
-	//XMatrix		TranslatedViewMatrixTranspose;
 	XMatrix		TranslatedViewProjectionMatrixTranspose;
 
 	XMatrix		ViewProjectionMatrixInverse;
@@ -74,12 +71,6 @@ public:
 	inline const XMatrix& GetTranslatedViewMatrix()const			{ return TranslatedViewMatrix; };
 	inline const XMatrix& GetTranslatedViewProjectionMatrix()const	{ return TranslatedViewProjectionMatrix; };
 	
-	//transpose
-	//inline const XMatrix& GetProjectionMatrixTranspose()const { return ProjectionMatrixTranspose; };
-	//inline const XMatrix& GetViewMatrixTranspose()const { return ViewMatrixTranspose; };
-	//inline const XMatrix& GetViewProjectionMatrixTranspose()const { return ViewProjectionMatrixTranspose; };
-	//inline const XMatrix& GetTranslatedViewMatrixTranspose()const { return TranslatedViewMatrixTranspose; };
-	//inline const XMatrix& GetTranslatedViewProjectionMatrixTranspose()const { return TranslatedViewProjectionMatrixTranspose; };
 
 	//inverse
 	inline const XMatrix& GetViewProjectionMatrixInverse()const { return ViewProjectionMatrixInverse; };
@@ -88,10 +79,6 @@ public:
 	//misc
 	XMatrix GetScreenToTranslatedWorld();
 	XMatrix GetScreenToWorld();
-
-	//misc
-	//XMatrix GetScreenToTranslatedWorldTranPose();
-	//XMatrix GetScreenToWorldTranPose();
 };
 
 struct ViewConstantBufferData

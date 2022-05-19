@@ -24,19 +24,9 @@ public:
 	virtual void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size) = 0;
 	virtual void RHIEndRenderPass() = 0;
 	virtual void RHIEventEnd() = 0;
-	virtual void RHIExecuteIndirect(
-		XRHICommandSignature* RHICmdSig, uint32 CmdCount,
-		XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset,
-		XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset) = 0;
+	virtual void RHIExecuteIndirect(XRHICommandSignature* RHICmdSig, uint32 CmdCount, XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset, XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset) = 0;
 	virtual void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) = 0;
-	virtual void RHIDrawIndexedPrimitive() = 0;
-	virtual void RHIDrawIndexedPrimitive(
-		XRHIIndexBuffer* IndexBuffer,
-		uint32 IndexCountPerInstance,
-		uint32 InstanceCount,
-		uint32 StartIndexLocation,
-		uint32 BaseVertexLocation,
-		uint32 StartInstanceLocation) = 0;
+	virtual void RHIDrawIndexedPrimitive(XRHIIndexBuffer* IndexBuffer, uint32 IndexCountPerInstance, uint32 InstanceCount, uint32 StartIndexLocation, uint32 BaseVertexLocation, uint32 StartInstanceLocation) = 0;
 
 	//SetPSO
 	virtual void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState) = 0;

@@ -41,6 +41,7 @@ namespace DirectX
 
             LMatrix(const XMFLOAT4X4& M) noexcept { memcpy(this, &M, sizeof(XMFLOAT4X4)); }
             LMatrix Transpose() const noexcept;
+            Matrix Invert() const noexcept;
 
             operator XMMATRIX() const noexcept { return XMLoadFloat4x4(this); }
 

@@ -11,15 +11,17 @@ protected:
 		XRHIDepthStencilView CachedDepthStencilTarget;
 		std::array<XRHIRenderTargetView, 8>CachedRenderTargets;
 	} PSOContext;
+
 public:
 	virtual void Open() = 0;
 
-	void SetContext(IRHIContext* InContext)
+	inline void SetContext(IRHIContext* InContext)
 	{
 		Context = InContext;
 		ComputeContext = InContext;
 	}
-	IRHIContext* GetContext()const
+
+	inline IRHIContext* GetContext()const
 	{
 		return Context;
 	}
@@ -28,7 +30,8 @@ public:
 	{
 		ComputeContext = Context;
 	}
-	IRHIContext* GetComputeContext()const
+
+	inline IRHIContext* GetComputeContext()const
 	{
 		return ComputeContext;
 	}
@@ -70,6 +73,7 @@ public:
 			GraphicsPSOInit.DS_Format = EPixelFormat::FT_Unknown;
 		}
 	}
+
 private:
 	IRHIContext* Context;
 	IRHIContext* ComputeContext;
@@ -169,11 +173,6 @@ public:
 		uint32 StartInstanceLocation)
 	{
 		GetContext()->RHIDrawIndexedPrimitive(IndexBuffer, IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
-	}
-
-	inline void RHIDrawIndexedPrimitive()
-	{
-		GetContext()->RHIDrawIndexedPrimitive();
 	}
 
 	inline void SetGraphicsPipelineState(class XRHIGraphicsPSO* GraphicsPipelineState)

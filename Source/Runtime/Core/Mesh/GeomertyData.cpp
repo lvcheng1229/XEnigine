@@ -100,7 +100,6 @@ void GIndexBuffer::CreateRHIBufferChecked()
 }
 
 
-
 std::shared_ptr<XRHIConstantBuffer> GGeomertry::GetPerObjectVertexCBuffer()
 {
 	if (PerObjectVertexCBuffer.get() == nullptr)

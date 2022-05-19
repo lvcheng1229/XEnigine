@@ -11,6 +11,15 @@ namespace DirectX
             XMStoreFloat4x4(&R, XMMatrixTranspose(M));
             return R;
         }
+        Matrix LMatrix::Invert() const noexcept
+        {
+            using namespace DirectX;
+            const XMMATRIX M = XMLoadFloat4x4(this);
+            Matrix R;
+            XMVECTOR det;
+            XMStoreFloat4x4(&R, XMMatrixInverse(&det, M));
+            return R;
+        }
         LMatrix LMatrix::CreateScale(const Vector3& scales) noexcept
         {
             using namespace DirectX;

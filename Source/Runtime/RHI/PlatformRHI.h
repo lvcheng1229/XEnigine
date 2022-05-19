@@ -25,8 +25,7 @@ public:
 	virtual XRHIShaderResourceView* GetRHISRVFromTexture(XRHITexture* RHITexture, uint32 MipIndex = 0) = 0;
 	virtual uint64 RHIGetCmdBufferOffset(XRHIStructBuffer* RHIStructBuffer) = 0;
 	virtual void* RHIGetCommandDataPtr(std::vector<XRHICommandData>&RHICmdData, uint32& OutCmdDataSize) = 0;
-	virtual std::shared_ptr<XRHICommandSignature> RHICreateCommandSignature(
-		XRHIIndirectArg* RHIIndirectArg, uint32 ArgCount, XRHIVertexShader* VertexShader, XRHIPixelShader* PixelShader) = 0;
+	virtual std::shared_ptr<XRHICommandSignature> RHICreateCommandSignature(XRHIIndirectArg* RHIIndirectArg, uint32 ArgCount, XRHIVertexShader* VertexShader, XRHIPixelShader* PixelShader) = 0;
 
 	//Create State
 	virtual std::shared_ptr<XRHIDepthStencilState> RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer) = 0;
@@ -41,15 +40,13 @@ public:
 	virtual std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const  XGraphicsPSOInitializer& PSOInit) = 0;
 	virtual std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader) = 0;
 
-	virtual std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
-		bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data) = 0;
-
-	virtual std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
-		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data) = 0;
+	virtual std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data) = 0;
+	virtual std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data) = 0;
 
 	virtual std::shared_ptr<XRHIConstantBuffer> RHICreateConstantBuffer(uint32 size) = 0;
 
 	virtual XRHITexture* RHIGetCurrentBackTexture() = 0;
+	
 	//Lock/UnLock Vertex Buffer
 	virtual void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI) = 0;
 	virtual void UnLockVertexBuffer(XRHIVertexBuffer* VertexBuffer) = 0;
@@ -59,7 +56,6 @@ public:
 };
 
 
-XPlatformRHI* PlatformCreateDynamicRHI();
 extern XPlatformRHI* GPlatformRHI;
 extern bool GIsRHIInitialized;
 
