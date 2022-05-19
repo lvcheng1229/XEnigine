@@ -2,7 +2,6 @@
 #include "RenderResource.h"
 #include "Runtime/RHI/RHIResource.h"
 #include "Runtime/RHI/PlatformRHI.h"
-#include "Runtime/Core/XMath.h"
 #include "Runtime/Core/Math/Math.h"
 #include "GlobalShader.h"
 

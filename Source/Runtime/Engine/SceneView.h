@@ -1,5 +1,4 @@
 #pragma once
-#include "Runtime/Core/XMath.h"
 #include "Runtime/Core/Math/Math.h"
 #include "Runtime/RHI/RHIResource.h"
 XVector4 CreateInvDeviceZToWorldZTransform(const XMatrix ProjMatrix);
