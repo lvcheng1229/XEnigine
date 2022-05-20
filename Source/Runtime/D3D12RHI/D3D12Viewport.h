@@ -11,18 +11,18 @@ public:
 		HWND WindowHandle_in);
 	void Resize(uint32 size_x_in, uint32 size_y_in);
 	void Present();
-	inline XD3D12Texture2D* GetCurrentBackTexture() { return BackBufferTextures[current_back_buffer].get(); }
+	inline XD3D12Texture2D* GetCurrentBackTexture() { return BackBufferTextures[CurrentBackBuffer].get(); }
 private:
-	XD3D12AbstractDevice* device;
+	XD3D12AbstractDevice* AbsDevice;
 
-	uint32 current_back_buffer;
+	uint32 CurrentBackBuffer;
 
-	uint32 size_x;
-	uint32 size_y;
+	uint32 SizeX;
+	uint32 SizeY;
 	EPixelFormat Format;
 
 	std::vector<std::shared_ptr<XD3D12Texture2D>>BackBufferTextures;
-	XD3D12Resource back_buffer_resources[BACK_BUFFER_COUNT_DX12];
-	XD3D12RenderTargetView back_rt_views[BACK_BUFFER_COUNT_DX12];
+	XD3D12Resource BackBufferResources[BACK_BUFFER_COUNT_DX12];
+	XD3D12RenderTargetView BackRtViews[BACK_BUFFER_COUNT_DX12];
 	XDxRefCount<IDXGISwapChain> mSwapChain;
 };

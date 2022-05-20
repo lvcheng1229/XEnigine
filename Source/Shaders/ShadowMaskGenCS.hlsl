@@ -10,7 +10,8 @@ Texture2D<uint>PhysicalShadowDepthTexture; // 1024 * 1024
 cbuffer cbShadowViewInfo
 {
     row_major float4x4 LightViewProjectMatrix;
-
+    float3 ShadowLightDir;
+    float padding0;
     //float ClientWidth;
     //float ClientHeight;
     //float padding0;
@@ -87,7 +88,7 @@ void ShadowMaskGenCS(uint2 DispatchThreadID :SV_DispatchThreadID)
 
     uint ObjectShadowDepth = (ShadowScreenPOS.z)* (1<<30);
 
-    float3 LightDir = float3(-1,1,1);
+    float3 LightDir = ShadowLightDir;
     LightDir = normalize(LightDir);
     float NoL = dot(LightDir,Normal.xyz);
     uint Bias = NoL * 1000 * (1 << 10) + 500 * (1 << 10);

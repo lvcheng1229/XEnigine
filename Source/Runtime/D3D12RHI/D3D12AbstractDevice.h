@@ -41,18 +41,14 @@ public:
 	std::shared_ptr<XD3D12ConstantBuffer>CreateUniformBuffer(uint32 size);
 	XD3D12ConstantBuffer* CreateConstantBuffer(uint32 size);
 
-	XD3D12Texture2D* CreateD3D12Texture2D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,
-		bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
-
-	XD3D12Texture3D* CreateD3D12Texture3D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,
-		EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
+	XD3D12Texture2D* CreateD3D12Texture2D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
+	XD3D12Texture3D* CreateD3D12Texture3D(XD3D12DirectCommandList* x_cmd_list, uint32 width, uint32 height, uint32 SizeZ,EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data);
 
 	template<typename BufferType>
 	BufferType* DeviceCreateRHIBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
 		uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
 
-	XD3D12StructBuffer* DeviceCreateStructBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,
-		uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
+	XD3D12StructBuffer* DeviceCreateStructBuffer(XD3D12DirectCommandList* D3D12CmdList, const D3D12_RESOURCE_DESC& InDesc, uint32 Alignment,uint32 Stride, uint32 Size, EBufferUsage InUsage, XRHIResourceCreateData& CreateData);
 
 	void DeviceResetStructBufferCounter(XD3D12DirectCommandList* D3D12CmdList, XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset);
 	void DeviceCopyTextureRegion(XD3D12DirectCommandList* D3D12CmdList,

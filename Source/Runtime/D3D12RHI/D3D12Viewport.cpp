@@ -5,67 +5,66 @@ void XD3D12Viewport::Resize(
     uint32 size_x_in, 
     uint32 size_y_in)
 {
-    size_x = size_x_in;
-    size_y = size_y_in;
+    SizeX = size_x_in;
+    SizeY = size_y_in;
 
     DXGI_FORMAT DxFormat = (DXGI_FORMAT)GPixelFormats[(int)Format].PlatformFormat;
 
-    XD3D12PhysicDevice* PhysicalDevice = device->GetPhysicalDevice();
-    XD3D12CommandQueue* direct_cmd_queue = device->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
-    XD3DDirectContex* directx_ctx = device->GetDirectContex(0);
-    XD3D12DirectCommandList* cmd_list = directx_ctx->GetCmdList();
-    XD3D12CommandAllocator* cmd_alloc = directx_ctx->GetCmdAlloc();
+    XD3D12PhysicDevice* PhysicalDevice = AbsDevice->GetPhysicalDevice();
+    XD3D12CommandQueue* DirectCmdQueue = AbsDevice->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
+    XD3DDirectContex* DirectxCtx = AbsDevice->GetDirectContex(0);
 
-    direct_cmd_queue->CommandQueueWaitFlush();
-    directx_ctx->OpenCmdList();
+
+    DirectCmdQueue->CommandQueueWaitFlush();
+    DirectxCtx->OpenCmdList();
 
     for (int i = 0; i < BACK_BUFFER_COUNT_DX12; ++i)
     {
-        if(back_buffer_resources[i].GetResource())
-            back_buffer_resources[i].GetResource()->Release();
+        if(BackBufferResources[i].GetResource())
+            BackBufferResources[i].GetResource()->Release();
     }
 
-    ThrowIfFailed(mSwapChain->ResizeBuffers(BACK_BUFFER_COUNT_DX12, size_x, size_y,
+    ThrowIfFailed(mSwapChain->ResizeBuffers(BACK_BUFFER_COUNT_DX12, SizeX, SizeY,
         DxFormat, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
     
-    current_back_buffer = 0;
+    CurrentBackBuffer = 0;
 
-    D3D12_RENDER_TARGET_VIEW_DESC rt_desc;
-    rt_desc.Format = DxFormat;
-    rt_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-    rt_desc.Texture2D.MipSlice = 0;
-    rt_desc.Texture2D.PlaneSlice = 0;
+    D3D12_RENDER_TARGET_VIEW_DESC RtDesc;
+    RtDesc.Format = DxFormat;
+    RtDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+    RtDesc.Texture2D.MipSlice = 0;
+    RtDesc.Texture2D.PlaneSlice = 0;
     
     for (UINT i = 0; i < BACK_BUFFER_COUNT_DX12; i++)
     {
-        uint32 index_of_desc_in_heap_rt;
-        uint32 index_of_heap_rt;
-        device->GetRenderTargetDescArrayManager()->AllocateDesc(index_of_desc_in_heap_rt, index_of_heap_rt);
+        uint32 IndexOfDescInHeapRt;
+        uint32 IndexOfHeapRt;
+        AbsDevice->GetRenderTargetDescArrayManager()->AllocateDesc(IndexOfDescInHeapRt, IndexOfHeapRt);
 
-        ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(back_buffer_resources[i].GetPtrToResourceAdress())));
-        back_buffer_resources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON);
-        back_buffer_resources[i].GetResource()->SetName(L"BackBuffer");
-        back_rt_views[i].Create(PhysicalDevice,&back_buffer_resources[i], rt_desc,
-            device->GetRenderTargetDescArrayManager()->compute_cpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt),
-            device->GetRenderTargetDescArrayManager()->compute_gpu_ptr(index_of_desc_in_heap_rt, index_of_heap_rt)
+        ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(BackBufferResources[i].GetPtrToResourceAdress())));
+        BackBufferResources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON);
+        BackBufferResources[i].GetResource()->SetName(L"BackBuffer");
+        BackRtViews[i].Create(PhysicalDevice,&BackBufferResources[i], RtDesc,
+            AbsDevice->GetRenderTargetDescArrayManager()->compute_cpu_ptr(IndexOfDescInHeapRt, IndexOfHeapRt),
+            AbsDevice->GetRenderTargetDescArrayManager()->compute_gpu_ptr(IndexOfDescInHeapRt, IndexOfHeapRt)
         );
 
         std::shared_ptr<XD3D12Texture2D>BackBufferTexture = std::make_shared<XD3D12Texture2D>(Format);
-        BackBufferTexture->SetRenderTargetView(back_rt_views[i]);
+        BackBufferTexture->SetRenderTargetView(BackRtViews[i]);
         BackBufferTextures.push_back(BackBufferTexture);
     }
 
-    directx_ctx->CloseCmdList();
+    DirectxCtx->CloseCmdList();
 
-    ID3D12CommandList* cmdsLists[] = { directx_ctx->GetCmdList()->GetDXCmdList()};
-    direct_cmd_queue->GetDXCommandQueue()->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-    direct_cmd_queue->CommandQueueWaitFlush();
+    ID3D12CommandList* cmdsLists[] = { DirectxCtx->GetCmdList()->GetDXCmdList()};
+    DirectCmdQueue->GetDXCommandQueue()->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+    DirectCmdQueue->CommandQueueWaitFlush();
 }
 
 void XD3D12Viewport::Present()
 {
-    XD3DDirectContex* DirectCtx = device->GetDirectContex(0);
-    XD3D12CommandQueue* DirectCmdQueue = device->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
+    XD3DDirectContex* DirectCtx = AbsDevice->GetDirectContex(0);
+    XD3D12CommandQueue* DirectCmdQueue = AbsDevice->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
 
     XD3D12PlatformRHI::TransitionResource(*DirectCtx->GetCmdList(), this->GetCurrentBackTexture()->GetRenderTargetView(), D3D12_RESOURCE_STATE_PRESENT);
     DirectCtx->GetCmdList()->CmdListFlushBarrier();
@@ -76,5 +75,5 @@ void XD3D12Viewport::Present()
     DirectCmdQueue->CommandQueueWaitFlush();
 
     ThrowIfFailed(mSwapChain->Present(0, 0));
-    current_back_buffer = (current_back_buffer + 1) % BACK_BUFFER_COUNT_DX12;
+    CurrentBackBuffer = (CurrentBackBuffer + 1) % BACK_BUFFER_COUNT_DX12;
 }

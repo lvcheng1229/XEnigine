@@ -69,6 +69,8 @@ ShadowMaskGenCS::ShaderInfos ShadowMaskGenCS::StaticShaderInfos(
 struct ShadowMaskGenStruct
 {
 	XMatrix LightViewProjectMatrix;
+	XVector3 ShadowLightDir;
+	float padding0 = 0;
 };
 
 class XShadowMaskGenResourece :public XRenderResource
@@ -89,7 +91,12 @@ TGlobalResource<XShadowMaskGenResourece>ShadowMaskGenResourece;
 
 void XDeferredShadingRenderer::ShadowMaskGenerate(XRHICommandList& RHICmdList)
 {
-	ShadowMaskGenResourece.ShadowMaskGenConstantBuffer->UpdateData(&LightViewProjMat,sizeof(XMatrix),0);
+	ShadowLightDir.Normalize();
+	ShadowMaskGenStruct ShadowMaskGenIns;
+	ShadowMaskGenIns.LightViewProjectMatrix = LightViewProjMat;
+	ShadowMaskGenIns.ShadowLightDir = ShadowLightDir;
+
+	ShadowMaskGenResourece.ShadowMaskGenConstantBuffer->UpdateData(&ShadowMaskGenIns,sizeof(ShadowMaskGenStruct),0);
 
 	RHICmdList.RHIEventBegin(1, "ShadowMaskGenCS", sizeof("ShadowMaskGenCS"));
 	TShaderReference<ShadowMaskGenCS> Shader = GetGlobalShaderMapping()->GetShader<ShadowMaskGenCS>();

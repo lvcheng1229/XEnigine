@@ -28,24 +28,24 @@ void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
 	CBV_SRV_UAVDescArrayManager.Create(PhysicalDeviceIn, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128);
 
 	XAllocConfig default_cfg;
-	default_cfg.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
-	default_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
-	default_cfg.d3d12_resource_flags = D3D12_RESOURCE_FLAG_NONE;
+	default_cfg.D3d12HeapFlags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
+	default_cfg.D3d12HeapType = D3D12_HEAP_TYPE_DEFAULT;
+	default_cfg.D3d12ResourceFlags = D3D12_RESOURCE_FLAG_NONE;
 	DefaultNonRtDsTextureHeapAlloc.Create(PhysicalDevice, default_cfg, 512 * (1 << 20), (64 * 1024), AllocStrategy::PlacedResource);
 
 
 	XAllocConfig BufferTypeAlloc_HeapDefault;
-	BufferTypeAlloc_HeapDefault.d3d12_heap_flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
-	BufferTypeAlloc_HeapDefault.d3d12_heap_type = D3D12_HEAP_TYPE_DEFAULT;
-	BufferTypeAlloc_HeapDefault.d3d12_resource_states = D3D12_RESOURCE_STATE_COMMON;
-	BufferTypeAlloc_HeapDefault.d3d12_resource_flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	BufferTypeAlloc_HeapDefault.D3d12HeapFlags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
+	BufferTypeAlloc_HeapDefault.D3d12HeapType = D3D12_HEAP_TYPE_DEFAULT;
+	BufferTypeAlloc_HeapDefault.D3d12ResourceStates = D3D12_RESOURCE_STATE_COMMON;
+	BufferTypeAlloc_HeapDefault.D3d12ResourceFlags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	VIBufferBufferAllocDefault.Create(PhysicalDevice, BufferTypeAlloc_HeapDefault, 512 * (1 << 20), (64 * 1024), AllocStrategy::ManualSubAllocation);
 
 
 	XAllocConfig upload_cfg;
-	upload_cfg.d3d12_heap_type = D3D12_HEAP_TYPE_UPLOAD;
-	upload_cfg.d3d12_resource_states = D3D12_RESOURCE_STATE_GENERIC_READ;
-	upload_cfg.d3d12_resource_flags = D3D12_RESOURCE_FLAG_NONE;
+	upload_cfg.D3d12HeapType = D3D12_HEAP_TYPE_UPLOAD;
+	upload_cfg.D3d12ResourceStates = D3D12_RESOURCE_STATE_GENERIC_READ;
+	upload_cfg.D3d12ResourceFlags = D3D12_RESOURCE_FLAG_NONE;
 	UploadHeapAlloc.Create(PhysicalDevice, upload_cfg, 512 * (1 << 20), (64 * 1024), AllocStrategy::ManualSubAllocation);
 
 	ConstantBufferUploadHeapAlloc.Create(PhysicalDevice, upload_cfg, 128 * (1 << 20), 256, AllocStrategy::ManualSubAllocation);

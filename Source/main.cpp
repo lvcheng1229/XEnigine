@@ -44,7 +44,7 @@ public:
 	float FoVAngleY = 0.25f * X_PI;
 
 	//Light
-	XVector3 LightDir = { -1 / sqrtf(3.0f),1 / sqrtf(3.0f),1 / sqrtf(3.0f) };
+	XVector3 LightDir = { 1 / sqrtf(3.0f),1 / sqrtf(3.0f),1 / sqrtf(3.0f) };
 	XVector3 LightColor = { 1,1,1 };
 	float LightIntensity = 7.0f;
 

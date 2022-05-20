@@ -19,12 +19,12 @@ enum class AllocStrategy
 struct XAllocConfig
 {
 	//PlacedResource
-	D3D12_HEAP_TYPE d3d12_heap_type;
-	D3D12_HEAP_FLAGS d3d12_heap_flags;
+	D3D12_HEAP_TYPE D3d12HeapType;
+	D3D12_HEAP_FLAGS D3d12HeapFlags;
 
 	//ManualSubAllocation
-	D3D12_RESOURCE_STATES d3d12_resource_states;
-	D3D12_RESOURCE_FLAGS d3d12_resource_flags;
+	D3D12_RESOURCE_STATES D3d12ResourceStates;
+	D3D12_RESOURCE_FLAGS D3d12ResourceFlags;
 };
 
 //#define LOG_USED_BLOCK 0

@@ -8,16 +8,16 @@ void XD3D12Viewport::Create(
     EPixelFormat EPixFormatIn,
     HWND WindowHandle_in)
 {
-    device = device_in;
-    size_x = size_x_in;
-    size_y = size_y_in;
+    AbsDevice = device_in;
+    SizeX = size_x_in;
+    SizeY = size_y_in;
     Format = EPixFormatIn;
 
     DXGI_FORMAT DxFormat = (DXGI_FORMAT)GPixelFormats[(int)Format].PlatformFormat;
 
     DXGI_SWAP_CHAIN_DESC sd;
-    sd.BufferDesc.Width = size_x;
-    sd.BufferDesc.Height = size_y;
+    sd.BufferDesc.Width = SizeX;
+    sd.BufferDesc.Height = SizeY;
     sd.BufferDesc.RefreshRate.Numerator = 60;
     sd.BufferDesc.RefreshRate.Denominator = 1;
     sd.BufferDesc.Format = DxFormat;
@@ -32,8 +32,8 @@ void XD3D12Viewport::Create(
     sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-    device->GetPhysicalDevice()->GetAdapter()->GetDXFactory()->CreateSwapChain(
-        device->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT)->GetDXCommandQueue(),
+    AbsDevice->GetPhysicalDevice()->GetAdapter()->GetDXFactory()->CreateSwapChain(
+        AbsDevice->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT)->GetDXCommandQueue(),
         &sd,
         mSwapChain.GetAddressOf());
 }

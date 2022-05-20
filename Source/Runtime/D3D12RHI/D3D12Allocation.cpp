@@ -39,7 +39,7 @@ void XD3DBuddyAllocator::Create(
 	if (strategy == AllocStrategy::PlacedResource)
 	{
 		D3D12_HEAP_PROPERTIES heap_properties;
-		heap_properties.Type = config.d3d12_heap_type;;
+		heap_properties.Type = config.D3d12HeapType;;
 		heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 		heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 		heap_properties.CreationNodeMask = 0;
@@ -49,7 +49,7 @@ void XD3DBuddyAllocator::Create(
 		heap_desc.SizeInBytes = max_block_size;
 		heap_desc.Properties = heap_properties;
 		heap_desc.Alignment = MIN_PLACED_BUFFER_SIZE;
-		heap_desc.Flags = config.d3d12_heap_flags;
+		heap_desc.Flags = config.D3d12HeapFlags;
 
 		ThrowIfFailed(GetParentDevice()->GetDXDevice()->CreateHeap(&heap_desc, IID_PPV_ARGS(&m_heap)));
 		m_heap->SetName(L"buddy allocator heap");
@@ -57,16 +57,16 @@ void XD3DBuddyAllocator::Create(
 	else
 	{
 		CD3DX12_RESOURCE_DESC ResDesc = CD3DX12_RESOURCE_DESC::Buffer(max_block_size);
-		ResDesc.Flags |= config.d3d12_resource_flags;
+		ResDesc.Flags |= config.D3d12ResourceFlags;
 
 		ThrowIfFailed(GetParentDevice()->GetDXDevice()->CreateCommittedResource(
-			GetRValuePtr((CD3DX12_HEAP_PROPERTIES(config.d3d12_heap_type))),
+			GetRValuePtr((CD3DX12_HEAP_PROPERTIES(config.D3d12HeapType))),
 			D3D12_HEAP_FLAG_NONE,
 			&ResDesc,
-			config.d3d12_resource_states,
+			config.D3d12ResourceStates,
 			nullptr,
 			IID_PPV_ARGS(back_resource.GetPtrToResourceAdress())));
-		back_resource.Create(back_resource.GetResource(), config.d3d12_resource_states);
+		back_resource.Create(back_resource.GetResource(), config.D3d12ResourceStates);
 		back_resource.GetResource()->SetName(L"Alloc back_resource");
 	}
 
@@ -133,7 +133,7 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment
 			resource_location.SetBackResource(&back_resource);
 			resource_location.SetGPUVirtualPtr(back_resource.GetGPUVirtaulAddress() + AllocatedResourceOffset);
 
-			if (config.d3d12_heap_type == D3D12_HEAP_TYPE_UPLOAD) //if cpu writable
+			if (config.D3d12HeapType == D3D12_HEAP_TYPE_UPLOAD) //if cpu writable
 			{
 				resource_location.SetMappedCPUResourcePtr((uint8*)back_resource.GetMappedResourceCPUPtr() + AllocatedResourceOffset);
 			}
