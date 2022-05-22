@@ -14,8 +14,9 @@ add_definitions(-D ROOT_DIR_XENGINE=${XENGINE_ROOT_DIR})
 
 file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.h")
 file(GLOB_RECURSE SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp")
+file(GLOB_RECURSE SOURCE_FILES_CC "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cc")
 
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/Source" FILES ${HEADER_FILES} ${SOURCE_FILES})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/Source" FILES ${HEADER_FILES} ${SOURCE_FILES} ${SOURCE_FILES_CC})
 
 link_libraries("d3dcompiler.lib")
 link_libraries("D3D12.lib")
@@ -65,4 +66,4 @@ include_directories(${BOOST_SOURCE_DIR})
 #)
 
 #https://zhuanlan.zhihu.com/p/268209090
-add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
+add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${SOURCE_FILES_CC})

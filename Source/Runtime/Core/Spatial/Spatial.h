@@ -40,6 +40,11 @@ public:
 		return WorldTransform;
 	}
 
+	inline void SetWorldRotate(const XVector3& Axis,float Angle)
+	{
+		WorldTransform.SetRotate(Axis, Angle);
+	}
+
 	inline void SetWorldTranslate(const XVector3& TranslationIn)
 	{
 		WorldTransform.SetTranslation(TranslationIn);

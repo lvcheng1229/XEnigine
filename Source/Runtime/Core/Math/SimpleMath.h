@@ -87,6 +87,8 @@ namespace DirectX
 
             void Normalize() noexcept;
             void Normalize(Vector2& result) const noexcept;
+            
+            
 
             void Clamp(const Vector2& vmin, const Vector2& vmax) noexcept;
             void Clamp(const Vector2& vmin, const Vector2& vmax, Vector2& result) const noexcept;
@@ -200,6 +202,12 @@ namespace DirectX
 
             void Normalize() noexcept;
             void Normalize(Vector3& result) const noexcept;
+            inline Vector3 NormalizeRet()
+            {
+                Vector3 Ret = *this;
+                Ret.Normalize();
+                return Ret;
+            }
 
             void Clamp(const Vector3& vmin, const Vector3& vmax) noexcept;
             void Clamp(const Vector3& vmin, const Vector3& vmax, Vector3& result) const noexcept;

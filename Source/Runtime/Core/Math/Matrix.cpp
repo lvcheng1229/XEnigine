@@ -20,6 +20,16 @@ namespace DirectX
             XMStoreFloat4x4(&R, XMMatrixInverse(&det, M));
             return R;
         }
+
+        LMatrix DirectX::SimpleMath::LMatrix::CreateFromAxisAngle(const Vector3& axis, float angle) noexcept
+        {
+            using namespace DirectX;
+            Matrix R;
+            const XMVECTOR a = XMLoadFloat3(&axis);
+            XMStoreFloat4x4(&R, XMMatrixRotationAxis(a, angle));
+            return R;
+        }
+
         LMatrix LMatrix::CreateScale(const Vector3& scales) noexcept
         {
             using namespace DirectX;

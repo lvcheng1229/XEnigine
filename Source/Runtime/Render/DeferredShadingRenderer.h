@@ -28,6 +28,8 @@ public:
 	~XDeferredShadingRenderer();
 	void SceneTagetGen();
 
+	void VoxelizationPass(XRHICommandList& RHICmdList);
+
 	//Width Height CamIns
 	void ViewInfoSetup(uint32 Width,uint32 Height,GCamera& CameraIn);
 	void ViewInfoUpdate(GCamera& CameraIn);

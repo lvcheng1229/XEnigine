@@ -45,6 +45,7 @@ namespace DirectX
 
             operator XMMATRIX() const noexcept { return XMLoadFloat4x4(this); }
 
+            static LMatrix CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
             static LMatrix CreateScale(const Vector3& scales) noexcept;
             static LMatrix CreateTranslation(const Vector3& position) noexcept;
             static LMatrix CreateOrthographicOffCenterLH(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;

@@ -5,6 +5,9 @@ class XTransform
 {
 public:
 	XMatrix CombinedMatrix;
+	XVector3 RotateAxis;
+	float Angle;
+
 	XVector3 Translation;
 	XVector3 Scale;
 	bool bNeedRecombine;
@@ -33,6 +36,13 @@ public:
 	inline void SetScale(const XVector3& ScaleIn)
 	{
 		Scale = ScaleIn;
+		bNeedRecombine = true;
+	}
+
+	inline void SetRotate(const XVector3& AxisIn, float AngleIn)
+	{
+		RotateAxis = AxisIn;
+		Angle = AngleIn;
 		bNeedRecombine = true;
 	}
 };

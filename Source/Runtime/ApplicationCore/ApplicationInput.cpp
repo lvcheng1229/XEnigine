@@ -1,9 +1,11 @@
 #include "ApplicationInput.h"
+#include <memory>
 XAppInput::XAppInput()
 {
 	MouseDelta = { 0,0 };
 	MouseX = MouseY = 0;
 	bMousePressed[0] = bMousePressed[1] = bMousePressed[2] = false;
+	memset(bBoardKeyPressed, 0, sizeof(bBoardKeyPressed));
 }
 
 #include <iostream>
@@ -28,6 +30,16 @@ void XAppInput::OnMouseMove(int32 X, int32 Y)
 {
 	MouseDelta = { X - MouseX,Y - MouseY };
 	this->SetMousePos(X, Y);
+}
+
+void XAppInput::OnKeyDown(EInputKey InputKey)
+{
+	bBoardKeyPressed[int32(InputKey)] = true;
+}
+
+void XAppInput::OnKeyUp(EInputKey InputKey)
+{
+	bBoardKeyPressed[int32(InputKey)] = false;
 }
 
 void XAppInput::InputMsgProcsss(EInputType InputType, EInputEvent InputEvent, EInputKey InputKey, int32 PosX, int32 PosY, int32 WHEEL)
@@ -57,9 +69,16 @@ void XAppInput::InputMsgProcsss(EInputType InputType, EInputEvent InputEvent, EI
 			XAppInput::InputPtr->OnMouseMove(PosX, PosY);
 		}
 	}
-	else
+	else if(InputType == EInputType::KEYBOARD)
 	{
-
+		if (InputEvent == EInputEvent::DOWN)
+		{
+			XAppInput::InputPtr->OnKeyDown(InputKey);
+		}
+		else if (InputEvent == EInputEvent::UP)
+		{
+			XAppInput::InputPtr->OnKeyUp(InputKey);
+		}
 	}
 
 	TempUpdate(TempUpFun);

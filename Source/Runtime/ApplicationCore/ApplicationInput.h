@@ -24,6 +24,10 @@ enum class EInputKey
 	MOUSE_MAX,
 
 	ESCAPE,
+	BK_W,
+	BK_A,
+	BK_S,
+	BK_D,
 	KEY_MAX
 };
 
@@ -43,6 +47,8 @@ public:
 	inline int32 GetMouseY() { return MouseY; };
 	inline XMousePos& GetMouseDelta() { return MouseDelta; }
 	inline bool GetMousePressed(EInputKey InputKey) { return bMousePressed[int32(InputKey)]; }
+	inline bool GetKeyPressed(EInputKey InputKey) { return bBoardKeyPressed[int32(InputKey)]; }
+
 	static void InputMsgProcsss(EInputType InputType, EInputEvent InputEvent, EInputKey InputKey, int32 PosX, int32 PosY, int32 WHEEL);
 	
 	typedef void (*FunPtr)();
@@ -54,8 +60,11 @@ private:
 	void OnLMouseDown(int32 X, int32 Y);
 	void OnRMouseUp(int32 X, int32 Y);
 	void OnMouseMove(int32 X, int32 Y);
-	
-	bool bMousePressed[int32(EInputKey::KEY_MAX)];
+	void OnKeyDown(EInputKey InputKey);
+	void OnKeyUp(EInputKey InputKey);
+
+	bool bMousePressed[int32(EInputKey::MOUSE_MAX)];
+	bool bBoardKeyPressed[int32(EInputKey::KEY_MAX)];
 	XMousePos MouseDelta;
 	int32 MouseX;
 	int32 MouseY;

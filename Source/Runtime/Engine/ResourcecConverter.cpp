@@ -8,6 +8,7 @@
 std::shared_ptr<GTexture2D> CreateTextureFromImageFile(const std::string& FilePath, bool bSRGB)
 {
 	int SizeX, SizeY, Channel;
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char* ColorData = stbi_load(FilePath.c_str(), &SizeX, &SizeY, &Channel, 0);
 	
 	if (Channel == 3)
@@ -128,7 +129,7 @@ std::shared_ptr<GGeomertry> CreateDefualtSphereGeo(float Radius, uint32 SliceCou
 
 	XVector3 TopTangentX(1, 0, 0);
 	XVector4 TopTangentY(0, 1, 0, 1);
-	XVector2 TopTexCoord(0, 0);
+	XVector2 TopTexCoord(0, 1);
 
 	Positions.push_back(TopPosition);
 	TangentXs.push_back(TopTangentX);
@@ -166,7 +167,7 @@ std::shared_ptr<GGeomertry> CreateDefualtSphereGeo(float Radius, uint32 SliceCou
 			XVector4 Normal(Position3.x, Position3.y, Position3.z, 1.0f);
 			TangentYs.push_back(Normal);
 
-			XVector2 TexCoord(Theta / X_2PI, Phi / X_PI);
+			XVector2 TexCoord(Theta / X_2PI, 1 -  Phi / X_PI);
 			TextureCoords.push_back(TexCoord);
 
 		}
@@ -185,7 +186,7 @@ std::shared_ptr<GGeomertry> CreateDefualtSphereGeo(float Radius, uint32 SliceCou
 
 	XVector3 BottomTangentX(1, 0, 0);
 	XVector4 BottomTangentY(0, -1, 0, 1);
-	XVector2 BottomTexCoord(0, 1);
+	XVector2 BottomTexCoord(0, 0);
 
 	Positions.push_back(BottomPosition);
 	TangentXs.push_back(BottomTangentX);
@@ -333,32 +334,32 @@ std::shared_ptr<GGeomertry> CreateDefualtQuadGeo()
 	return Geomertry;
 }
 
-std::shared_ptr<GGeomertry> TempCreateSphereGeoWithMat()
+std::shared_ptr<GMaterialInstance> CreateDefautMaterialInstance()
 {
-	std::shared_ptr<GGeomertry> Result = CreateDefualtSphereGeo(0.5, 36, 36);
-	std::shared_ptr<GMaterial> MaterialPtr = CreateMaterialFromCode(L"E:/XEngine/XEnigine/MaterialShaders/Material.hlsl");
+	std::shared_ptr<GMaterial> MaterialPtr = CreateMaterialFromCode(L"E:/XEngine/XEnigine/MaterialShaders/DefaultMaterials.hlsl");
 	std::shared_ptr<GMaterialInstance> MaterialIns = std::make_shared<GMaterialInstance>(MaterialPtr);
-	MaterialIns->SetMaterialValueFloat("Metallic", 0.8f);
-	MaterialIns->SetMaterialValueFloat("Roughness", 0.4f);
-	MaterialIns->SetMaterialValueFloat("TextureScale", 1.0f);
+	MaterialIns->SetMaterialValueFloat3("ConstantColor", XVector3(0.8, 0.8, 0.8));
+	MaterialIns->SetMaterialValueFloat("ConstantRoughness", 0.67f);
+	MaterialIns->SetMaterialValueFloat("ConstantMetatllic", 0.3f);
+
 
 	std::shared_ptr<GTexture2D> TexBaseColor =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Metal_Gold_D.TGA", true);
-
-	std::shared_ptr<GTexture2D> TexRouhness =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_MacroVariation.TGA", false);
-
+		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_CheckBoard_D.png", true);
 	std::shared_ptr<GTexture2D> TexNormal =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Metal_Gold_N.TGA", false);
+		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_CheckBoard_N.png", false);
 
 	TexBaseColor->CreateRHITexture();
-	TexRouhness->CreateRHITexture();
 	TexNormal->CreateRHITexture();
 
 	MaterialIns->SetMaterialTexture2D("BaseColorMap", TexBaseColor);
-	MaterialIns->SetMaterialTexture2D("RoughnessMap", TexRouhness);
 	MaterialIns->SetMaterialTexture2D("NormalMap", TexNormal);
+	return MaterialIns;
+}
 
+std::shared_ptr<GGeomertry> TempCreateSphereGeoWithMat()
+{
+	std::shared_ptr<GGeomertry> Result = CreateDefualtSphereGeo(0.5, 36, 36);
+	std::shared_ptr<GMaterialInstance> MaterialIns = CreateDefautMaterialInstance();
 	Result->SetMaterialPtr(MaterialIns);
 	return Result;
 }
@@ -366,29 +367,7 @@ std::shared_ptr<GGeomertry> TempCreateSphereGeoWithMat()
 std::shared_ptr<GGeomertry> TempCreateQuadGeoWithMat()
 {
 	std::shared_ptr<GGeomertry> Result = CreateDefualtQuadGeo();
-	std::shared_ptr<GMaterial> MaterialPtr = CreateMaterialFromCode(L"E:/XEngine/XEnigine/MaterialShaders/Material.hlsl");
-	std::shared_ptr<GMaterialInstance> MaterialIns = std::make_shared<GMaterialInstance>(MaterialPtr);
-	MaterialIns->SetMaterialValueFloat("Metallic",0.0f);
-	MaterialIns->SetMaterialValueFloat("Roughness",0.8f);
-	MaterialIns->SetMaterialValueFloat("TextureScale",6.0f);
-	
-	std::shared_ptr<GTexture2D> TexBaseColor = 
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Rock_Sandstone_D.TGA", true);
-
-	std::shared_ptr<GTexture2D> TexRouhness =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_MacroVariation.TGA", false);
-
-	std::shared_ptr<GTexture2D> TexNormal =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_Rock_Sandstone_N.TGA", false);
-
-	TexBaseColor->CreateRHITexture();
-	TexRouhness->CreateRHITexture();
-	TexNormal->CreateRHITexture();
-
-	MaterialIns->SetMaterialTexture2D("BaseColorMap", TexBaseColor);
-	MaterialIns->SetMaterialTexture2D("RoughnessMap", TexRouhness);
-	MaterialIns->SetMaterialTexture2D("NormalMap", TexNormal);
-
+	std::shared_ptr<GMaterialInstance> MaterialIns = CreateDefautMaterialInstance();
 	Result->SetMaterialPtr(MaterialIns);
 	return Result;
 }
