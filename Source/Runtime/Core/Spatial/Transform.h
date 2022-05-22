@@ -1,5 +1,6 @@
 #pragma once
 #include "Runtime/Core/Math/Math.h"
+#include "Runtime/HAL/Mch.h"
 
 class XTransform
 {
@@ -35,6 +36,7 @@ public:
 
 	inline void SetScale(const XVector3& ScaleIn)
 	{
+		X_Assert(((ScaleIn.x == ScaleIn.y) && (ScaleIn.y == ScaleIn.z)));
 		Scale = ScaleIn;
 		bNeedRecombine = true;
 	}

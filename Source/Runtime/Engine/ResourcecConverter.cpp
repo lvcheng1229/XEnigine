@@ -338,7 +338,7 @@ std::shared_ptr<GMaterialInstance> CreateDefautMaterialInstance()
 {
 	std::shared_ptr<GMaterial> MaterialPtr = CreateMaterialFromCode(L"E:/XEngine/XEnigine/MaterialShaders/DefaultMaterials.hlsl");
 	std::shared_ptr<GMaterialInstance> MaterialIns = std::make_shared<GMaterialInstance>(MaterialPtr);
-	MaterialIns->SetMaterialValueFloat3("ConstantColor", XVector3(0.8, 0.8, 0.8));
+	MaterialIns->SetMaterialValueFloat3("ConstantColor", XVector3(1.0, 1.0, 1.0));
 	MaterialIns->SetMaterialValueFloat("ConstantRoughness", 0.67f);
 	MaterialIns->SetMaterialValueFloat("ConstantMetatllic", 0.3f);
 

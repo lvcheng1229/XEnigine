@@ -48,7 +48,7 @@ void CalcMaterialParameters(ParametersIn Parameters,inout GBufferdataOutput Outp
     float4 SampleNormalValue = NormalMap.Sample(gsamPointWarp, Parameters.TexCoords.xy);
     float3 DecodeNormal=NormalSampleToWorldSpace(SampleNormalValue.xyz,normalize(Parameters.TangentToWorld1),Parameters.TangentToWorld0);
 
-    OutputGbufferData.BaseColor= BaseColorSample.xyz;
+    OutputGbufferData.BaseColor= BaseColorSample.xyz * ConstantColor.xyz;
     OutputGbufferData.Metallic= ConstantMetatllic;
     OutputGbufferData.Roughness= ConstantRoughness;
     OutputGbufferData.Normal= DecodeNormal.xyz;
