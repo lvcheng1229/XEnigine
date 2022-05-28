@@ -17,4 +17,6 @@ struct XSceneRenderTarget
 
 	std::shared_ptr<XRHITexture2D>TextureSceneColorDeffered;
 	std::shared_ptr<XRHITexture2D>TextureSceneColorDefferedPingPong;
+
+	std::shared_ptr<XRHITexture2D> TempShadowDepthTexture;
 };

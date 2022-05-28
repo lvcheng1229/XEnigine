@@ -40,6 +40,9 @@ public:
 	std::shared_ptr <XRHITexture2D> VirtualSMFlags;
 	std::shared_ptr<XRHIConstantBuffer>VSMTileMaskConstantBuffer;
 
+
+	std::shared_ptr<XRHIStructBuffer>VSMCounterBuffer;
+	std::shared_ptr<XRHIUnorderedAcessView>VSMCounterBufferUAV;
 	//Shadow Command
 	std::shared_ptr<XRHIConstantBuffer>RHICbCullingParameters;
 
@@ -58,7 +61,9 @@ public:
 
 	void InitRHI()override
 	{
-		VirtualSMFlags = VirtualSMFlags = RHICreateTexture2D(VirtualTileWidthNum, VirtualTileWidthNum, 1, false, false, EPixelFormat::FT_R32_UINT
+		VSMCounterBuffer = RHIcreateStructBuffer(sizeof(uint32),sizeof(uint32), EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer) | int(EBufferUsage::BUF_UnorderedAccess)),nullptr);
+
+		VirtualSMFlags =  RHICreateTexture2D(VirtualTileWidthNum, VirtualTileWidthNum, 1, false, false, EPixelFormat::FT_R32_UINT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1, nullptr);
 		VSMTileMaskConstantBuffer = RHICreateConstantBuffer(sizeof(VSMTileMaskStruct));
 		
@@ -238,15 +243,23 @@ public:
 	{
 		VirtualSMFlags.Bind(Initializer.ShaderParameterMap, "VirtualSMFlags");
 		PagetableInfos.Bind(Initializer.ShaderParameterMap, "PagetableInfos");
+		VSMCounterBuffer.Bind(Initializer.ShaderParameterMap, "VSMCounterBuffer");
 	}
 
-	void SetParameters(XRHICommandList& RHICommandList, XRHIShaderResourceView* VirtualSMFlagsIn, XRHIUnorderedAcessView* PagetableInfosIn)
+	void SetParameters(
+		XRHICommandList& RHICommandList, 
+		XRHIShaderResourceView* VirtualSMFlagsIn,
+		XRHIUnorderedAcessView* PagetableInfosIn,
+		XRHIUnorderedAcessView* VSMCounterBufferIn
+	)
 	{
 		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, PagetableInfos, PagetableInfosIn);
+		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VSMCounterBuffer, VSMCounterBufferIn);
 	}
 	SRVParameterType VirtualSMFlags;
 	UAVParameterType PagetableInfos;
+	UAVParameterType VSMCounterBuffer;
 };
 
 VSMPageTableGenCS::ShaderInfos VSMPageTableGenCS::StaticShaderInfos(
@@ -258,10 +271,11 @@ VSMPageTableGenCS::ShaderInfos VSMPageTableGenCS::StaticShaderInfos(
 void XDeferredShadingRenderer::VSMPageTableGen(XRHICommandList& RHICmdList)
 {
 	RHICmdList.RHIEventBegin(1, "VSMPageTableGenCS", sizeof("VSMPageTableGenCS"));
+	RHIResetStructBufferCounter(VirtualShadowMapResourece.VSMCounterBuffer.get(), 0);
 	TShaderReference<VSMPageTableGenCS> Shader = GetGlobalShaderMapping()->GetShader<VSMPageTableGenCS>();
 	XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
 	SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
-	Shader->SetParameters(RHICmdList, GetRHISRVFromTexture(VirtualShadowMapResourece.VirtualSMFlags.get()), GetRHIUAVFromTexture(SceneTargets.PagetableInfos.get()));
+	Shader->SetParameters(RHICmdList, GetRHISRVFromTexture(VirtualShadowMapResourece.VirtualSMFlags.get()), GetRHIUAVFromTexture(SceneTargets.PagetableInfos.get()), VirtualShadowMapResourece.VSMCounterBufferUAV.get());
 	RHICmdList.RHIDispatchComputeShader(1, 1, 1);
 	RHICmdList.RHIEventEnd();
 }
@@ -394,6 +408,7 @@ void XDeferredShadingRenderer::VirtualShadowMapGen(XRHICommandList& RHICmdList)
 	XGraphicsPSOInitializer GraphicsPSOInit;
 	GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
 	GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<>::GetRHI();
+	GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
 
 	TShaderReference<XShadowPerTileProjectionVS> VertexShader = GetGlobalShaderMapping()->GetShader<XShadowPerTileProjectionVS>();
 	TShaderReference<XShadowPerTileProjectionPS> PixelShader = GetGlobalShaderMapping()->GetShader<XShadowPerTileProjectionPS>();
@@ -518,4 +533,5 @@ void XDeferredShadingRenderer::VSMSetup()
 
 	VirtualShadowMapResourece.ShadowNoCullCmdBufferSRV = RHICreateShaderResourceView(VirtualShadowMapResourece.ShadowCmdBufferNoCulling.get());
 	VirtualShadowMapResourece.ShadowCulledCmdBufferUAV = RHICreateUnorderedAccessView(VirtualShadowMapResourece.ShadowCmdBufferCulled.get(), true, true, VirtualShadowMapResourece.ShadowCounterOffset);
+	VirtualShadowMapResourece.VSMCounterBufferUAV = RHICreateUnorderedAccessView(VirtualShadowMapResourece.VSMCounterBuffer.get(), true, true, 0);
 }

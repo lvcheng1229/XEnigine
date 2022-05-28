@@ -143,6 +143,7 @@ void XDeferredShadingRenderer::LightPass(XRHICommandList& RHICmdList)
 	XGraphicsPSOInitializer GraphicsPSOInit;
 	GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
 	GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+	GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
 
 	TShaderReference<XLightPassVS> VertexShader = GetGlobalShaderMapping()->GetShader<XLightPassVS>();
 	TShaderReference<XLightPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XLightPassPS>();

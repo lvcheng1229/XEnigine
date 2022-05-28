@@ -26,6 +26,7 @@ public:
 	XRHIBoundShaderStateInput_WithoutRT BoundShaderState;
 	XRHIBlendState* BlendState;
 	XRHIDepthStencilState* DepthStencilState;
+	XRHIRasterizationState* RasterState;
 
 	inline XGraphicsPSOInitializer TransToGraphicsPSOInitializer()
 	{
@@ -33,6 +34,7 @@ public:
 		PSOInitializer.BoundShaderState = BoundShaderState.TransToRHIBoundShaderState();
 		PSOInitializer.BlendState = BlendState;
 		PSOInitializer.DepthStencilState = DepthStencilState;
+		PSOInitializer.RasterState = RasterState;
 
 		PSOInitializer.RTNums = 0;
 		PSOInitializer.RT_Format.fill(EPixelFormat::FT_Unknown);

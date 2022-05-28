@@ -14,13 +14,25 @@ struct FVertexFactoryInterpolantsVSToPS
     float3 TestWorldPosition : TEXCOORD1;
 };
 
-cbuffer
+cbuffer cbPerObject
 {
-    row_major float4x4 OrientToXProj;
-    row_major float4x4 OrientToYProj;
-    row_major float4x4 OrientToZProj;
-    row_major float4x4 ViewMatrix;
+    float4x4 gWorld;
+    float3 BoundBoxMax;
+    float padding0;
+    float3 BoundBoxMin;
+    float padding1;
 }
+
+#include "Common.Hlsl"
+
+cbuffer OrientMatrix
+{
+    row_major float4x4 OrientToXView;
+    row_major float4x4 OrientToYView;
+    row_major float4x4 OrientToZView;
+    row_major float4x4 ProjMatrix;
+}
+
 
 void VS(FVertexFactoryInput Input,
     out FVertexFactoryInterpolantsVSToPS Output,
@@ -36,21 +48,20 @@ void VS(FVertexFactoryInput Input,
     float4 PosW = mul(gWorld,Input.Position);
     Output.TestWorldPosition = PosW;
 
-    float4 PosV = mul(PosW,ViewMatrix)
-    float4 PosH;
     
+    float4 PosH;
     if((AbsNormal.x>AbsNormal.y)&&(AbsNormal.x>AbsNormal.z))
     {
-        PosH = mul(PosV,OrientToXProj);
+        PosH = mul(PosW,OrientToXView);
     }
     else if((AbsNormal.y>AbsNormal.x)&&(AbsNormal.y>AbsNormal.z))
     {
-        PosH = mul(PosV,OrientToYProj);
+        PosH = mul(PosW,OrientToYView);
     }
     else
     {
-        PosH = mul(PosV,OrientToZProj);
+        PosH = mul(PosW,OrientToZView);
     }
 
-    Position = PosH;
+    Position = mul(PosH,ProjMatrix);
 }

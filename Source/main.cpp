@@ -158,7 +158,7 @@ public:
 		DeferredShadingRenderer.ViewInfoSetup(Application->ClientWidth, Application->ClientHeight, CamIns);
 		DeferredShadingRenderer.Setup(RenderGeos,
 			XBoundSphere{ SceneBoundingSphere.Center ,SceneBoundingSphere.Radius },
-			LightDir, LightColor, LightIntensity);
+			LightDir, LightColor, LightIntensity, RHICmdList);
 		RHICmdList.Execute();
 
 		mTimer = new GameTimer();
@@ -207,7 +207,7 @@ public:
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(4086);
+	//_CrtSetBreakAlloc(757);
 	int* a = new int(5);
 
 	{
@@ -216,6 +216,7 @@ int main()
 	}
 	{
 		delete Application;
+		return 0;
 	}
 
 	_CrtDumpMemoryLeaks();

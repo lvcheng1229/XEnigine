@@ -107,7 +107,8 @@ void XDeferredShadingRenderer::Setup(
 	XBoundSphere SceneBoundingpSphere,
 	XVector3 ShadowLightDirIn,
 	XVector3 MainLightColorIn,
-	float LightIntensityIn)
+	float LightIntensityIn,
+	XRHICommandList& RHICmdList)
 {
 	FrameNum = 0;
 	SceneBoundingSphere = SceneBoundingpSphere;
@@ -122,6 +123,8 @@ void XDeferredShadingRenderer::Setup(
 	PreDepthPassGPUCullingSetup();
 	VSMSetup();
 
+	
+
 	EditorUI.SetDefaltStyle();
 	EditorUI.InitIOInfo(RViewInfo.ViewWidth, RViewInfo.ViewHeight);
 	EditorUI.ImGui_Impl_RHI_Init();
@@ -134,6 +137,9 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 
 
 	RHICmdList.RHIBeginFrame();
+	VoxelizationPass(RHICmdList);
+	SpaseVoxelOctreeBuild(RHICmdList);
+
 	PreDepthPassGPUCulling(RHICmdList);
 	PreDepthPassRendering(RHICmdList);
 

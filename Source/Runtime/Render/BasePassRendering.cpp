@@ -76,6 +76,7 @@ void XDeferredShadingRenderer::BasePassRendering(XRHICommandList& RHICmdList)
 				}
 				PassState.BoundShaderState = PassShaders;
 				PassState.BlendState = TStaticBlendState<>::GetRHI();
+				PassState.RasterState = TStaticRasterizationState<>::GetRHI();
 				PassState.DepthStencilState = TStaticDepthStencilState<true, ECompareFunction::CF_GreaterEqual>::GetRHI();
 			}
 

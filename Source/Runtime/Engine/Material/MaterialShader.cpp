@@ -54,6 +54,7 @@ void XMaterialShaderMapping_MatUnit::Compile(const XShaderCompileSetting& Shader
 		Input.Shadertype = ShaderInfo->GetShaderType();
 		Input.ShaderName = ShaderInfo->GetShaderName();
 		Input.CompileSettings = ShaderCompileSetting;
+		ShaderInfo->ModifySettingsPtr(Input.CompileSettings);
 
 		XShaderCompileOutput Output;
 		CompileMaterialShader(Input, Output);

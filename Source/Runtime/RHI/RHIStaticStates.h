@@ -49,6 +49,18 @@ TStaticStateRHI<InitializerType, RHIStateType>::StaticResource =
 TStaticStateRHI<InitializerType, RHIStateType>::XStaticStateResource();
 
 
+template<bool bConservative = false, EFaceCullMode CullMode = EFaceCullMode::FC_Back>
+class TStaticRasterizationState :
+	public TStaticStateRHI<TStaticRasterizationState<bConservative, CullMode>,
+	XRHIRasterizationState>
+{
+public:
+	static std::shared_ptr<XRHIRasterizationState> CreateRHI()
+	{
+		XRasterizationStateInitializerRHI Initializer(bConservative, CullMode);
+		return RHICreateRasterizationStateState(Initializer);
+	}
+};
 
 template<bool bEnableDepthWrite = true, ECompareFunction DepthTest = ECompareFunction::CF_Greater>
 class TStaticDepthStencilState:

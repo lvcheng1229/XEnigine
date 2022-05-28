@@ -215,7 +215,8 @@ static void GetPSODescAndHash(
 	//default
 	PSODesc.SampleMask = UINT_MAX;
 	PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	PSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	X_Assert((PSOInit.RasterState != nullptr));
+	PSODesc.RasterizerState = static_cast<XD3D12RasterizationState*>(PSOInit.RasterState)->Desc;
 	PSODesc.SampleDesc.Count = 1;
 	PSODesc.SampleDesc.Quality = 0;
 
@@ -348,6 +349,30 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 }
 
 
+
+std::shared_ptr<XRHIRasterizationState> XD3D12PlatformRHI::RHICreateRasterizationStateState(const XRasterizationStateInitializerRHI& Initializer)
+{
+	XD3D12RasterizationState* RasterizationState = new XD3D12RasterizationState;
+	D3D12_RASTERIZER_DESC& RasterStateDesc = RasterizationState->Desc;
+	RasterStateDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	
+	D3D12_CULL_MODE CullMode;
+	switch (Initializer.CullMode)
+	{
+	case EFaceCullMode::FC_Front:
+		CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
+		break;
+	[[likely]] case EFaceCullMode::FC_Back:
+		CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+		break;
+	case EFaceCullMode::FC_None:
+		CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
+		break;
+	}
+	RasterStateDesc.CullMode = CullMode;
+	RasterStateDesc.ConservativeRaster = Initializer.bConservative ? D3D12_CONSERVATIVE_RASTERIZATION_MODE_ON : D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+	return std::shared_ptr<XRHIRasterizationState>(RasterizationState);
+}
 
 std::shared_ptr<XRHIDepthStencilState> XD3D12PlatformRHI::RHICreateDepthStencilState(const XDepthStencilStateInitializerRHI& Initializer)
 {

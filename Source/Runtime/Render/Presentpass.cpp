@@ -45,6 +45,7 @@ void XDeferredShadingRenderer::PresentPass(XRHICommandList& RHICmdList , XRHITex
 	XGraphicsPSOInitializer GraphicsPSOInit;
 	GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();;
 	GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+	GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
 
 	TShaderReference<RFullScreenQuadVS> SSRVertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
 	TShaderReference<XFinalPassPS> SSRPixelShader = GetGlobalShaderMapping()->GetShader<XFinalPassPS>();

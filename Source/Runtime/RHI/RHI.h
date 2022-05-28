@@ -35,6 +35,17 @@ struct XRHIResourceCreateData
 	FResourceArrayInterface* ResourceArray;
 };
 
+struct XRasterizationStateInitializerRHI
+{
+	bool bConservative; 
+	EFaceCullMode CullMode;
+	XRasterizationStateInitializerRHI(
+		bool bConservativeIn,
+		EFaceCullMode CullModeIn) :
+		bConservative(bConservativeIn),
+		CullMode(CullModeIn) {}
+};
+
 struct XDepthStencilStateInitializerRHI
 {
 	bool bEnableDepthWrite;

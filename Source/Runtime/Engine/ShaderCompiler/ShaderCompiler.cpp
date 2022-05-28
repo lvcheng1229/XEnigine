@@ -15,17 +15,25 @@ public:
 	bool HasIncludePath;
 	HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
 	{
-		auto iter = IncludePathToCode->find(std::string(pFileName));
+		std::string FileNameStr = std::string(pFileName);
+		auto iter = IncludePathToCode->find(FileNameStr);
 		if (iter != IncludePathToCode->end())
 		{
 			*ppData = iter->second.data();
 			*pBytes = iter->second.size();
 
-			HasIncludePath = true;
-			return S_OK;
+			if (iter->second.data()[0] == '*')
+			{
+				FileNameStr = iter->second.substr(1, iter->second.size() - 1);
+			}
+			else
+			{
+				HasIncludePath = true;
+				return S_OK;
+			}
 		}
 
-		std::string FilePath = GLOBAL_SHADER_PATH + std::string(pFileName);
+		std::string FilePath = GLOBAL_SHADER_PATH + FileNameStr;
 		if (!std::filesystem::exists(FilePath))
 			return E_FAIL;
 
@@ -211,7 +219,10 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 					}
 				}
 			}
-			else if (ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWTYPED || ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_APPEND_STRUCTURED)
+			else if (
+				ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWTYPED || 
+				ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_APPEND_STRUCTURED || 
+				ResourceType == D3D_SHADER_INPUT_TYPE::D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER)
 			{
 				NumUAVCount++;
 				ParameterInfo.Parametertype = EShaderParametertype::UAV;

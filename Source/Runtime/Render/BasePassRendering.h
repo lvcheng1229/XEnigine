@@ -14,7 +14,10 @@ public:
 
 	static ShaderInfos StaticShaderInfos;
 
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) 
+	{
+		
+	}
 public:
 	TBasePassPS(const XShaderInitlizer& Initializer):
 		XMeshMaterialShader(Initializer)
@@ -46,7 +49,10 @@ public:
 
 	static ShaderInfos StaticShaderInfos;
 
-	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+	static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) 
+	{
+		OutSettings.IncludePathToCode["Generated/LocalVertexFactory.hlsl"] = "*LocalVertexFactory.hlsl";
+	}
 public:
 	TBasePassVS(const XShaderInitlizer& Initializer) :
 		XMeshMaterialShader(Initializer)

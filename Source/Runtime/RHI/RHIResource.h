@@ -170,6 +170,7 @@ struct XRHICommandData
 
 class XRHIBlendState {};
 class XRHIDepthStencilState {};
+class XRHIRasterizationState {};
 
 #define VERTEX_LAYOUT_MAX 16
 using XRHIVertexLayoutArray = std::vector<XVertexElement>;
@@ -211,6 +212,7 @@ class XGraphicsPSOInitializer
 public:
 	XRHIBoundShaderStateInput BoundShaderState;
 	XRHIBlendState* BlendState;
+	XRHIRasterizationState* RasterState;
 	XRHIDepthStencilState* DepthStencilState;
 	uint32 RTNums;
 	std::array<EPixelFormat, 8>RT_Format;
@@ -223,6 +225,7 @@ public:
 		THashCombine(seed, BoundShaderState.RHIVertexShader);
 		THashCombine(seed, BoundShaderState.RHIPixelShader);
 		THashCombine(seed, BlendState);
+		THashCombine(seed, RasterState);
 		THashCombine(seed, DepthStencilState);
 		THashCombine(seed, RTNums);
 		for (int i = 0; i < 8; i++)

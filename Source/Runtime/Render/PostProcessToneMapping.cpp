@@ -48,6 +48,7 @@ void XDeferredShadingRenderer::PostProcessToneMapping(XRHICommandList& RHICmdLis
 	XGraphicsPSOInitializer GraphicsPSOInit;
 	GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
 	GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+	GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
 
 	TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
 	TShaderReference<XToneMappingPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XToneMappingPassPS>();

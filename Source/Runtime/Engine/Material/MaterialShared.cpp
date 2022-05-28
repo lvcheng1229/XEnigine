@@ -1,7 +1,8 @@
 #include <memory>
 #include "MaterialShared.h"
 #include "MaterialShaderMapSet.h"
-
+#include <locale>
+#include <codecvt>
 //Temp
 #include <filesystem>
 #include <fstream>
@@ -22,6 +23,8 @@ void RMaterial::BeginCompileShaderMap()
 	MaterialShaderCode.resize(FileSize, '\n');
 	FileCode.read(MaterialShaderCode.data(), FileSize);
 	FileCode.close();
+
+
 
 	MaterialCompileSetting->IncludePathToCode["Generated/Material.hlsl"] = MaterialShaderCode;
 	NewShaderMap->Compile(*MaterialCompileSetting);

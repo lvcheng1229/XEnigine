@@ -44,6 +44,15 @@ enum class ECompareFunction
 	CF_Always,
 };
 
+enum class EFaceCullMode
+{
+	FC_Back,
+	FC_Front,
+	FC_None,
+};
+
+
+
 enum class ERenderTargetLoadAction
 {
 	ENoAction,

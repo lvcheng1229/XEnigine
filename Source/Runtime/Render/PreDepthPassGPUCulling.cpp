@@ -197,6 +197,7 @@ void XDeferredShadingRenderer::PreDepthPassRendering(XRHICommandList& RHICmdList
 	XGraphicsPSOInitializer GraphicsPSOInit;
 	GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
 	GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<true, ECompareFunction::CF_GreaterEqual>::GetRHI();
+	GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
 
 	TShaderReference<XPreDepthPassVS> VertexShader = GetGlobalShaderMapping()->GetShader<XPreDepthPassVS>();
 	TShaderReference<XPreDepthPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XPreDepthPassPS>();

@@ -5,3 +5,9 @@
 #include "Runtime/RHI/PipelineStateCache.h"
 #include "Runtime/RHI/RHIStaticStates.h"
 
+#include "ShadowMap_Old.h"
+
+void XDeferredShadingRenderer::ShadowMapGenPass(XRHICommandList& RHICmdList)
+{
+
+}

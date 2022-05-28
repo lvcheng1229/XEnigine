@@ -29,6 +29,7 @@ public:
 	void SceneTagetGen();
 
 	void VoxelizationPass(XRHICommandList& RHICmdList);
+	void SpaseVoxelOctreeBuild(XRHICommandList& RHICmdList);
 
 	//Width Height CamIns
 	void ViewInfoSetup(uint32 Width,uint32 Height,GCamera& CameraIn);
@@ -41,7 +42,8 @@ public:
 		XBoundSphere SceneBoundingpSphere,
 		XVector3 ShadowLightDirIn,
 		XVector3 MainLightColorIn,
-		float LightIntensityIn);
+		float LightIntensityIn,
+		XRHICommandList& RHICmdList);
 
 	void Rendering(XRHICommandList& RHICmdList);
 	
@@ -89,6 +91,8 @@ public:
 	//
 	void PresentPass(XRHICommandList& RHICmdList,XRHITexture* TexSrc);
 
+	//
+	void ShadowMapGenPass(XRHICommandList& RHICmdList);
 private:
 	XPreDepthPassResource PreDepthPassResource;
 	XSceneRenderTarget SceneTargets;

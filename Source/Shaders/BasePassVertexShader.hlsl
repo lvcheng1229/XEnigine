@@ -18,7 +18,7 @@ cbuffer cbPerObject
 
 //#include "Generated/VertexFactory.hlsl"
 
-#include "LocalVertexFactory.hlsl"
+#include "Generated/LocalVertexFactory.hlsl"
 
 void VS(FVertexFactoryInput Input,
     out FVertexFactoryInterpolantsVSToPS Output,

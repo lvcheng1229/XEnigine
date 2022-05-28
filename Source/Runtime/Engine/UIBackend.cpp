@@ -191,7 +191,7 @@ void XUIRender::ImGui_Impl_RHI_NewFrame(XRHICommandList* RHICmdList)
 			EBlendFactor::BF_InverseSourceAlpha
 		>::GetRHI();
 		BackendData->PSOInit->DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-
+		BackendData->PSOInit->RasterState = TStaticRasterizationState<>::GetRHI();
 		TShaderReference<XUIBackendVS> VertexShader = GetGlobalShaderMapping()->GetShader<XUIBackendVS>();
 		TShaderReference<XUIBackendPS> PixelShader = GetGlobalShaderMapping()->GetShader<XUIBackendPS>();
 		BackendData->PSOInit->BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
