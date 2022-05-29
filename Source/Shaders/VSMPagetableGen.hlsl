@@ -15,7 +15,7 @@ void VSMPageTableGenCS(uint2 DispatchThreadID :SV_DispatchThreadID)
         for(uint j = 0 ; j < 4; j++)
         {
             uint2 FlagsXY = DispatchThreadID.xy * 4 + uint2(i,j);
-            uint ValueOut = -1;
+            uint ValueOut = 0;
             if(VirtualSMFlags[FlagsXY] == 1)
             {
                 ValueOut = VSMCounterBuffer.IncrementCounter();

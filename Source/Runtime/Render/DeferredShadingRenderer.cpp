@@ -148,6 +148,7 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 	VSMPageTableGen(RHICmdList);
 	VSMShadowCommandBuild(RHICmdList);
 	VirtualShadowMapGen(RHICmdList);
+	ShadowMapGenPass(RHICmdList);
 
 	HZBPass(RHICmdList);
 	

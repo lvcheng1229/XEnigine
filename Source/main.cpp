@@ -146,7 +146,7 @@ public:
 		RHICmdList = GRHICmdList;
 
 		SceneBoundingSphere.Center = XVector3(0, 0, 0);
-		SceneBoundingSphere.Radius = 96.0f;
+		SceneBoundingSphere.Radius = 48.0f;
 
 		RHICmdList.Open();
 		SceneBuild();
