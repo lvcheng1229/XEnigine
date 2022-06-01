@@ -80,7 +80,8 @@ void XDeferredShadingRenderer::ShadowMapGenPass(XRHICommandList& RHICmdList)
 	XMatrix TempLightProjMat = XMatrix::CreateOrthographicOffCenterLH(l, r, b, t, f, n);
 	XMatrix TempLightViewProjMat = TempLightViewMat * TempLightProjMat;
 	ShadowMapResourece_Old.ShadowViewProjectionCBStructIns.ShadowViewProjection = TempLightViewProjMat;
-	ShadowMapResourece_Old.ShadowViewProjectionCB->UpdateData(&ShadowMapResourece_Old.ShadowViewProjectionCBStructIns.ShadowViewProjection, sizeof(ShadowViewProjectionCBStruct), 0);
+	ShadowMapResourece_Old.ShadowViewProjectionCBStructIns.ShadowViewProjectionInv = TempLightViewProjMat.Invert();
+	ShadowMapResourece_Old.ShadowViewProjectionCB->UpdateData(&ShadowMapResourece_Old.ShadowViewProjectionCBStructIns, sizeof(ShadowViewProjectionCBStruct), 0);
 
 	XRHIRenderPassInfo RPInfos(0, nullptr, ERenderTargetLoadAction::ENoAction, SceneTargets.TempShadowDepthTexture.get(), EDepthStencilLoadAction::EClear);
 	RHICmdList.RHIBeginRenderPass(RPInfos, "XShadowMapPS", sizeof("XShadowMapPS"));

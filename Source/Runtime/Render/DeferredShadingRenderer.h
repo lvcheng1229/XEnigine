@@ -93,6 +93,8 @@ public:
 
 	//
 	void ShadowMapGenPass(XRHICommandList& RHICmdList);
+
+	void SVOInjectLightPass(XRHICommandList& RHICmdList);
 private:
 	XPreDepthPassResource PreDepthPassResource;
 	XSceneRenderTarget SceneTargets;

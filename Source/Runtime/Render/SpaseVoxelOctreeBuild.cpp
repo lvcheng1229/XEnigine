@@ -68,6 +68,7 @@ public:
 		cbSVOBuildBuffer.Bind(Initializer.ShaderParameterMap, "cbSVOBuildBuffer");
 		SpaseVoxelOctreeRW.Bind(Initializer.ShaderParameterMap, "SpaseVoxelOctreeRW");
 		NodeCountAndOffsetBufferUAV.Bind(Initializer.ShaderParameterMap, "NodeCountAndOffsetBuffer");
+		//NodeCountAndOffsetBufferSRV.Bind(Initializer.ShaderParameterMap, "NodeCountAndOffsetBufferR");
 		NodesCounterUAV.Bind(Initializer.ShaderParameterMap, "NodesCounter");
 	}
 
@@ -76,17 +77,20 @@ public:
 		XRHIConstantBuffer* cbSVOBuildBufferIn,
 		XRHIUnorderedAcessView* SpaseVoxelOctreeRWIn,
 		XRHIUnorderedAcessView* NodeCountAndOffsetBufferUAVIn,
+		//XRHIShaderResourceView* NodeCountAndOffsetBufferSRVIn,
 		XRHIUnorderedAcessView* NodesCounterUAVIn
 	)
 	{
 		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbSVOBuildBuffer, cbSVOBuildBufferIn);
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, SpaseVoxelOctreeRW, SpaseVoxelOctreeRWIn);
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, NodeCountAndOffsetBufferUAV, NodeCountAndOffsetBufferUAVIn);
+		//SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, NodeCountAndOffsetBufferSRV, NodeCountAndOffsetBufferSRVIn);
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, NodesCounterUAV, NodesCounterUAVIn);
 	}
 	CBVParameterType cbSVOBuildBuffer;
 	UAVParameterType SpaseVoxelOctreeRW;
 	UAVParameterType NodeCountAndOffsetBufferUAV;
+	//SRVParameterType NodeCountAndOffsetBufferSRV;
 	UAVParameterType NodesCounterUAV;
 };
 SubDivideNodeCS::ShaderInfos SubDivideNodeCS::StaticShaderInfos(
@@ -109,22 +113,26 @@ public:
 	{
 		cbSVOBuildBuffer.Bind(Initializer.ShaderParameterMap, "cbSVOBuildBuffer");
 		SpaseVoxelOctreeRW.Bind(Initializer.ShaderParameterMap, "SpaseVoxelOctreeRW");
-		NodeCountAndOffsetBufferUAV.Bind(Initializer.ShaderParameterMap, "NodeCountAndOffsetBuffer");
+		//NodeCountAndOffsetBufferUAV.Bind(Initializer.ShaderParameterMap, "NodeCountAndOffsetBuffer");
+		NodeCountAndOffsetBufferSRV.Bind(Initializer.ShaderParameterMap, "NodeCountAndOffsetBufferR");
 	}
 	void SetParameters(
 		XRHICommandList& RHICommandList,
 		XRHIConstantBuffer* cbSVOBuildBufferIn,
 		XRHIUnorderedAcessView* SpaseVoxelOctreeRWIn,
-		XRHIUnorderedAcessView* NodeCountAndOffsetBufferUAVIn
+		//XRHIUnorderedAcessView* NodeCountAndOffsetBufferUAVIn,
+		XRHIShaderResourceView* NodeCountAndOffsetBufferSRVIn
 	)
 	{
 		SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Compute, cbSVOBuildBuffer, cbSVOBuildBufferIn);
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, SpaseVoxelOctreeRW, SpaseVoxelOctreeRWIn);
-		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, NodeCountAndOffsetBufferUAV, NodeCountAndOffsetBufferUAVIn);
+		//SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, NodeCountAndOffsetBufferUAV, NodeCountAndOffsetBufferUAVIn);
+		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, NodeCountAndOffsetBufferSRV, NodeCountAndOffsetBufferSRVIn);
 	}
 	CBVParameterType cbSVOBuildBuffer;
 	UAVParameterType SpaseVoxelOctreeRW;
-	UAVParameterType NodeCountAndOffsetBufferUAV;
+	//UAVParameterType NodeCountAndOffsetBufferUAV;
+	SRVParameterType NodeCountAndOffsetBufferSRV;
 };
 ConnectNeighborsCS::ShaderInfos ConnectNeighborsCS::StaticShaderInfos(
 	"ConnectNeighborsCS", L"E:/XEngine/XEnigine/Source/Shaders/SVOBuildCS.hlsl",
@@ -167,31 +175,24 @@ ConnectNodesToVoxelsCS::ShaderInfos ConnectNodesToVoxelsCS::StaticShaderInfos(
 
 void XDeferredShadingRenderer::SpaseVoxelOctreeBuild(XRHICommandList& RHICmdList)
 {
-	if (VoxelSceneInitialize == true) [[unlikely]]
+	if (VoxelSceneInitialize == true) 
 	{
 		return;
 	}
 	VoxelSceneInitialize = true;
 
-	cbSVOBuildBufferStruct SVOBuildBufferIns[4];
-	SVOBuildBufferIns[0].CurrentLevel = 0;
-	SVOBuildBufferIns[1].CurrentLevel = 1;
-	SVOBuildBufferIns[2].CurrentLevel = 2;
-	SVOBuildBufferIns[3].CurrentLevel = 3;
+	cbSVOBuildBufferStruct SVOBuildBufferIns[OctreeHeight];
+	for (uint32 i = 0; i < OctreeHeight; i++)
+	{
+		SVOBuildBufferIns[i].CurrentLevel = i;
+		SVOGIResourece.cbSVOBuildBufferLevels[i]->UpdateData(&SVOBuildBufferIns[i], sizeof(cbSVOBuildBufferStruct), 0);
+	}
 
-	SVOGIResourece.cbSVOBuildBufferLevel0->UpdateData(&SVOBuildBufferIns[0], sizeof(cbSVOBuildBufferStruct),0);
-	SVOGIResourece.cbSVOBuildBufferLevel1->UpdateData(&SVOBuildBufferIns[1], sizeof(cbSVOBuildBufferStruct),0);
-	SVOGIResourece.cbSVOBuildBufferLevel2->UpdateData(&SVOBuildBufferIns[2], sizeof(cbSVOBuildBufferStruct),0);
-	SVOGIResourece.cbSVOBuildBufferLevel3->UpdateData(&SVOBuildBufferIns[3], sizeof(cbSVOBuildBufferStruct),0);
-
-	XRHIConstantBuffer* ArrayBuffer[4];
-	ArrayBuffer[0] = SVOGIResourece.cbSVOBuildBufferLevel0.get();
-	ArrayBuffer[1] = SVOGIResourece.cbSVOBuildBufferLevel1.get();
-	ArrayBuffer[2] = SVOGIResourece.cbSVOBuildBufferLevel2.get();
-	ArrayBuffer[3] = SVOGIResourece.cbSVOBuildBufferLevel3.get();
-
+	RHICmdList.RHIEndFrame();
+	
 	for (uint32 i = 0; i < OctreeHeight - 1; i++)
 	{
+		RHICmdList.RHIBeginFrame();
 		{
 			RHICmdList.RHIEventBegin(1, "CheckSVOFlagCS", sizeof("CheckSVOFlagCS"));
 			TShaderReference<CheckSVOFlagCS> Shader = GetGlobalShaderMapping()->GetShader<CheckSVOFlagCS>();
@@ -199,7 +200,7 @@ void XDeferredShadingRenderer::SpaseVoxelOctreeBuild(XRHICommandList& RHICmdList
 			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 			Shader->SetParameters(
 				RHICmdList,
-				ArrayBuffer[i],
+				SVOGIResourece.cbSVOBuildBufferLevels[i].get(),
 				SVOGIResourece.VoxelArrayShaderResourceView.get(),
 				GetRHIUAVFromTexture(SVOGIResourece.SpaseVoxelOctree.get()));
 			RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(VoxelDimension * VoxelDimension / float(128)), 1, 1);
@@ -213,9 +214,10 @@ void XDeferredShadingRenderer::SpaseVoxelOctreeBuild(XRHICommandList& RHICmdList
 			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 			Shader->SetParameters(
 				RHICmdList,
-				ArrayBuffer[i],
+				SVOGIResourece.cbSVOBuildBufferLevels[i].get(),
 				GetRHIUAVFromTexture(SVOGIResourece.SpaseVoxelOctree.get()),
 				GetRHIUAVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get()),
+				//GetRHISRVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get()),
 				SVOGIResourece.SVOCounterBufferUnorderedAcessView.get()
 			);
 			RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ApproxVoxelDimension / float(128)), 1, 1);
@@ -229,15 +231,18 @@ void XDeferredShadingRenderer::SpaseVoxelOctreeBuild(XRHICommandList& RHICmdList
 			SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
 			Shader->SetParameters(
 				RHICmdList,
-				ArrayBuffer[i],
+				SVOGIResourece.cbSVOBuildBufferLevels[i].get(),
 				GetRHIUAVFromTexture(SVOGIResourece.SpaseVoxelOctree.get()),
-				GetRHIUAVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get())
+				//GetRHIUAVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get()),
+				GetRHISRVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get())
 			);
 			RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ApproxVoxelDimension / float(128)), 1, 1);
 			RHICmdList.RHIEventEnd();
 		}
+		RHICmdList.RHIEndFrame();
 	}
-
+	RHICmdList.RHIBeginFrame();
+	
 	{
 		RHICmdList.RHIEventBegin(1, "ConnectNodesToVoxelsCS", sizeof("ConnectNodesToVoxelsCS"));
 		TShaderReference<ConnectNodesToVoxelsCS> Shader = GetGlobalShaderMapping()->GetShader<ConnectNodesToVoxelsCS>();

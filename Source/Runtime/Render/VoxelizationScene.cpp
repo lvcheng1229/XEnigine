@@ -27,10 +27,12 @@ void XSVOGIResourece::InitRHI()
 	{
 		SpaseVoxelOctree = RHICreateTexture2D(OctreeRealBufferSize, OctreeRealBufferSize, 1, false, false, EPixelFormat::FT_R32_UINT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1, nullptr);
-		cbSVOBuildBufferLevel0 = RHICreateConstantBuffer(sizeof(cbSVOBuildBufferStruct));
-		cbSVOBuildBufferLevel1 = RHICreateConstantBuffer(sizeof(cbSVOBuildBufferStruct));
-		cbSVOBuildBufferLevel2 = RHICreateConstantBuffer(sizeof(cbSVOBuildBufferStruct));
-		cbSVOBuildBufferLevel3 = RHICreateConstantBuffer(sizeof(cbSVOBuildBufferStruct));
+
+		cbSVOBuildBufferLevels.resize(OctreeHeight);
+		for (uint32 i = 0; i < OctreeHeight; i++)
+		{
+			cbSVOBuildBufferLevels[i] = RHICreateConstantBuffer(sizeof(cbSVOBuildBufferStruct));
+		}
 		NodeCountAndOffsetBuffer = RHICreateTexture2D((OctreeHeight + 1) *2, 1, 1, false, false, EPixelFormat::FT_R32_UINT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1, nullptr);
 
@@ -80,9 +82,9 @@ void XSVOGIResourece::InitRHI()
 		VoxelSceneVSCBuffer->UpdateData(&VoxelSceneVSCBufferIns, sizeof(VoxelSceneVSBufferStruct), 0);
 		VoxelScenePSCBuffer->UpdateData(&VoxelScenePSCBufferIns, sizeof(VoxelScenePSBufferStruct), 0);
 
-		uint32 StructBufferSize = VoxelDimension * VoxelDimension * 32;
+		uint32 StructBufferSize = VoxelDimension * VoxelDimension * 16 * 10;
 		uint32 CounterOffset = AlignArbitrary(StructBufferSize, D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT);
-
+		
 		VoxelArrayRW = RHIcreateStructBuffer(
 			32, StructBufferSize + sizeof(uint32),
 			EBufferUsage(int(EBufferUsage::BUF_StructuredBuffer) | int(EBufferUsage::BUF_UnorderedAccess)), nullptr);
@@ -90,10 +92,19 @@ void XSVOGIResourece::InitRHI()
 		VoxelArrayUnorderedAcessView = RHICreateUnorderedAccessView(VoxelArrayRW.get(), true, true, CounterOffset);
 		VoxelArrayShaderResourceView = RHICreateShaderResourceView(VoxelArrayRW.get());
 
-		NodeCountAndOffsetBuffer = RHICreateTexture2D(2 * (4 + 1), 1, 1, false, false, EPixelFormat::FT_R32_UINT, ETextureCreateFlags::TexCreate_UAV, 1, nullptr);
+		NodeCountAndOffsetBuffer = RHICreateTexture2D(2 * (OctreeHeight + 4), 1, 1, false, false, EPixelFormat::FT_R32_UINT, ETextureCreateFlags::TexCreate_UAV, 1, nullptr);
 	}
 
-	{}
+
+	//SVO Inject Light
+	{
+		IrradianceBrickBufferRWUAV = RHICreateTexture3D(BrickBufferSize, BrickBufferSize, BrickBufferSize,
+			EPixelFormat::FT_R16G16B16A16_FLOAT, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1, nullptr);
+		RHIcbMainLight = RHICreateConstantBuffer(sizeof(cbMainLightStruct));
+
+		IrradianceBrickBufferPinPongUAV = RHICreateTexture3D(BrickBufferSize, BrickBufferSize, BrickBufferSize,
+			EPixelFormat::FT_R16G16B16A16_FLOAT, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1, nullptr);
+	}
 
 }
 

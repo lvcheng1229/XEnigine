@@ -3,17 +3,22 @@
 
 #define VoxelDimension 512
 #define OctreeRealBufferSize 1024
-#define OctreeHeight 4
+#define OctreeHeight 9
+
+//1 8 64 512
+//1 2 4 8 16 32 64 128 512
+
+#define BrickBufferSize 128
 
 #define ApproxVoxelDimension (512*512*16)
 
-#define MinBoundX -20
-#define MinBoundY -20
-#define MinBoundZ -20
+#define MinBoundX -48
+#define MinBoundY -48
+#define MinBoundZ -48
 
-#define MaxBoundX 20
-#define MaxBoundY 20
-#define MaxBoundZ 20
+#define MaxBoundX 48
+#define MaxBoundY 48
+#define MaxBoundZ 48
 
 class XSVOGIResourece :public XRenderResource
 {
@@ -33,16 +38,24 @@ public:
 
 	//SVO Build
 	std::shared_ptr <XRHITexture2D> SpaseVoxelOctree;
-	std::shared_ptr<XRHIConstantBuffer>cbSVOBuildBufferLevel0;
-	std::shared_ptr<XRHIConstantBuffer>cbSVOBuildBufferLevel1;
-	std::shared_ptr<XRHIConstantBuffer>cbSVOBuildBufferLevel2;
-	std::shared_ptr<XRHIConstantBuffer>cbSVOBuildBufferLevel3;
+	std::vector<std::shared_ptr<XRHIConstantBuffer>>cbSVOBuildBufferLevels;
 
 	std::shared_ptr<XRHIStructBuffer>SVOCounterBuffer;
 	std::shared_ptr<XRHIUnorderedAcessView> SVOCounterBufferUnorderedAcessView;
 
+	//SVO Inject Light
+	std::shared_ptr <XRHITexture3D> IrradianceBrickBufferRWUAV;
+	std::shared_ptr <XRHITexture3D> IrradianceBrickBufferPinPongUAV;
+	std::shared_ptr<XRHIConstantBuffer>RHIcbMainLight;
 	void InitRHI()override;
 	void ReleaseRHI()override;
+};
+struct cbMainLightStruct
+{
+	XVector3 LightDir;
+	float LightIntensity;
+	XVector3 LightColor;
+	float cbMainLight_padding1;
 };
 
 struct cbSVOBuildBufferStruct

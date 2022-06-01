@@ -10,6 +10,7 @@ cbuffer cbPerObject
 cbuffer LightProjectMatrix
 {
     row_major float4x4 LightViewProjectMatrix;
+    row_major float4x4 LightViewProjectMatrixInv;
 }
 
 struct FVertexFactoryInput

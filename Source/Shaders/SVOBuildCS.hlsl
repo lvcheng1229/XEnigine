@@ -48,6 +48,11 @@ uint AllocateNodes( in uint NodeIndex )
         uint ChildIndex = ( Index + i ) * SIZE_OF_NODE_STRUCT;
         SpaseVoxelOctreeRW[GetChildCoordsInBuffer( NodeIndex, i )] = ChildIndex;
         SpaseVoxelOctreeRW[GetParentCoords( ChildIndex )] = ParentIndex;
+
+        for(uint j = 0 ; j < 8; j++ )
+        {
+            SpaseVoxelOctreeRW[IndexToCoords( ChildIndex + j )] = NODE_UNKOWN;
+        }
     }
     return ( NodeCount + 1 ) * 8 + 1;
 }
@@ -56,13 +61,13 @@ uint AllocateNodes( in uint NodeIndex )
 void SubDivideNodeCS(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
     uint NodeOffset = (groupId.x * ThreadBlockSize) + groupIndex;
-    uint NodesCountCurrentLevel = GetNodesCountByLevel(CurrentOctreeLevel);
+    uint NodesCountCurrentLevel = GetNodesCountByLevelForW(CurrentOctreeLevel);
     if( NodeOffset > NodesCountCurrentLevel)
     {
         return;
     }
 
-    uint CurrentOctreeLevelOffsetInBuffer = LevelOffsetInBuffer( CurrentOctreeLevel );
+    uint CurrentOctreeLevelOffsetInBuffer = LevelOffsetInBufferForW( CurrentOctreeLevel );
     uint NodeIndex = (CurrentOctreeLevelOffsetInBuffer + NodeOffset) * SIZE_OF_NODE_STRUCT;
 
     uint2 FlagCoords = GetFlagCoords( NodeIndex );
@@ -79,7 +84,7 @@ void SubDivideNodeCS(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex
         
         
         uint NextLevelOffset = NodeOffset + NodesCountCurrentLevel;
-        uint NodeCountNextLevel  = NodesCount - NextLevelOffset;
+        uint NodeCountNextLevel  = NodesCount > NextLevelOffset ? NodesCount - NextLevelOffset : 0;
 
         uint NextOctreeLevel = CurrentOctreeLevel + 1;
         StoreNodeCountLevelMax(NextOctreeLevel,NodeCountNextLevel);

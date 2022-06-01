@@ -1,4 +1,5 @@
 RWTexture2D<uint> NodeCountAndOffsetBuffer;
+Texture2D<uint> NodeCountAndOffsetBufferR;
 
 #define VOXEL_COUNT_OFFSET 0
 
@@ -16,17 +17,27 @@ uint LevelIndex( uint OctreeLevel )
 
 uint LevelOffsetInBuffer( uint OctreeLevel )
 {
-    return NodeCountAndOffsetBuffer[ uint2(LevelIndex( OctreeLevel ) + 1 ,0 )];
+    return NodeCountAndOffsetBufferR[ uint2(LevelIndex( OctreeLevel ) + 1 ,0 )];
 }
 
 uint GetNodesCountByLevel( uint OctreeLevel )
+{
+    return NodeCountAndOffsetBufferR[ uint2(LevelIndex( OctreeLevel ),0) ];
+}
+
+uint LevelOffsetInBufferForW( uint OctreeLevel )
+{
+    return NodeCountAndOffsetBuffer[ uint2(LevelIndex( OctreeLevel ) + 1 ,0 )];
+}
+
+uint GetNodesCountByLevelForW( uint OctreeLevel )
 {
     return NodeCountAndOffsetBuffer[ uint2(LevelIndex( OctreeLevel ),0) ];
 }
 
 void StoreNodeOffsetLevelMax( uint OctreeLevel ,uint NodeOffset)
 {
-    InterlockedMax(NodeCountAndOffsetBuffer[ uint2(LevelIndex( OctreeLevel ) + 1 ,0) ],NodeOffset);
+    InterlockedMax(NodeCountAndOffsetBuffer[ uint2(LevelIndex( OctreeLevel ) + 1 ,0) ] , NodeOffset);
 }
 
 void StoreNodeCountLevelMax( uint OctreeLevel ,uint NodeCount)

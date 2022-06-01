@@ -11,11 +11,7 @@ void XD3D12PassStateManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectCon
 {
 	direct_ctx = direct_ctx_in;
 	pipe_curr_desc_array_manager.Create(device_in, direct_ctx_in);
-
 	bNeedSetHeapDesc = true;
-	PipelineState.Graphics.depth_stencil = nullptr;
-	PipelineState.Common.RootSignature = nullptr;
-
 	ResetState();
 }
 
@@ -26,6 +22,9 @@ void XD3D12PassStateManager::ResetState()
 	bNeedSetRootSig = false;
 	bNeedClearMRT = false;
 	bNeedSetVB = false;
+
+	PipelineState.Graphics.depth_stencil = nullptr;
+	PipelineState.Common.RootSignature = nullptr;
 
 	PipelineState.Graphics.VBSlotIndexMax = 0;
 	PipelineState.Common.SRVManager.UnsetMasks();

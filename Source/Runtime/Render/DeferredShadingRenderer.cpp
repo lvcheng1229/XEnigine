@@ -149,6 +149,7 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 	VSMShadowCommandBuild(RHICmdList);
 	VirtualShadowMapGen(RHICmdList);
 	ShadowMapGenPass(RHICmdList);
+	SVOInjectLightPass(RHICmdList);
 
 	HZBPass(RHICmdList);
 	

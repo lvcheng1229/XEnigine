@@ -5,6 +5,7 @@
 struct ShadowViewProjectionCBStruct
 {
 	XMatrix ShadowViewProjection;
+	XMatrix ShadowViewProjectionInv;
 };
 class XShadowMapResourece_Old :public XRenderResource
 {
