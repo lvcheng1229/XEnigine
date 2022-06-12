@@ -6,7 +6,7 @@
 #include "PreDepthPassGPUCulling.h"
 #include "SceneRenderTagrget.h"
 #include "SkyAtmosPhere.h"
-
+#include "Runtime/Core/Misc/Path.h"
 //!!!!!!!!!
 #include "Editor/EditorUI.h"
 
@@ -21,6 +21,8 @@ public:
 	void InitRHI()override;
 	void ReleaseRHI()override;
 };
+
+#define USE_SVOGI 0
 
 class XDeferredShadingRenderer
 {
@@ -81,6 +83,9 @@ public:
 
 	//SkyAtmoSphereCombine
 	void SkyAtmoSphereCombine(XRHICommandList& RHICmdList);
+
+	//
+	void ConeTracingPass(XRHICommandList& RHICmdList, XRHITexture* TextureSceneColorDest);
 
 	//PostProcessToneMapping
 	void PostProcessToneMapping(XRHICommandList& RHICmdList, XRHITexture* TextureSceneColorSrc, XRHITexture* TextureSceneColorDest);

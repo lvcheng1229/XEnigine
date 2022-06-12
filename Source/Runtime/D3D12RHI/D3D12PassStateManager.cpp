@@ -25,6 +25,7 @@ void XD3D12PassStateManager::ResetState()
 
 	PipelineState.Graphics.depth_stencil = nullptr;
 	PipelineState.Common.RootSignature = nullptr;
+	PipelineState.Compute.D3DComputePSO = nullptr;
 
 	PipelineState.Graphics.VBSlotIndexMax = 0;
 	PipelineState.Common.SRVManager.UnsetMasks();

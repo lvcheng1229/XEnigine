@@ -35,7 +35,7 @@ public:
 	TextureParameterType    FullScreenMap;
 };
 XToneMappingPassPS::ShaderInfos XToneMappingPassPS::StaticShaderInfos(
-	"XToneMappingPassPS", L"E:/XEngine/XEnigine/Source/Shaders/ToneMapping.hlsl",
+	"XToneMappingPassPS", GET_SHADER_PATH("ToneMapping.hlsl"),
 	"ToneMapping_PS", EShaderType::SV_Pixel, XToneMappingPassPS::CustomConstrucFunc,
 	XToneMappingPassPS::ModifyShaderCompileSettings);
 

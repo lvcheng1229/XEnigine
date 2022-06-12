@@ -4,7 +4,7 @@
 #include <d3dcompiler.h>
 #include "Runtime/Engine/Material/MaterialShared.h"
 #include "Runtime/ResourceManager/ResourceManager.h"
-
+#include "Runtime/Core/Misc/Path.h"
 std::shared_ptr<GTexture2D> CreateTextureFromImageFile(const std::string& FilePath, bool bSRGB)
 {
 	int SizeX, SizeY, Channel;
@@ -336,7 +336,8 @@ std::shared_ptr<GGeomertry> CreateDefualtQuadGeo()
 
 std::shared_ptr<GMaterialInstance> CreateDefautMaterialInstance()
 {
-	std::shared_ptr<GMaterial> MaterialPtr = CreateMaterialFromCode(L"E:/XEngine/XEnigine/MaterialShaders/DefaultMaterials.hlsl");
+	
+	std::shared_ptr<GMaterial> MaterialPtr = CreateMaterialFromCode(XPath::ProjectMaterialSavedDir() + L"/DefaultMaterials.hlsl");
 	std::shared_ptr<GMaterialInstance> MaterialIns = std::make_shared<GMaterialInstance>(MaterialPtr);
 	MaterialIns->SetMaterialValueFloat3("ConstantColor", XVector3(1.0, 1.0, 1.0));
 	MaterialIns->SetMaterialValueFloat("ConstantRoughness", 0.67f);
@@ -344,9 +345,9 @@ std::shared_ptr<GMaterialInstance> CreateDefautMaterialInstance()
 
 
 	std::shared_ptr<GTexture2D> TexBaseColor =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_CheckBoard_D.png", true);
+		CreateTextureFromImageFile(XPath::ProjectResourceSavedDirString() + "/TextureNoAsset/T_CheckBoard_D.png", true);
 	std::shared_ptr<GTexture2D> TexNormal =
-		CreateTextureFromImageFile("E:/XEngine/XEnigine/ContentSave/TextureNoAsset/T_CheckBoard_N.png", false);
+		CreateTextureFromImageFile(XPath::ProjectResourceSavedDirString() + "/TextureNoAsset/T_CheckBoard_N.png", false);
 
 	TexBaseColor->CreateRHITexture();
 	TexNormal->CreateRHITexture();

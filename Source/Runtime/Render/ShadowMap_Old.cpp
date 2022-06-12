@@ -38,7 +38,7 @@ public:
 
 };
 XShadowMapVS::ShaderInfos XShadowMapVS::StaticShaderInfos(
-	"XShadowMapVS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowProjection_Old.hlsl",
+	"XShadowMapVS", GET_SHADER_PATH("ShadowProjection_Old.hlsl"),
 	"VS", EShaderType::SV_Vertex, XShadowMapVS::CustomConstrucFunc,
 	XShadowMapVS::ModifyShaderCompileSettings);
 
@@ -56,7 +56,7 @@ public:
 	XShadowMapPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer) {}
 };
 XShadowMapPS::ShaderInfos XShadowMapPS::StaticShaderInfos(
-	"XShadowMapPS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowProjection_Old.hlsl",
+	"XShadowMapPS", GET_SHADER_PATH("ShadowProjection_Old.hlsl"),
 	"PS", EShaderType::SV_Pixel, XShadowMapPS::CustomConstrucFunc,
 	XShadowMapPS::ModifyShaderCompileSettings);
 

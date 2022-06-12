@@ -53,6 +53,8 @@ uint AllocateNodes( in uint NodeIndex )
         {
             SpaseVoxelOctreeRW[IndexToCoords( ChildIndex + j )] = NODE_UNKOWN;
         }
+
+
     }
     return ( NodeCount + 1 ) * 8 + 1;
 }
@@ -207,7 +209,7 @@ void ConnectNodesToVoxelsCS(uint3 groupId : SV_GroupID, uint groupIndex : SV_Gro
     }
 
     uint leafIndex = 0;
-    if ( SearchOctree( VoxelArray[VoxelID].Position, OctreeHeight, leafIndex ) )
+    if ( SearchOctree( VoxelArray[VoxelID].Position, OctreeHeight - 1, leafIndex ) )
     {
         SpaseVoxelOctreeRW[IndexToCoords( leafIndex )] = VoxelID;
     }

@@ -24,6 +24,7 @@ struct VoxelSceneVSBufferStruct
 
 void XSVOGIResourece::InitRHI()
 {
+#if USE_SVOGI
 	{
 		SpaseVoxelOctree = RHICreateTexture2D(OctreeRealBufferSize, OctreeRealBufferSize, 1, false, false, EPixelFormat::FT_R32_UINT
 			, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1, nullptr);
@@ -105,7 +106,7 @@ void XSVOGIResourece::InitRHI()
 		IrradianceBrickBufferPinPongUAV = RHICreateTexture3D(BrickBufferSize, BrickBufferSize, BrickBufferSize,
 			EPixelFormat::FT_R16G16B16A16_FLOAT, ETextureCreateFlags(TexCreate_UAV | TexCreate_ShaderResource), 1, nullptr);
 	}
-
+#endif //  
 }
 
 void XSVOGIResourece::ReleaseRHI()
@@ -148,7 +149,7 @@ public:
 };
 
 XVoxelSceneVS::ShaderInfos XVoxelSceneVS::StaticShaderInfos(
-	"XVoxelSceneVS", L"E:/XEngine/XEnigine/Source/Shaders/VoxelizationVS.hlsl",
+	"XVoxelSceneVS", GET_SHADER_PATH("VoxelizationVS.hlsl"),
 	"VS", EShaderType::SV_Vertex, XVoxelSceneVS::CustomConstrucFunc,
 	XVoxelSceneVS::ModifyShaderCompileSettings);
 
@@ -199,7 +200,7 @@ public:
 };
 
 XVoxelScenePS::ShaderInfos XVoxelScenePS::StaticShaderInfos(
-	"XVoxelScenePS", L"E:/XEngine/XEnigine/Source/Shaders/VoxelizationPS.hlsl",
+	"XVoxelScenePS", GET_SHADER_PATH("VoxelizationPS.hlsl"),
 	"PS", EShaderType::SV_Pixel, XVoxelScenePS::CustomConstrucFunc,
 	XVoxelScenePS::ModifyShaderCompileSettings);
 

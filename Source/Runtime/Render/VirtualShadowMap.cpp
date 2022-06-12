@@ -121,7 +121,7 @@ public:
 };
 
 VSMTileMaskCS::ShaderInfos VSMTileMaskCS::StaticShaderInfos(
-	"VSMTileMaskCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskCS.hlsl",
+	"VSMTileMaskCS", GET_SHADER_PATH("VSMTileMaskCS.hlsl"),
 	"VSMTileMaskCS", EShaderType::SV_Compute, VSMTileMaskCS::CustomConstrucFunc,
 	VSMTileMaskCS::ModifyShaderCompileSettings);
 
@@ -263,7 +263,7 @@ public:
 };
 
 VSMPageTableGenCS::ShaderInfos VSMPageTableGenCS::StaticShaderInfos(
-	"VSMPageTableGenCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMPagetableGen.hlsl",
+	"VSMPageTableGenCS", GET_SHADER_PATH("VSMPagetableGen.hlsl"),
 	"VSMPageTableGenCS", EShaderType::SV_Compute, VSMPageTableGenCS::CustomConstrucFunc,
 	VSMPageTableGenCS::ModifyShaderCompileSettings);
 
@@ -323,7 +323,7 @@ public:
 };
 
 ShadowCommandBuildCS::ShaderInfos ShadowCommandBuildCS::StaticShaderInfos(
-	"ShadowCommandBuildCS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowCommandBuild.hlsl",
+	"ShadowCommandBuildCS", GET_SHADER_PATH("ShadowCommandBuild.hlsl"),
 	"ShadowCommandBuildCS", EShaderType::SV_Compute, ShadowCommandBuildCS::CustomConstrucFunc,
 	ShadowCommandBuildCS::ModifyShaderCompileSettings);
 
@@ -359,7 +359,7 @@ public:
 	void SetParameters() {}
 };
 XShadowPerTileProjectionVS::ShaderInfos XShadowPerTileProjectionVS::StaticShaderInfos(
-	"XShadowPerTileProjectionVS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowPerTileProjectionVS.hlsl",
+	"XShadowPerTileProjectionVS", GET_SHADER_PATH("ShadowPerTileProjectionVS.hlsl"),
 	"VS", EShaderType::SV_Vertex, XShadowPerTileProjectionVS::CustomConstrucFunc,
 	XShadowPerTileProjectionVS::ModifyShaderCompileSettings);
 
@@ -394,7 +394,7 @@ public:
 };
 
 XShadowPerTileProjectionPS::ShaderInfos XShadowPerTileProjectionPS::StaticShaderInfos(
-	"XShadowPerTileProjectionPS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowPerTileProjectionPS.hlsl",
+	"XShadowPerTileProjectionPS", GET_SHADER_PATH("ShadowPerTileProjectionPS.hlsl"),
 	"PS", EShaderType::SV_Pixel, XShadowPerTileProjectionPS::CustomConstrucFunc,
 	XShadowPerTileProjectionPS::ModifyShaderCompileSettings);
 
@@ -454,7 +454,7 @@ public:
 	UAVParameterType PhysicalShadowDepthTexture;
 };
 VSMTileMaskClearCS::ShaderInfos VSMTileMaskClearCS::StaticShaderInfos(
-	"VSMTileMaskClearCS", L"E:/XEngine/XEnigine/Source/Shaders/VSMTileMaskClearCS.hlsl",
+	"VSMTileMaskClearCS", GET_SHADER_PATH("VSMTileMaskClearCS.hlsl"),
 	"VSMTileMaskClearCS", EShaderType::SV_Compute, VSMTileMaskClearCS::CustomConstrucFunc,
 	VSMTileMaskClearCS::ModifyShaderCompileSettings);
 

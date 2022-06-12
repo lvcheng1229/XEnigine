@@ -12,13 +12,13 @@
 
 template<>
 TBasePassVS<false>::ShaderInfos TBasePassVS<false>::StaticShaderInfos(
-	"TBasePassVS<false>", L"E:/XEngine/XEnigine/Source/Shaders/BasePassVertexShader.hlsl",
+	"TBasePassVS<false>", GET_SHADER_PATH("BasePassVertexShader.hlsl"),
 	"VS", EShaderType::SV_Vertex, TBasePassVS<false>::CustomConstrucFunc,
 	TBasePassVS<false>::ModifyShaderCompileSettings);
 
 template<>
 TBasePassPS<false>::ShaderInfos TBasePassPS<false>::StaticShaderInfos(
-	"TBasePassPS<false>", L"E:/XEngine/XEnigine/Source/Shaders/BasePassPixelShader_1.hlsl",
+	"TBasePassPS<false>", GET_SHADER_PATH("BasePassPixelShader_1.hlsl"),
 	"PS", EShaderType::SV_Pixel, TBasePassPS<false>::CustomConstrucFunc,
 	TBasePassPS<false>::ModifyShaderCompileSettings);
 

@@ -63,7 +63,7 @@ public:
 	CBVParameterType cbCullingParameters;
 };
 DepthGPUCullingCS::ShaderInfos DepthGPUCullingCS::StaticShaderInfos(
-	"DepthGPUCullingCS", L"E:/XEngine/XEnigine/Source/Shaders/GPUCulling.hlsl",
+	"DepthGPUCullingCS", GET_SHADER_PATH("GPUCulling.hlsl"),
 	"CSMain", EShaderType::SV_Compute, DepthGPUCullingCS::CustomConstrucFunc,
 	DepthGPUCullingCS::ModifyShaderCompileSettings);
 
@@ -109,12 +109,12 @@ public:
 };
 
 XPreDepthPassVS::ShaderInfos XPreDepthPassVS::StaticShaderInfos(
-	"XPreDepthPassVS", L"E:/XEngine/XEnigine/Source/Shaders/DepthOnlyVertexShader.hlsl",
+	"XPreDepthPassVS", GET_SHADER_PATH("DepthOnlyVertexShader.hlsl"),
 	"VS", EShaderType::SV_Vertex, XPreDepthPassVS::CustomConstrucFunc,
 	XPreDepthPassVS::ModifyShaderCompileSettings);
 
 XPreDepthPassPS::ShaderInfos XPreDepthPassPS::StaticShaderInfos(
-	"XPreDepthPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DepthOnlyVertexShader.hlsl",
+	"XPreDepthPassPS", GET_SHADER_PATH("DepthOnlyVertexShader.hlsl"),
 	"PS", EShaderType::SV_Pixel, XPreDepthPassPS::CustomConstrucFunc,
 	XPreDepthPassPS::ModifyShaderCompileSettings);
 

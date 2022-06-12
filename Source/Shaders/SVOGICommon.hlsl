@@ -8,7 +8,7 @@ struct Voxel
 
 RWTexture2D<uint> SpaseVoxelOctreeRW;
 Texture2D<uint> SpaseVoxelOctreeR;
-#define OctreeHeight 9
+#define OctreeHeight 9 // statrt index is 0
 #define OctreeResolution 512
 #define OctreeRealBufferSize 1024
 #define SIZE_OF_NODE_STRUCT 16
@@ -98,7 +98,7 @@ bool SearchOctree(in uint VoxelPosition,in uint CurrentOctreeLevel , out uint No
 {
     NodeIndex = 0;
 
-    if (CurrentOctreeLevel > OctreeHeight )
+    if (CurrentOctreeLevel >= OctreeHeight )
         return false;
 
     uint3 PositionIndex = UnpackUintToUint3(VoxelPosition);
@@ -112,7 +112,7 @@ bool SearchOctree(in uint VoxelPosition,in uint CurrentOctreeLevel , out uint No
     for (uint TreeLevel = 0; TreeLevel < CurrentOctreeLevel; TreeLevel++ )
     {
         GetSubNodeIndex(PositionIndex,SubOctreeIndex,HalfSize,CurrentMinPosIndex,NodeIndex);
-        if(TreeLevel != (OctreeHeight - 1))
+        if(TreeLevel != (OctreeHeight - 2))
         {
             NodeIndex = SpaseVoxelOctreeRW[IndexToCoords( NodeIndex )].r;
             if(NodeIndex == NODE_UNKOWN)
@@ -124,44 +124,75 @@ bool SearchOctree(in uint VoxelPosition,in uint CurrentOctreeLevel , out uint No
     return true;
 }
 
-
-bool PhotonTraverseOctree( in uint3 VoxelSpaceIndex, out uint NodeIndex, out uint parentIndex, out uint3 SubOctreeIndex )
+bool SearchOctreeR(in uint VoxelPosition,in uint CurrentOctreeLevel , out uint NodeIndex ,out uint3 CurrentMinPosIndex)
 {
-    if ( any( step( OctreeResolution, VoxelSpaceIndex ) ) )
+    NodeIndex = 0;
+
+    if (CurrentOctreeLevel >= OctreeHeight )
         return false;
 
-    uint3 CurrentMinPosIndex = 0;
+    uint3 PositionIndex = UnpackUintToUint3(VoxelPosition);
+    if (any(step( OctreeResolution, PositionIndex ))) //step(x,y) : if x < y, return true
+        return false;
+
+    CurrentMinPosIndex = 0;
+    uint3 SubOctreeIndex = 0;
     uint HalfSize = OctreeResolution;
 
-    NodeIndex = 0;
-    parentIndex = 0;
-    SubOctreeIndex = 0;
-    
-    uint2 flagC = 0;
-    [unroll]
-    for ( uint treeLevel = 0; treeLevel < OctreeHeight; treeLevel++ )
+    for (uint TreeLevel = 0; TreeLevel < CurrentOctreeLevel; TreeLevel++ )
     {
-        parentIndex = NodeIndex;
-        GetSubNodeIndex(VoxelSpaceIndex,SubOctreeIndex,HalfSize,CurrentMinPosIndex,NodeIndex);
-        NodeIndex = SpaseVoxelOctreeRW[IndexToCoords( NodeIndex )].r;
-        
-        if(NodeIndex == NODE_UNKOWN)
+        GetSubNodeIndex(PositionIndex,SubOctreeIndex,HalfSize,CurrentMinPosIndex,NodeIndex);
+        if(TreeLevel != (OctreeHeight - 2))
         {
-            return false;
+            NodeIndex = SpaseVoxelOctreeR[IndexToCoords( NodeIndex )].r;
+            if(NodeIndex == NODE_UNKOWN)
+            {
+                return false;
+            }
         }
-
-        if ( treeLevel != OctreeHeight - 1 ) 
-        {
-            // write values to octree flag that we was here (write flag for the last level after the loop)
-            flagC = GetFlagCoords( parentIndex );
-            SpaseVoxelOctreeRW[flagC] = NODE_LIT;
-        }
-
- 
     }
-
     return true;
 }
+
+//bool PhotonTraverseOctree( in uint3 VoxelSpaceIndex, out uint NodeIndex, out uint parentIndex, out uint3 SubOctreeIndex )
+//{
+//    if ( any( step( OctreeResolution, VoxelSpaceIndex ) ) )
+//        return false;
+//
+//    uint3 CurrentMinPosIndex = 0;
+//    uint HalfSize = OctreeResolution;
+//
+//    NodeIndex = 0;
+//    parentIndex = 0;
+//    SubOctreeIndex = 0;
+//    
+//    uint2 flagC = 0;
+//    [unroll]
+//    for ( uint treeLevel = 0; treeLevel < OctreeHeight - 1; treeLevel++ )
+//    {
+//        parentIndex = NodeIndex;
+//        GetSubNodeIndex(VoxelSpaceIndex,SubOctreeIndex,HalfSize,CurrentMinPosIndex,NodeIndex);
+//        NodeIndex = SpaseVoxelOctreeRW[IndexToCoords( NodeIndex )].r;
+//        
+//        if(NodeIndex == NODE_UNKOWN)
+//        {
+//            return false;
+//        }
+//
+//        flagC = GetFlagCoords( parentIndex );
+//        SpaseVoxelOctreeRW[flagC] = NODE_LIT;
+//        //if ( treeLevel != OctreeHeight - 1 ) 
+//        //{
+//        //    // write values to octree flag that we was here (write flag for the last level after the loop)
+//        //
+//        //}
+//
+// 
+//    }
+//
+//    return true;
+//}
+
 // octree node struct
 //    -x -y -z <----------- 0 // subnodes for current node
 //    +x -y -z                // at the last level leaf is a pointer (index) to voxel array

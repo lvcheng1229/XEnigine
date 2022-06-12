@@ -48,7 +48,7 @@ public:
 };
 
 CheckSVOFlagCS::ShaderInfos CheckSVOFlagCS::StaticShaderInfos(
-	"CheckSVOFlagCS", L"E:/XEngine/XEnigine/Source/Shaders/SVOBuildCS.hlsl",
+	"CheckSVOFlagCS", GET_SHADER_PATH("SVOBuildCS.hlsl"),
 	"CheckSVOFlagCS", EShaderType::SV_Compute, CheckSVOFlagCS::CustomConstrucFunc,
 	CheckSVOFlagCS::ModifyShaderCompileSettings);
 
@@ -94,7 +94,7 @@ public:
 	UAVParameterType NodesCounterUAV;
 };
 SubDivideNodeCS::ShaderInfos SubDivideNodeCS::StaticShaderInfos(
-	"SubDivideNodeCS", L"E:/XEngine/XEnigine/Source/Shaders/SVOBuildCS.hlsl",
+	"SubDivideNodeCS", GET_SHADER_PATH("SVOBuildCS.hlsl"),
 	"SubDivideNodeCS", EShaderType::SV_Compute, SubDivideNodeCS::CustomConstrucFunc,
 	SubDivideNodeCS::ModifyShaderCompileSettings);
 
@@ -135,7 +135,7 @@ public:
 	SRVParameterType NodeCountAndOffsetBufferSRV;
 };
 ConnectNeighborsCS::ShaderInfos ConnectNeighborsCS::StaticShaderInfos(
-	"ConnectNeighborsCS", L"E:/XEngine/XEnigine/Source/Shaders/SVOBuildCS.hlsl",
+	"ConnectNeighborsCS", GET_SHADER_PATH("SVOBuildCS.hlsl"),
 	"ConnectNeighborsCS", EShaderType::SV_Compute, ConnectNeighborsCS::CustomConstrucFunc,
 	ConnectNeighborsCS::ModifyShaderCompileSettings);
 
@@ -168,7 +168,7 @@ public:
 	UAVParameterType SpaseVoxelOctreeRW;
 };
 ConnectNodesToVoxelsCS::ShaderInfos ConnectNodesToVoxelsCS::StaticShaderInfos(
-	"ConnectNodesToVoxelsCS", L"E:/XEngine/XEnigine/Source/Shaders/SVOBuildCS.hlsl",
+	"ConnectNodesToVoxelsCS", GET_SHADER_PATH("SVOBuildCS.hlsl"),
 	"ConnectNodesToVoxelsCS", EShaderType::SV_Compute, ConnectNodesToVoxelsCS::CustomConstrucFunc,
 	ConnectNodesToVoxelsCS::ModifyShaderCompileSettings);
 
@@ -217,7 +217,6 @@ void XDeferredShadingRenderer::SpaseVoxelOctreeBuild(XRHICommandList& RHICmdList
 				SVOGIResourece.cbSVOBuildBufferLevels[i].get(),
 				GetRHIUAVFromTexture(SVOGIResourece.SpaseVoxelOctree.get()),
 				GetRHIUAVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get()),
-				//GetRHISRVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get()),
 				SVOGIResourece.SVOCounterBufferUnorderedAcessView.get()
 			);
 			RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ApproxVoxelDimension / float(128)), 1, 1);

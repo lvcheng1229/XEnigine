@@ -8,7 +8,7 @@
 //1 8 64 512
 //1 2 4 8 16 32 64 128 512
 
-#define BrickBufferSize 128
+#define BrickBufferSize 64
 
 #define ApproxVoxelDimension (512*512*16)
 
@@ -47,6 +47,9 @@ public:
 	std::shared_ptr <XRHITexture3D> IrradianceBrickBufferRWUAV;
 	std::shared_ptr <XRHITexture3D> IrradianceBrickBufferPinPongUAV;
 	std::shared_ptr<XRHIConstantBuffer>RHIcbMainLight;
+
+	XRHITexture3D* BrickBufferPingPong[2];
+	int PingPongIndex ;
 	void InitRHI()override;
 	void ReleaseRHI()override;
 };

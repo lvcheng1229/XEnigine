@@ -78,7 +78,7 @@ public:
 };
 
 XRenderTransmittanceLutCS::ShaderInfos XRenderTransmittanceLutCS::StaticShaderInfos(
-	"RenderTransmittanceLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
+	"RenderTransmittanceLutCS", GET_SHADER_PATH("SkyAtmosphere.hlsl"),
 	"RenderTransmittanceLutCS", EShaderType::SV_Compute, XRenderTransmittanceLutCS::CustomConstrucFunc,
 	XRenderTransmittanceLutCS::ModifyShaderCompileSettings);
 
@@ -120,7 +120,7 @@ public:
 };
 
 XRenderMultiScatteredLuminanceLutCS::ShaderInfos XRenderMultiScatteredLuminanceLutCS::StaticShaderInfos(
-	"RenderMultiScatteredLuminanceLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
+	"RenderMultiScatteredLuminanceLutCS", GET_SHADER_PATH("SkyAtmosphere.hlsl"),
 	"RenderMultiScatteredLuminanceLutCS", EShaderType::SV_Compute, XRenderMultiScatteredLuminanceLutCS::CustomConstrucFunc,
 	XRenderMultiScatteredLuminanceLutCS::ModifyShaderCompileSettings);
 
@@ -178,7 +178,7 @@ public:
 };
 
 XRenderSkyViewLutCS::ShaderInfos XRenderSkyViewLutCS::StaticShaderInfos(
-	"RenderSkyViewLutCS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
+	"RenderSkyViewLutCS", GET_SHADER_PATH("SkyAtmosphere.hlsl"),
 	"RenderSkyViewLutCS", EShaderType::SV_Compute, XRenderSkyViewLutCS::CustomConstrucFunc,
 	XRenderSkyViewLutCS::ModifyShaderCompileSettings);
 
@@ -397,7 +397,7 @@ public:
 	TextureParameterType TransmittanceLutTexture_Combine;
 };
 XRenderSkyAtmosphereRayMarchingPS::ShaderInfos XRenderSkyAtmosphereRayMarchingPS::StaticShaderInfos(
-	"XRenderSkyAtmosphereRayMarchingPS", L"E:/XEngine/XEnigine/Source/Shaders/SkyAtmosphere.hlsl",
+	"XRenderSkyAtmosphereRayMarchingPS", GET_SHADER_PATH("SkyAtmosphere.hlsl"),
 	"RenderSkyAtmosphereRayMarchingPS", EShaderType::SV_Pixel, XRenderSkyAtmosphereRayMarchingPS::CustomConstrucFunc,
 	XRenderSkyAtmosphereRayMarchingPS::ModifyShaderCompileSettings);
 

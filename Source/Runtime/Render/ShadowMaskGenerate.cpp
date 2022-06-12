@@ -62,7 +62,7 @@ public:
 	SRVParameterType PhysicalShadowDepthTexture;
 };
 ShadowMaskGenCS::ShaderInfos ShadowMaskGenCS::StaticShaderInfos(
-	"ShadowMaskGenCS", L"E:/XEngine/XEnigine/Source/Shaders/ShadowMaskGenCS.hlsl",
+	"ShadowMaskGenCS", GET_SHADER_PATH("ShadowMaskGenCS.hlsl"),
 	"ShadowMaskGenCS", EShaderType::SV_Compute, ShadowMaskGenCS::CustomConstrucFunc,
 	ShadowMaskGenCS::ModifyShaderCompileSettings);
 

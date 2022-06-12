@@ -62,7 +62,7 @@ public:
 };
 
 XHZBPassCS::ShaderInfos XHZBPassCS::StaticShaderInfos(
-	"HZBBuildCS", L"E:/XEngine/XEnigine/Source/Shaders/HZB.hlsl",
+	"HZBBuildCS", GET_SHADER_PATH("HZB.hlsl"),
 	"HZBBuildCS", EShaderType::SV_Compute, XHZBPassCS::CustomConstrucFunc,
 	XHZBPassCS::ModifyShaderCompileSettings);
 

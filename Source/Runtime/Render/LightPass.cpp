@@ -97,11 +97,11 @@ public:
 };
 
 XLightPassVS::ShaderInfos XLightPassVS::StaticShaderInfos(
-	"XLightPassVS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightVertexShaders.hlsl",
+	"XLightPassVS", GET_SHADER_PATH("DeferredLightVertexShaders.hlsl"),
 	"DeferredLightVertexMain", EShaderType::SV_Vertex, XLightPassVS::CustomConstrucFunc,
 	XLightPassVS::ModifyShaderCompileSettings);
 XLightPassPS::ShaderInfos XLightPassPS::StaticShaderInfos(
-	"XLightPassPS", L"E:/XEngine/XEnigine/Source/Shaders/DeferredLightPixelShaders.hlsl",
+	"XLightPassPS", GET_SHADER_PATH("DeferredLightPixelShaders.hlsl"),
 	"DeferredLightPixelMain", EShaderType::SV_Pixel, XLightPassPS::CustomConstrucFunc,
 	XLightPassPS::ModifyShaderCompileSettings);
 

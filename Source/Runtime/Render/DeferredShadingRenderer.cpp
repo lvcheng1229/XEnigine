@@ -137,8 +137,12 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 
 
 	RHICmdList.RHIBeginFrame();
-	VoxelizationPass(RHICmdList);
-	SpaseVoxelOctreeBuild(RHICmdList);
+	if (USE_SVOGI)
+	{
+		VoxelizationPass(RHICmdList);
+		SpaseVoxelOctreeBuild(RHICmdList);
+	}
+
 
 	PreDepthPassGPUCulling(RHICmdList);
 	PreDepthPassRendering(RHICmdList);
@@ -148,8 +152,14 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 	VSMPageTableGen(RHICmdList);
 	VSMShadowCommandBuild(RHICmdList);
 	VirtualShadowMapGen(RHICmdList);
-	ShadowMapGenPass(RHICmdList);
-	SVOInjectLightPass(RHICmdList);
+	
+	
+	if (USE_SVOGI)
+	{
+		ShadowMapGenPass(RHICmdList);
+		SVOInjectLightPass(RHICmdList);
+	}
+	
 
 	HZBPass(RHICmdList);
 	
@@ -164,7 +174,23 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 
 	SkyAtmoSphereCombine(RHICmdList);
 
-	PostProcessToneMapping(RHICmdList, SceneTargets.TextureSceneColorDeffered.get(), SceneTargets.TextureSceneColorDefferedPingPong.get());
+	if (USE_SVOGI)
+	{
+		ConeTracingPass(RHICmdList, SceneTargets.TextureSceneColorDeffered.get());
+	}
+	
+
+	//0 for r , 1 for target / w
+	XRHITexture* PingPongTex[2] = { SceneTargets.TextureSceneColorDeffered.get() ,SceneTargets.TextureSceneColorDefferedPingPong.get() };
+	int32 PingPongindex = 0;
+
+	//PostProcessToneMapping(RHICmdList, SceneTargets.TextureSceneColorDeffered.get(), SceneTargets.TextureSceneColorDefferedPingPong.get());
+	//TempUIRenderer(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
+	//PresentPass(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
+
+	PostProcessToneMapping(RHICmdList, PingPongTex[PingPongindex % 2], PingPongTex[(PingPongindex + 1) % 2]);
+
+
 	TempUIRenderer(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
 	PresentPass(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
 

@@ -31,7 +31,7 @@ public:
 	TextureParameterType    FullScreenMap;
 };
 XFinalPassPS::ShaderInfos XFinalPassPS::StaticShaderInfos(
-	"XFinalPassPS", L"E:/XEngine/XEnigine/Source/Shaders/FinalPassShader.hlsl",
+	"XFinalPassPS", GET_SHADER_PATH("FinalPassShader.hlsl"),
 	"PS", EShaderType::SV_Pixel, XFinalPassPS::CustomConstrucFunc,
 	XFinalPassPS::ModifyShaderCompileSettings);
 

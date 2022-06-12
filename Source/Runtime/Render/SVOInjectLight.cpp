@@ -65,7 +65,7 @@ public:
 	UAVParameterType SpaseVoxelOctreeRW;
 };
 ShadowMapInjectLightCS::ShaderInfos ShadowMapInjectLightCS::StaticShaderInfos(
-	"ShadowMapInjectLightCS", L"E:/XEngine/XEnigine/Source/Shaders/SVOInjectLight.hlsl",
+	"ShadowMapInjectLightCS", GET_SHADER_PATH("SVOInjectLight.hlsl"),
 	"ShadowMapInjectLightCS", EShaderType::SV_Compute, ShadowMapInjectLightCS::CustomConstrucFunc,
 	ShadowMapInjectLightCS::ModifyShaderCompileSettings);
 
@@ -114,7 +114,6 @@ public:
 	{
 		IrradianceBrickBufferROnly.Bind(Initializer.ShaderParameterMap, "IrradianceBrickBufferROnly");
 		IrradianceBrickBufferWOnly.Bind(Initializer.ShaderParameterMap, "IrradianceBrickBufferWOnly");
-		//NodeCountAndOffsetBuffer.Bind(Initializer.ShaderParameterMap, "NodeCountAndOffsetBuffer");
 		NodeCountAndOffsetBufferR.Bind(Initializer.ShaderParameterMap, "NodeCountAndOffsetBufferR");
 	}
 
@@ -123,21 +122,18 @@ public:
 		XRHIShaderResourceView* IrradianceBrickBufferROnlyIn,
 		XRHIShaderResourceView* NodeCountAndOffsetBufferRIn,
 		XRHIUnorderedAcessView* IrradianceBrickBufferWOnlyIn
-		//,XRHIUnorderedAcessView* NodeCountAndOffsetBufferUAVIn
 	)
 	{
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, IrradianceBrickBufferWOnly, IrradianceBrickBufferWOnlyIn);
 		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, NodeCountAndOffsetBufferR, NodeCountAndOffsetBufferRIn);
 		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Compute, IrradianceBrickBufferROnly, IrradianceBrickBufferROnlyIn);
-		//SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, NodeCountAndOffsetBuffer, NodeCountAndOffsetBufferUAVIn);
 	}
-	//UAVParameterType NodeCountAndOffsetBuffer;
 	SRVParameterType NodeCountAndOffsetBufferR;
 	UAVParameterType IrradianceBrickBufferROnly;
 	UAVParameterType IrradianceBrickBufferWOnly;
 };
 AverageLitNodeValuesCS::ShaderInfos AverageLitNodeValuesCS::StaticShaderInfos(
-	"AverageLitNodeValuesCS", L"E:/XEngine/XEnigine/Source/Shaders/SVOInjectLight.hlsl",
+	"AverageLitNodeValuesCS", GET_SHADER_PATH("SVOInjectLight.hlsl"),
 	"AverageLitNodeValuesCS", EShaderType::SV_Compute, AverageLitNodeValuesCS::CustomConstrucFunc,
 	AverageLitNodeValuesCS::ModifyShaderCompileSettings);
 
@@ -182,7 +178,7 @@ public:
 	CBVParameterType cbSVOBuildBuffer;
 };
 GatherValuesFromLowLevelCS::ShaderInfos GatherValuesFromLowLevelCS::StaticShaderInfos(
-	"GatherValuesFromLowLevelCS", L"E:/XEngine/XEnigine/Source/Shaders/SVOInjectLight.hlsl",
+	"GatherValuesFromLowLevelCS", GET_SHADER_PATH("SVOInjectLight.hlsl"),
 	"GatherValuesFromLowLevelCS", EShaderType::SV_Compute, GatherValuesFromLowLevelCS::CustomConstrucFunc,
 	GatherValuesFromLowLevelCS::ModifyShaderCompileSettings);
 
@@ -213,13 +209,13 @@ void XDeferredShadingRenderer::SVOInjectLightPass(XRHICommandList& RHICmdList)
 		RHICmdList.RHIEventEnd();
 	}
 
-	XRHITexture3D* BrickBufferPingPong[2];
-	BrickBufferPingPong[0] = SVOGIResourece.IrradianceBrickBufferRWUAV.get();
-	BrickBufferPingPong[1] = SVOGIResourece.IrradianceBrickBufferPinPongUAV.get();
-
+	
+	SVOGIResourece.BrickBufferPingPong[0] = SVOGIResourece.IrradianceBrickBufferRWUAV.get();
+	SVOGIResourece.BrickBufferPingPong[1] = SVOGIResourece.IrradianceBrickBufferPinPongUAV.get();
+	SVOGIResourece.PingPongIndex = 0;
 	//()%2 for R
 	//( + 1)%2 for W
-	int PingPongIndex = 0;
+	
 	{
 		RHICmdList.RHIEventBegin(1, "AverageLitNodeValuesCS", sizeof("AverageLitNodeValuesCS"));
 		TShaderReference<AverageLitNodeValuesCS> Shader = GetGlobalShaderMapping()->GetShader<AverageLitNodeValuesCS>();
@@ -228,34 +224,39 @@ void XDeferredShadingRenderer::SVOInjectLightPass(XRHICommandList& RHICmdList)
 		Shader->SetParameters(
 			RHICmdList,
 			//GetRHISRVFromTexture(SVOGIResourece.IrradianceBrickBufferRWUAV.get()),
-			GetRHISRVFromTexture(BrickBufferPingPong[PingPongIndex % 2]),
+			GetRHISRVFromTexture(SVOGIResourece.BrickBufferPingPong[SVOGIResourece.PingPongIndex % 2]),
 			GetRHISRVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get()),
 			//GetRHIUAVFromTexture(SVOGIResourece.IrradianceBrickBufferPinPongUAV.get())
-			GetRHIUAVFromTexture(BrickBufferPingPong[(PingPongIndex + 1) % 2])
+			GetRHIUAVFromTexture(SVOGIResourece.BrickBufferPingPong[(SVOGIResourece.PingPongIndex + 1) % 2])
 			//,GetRHIUAVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get())
 		);
 		RHICmdList.RHIDispatchComputeShader(VoxelDimension * 256 / 128, 1, 1);
 		RHICmdList.RHIEventEnd();
-		PingPongIndex++;
+		SVOGIResourece.PingPongIndex++;
 	}
 
+	//8 leaf
+	//7 AverageLitNodeValuesCS
+	//start at 6
+
 	uint32 DispatchSize = VoxelDimension * 256 / 128;
+	for (int32 i = OctreeHeight - 2 - 1; i >= 0; --i)
 	{
 		DispatchSize /= 2;
-	
 		RHICmdList.RHIEventBegin(1, "GatherValuesFromLowLevelCS", sizeof("GatherValuesFromLowLevelCS"));
-		TShaderReference<GatherValuesFromLowLevelCS> Shader = GetGlobalShaderMapping()->GetShader<GatherValuesFromLowLevelCS>();
-		XRHIComputeShader* ComputeShader = Shader.GetComputeShader();
-		SetComputePipelineStateFromCS(RHICmdList, ComputeShader);
-		Shader->SetParameters(
+		TShaderReference<GatherValuesFromLowLevelCS> GatherValuesFromLowLevelCSShader = GetGlobalShaderMapping()->GetShader<GatherValuesFromLowLevelCS>();
+		XRHIComputeShader* FilterComputeShader = GatherValuesFromLowLevelCSShader.GetComputeShader();
+		SetComputePipelineStateFromCS(RHICmdList, FilterComputeShader);
+		GatherValuesFromLowLevelCSShader->SetParameters(
 			RHICmdList,
 			GetRHISRVFromTexture(SVOGIResourece.SpaseVoxelOctree.get()),
-			GetRHISRVFromTexture(BrickBufferPingPong[PingPongIndex % 2]),
+			GetRHISRVFromTexture(SVOGIResourece.BrickBufferPingPong[SVOGIResourece.PingPongIndex % 2]),
 			GetRHISRVFromTexture(SVOGIResourece.NodeCountAndOffsetBuffer.get()),
-			GetRHIUAVFromTexture(BrickBufferPingPong[(PingPongIndex + 1) % 2]),
-			SVOGIResourece.cbSVOBuildBufferLevels[9 - 2].get()
+			GetRHIUAVFromTexture(SVOGIResourece.BrickBufferPingPong[(SVOGIResourece.PingPongIndex + 1) % 2]),
+			SVOGIResourece.cbSVOBuildBufferLevels[i].get()
 		);
 		RHICmdList.RHIDispatchComputeShader(DispatchSize, 1, 1);
 		RHICmdList.RHIEventEnd();
+		SVOGIResourece.PingPongIndex++;
 	}
 }
