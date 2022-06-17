@@ -70,6 +70,9 @@ static void CalcFPS(HWND mhMainWnd)
 	}
 }
 
+
+
+
 #include "UnitTest/ResouceLoaderTest.h"
 class TestMain
 {
@@ -100,13 +103,21 @@ public:
 		std::shared_ptr<GGeomertry> DefaultSphere = TempCreateSphereGeoWithMat();
 		DefaultSphere->SetWorldTranslate(XVector3(0, -0.5, 0));
 
-		std::shared_ptr<GGeomertry> SphereInsUp = DefaultSphere->CreateGeoInstancewithMat();
-		SphereInsUp->SetWorldTranslate(XVector3(-1, 1.5, 0));
-		SphereInsUp->GetMaterialInstance()->SetMaterialValueFloat("ConstantMetatllic", 0.8);
-		SphereInsUp->GetMaterialInstance()->SetMaterialValueFloat("ConstantRoughness", 0.6);
+		std::shared_ptr<GGeomertry> DefaultCube = TempCreateCubeGeoWithMat();
+		DefaultCube->SetWorldTranslate(XVector3(-1, 1.5, 0));
+		DefaultCube->GetMaterialInstance()->SetMaterialValueFloat("ConstantMetatllic", 0.8);
+		DefaultCube->GetMaterialInstance()->SetMaterialValueFloat("ConstantRoughness", 0.6);
 
-		std::shared_ptr<GGeomertry> SphereInsRight = DefaultSphere->CreateGeoInstancewithMat();
-		SphereInsRight->SetWorldTranslate(XVector3(1, 1.5, 0));
+		std::shared_ptr<GGeomertry> DefaultCubeRight = DefaultCube->CreateGeoInstancewithMat();
+		DefaultCubeRight->SetWorldTranslate(XVector3(1, 1.5, 0));
+
+		//std::shared_ptr<GGeomertry> SphereInsUp = DefaultSphere->CreateGeoInstancewithMat();
+		//SphereInsUp->SetWorldTranslate(XVector3(-1, 1.5, 0));
+		//SphereInsUp->GetMaterialInstance()->SetMaterialValueFloat("ConstantMetatllic", 0.8);
+		//SphereInsUp->GetMaterialInstance()->SetMaterialValueFloat("ConstantRoughness", 0.6);
+
+		//std::shared_ptr<GGeomertry> SphereInsRight = DefaultSphere->CreateGeoInstancewithMat();
+		//SphereInsRight->SetWorldTranslate(XVector3(1, 1.5, 0));
 
 		std::shared_ptr<GGeomertry> DefaultQuad = TempCreateQuadGeoWithMat();
 		DefaultQuad->SetWorldTranslate(XVector3(0.0, 1.0, 0.0));
@@ -119,10 +130,12 @@ public:
 		FrontQuad->SetWorldRotate(XVector3(1, 0, 0), -(3.14159 * 0.5));
 		FrontQuad->SetWorldTranslate(XVector3(0.0, 0.0, 2.0));
 
+		RenderGeos.push_back(DefaultCube);
+		RenderGeos.push_back(DefaultCubeRight);
 		RenderGeos.push_back(DefaultSphere);
-		RenderGeos.push_back(SphereInsUp);
+		//RenderGeos.push_back(SphereInsUp);
 		RenderGeos.push_back(DefaultQuad);
-		RenderGeos.push_back(SphereInsRight);
+		//RenderGeos.push_back(SphereInsRight);
 		RenderGeos.push_back(LeftQuad);
 		RenderGeos.push_back(FrontQuad);
 

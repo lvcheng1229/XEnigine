@@ -2,12 +2,15 @@
 #include "ShaderCompiler.h"
 #include "Runtime/RenderCore/GlobalShader.h"
 #include <filesystem>
-static const std::filesystem::path ShaderASMPath("E:\\XEngine\\XEnigine\\Cache");
+#include "Runtime/Core/Misc/Path.h"
+
+#define CACHE_PATH BOOST_PP_CAT(BOOST_PP_STRINGIZE(ROOT_DIR_XENGINE), "/Cache")
+static const std::filesystem::path ShaderASMPath(CACHE_PATH);
+
+//static const std::filesystem::path ShaderASMPath("E:\\XEngine\\XEnigine\\Cache");
 //https://docs.microsoft.com/en-us/windows/win32/direct3dtools/dx-graphics-tools-fxc-syntax
 
 #define CACHE_SHADER 0
-
-
 class XD3DInclude : public ID3DInclude
 {
 public:
@@ -59,7 +62,6 @@ public:
 		*ppData = data;
 		return S_OK;
 }
-
 	HRESULT Close(LPCVOID pData) override
 	{
 		if (HasIncludePath == false)

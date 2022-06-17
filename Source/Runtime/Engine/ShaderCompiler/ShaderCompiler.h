@@ -15,9 +15,7 @@ struct XShaderCompileOutput
 {
 	EShaderType Shadertype;
 	std::vector<uint8>ShaderCode;
-
 	std::size_t SourceCodeHash;
-
 	XShaderParameterMap ShaderParameterMap;
 };
 extern void CompileMaterialShader(XShaderCompileInput& Input, XShaderCompileOutput& Output);

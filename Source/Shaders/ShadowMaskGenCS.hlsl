@@ -91,7 +91,7 @@ void ShadowMaskGenCS(uint2 DispatchThreadID :SV_DispatchThreadID)
     float3 LightDir = ShadowLightDir;
     LightDir = normalize(LightDir);
     float NoL = dot(LightDir,Normal.xyz);
-    uint Bias = NoL * 1000 * (1 << 10) + 500 * (1 << 10);
+    uint Bias = NoL * 500 * (1 << 10) + 300 * (1 << 10);
     
     //if(abs(NoL) < 0.25)
     //{

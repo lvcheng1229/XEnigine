@@ -45,7 +45,7 @@ void XD3D12Viewport::Resize(
         BackBufferResources[i].SetResourceState(D3D12_RESOURCE_STATE_COMMON);
         BackBufferResources[i].GetResource()->SetName(L"BackBuffer");
         BackRtViews[i].Create(PhysicalDevice,&BackBufferResources[i], RtDesc,
-            AbsDevice->GetRenderTargetDescArrayManager()->compute_cpu_ptr(IndexOfDescInHeapRt, IndexOfHeapRt),
+            AbsDevice->GetRenderTargetDescArrayManager()->ComputeCpuPtr(IndexOfDescInHeapRt, IndexOfHeapRt),
             AbsDevice->GetRenderTargetDescArrayManager()->compute_gpu_ptr(IndexOfDescInHeapRt, IndexOfHeapRt)
         );
 

@@ -188,7 +188,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 
 		XD3D12ShaderResourceView ShaderResourceView;
 		ShaderResourceView.Create(PhysicalDevice, TextureResource,srvDesc, 
-			CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap),
+			CBV_SRV_UAVDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap, index_of_heap),
 			CBV_SRV_UAVDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap)
 		);
 		TextureRet->SetShaderResourceView(ShaderResourceView);
@@ -221,7 +221,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 
 			XD3D12UnorderedAcessView UnorderedAcessView;
 			UnorderedAcessView.Create(PhysicalDevice, TextureResource,UavDesc, 
-				CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap),
+				CBV_SRV_UAVDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap, index_of_heap),
 				CBV_SRV_UAVDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap)
 			);
 			TextureRet->SetUnorderedAcessView(UnorderedAcessView);
@@ -242,7 +242,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 
 		XD3D12RenderTargetView ShaderResourceView;
 		ShaderResourceView.Create(PhysicalDevice, TextureResource,rtDesc, 
-			RenderTargetDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap),
+			RenderTargetDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap, index_of_heap),
 			RenderTargetDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap)
 		);
 		TextureRet->SetRenderTargetView(ShaderResourceView);
@@ -263,7 +263,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 
 		XD3D12DepthStencilView DepthStencilView;
 		DepthStencilView.Create(PhysicalDevice, TextureResource,ds_desc, 
-			DepthStencilDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap_ds, index_of_heap_ds),
+			DepthStencilDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap_ds, index_of_heap_ds),
 			DepthStencilDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap_ds, index_of_heap_ds)
 		);
 		TextureRet->SetDepthStencilView(DepthStencilView);
@@ -399,7 +399,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 		XD3D12ShaderResourceView ShaderResourceView;
 		ShaderResourceView.Create(PhysicalDevice, TextureResource,srvDesc, 
-			CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap),
+			CBV_SRV_UAVDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap, index_of_heap),
 			CBV_SRV_UAVDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap)
 		);
 		TextureRet->SetShaderResourceView(ShaderResourceView);
@@ -422,7 +422,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 		XD3D12UnorderedAcessView UnorderedAcessView;
 		UnorderedAcessView.Create(PhysicalDevice, TextureResource,UavDesc, 
-			CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap),
+			CBV_SRV_UAVDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap, index_of_heap),
 			CBV_SRV_UAVDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap)
 		);
 		TextureRet->SetUnorderedAcessView(UnorderedAcessView);
@@ -443,7 +443,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 		XD3D12RenderTargetView ShaderResourceView;
 		ShaderResourceView.Create(PhysicalDevice, TextureResource, rtDesc, 
-			RenderTargetDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap),
+			RenderTargetDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap, index_of_heap),
 			RenderTargetDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap)
 		);
 		TextureRet->SetRenderTargetView(ShaderResourceView);

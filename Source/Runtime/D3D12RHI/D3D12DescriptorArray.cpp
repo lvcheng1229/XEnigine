@@ -20,26 +20,26 @@ void XD3D12DescArrayManager::AllocateDesc(uint32& index_of_desc_in_heap, uint32&
 		AllocHeap();
 	}
 	index_of_heap = *free_desc_array_index.begin();
-	index_of_desc_in_heap= *all_desc_arrays[index_of_heap].desc_index_free.begin();
+	index_of_desc_in_heap= *AllDescArrays[index_of_heap].DescIndexFree.begin();
 	
-	all_desc_arrays[index_of_heap].desc_index_free.erase(index_of_desc_in_heap);
+	AllDescArrays[index_of_heap].DescIndexFree.erase(index_of_desc_in_heap);
 	
-	if(all_desc_arrays[index_of_heap].desc_index_free.size()==0)
+	if(AllDescArrays[index_of_heap].DescIndexFree.size()==0)
 		free_desc_array_index.erase(index_of_heap);
 }
 
 void XD3D12DescArrayManager::AllocHeap()
 {
-	all_desc_arrays.push_back(DescArray());
-	size_t index = all_desc_arrays.size() - 1;
+	AllDescArrays.push_back(DescArray());
+	size_t index = AllDescArrays.size() - 1;
 	free_desc_array_index.insert(static_cast<uint32>(index));
 
-	ThrowIfFailed(device->GetDXDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&all_desc_arrays[index].d3d12_heap)));
-	all_desc_arrays[index].cpu_ptr_begin = all_desc_arrays[index].d3d12_heap->GetCPUDescriptorHandleForHeapStart();
-	all_desc_arrays[index].gpu_ptr_begin = all_desc_arrays[index].d3d12_heap->GetGPUDescriptorHandleForHeapStart();
+	ThrowIfFailed(device->GetDXDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&AllDescArrays[index].d3d12Heap)));
+	AllDescArrays[index].CpuPtrBegin = AllDescArrays[index].d3d12Heap->GetCPUDescriptorHandleForHeapStart();
+	AllDescArrays[index].GpuPtrBegin = AllDescArrays[index].d3d12Heap->GetGPUDescriptorHandleForHeapStart();
 	for (uint32 i = 0; i < desc_per_heap; i++)
 	{
-		all_desc_arrays[index].desc_index_free.insert(i);
+		AllDescArrays[index].DescIndexFree.insert(i);
 	}
 }
 
@@ -48,6 +48,6 @@ void XD3D12DescArrayManager::FreeDesc(uint32 index_of_desc_in_heap, uint32 index
 	if (free_desc_array_index.find(index_of_heap) == free_desc_array_index.end())
 		free_desc_array_index.insert(index_of_heap);
 
-	all_desc_arrays[index_of_heap].desc_index_free.insert(index_of_desc_in_heap);
+	AllDescArrays[index_of_heap].DescIndexFree.insert(index_of_desc_in_heap);
 
 }

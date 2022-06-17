@@ -55,7 +55,6 @@ void CalcMaterialParameters(ParametersIn Parameters,inout GBufferdataOutput Outp
 
     OutputGbufferData.BaseColor=(RoughnessSampleValue.r+0.5f)*float3(0.8f,0.8f,0.8f)*BaseColorSample.xyz;
     OutputGbufferData.Metallic=Metallic;
-    //OutputGbufferData.Specular=Specular;
     OutputGbufferData.Roughness=(RoughnessSampleValue.r+0.5f)*BaseColorSample.a*Roughness;
     OutputGbufferData.Normal=DecodeNormal;
     OutputGbufferData.ShadingModel=1;

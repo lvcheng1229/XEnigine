@@ -1,8 +1,11 @@
 #include "D3D12PipelineLibrary.h"
 #include "D3D12PhysicDevice.h"
+#include "Runtime/Core/Misc/Path.h"
+
+#define CACHE_PATH BOOST_PP_CAT(L, BOOST_PP_CAT(BOOST_PP_STRINGIZE(ROOT_DIR_XENGINE), "/Cache/graphics_pso_cache.cache"))
 
 //https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12PipelineStateCache/src/MemoryMappedPipelineLibrary.cpp
-static const std::wstring FileName = L"E:/XEngine/XEnigine/Cache/graphics_pso_cache.cache";
+static const std::wstring FileName = CACHE_PATH;
 
 void XD3D12PipelineLibrary::DeserializingPSOLibrary(XD3D12PhysicDevice* InPhyDevice)
 {
@@ -76,14 +79,6 @@ void XD3D12PipelineLibrary::StorePSOToLibrary(
 	Changed = true;
 	ThrowIfFailed(m_pipelineLibrary->StorePipeline(pName, pPipeline));
 }
-
-
-
-
-
-
-
-
 
 
 

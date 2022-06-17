@@ -132,68 +132,47 @@ void XDeferredShadingRenderer::Setup(
 
 void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 {
-	
 	SkyAtmosPhereUpdata(RHICmdList);
 
-
 	RHICmdList.RHIBeginFrame();
-	if (USE_SVOGI)
+
+#if USE_SVOGI
+	VoxelizationPass(RHICmdList);
+	SpaseVoxelOctreeBuild(RHICmdList);
+#endif
 	{
-		VoxelizationPass(RHICmdList);
-		SpaseVoxelOctreeBuild(RHICmdList);
+		PreDepthPassGPUCulling(RHICmdList);
+		PreDepthPassRendering(RHICmdList);
+		HZBPass(RHICmdList);
 	}
-
-
-	PreDepthPassGPUCulling(RHICmdList);
-	PreDepthPassRendering(RHICmdList);
-
-	VSMUpdate();
-	VSMTileMaskPass(RHICmdList);
-	VSMPageTableGen(RHICmdList);
-	VSMShadowCommandBuild(RHICmdList);
-	VirtualShadowMapGen(RHICmdList);
-	
-	
-	if (USE_SVOGI)
 	{
-		ShadowMapGenPass(RHICmdList);
-		SVOInjectLightPass(RHICmdList);
+		VSMUpdate();
+		VSMTileMaskPass(RHICmdList);
+		VSMPageTableGen(RHICmdList);
+		VSMShadowCommandBuild(RHICmdList);
+		VirtualShadowMapGen(RHICmdList);
 	}
-	
-
-	HZBPass(RHICmdList);
-	
+#if USE_SVOGI
+	ShadowMapGenPass(RHICmdList);
+	SVOInjectLightPass(RHICmdList);
+#endif
 	SkyAtmosPhereRendering(RHICmdList);
-
 	BasePassRendering(RHICmdList);
-
 	ShadowMaskGenerate(RHICmdList);
 	VSMTileMaskClear(RHICmdList);
-
 	LightPass(RHICmdList);
-
 	SkyAtmoSphereCombine(RHICmdList);
-
-	if (USE_SVOGI)
-	{
-		ConeTracingPass(RHICmdList, SceneTargets.TextureSceneColorDeffered.get());
-	}
-	
-
-	//0 for r , 1 for target / w
+#if USE_SVOGI
+	ConeTracingPass(RHICmdList, SceneTargets.TextureSceneColorDeffered.get());
+#endif
+	//0 -> r , 1 -> w
 	XRHITexture* PingPongTex[2] = { SceneTargets.TextureSceneColorDeffered.get() ,SceneTargets.TextureSceneColorDefferedPingPong.get() };
 	int32 PingPongindex = 0;
-
-	//PostProcessToneMapping(RHICmdList, SceneTargets.TextureSceneColorDeffered.get(), SceneTargets.TextureSceneColorDefferedPingPong.get());
-	//TempUIRenderer(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
-	//PresentPass(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
-
-	PostProcessToneMapping(RHICmdList, PingPongTex[PingPongindex % 2], PingPongTex[(PingPongindex + 1) % 2]);
-
-
-	TempUIRenderer(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
-	PresentPass(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
-
+	{
+		PostProcessToneMapping(RHICmdList, PingPongTex[PingPongindex % 2], PingPongTex[(PingPongindex + 1) % 2]);
+		TempUIRenderer(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
+		PresentPass(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
+	}
 	RHICmdList.RHIEndFrame();
 }
 

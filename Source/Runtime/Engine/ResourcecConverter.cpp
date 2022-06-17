@@ -105,6 +105,247 @@ std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn
 	return MaterialResult;
 }
 
+std::shared_ptr<GGeomertry> CreateDefualCubeGeo()
+{
+	float Width = 1.0 * 0.5;
+	float Height = 1.0 * 0.5;
+	float Depth = 1.0 * 0.5;
+
+	std::vector<XVector4>Positions;
+	std::vector<XVector3>TangentX;
+	std::vector<XVector4>TangentY;
+	std::vector<uint16>Indices;
+	std::vector<XVector2>TextureCoords;
+
+	uint16 IndexOffset = 0;
+
+	//top face
+	{
+		Positions.push_back(XVector4(-Width, Height, Depth, 1.0));
+		Positions.push_back(XVector4(Width, Height, Depth, 1.0));
+		Positions.push_back(XVector4(-Width, Height, -Depth, 1.0));
+		Positions.push_back(XVector4(Width, Height, -Depth, 1.0));
+
+		TextureCoords.push_back(XVector2(0, 1));
+		TextureCoords.push_back(XVector2(1, 1));
+		TextureCoords.push_back(XVector2(0, 0));
+		TextureCoords.push_back(XVector2(1, 0));
+
+		TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+
+		TangentY.push_back(XVector4(0.0, 1.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 1.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 1.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 1.0, 0.0, 1.0));
+
+		Indices.push_back(0 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(2 + IndexOffset);
+
+		Indices.push_back(2 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(3 + IndexOffset);
+		IndexOffset += 4;
+	}
+
+	//bottom face
+	{
+		Positions.push_back(XVector4(Width, -Height, -Depth, 1.0));
+		Positions.push_back(XVector4(-Width, -Height,-Depth, 1.0));
+		Positions.push_back(XVector4(-Width, -Height, Depth, 1.0));
+		Positions.push_back(XVector4(Width, -Height, Depth, 1.0));
+
+		TextureCoords.push_back(XVector2(0, 1));
+		TextureCoords.push_back(XVector2(1, 1));
+		TextureCoords.push_back(XVector2(0, 0));
+		TextureCoords.push_back(XVector2(1, 0));
+
+		TangentX.push_back(XVector3(-1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(-1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(-1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(-1.0, 0.0, 0.0));
+
+		TangentY.push_back(XVector4(0.0, -1.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(0.0, -1.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(0.0, -1.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(0.0, -1.0, 0.0, 1.0));
+
+		Indices.push_back(0 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(2 + IndexOffset);
+
+		Indices.push_back(2 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(3 + IndexOffset);
+		IndexOffset += 4;
+	}
+
+	//right face
+	{
+		Positions.push_back(XVector4(Width, Height, -Depth, 1.0));
+		Positions.push_back(XVector4(Width, Height, Depth, 1.0));
+		Positions.push_back(XVector4(Width, -Height,-Depth, 1.0));
+		Positions.push_back(XVector4(Width, -Height, Depth, 1.0));
+
+		TextureCoords.push_back(XVector2(0, 1));
+		TextureCoords.push_back(XVector2(1, 1));
+		TextureCoords.push_back(XVector2(0, 0));
+		TextureCoords.push_back(XVector2(1, 0));
+
+		TangentX.push_back(XVector3(0.0, 0.0, 1.0));
+		TangentX.push_back(XVector3(0.0, 0.0, 1.0));
+		TangentX.push_back(XVector3(0.0, 0.0, 1.0));
+		TangentX.push_back(XVector3(0.0, 0.0, 1.0));
+
+		TangentY.push_back(XVector4(1.0, 0.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(1.0, 0.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(1.0, 0.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(1.0, 0.0, 0.0, 1.0));
+
+		Indices.push_back(0 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(2 + IndexOffset);
+
+		Indices.push_back(2 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(3 + IndexOffset);
+		IndexOffset += 4;
+	}
+
+	//left face
+	{
+		Positions.push_back(XVector4(-Width, Height, Depth, 1.0));
+		Positions.push_back(XVector4(-Width, Height, -Depth, 1.0));
+		Positions.push_back(XVector4(-Width, -Height, Depth, 1.0));
+		Positions.push_back(XVector4(-Width, -Height, -Depth, 1.0));
+
+		TextureCoords.push_back(XVector2(0, 1));
+		TextureCoords.push_back(XVector2(1, 1));
+		TextureCoords.push_back(XVector2(0, 0));
+		TextureCoords.push_back(XVector2(1, 0));
+
+		TangentX.push_back(XVector3(0.0, 0.0, -1.0));
+		TangentX.push_back(XVector3(0.0, 0.0, -1.0));
+		TangentX.push_back(XVector3(0.0, 0.0, -1.0));
+		TangentX.push_back(XVector3(0.0, 0.0, -1.0));
+
+		TangentY.push_back(XVector4(-1.0, 0.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(-1.0, 0.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(-1.0, 0.0, 0.0, 1.0));
+		TangentY.push_back(XVector4(-1.0, 0.0, 0.0, 1.0));
+
+		Indices.push_back(0 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(2 + IndexOffset);
+
+		Indices.push_back(2 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(3 + IndexOffset);
+		IndexOffset += 4;
+	}
+
+	//front face
+	{
+		Positions.push_back(XVector4(-Width, Height, -Depth, 1.0));
+		Positions.push_back(XVector4(Width, Height, -Depth, 1.0));
+		Positions.push_back(XVector4(-Width, -Height, -Depth, 1.0));
+		Positions.push_back(XVector4(Width, -Height, -Depth, 1.0));
+
+		TextureCoords.push_back(XVector2(0, 1));
+		TextureCoords.push_back(XVector2(1, 1));
+		TextureCoords.push_back(XVector2(0, 0));
+		TextureCoords.push_back(XVector2(1, 0));
+
+		TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(1.0, 0.0, 0.0));
+
+		TangentY.push_back(XVector4(0.0, 0.0, -1.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 0.0, -1.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 0.0, -1.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 0.0, -1.0, 1.0));
+
+		Indices.push_back(0 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(2 + IndexOffset);
+
+		Indices.push_back(2 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(3 + IndexOffset);
+		IndexOffset += 4;
+	}
+
+	//back face
+	{
+		Positions.push_back(XVector4(Width, Height, Depth, 1.0));
+		Positions.push_back(XVector4(-Width, Height, Depth, 1.0));
+		Positions.push_back(XVector4(-Width, -Height, Depth, 1.0));
+		Positions.push_back(XVector4(Width, -Height, Depth, 1.0));
+
+		TextureCoords.push_back(XVector2(0, 1));
+		TextureCoords.push_back(XVector2(1, 1));
+		TextureCoords.push_back(XVector2(0, 0));
+		TextureCoords.push_back(XVector2(1, 0));
+
+		TangentX.push_back(XVector3(-1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(-1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(-1.0, 0.0, 0.0));
+		TangentX.push_back(XVector3(-1.0, 0.0, 0.0));
+
+		TangentY.push_back(XVector4(0.0, 0.0, 1.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 0.0, 1.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 0.0, 1.0, 1.0));
+		TangentY.push_back(XVector4(0.0, 0.0, 1.0, 1.0));
+
+		Indices.push_back(0 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(2 + IndexOffset);
+
+		Indices.push_back(2 + IndexOffset);
+		Indices.push_back(1 + IndexOffset);
+		Indices.push_back(3 + IndexOffset);
+		IndexOffset += 4;
+	}
+
+	std::shared_ptr<GDataBuffer> PositionDataBuffer = std::make_shared<GDataBuffer>();
+	PositionDataBuffer->SetData((uint8*)Positions.data(), Positions.size(), EVertexElementType::VET_Float4);
+
+	std::shared_ptr<GDataBuffer> TangentXDataBuffer = std::make_shared<GDataBuffer>();
+	TangentXDataBuffer->SetData((uint8*)TangentX.data(), TangentX.size(), EVertexElementType::VET_Float3);
+
+	std::shared_ptr<GDataBuffer> TangentYDataBuffer = std::make_shared<GDataBuffer>();
+	TangentYDataBuffer->SetData((uint8*)TangentY.data(), TangentY.size(), EVertexElementType::VET_Float4);
+
+	std::shared_ptr<GDataBuffer> TextureCoordsDataBuffer = std::make_shared<GDataBuffer>();
+	TextureCoordsDataBuffer->SetData((uint8*)TextureCoords.data(), TextureCoords.size(), EVertexElementType::VET_Float2);
+
+	std::shared_ptr<GDataBuffer> IndexDataBuffer = std::make_shared<GDataBuffer>();
+	IndexDataBuffer->SetData((uint8*)Indices.data(), Indices.size(), EVertexElementType::VET_UINT16);
+
+	std::shared_ptr<GVertexBuffer>VertexBuffer = std::make_shared<GVertexBuffer>();
+	VertexBuffer->SetData(PositionDataBuffer, EVertexAttributeType::VAT_POSITION);
+	VertexBuffer->SetData(TangentXDataBuffer, EVertexAttributeType::VAT_TANGENT);
+	VertexBuffer->SetData(TangentYDataBuffer, EVertexAttributeType::VAT_NORMAL);
+	VertexBuffer->SetData(TextureCoordsDataBuffer, EVertexAttributeType::VAT_TEXCOORD);
+
+	std::shared_ptr<GIndexBuffer> IndexBuffer = std::make_shared<GIndexBuffer>();
+	IndexBuffer->SetData(IndexDataBuffer);
+
+	std::shared_ptr<GMeshData>MeshData = std::make_shared<GMeshData>();
+	MeshData->SetVertexBuffer(VertexBuffer);
+	MeshData->SetIndexBuffer(IndexBuffer);
+
+	std::shared_ptr<GGeomertry>Geomertry = std::make_shared<GGeomertry>();
+	Geomertry->SetMeshData(MeshData);
+
+	Geomertry->SetBoundingBox(XVector3(0, 0, 0), XVector3(Width, Height, Depth));
+	return Geomertry;
+}
+
 std::shared_ptr<GGeomertry> CreateDefualtSphereGeo(float Radius, uint32 SliceCount, uint32 StackCount)
 {
 	std::vector<XVector4>Positions;
@@ -357,10 +598,24 @@ std::shared_ptr<GMaterialInstance> CreateDefautMaterialInstance()
 	return MaterialIns;
 }
 
+std::shared_ptr<GMaterialInstance> GetDefaultmaterialIns()
+{
+	static std::shared_ptr<GMaterialInstance> MaterialIns = CreateDefautMaterialInstance();
+	return MaterialIns;
+} 
+
+std::shared_ptr<GGeomertry> TempCreateCubeGeoWithMat()
+{
+	std::shared_ptr<GGeomertry> Result = CreateDefualCubeGeo();
+	std::shared_ptr<GMaterialInstance> MaterialIns = GetDefaultmaterialIns();
+	Result->SetMaterialPtr(MaterialIns);
+	return Result;
+}
+
 std::shared_ptr<GGeomertry> TempCreateSphereGeoWithMat()
 {
 	std::shared_ptr<GGeomertry> Result = CreateDefualtSphereGeo(0.5, 36, 36);
-	std::shared_ptr<GMaterialInstance> MaterialIns = CreateDefautMaterialInstance();
+	std::shared_ptr<GMaterialInstance> MaterialIns = GetDefaultmaterialIns();
 	Result->SetMaterialPtr(MaterialIns);
 	return Result;
 }
@@ -368,7 +623,7 @@ std::shared_ptr<GGeomertry> TempCreateSphereGeoWithMat()
 std::shared_ptr<GGeomertry> TempCreateQuadGeoWithMat()
 {
 	std::shared_ptr<GGeomertry> Result = CreateDefualtQuadGeo();
-	std::shared_ptr<GMaterialInstance> MaterialIns = CreateDefautMaterialInstance();
+	std::shared_ptr<GMaterialInstance> MaterialIns = GetDefaultmaterialIns();
 	Result->SetMaterialPtr(MaterialIns);
 	return Result;
 }

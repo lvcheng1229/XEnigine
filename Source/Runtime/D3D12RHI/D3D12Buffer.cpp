@@ -192,7 +192,7 @@ XD3D12ShaderResourceView* XD3D12AbstractDevice::RHICreateShaderResourceView(XRHI
 	uint32 index_of_desc_in_heap;
 	uint32 index_of_heap;
 	CBV_SRV_UAVDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
-	D3D12_CPU_DESCRIPTOR_HANDLE CPU_PTR = CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap);
+	D3D12_CPU_DESCRIPTOR_HANDLE CPU_PTR = CBV_SRV_UAVDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap, index_of_heap);
 	D3D12_GPU_DESCRIPTOR_HANDLE GPU_PTR = CBV_SRV_UAVDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap);
 
 	XD3D12ShaderResourceView* ShaderResourceView = new  XD3D12ShaderResourceView();
@@ -219,7 +219,7 @@ XD3D12UnorderedAcessView* XD3D12AbstractDevice::RHICreateUnorderedAccessView(XRH
 	uint32 index_of_desc_in_heap;
 	uint32 index_of_heap;
 	CBV_SRV_UAVDescArrayManager.AllocateDesc(index_of_desc_in_heap, index_of_heap);
-	D3D12_CPU_DESCRIPTOR_HANDLE CPU_PTR = CBV_SRV_UAVDescArrayManager.compute_cpu_ptr(index_of_desc_in_heap, index_of_heap);
+	D3D12_CPU_DESCRIPTOR_HANDLE CPU_PTR = CBV_SRV_UAVDescArrayManager.ComputeCpuPtr(index_of_desc_in_heap, index_of_heap);
 	D3D12_GPU_DESCRIPTOR_HANDLE GPU_PTR = CBV_SRV_UAVDescArrayManager.compute_gpu_ptr(index_of_desc_in_heap, index_of_heap);
 	XD3D12UnorderedAcessView* UnorderedAcessView = new  XD3D12UnorderedAcessView();
 	UnorderedAcessView->Create(PhysicalDevice, D3D12Resource, D3D12Resource, uavDesc, CPU_PTR, GPU_PTR);

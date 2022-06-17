@@ -41,6 +41,7 @@ public:
 		MaterialTextureArray = MaterialPtrIn->MaterialTextureArray;
 	}
 
+	std::shared_ptr<XRHIConstantBuffer> GetRHIConstantBuffer();
 	inline std::shared_ptr<GTexture2D>& TempGetGTexPtrByIndex(uint32 Index)
 	{
 		for (auto iter = MaterialTextureArray.begin(); iter != MaterialTextureArray.end(); iter++)
@@ -57,11 +58,9 @@ public:
 	void SetMaterialValueFloat3(const std::string& ValueName, XVector3 Value);
 	void SetMaterialValueFloat4(const std::string& ValueName, XVector4 Value);
 	void SetMaterialTexture2D(const std::string& TexName, std::shared_ptr<GTexture2D> TexPtrIn);
-	std::shared_ptr<XRHIConstantBuffer> GetRHIConstantBuffer();
 
 	std::vector<MaterialValueParas>MaterialFloatArray;
 	std::vector<MaterialTexParas>MaterialTextureArray;
-
 	std::shared_ptr<GMaterial>MaterialPtr;
 private:
 	bool bValueChanged;

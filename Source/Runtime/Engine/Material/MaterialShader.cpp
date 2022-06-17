@@ -15,8 +15,7 @@ public:
 	const XMaterialShaderMapSet& GetSet()
 	{
 		XMaterialShaderMapSet* MapSet;
-
-		//Now We Only Have Base Pass Material Shader Map , So Size == 1
+		
 		if (ShaderMapSets.size() == 1)
 		{
 			MapSet = ShaderMapSets.begin()->get();

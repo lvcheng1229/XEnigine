@@ -4,13 +4,9 @@ project(XEngine VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(XENGINE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_definitions(-D ROOT_DIR_XENGINE=${XENGINE_ROOT_DIR})
-
-#add_subdirectory(Source/Runtime)
-#add_dependencies(XEngineRuntime)
 
 file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.h")
 file(GLOB_RECURSE SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp")
@@ -22,24 +18,14 @@ link_libraries("d3dcompiler.lib")
 link_libraries("D3D12.lib")
 link_libraries("dxgi.lib")
 
-#add_library(my_library_shared SHARED 
-#  ${CMAKE_CURRENT_SOURCE_DIR}/src/my_library.cpp
-#  )
-
 include_directories(
   ${XENGINE_ROOT_DIR}/Source
 )
 
 add_definitions(-DX_PLATFORM_WIN)
 add_definitions(-DX_RHI_DX12)
-
-
 add_definitions(-DUNICODE)
-
-#for imgui
-add_definitions(-D_UNICODE)
-
-
+add_definitions(-D_UNICODE)#for imgui
 
 #ImGUI Begin
 set(imgui_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThridParty/imgui)
@@ -51,19 +37,14 @@ file(GLOB imgui_impl
 "${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.h")
 add_library(imgui STATIC ${imgui_sources} ${imgui_impl})
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
-
 link_libraries(imgui)
 #ImGUI End
 
 
-#ImGUI Begin
+#BOOST Begin
 set(BOOST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThridParty/boost_1_78_0)
 include_directories(${BOOST_SOURCE_DIR})
-#ImGUI End
+#BOOST End
 
-#set(EXE_SOURCES
-#${XENGINE_ROOT_DIR}/Source/CrateApp.cpp
-#)
 
-#https://zhuanlan.zhihu.com/p/268209090
 add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${SOURCE_FILES_CC})

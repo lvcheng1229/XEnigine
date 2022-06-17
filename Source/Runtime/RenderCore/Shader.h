@@ -182,9 +182,7 @@ public:
 		);
 	static std::list<XShaderInfo*>& GetShaderInfo_LinkedList(EShaderTypeForDynamicCast ShaderInfoType);
 
-
 	inline std::size_t GetHashedFileIndex()const { return HashedFileIndex; }
-	//inline std::size_t GetHashedEntryIndex()const { return HashedEntryIndex; }
 	inline std::size_t GetHashedShaderNameIndex()const { return HashShaderNameIndex; };
 
 	inline const wchar_t* GetSourceFileName()const { return SourceFileName; }
@@ -198,7 +196,6 @@ public:
 private:
 
 	std::size_t HashedFileIndex;
-	//std::size_t HashedEntryIndex;
 	std::size_t HashShaderNameIndex;
 
 	EShaderTypeForDynamicCast CastType;
@@ -256,8 +253,6 @@ private:
 };
 
 
-
-////temp name
 class XXShader
 {
 public:
@@ -265,57 +260,13 @@ public:
 		:ShadersInfoPtr(Initializer.ShadersInfoPtr),
 		CodeHash(Initializer.CodeHash),
 		RHIShaderIndex(Initializer.RHIShaderIndex) {}
-	//XXShader(XShaderInfos* InShadersInfoPtr, XShaderCompileOutput* Output) :
-	//	ShadersInfoPtr(InShadersInfoPtr),
-	//	CodeHash(Output->SourceCodeHash),
-	//	RHIShaderIndex(0) {}
-	
-	//inline void SetRHIShaderIndex(std::size_t Index)
-	//{
-	//	RHIShaderIndex = Index;
-	//}
+
 	inline std::size_t GetCodeHash()const { return CodeHash; };
 	inline std::size_t GetRHIShaderIndex()const { return RHIShaderIndex; };
 private:
 	XShaderInfo* ShadersInfoPtr;
 	std::size_t CodeHash;
 	std::size_t RHIShaderIndex;
-};
-
-
-
-class XShader
-{
-private:
-	uint16 srv_count;
-	uint16 cbv_count;
-	uint16 uav_count;
-	uint16 sampler_count;
-	XDxRefCount<ID3DBlob> byteCode;
-
-	EShaderType ShaderType;
-	std::shared_ptr<XRHIGraphicsShader>RHIShader = nullptr;
-	std::shared_ptr<XRHIComputeShader>RHIComputeShader = nullptr;
-
-public:
-	XShader() :byteCode(nullptr), srv_count(0), cbv_count(0), uav_count(0), sampler_count(0) {};
-
-	void CreateShader(EShaderType shader_type);
-	void CompileShader(const std::wstring& filename,
-		const D3D_SHADER_MACRO* defines,
-		const std::string& entrypoint,
-		const std::string& target);
-	void ShaderReflect();
-	inline XDxRefCount<ID3DBlob> GetByteCode() { return byteCode; }
-
-	inline EShaderType GetShaderType() { return ShaderType; }
-	inline std::shared_ptr<XRHIGraphicsShader> GetRHIGraphicsShader() { return RHIShader; }
-	inline std::shared_ptr<XRHIComputeShader> GetRHIComputeShader() { return RHIComputeShader; }
-
-	inline uint32 GetSRVCount() { return srv_count; }
-	inline uint32 GetCBVCount() { return cbv_count; }
-	inline uint32 GetUAVCount() { return uav_count; }
-	inline uint32 GetSamplerCount() { return sampler_count; }
 };
 
 

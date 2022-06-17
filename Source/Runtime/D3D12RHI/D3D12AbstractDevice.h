@@ -90,5 +90,5 @@ private:
 	XD3D12DescArrayManager RenderTargetDescArrayManager;
 	XD3D12DescArrayManager DepthStencilDescArrayManager;
 	XD3D12DescArrayManager CBV_SRV_UAVDescArrayManager;
-	XD3D12DescArrayManager ConstantBufferDescArrayManager;
+	//XD3D12DescArrayManager ConstantBufferDescArrayManager;
 };

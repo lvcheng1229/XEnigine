@@ -18,7 +18,7 @@ enum class ED3D12PipelineType
 class XD3D12PassStateManager
 {
 private:
-	XD3D12OnlineDescArrayManager pipe_curr_desc_array_manager;
+	XD3D12OnlineDescArrayManager PipeCurrDescArrayManager;
 	XD3DDirectContex* direct_ctx;
 	bool bNeedSetPSO;
 	bool bNeedSetRT;
@@ -32,9 +32,9 @@ private:
 		struct
 		{
 			XD3DGraphicsPSO* D3DGraphicsPSO;
-			uint32						current_num_rendertarget;
-			XD3D12DepthStencilView*		depth_stencil;
-			XD3D12RenderTargetView*		render_target_array[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+			uint32						CurrentNumRendertarget;
+			XD3D12DepthStencilView*		DepthStencil;
+			XD3D12RenderTargetView*		RenderTargetArray[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
 
 			D3D12_VERTEX_BUFFER_VIEW CurrentVertexBufferViews[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 			uint32 VBSlotIndexMax;
@@ -179,15 +179,8 @@ public:
 		}
 	}
 
-	inline void ResetDescHeapIndex() { pipe_curr_desc_array_manager.GetCurrentDescArray()->ResetIndexToZero(); }
+	inline void ResetDescHeapIndex() { PipeCurrDescArrayManager.GetCurrentDescArray()->ResetIndexToZero(); }
 	
-	template<EShaderType ShaderType>
-	inline void SetShader(XShader* ShaderIn)
-	{
-		PipelineState.Common.NumSRVs[EShaderType_Underlying(ShaderType)] = ShaderIn != nullptr ? ShaderIn->GetSRVCount() : 0;
-		PipelineState.Common.NumUAVs[EShaderType_Underlying(ShaderType)] = ShaderIn != nullptr ? ShaderIn->GetUAVCount() : 0;
-	}
-
 	inline void SetHeapDesc() 
 	{
 		bNeedSetHeapDesc = true; 
