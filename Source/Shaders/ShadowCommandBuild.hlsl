@@ -80,7 +80,7 @@ void ShadowCommandBuildCS(uint3 groupId : SV_GroupID, uint groupIndex : SV_Group
 {
     uint index = (groupId.x * ThreadBlockSize) + groupIndex;
 
-    if(index >= commandCount)
+    if(index >= uint(commandCount))
     return;
 
     float4 Corner[8];

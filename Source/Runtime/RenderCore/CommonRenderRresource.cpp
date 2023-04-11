@@ -1,12 +1,14 @@
 #include "CommonRenderRresource.h"
 #include "Runtime/RHI/RHICommandList.h"
 #include <array>
+#include "Runtime\Core\Misc\Path.h"
+
 TGlobalResource<RFullScreenQuadVertexLayout> GFullScreenLayout;
 TGlobalResource<XScreenQuadVertexBuffer> GFullScreenVertexRHI;
 TGlobalResource<XScreenQuadIndexBuffer> GFullScreenIndexRHI;
 
 RFullScreenQuadVS::ShaderInfos RFullScreenQuadVS::StaticShaderInfos(
-	"RFullScreenQuadVS", L"E:/XEngine/XEnigine/Source/Shaders/FullScreenVertexShader.hlsl",
+	"RFullScreenQuadVS", GET_SHADER_PATH("FullScreenVertexShader.hlsl"),
 	"VS", EShaderType::SV_Vertex, RFullScreenQuadVS::CustomConstrucFunc,
 	RFullScreenQuadVS::ModifyShaderCompileDefines);
 

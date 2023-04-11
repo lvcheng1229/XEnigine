@@ -585,6 +585,11 @@ std::shared_ptr<GMaterialInstance> CreateDefautMaterialInstance()
 	MaterialIns->SetMaterialValueFloat("ConstantMetatllic", 0.3f);
 
 
+	//std::shared_ptr<GTexture2D> TexBaseColor =
+	//	CreateTextureFromImageFile(XPath::ProjectResourceSavedDirString() + "/TextureNoAsset/T_CheckBoard_D.png", true);
+	//std::shared_ptr<GTexture2D> TexNormal =
+	//	CreateTextureFromImageFile(XPath::ProjectResourceSavedDirString() + "/TextureNoAsset/T_CheckBoard_N.png", false);
+
 	std::shared_ptr<GTexture2D> TexBaseColor =
 		CreateTextureFromImageFile(XPath::ProjectResourceSavedDirString() + "/TextureNoAsset/T_CheckBoard_D.png", true);
 	std::shared_ptr<GTexture2D> TexNormal =

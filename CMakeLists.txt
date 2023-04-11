@@ -27,18 +27,18 @@ add_definitions(-DX_RHI_DX12)
 add_definitions(-DUNICODE)
 add_definitions(-D_UNICODE)#for imgui
 
-#ImGUI Begin
-set(imgui_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThridParty/imgui)
-file(GLOB imgui_sources "${imgui_SOURCE_DIR}/*.cpp")
-file(GLOB imgui_impl
-"${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp" 
-"${imgui_SOURCE_DIR}/backends/imgui_impl_win32.h"
-"${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp" 
-"${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.h")
-add_library(imgui STATIC ${imgui_sources} ${imgui_impl})
-target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
-link_libraries(imgui)
-#ImGUI End
+##ImGUI Begin
+#set(imgui_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThridParty/imgui)
+#file(GLOB imgui_sources "${imgui_SOURCE_DIR}/*.cpp")
+#file(GLOB imgui_impl
+#"${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp" 
+#"${imgui_SOURCE_DIR}/backends/imgui_impl_win32.h"
+#"${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp" 
+#"${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.h")
+#add_library(imgui STATIC ${imgui_sources} ${imgui_impl})
+#target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
+#link_libraries(imgui)
+##ImGUI End
 
 
 #BOOST Begin
