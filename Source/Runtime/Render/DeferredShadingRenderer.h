@@ -90,6 +90,9 @@ public:
 	//PostProcessToneMapping
 	void PostProcessToneMapping(XRHICommandList& RHICmdList, XRHITexture* TextureSceneColorSrc, XRHITexture* TextureSceneColorDest);
 
+	//PostprocessAA
+	void PostprocessAA(XRHICommandList& RHICmdList, XRHITexture* TextureSceneColorSrc, XRHITexture* TextureSceneColorDest);
+	
 	//
 	void TempUIRenderer(XRHICommandList& RHICmdList, XRHITexture* DestTex);
 

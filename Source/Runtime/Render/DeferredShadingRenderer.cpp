@@ -170,8 +170,11 @@ void XDeferredShadingRenderer::Rendering(XRHICommandList& RHICmdList)
 	int32 PingPongindex = 0;
 	{
 		PostProcessToneMapping(RHICmdList, PingPongTex[PingPongindex % 2], PingPongTex[(PingPongindex + 1) % 2]);
-		TempUIRenderer(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
-		PresentPass(RHICmdList, SceneTargets.TextureSceneColorDefferedPingPong.get());
+		PingPongindex++;
+		PostprocessAA(RHICmdList, PingPongTex[PingPongindex % 2], PingPongTex[(PingPongindex + 1) % 2]);
+
+		TempUIRenderer(RHICmdList, PingPongTex[(PingPongindex + 1) % 2]);
+		PresentPass(RHICmdList, PingPongTex[(PingPongindex + 1) % 2]);
 	}
 	RHICmdList.RHIEndFrame();
 }

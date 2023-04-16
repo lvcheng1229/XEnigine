@@ -13,10 +13,10 @@ void XEditorUI::ShowEditorUI()
 
 	ShowEditorMenu(&bEditorMenuWindowOpen);
     
-    ShowEditorWorldObjectsWindow(&bAssetWindowOpen);
+    //ShowEditorWorldObjectsWindow(&bAssetWindowOpen);
     ShowEditorGameWindow(&bGameEngineWindowOpen);
-    ShowEditorFileContentWindow(&bFileContentWindowOpen);
-    ShowEditorDetialWindow(&bDetailWindowOpen);
+    //ShowEditorFileContentWindow(&bFileContentWindowOpen);
+    //ShowEditorDetialWindow(&bDetailWindowOpen);
 }
 
 void XEditorUI::ShowEditorDetialWindow(bool* bOpen)
