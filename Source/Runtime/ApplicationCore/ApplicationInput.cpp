@@ -1,5 +1,7 @@
 #include "ApplicationInput.h"
-#include <memory>
+#include "UnitTest\GameTimer.h"
+#include "Runtime/Core/ComponentNode/Camera.h"
+
 XAppInput::XAppInput()
 {
 	MouseDelta = { 0,0 };
@@ -42,7 +44,7 @@ void XAppInput::OnKeyUp(EInputKey InputKey)
 	bBoardKeyPressed[int32(InputKey)] = false;
 }
 
-void XAppInput::InputMsgProcsss(EInputType InputType, EInputEvent InputEvent, EInputKey InputKey, int32 PosX, int32 PosY, int32 WHEEL)
+void XAppInput::InputMsgProcesss(EInputType InputType, EInputEvent InputEvent, EInputKey InputKey, int32 PosX, int32 PosY, int32 WHEEL)
 {
 	if (InputType == EInputType::MOUSE)
 	{
@@ -50,37 +52,58 @@ void XAppInput::InputMsgProcsss(EInputType InputType, EInputEvent InputEvent, EI
 		{
 			if (InputKey == EInputKey::MOUSE_RIGHT)
 			{
-				XAppInput::InputPtr->OnRMouseDown(PosX, PosY);
+				OnRMouseDown(PosX, PosY);
 			}
 			else if (InputKey == EInputKey::MOUSE_LEFT)
 			{
-				XAppInput::InputPtr->OnLMouseDown(PosX, PosY);
+				OnLMouseDown(PosX, PosY);
 			}
 		}
 		else if(InputEvent == EInputEvent::UP)
 		{
 			if (InputKey == EInputKey::MOUSE_RIGHT)
 			{
-				XAppInput::InputPtr->OnRMouseUp(PosX, PosY);
+				OnRMouseUp(PosX, PosY);
 			}
 		}
 		else if (InputEvent == EInputEvent::MOUSE_MOVE)
 		{
-			XAppInput::InputPtr->OnMouseMove(PosX, PosY);
+			OnMouseMove(PosX, PosY);
 		}
 	}
 	else if(InputType == EInputType::KEYBOARD)
 	{
 		if (InputEvent == EInputEvent::DOWN)
 		{
-			XAppInput::InputPtr->OnKeyDown(InputKey);
+			OnKeyDown(InputKey);
 		}
 		else if (InputEvent == EInputEvent::UP)
 		{
-			XAppInput::InputPtr->OnKeyUp(InputKey);
+			OnKeyUp(InputKey);
 		}
 	}
 
-	TempUpdate(TempUpFun);
+	if (GetMousePressed(EInputKey::MOUSE_RIGHT))
+	{
+		Camera->ProcessMouseMove(GetMouseDelta().X, GetMouseDelta().Y);
+	}
+
+	const float DT = Timer->DeltaTime();
+	if (GetKeyPressed(EInputKey::BK_W))
+	{
+		Camera->WalkWS(10.0f * DT);
+	}
+	if (GetKeyPressed(EInputKey::BK_S))
+	{
+		Camera->WalkWS(-10.0f * DT);
+	}
+	if (GetKeyPressed(EInputKey::BK_A))
+	{
+		Camera->WalkAD(-10.0f * DT);
+	}
+	if (GetKeyPressed(EInputKey::BK_D))
+	{
+		Camera->WalkAD(10.0f * DT);
+	}
 }
 

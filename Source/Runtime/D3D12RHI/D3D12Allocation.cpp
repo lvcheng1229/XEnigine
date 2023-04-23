@@ -4,10 +4,6 @@
 #include <iostream>
 
 
-#ifdef LOG_USED_BLOCK
-static int heap_index_static = 0;
-#endif
-
 void XD3DBuddyAllocator::Create(
 	XD3D12PhysicDevice* device_in, 
 	
@@ -24,12 +20,6 @@ void XD3DBuddyAllocator::Create(
 	min_block_size = min_block_size_in;
 	max_order = SizeToOrder(max_block_size);
 
-#ifdef LOG_USED_BLOCK
-	heap_index = heap_index_static;
-	heap_index_static++;
-	blocks_free_index.resize(max_block_size / min_block_size);
-	for (auto t : blocks_free_index) { t = 0; }
-#endif
 	offset_from_left.clear();
 	offset_from_left.resize(max_order+1);
 	offset_from_left[max_order].insert(static_cast<uint32>(0));
@@ -106,15 +96,6 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment
 		X_Assert(TotalUsed < max_block_size);
 
 		uint32 OffsetRes = Allocate_Impl(order);
-#ifdef LOG_USED_BLOCK
-		std::cout << "** Heap Alloc Order " << order << "**" << std::endl;
-		std::cout << "heap index: " << heap_index << " used begin :" << OffsetRes << " size:" << (1 << order) << std::endl;
-		for (int i = OffsetRes; i < OffsetRes + (1 << order); i++)
-		{
-			if (blocks_free_index[i] == 1) { X_Assert(false); }
-			blocks_free_index[i] = 1;
-		}
-#endif // LOG_FREE_BLOCK
 
 		resource_location.SetBuddyAllocator(this);
 		BuddyAllocatorData& alloc_data = resource_location.GetBuddyAllocData();
@@ -139,23 +120,6 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment
 			}
 		}
 	}
-
-#ifdef LOG_USED_BLOCK
-	std::cout << "heap index:" << heap_index << "--------------------------------------------" << std::endl;
-	bool bOne = false;
-	for (int i = 0; i < blocks_free_index.size(); i++)
-	{
-		if (blocks_free_index[i] == 1&& bOne==false)
-		{
-			std::cout << "start: " << i; bOne = true;
-		}
-		if (blocks_free_index[i] == 0 && bOne == true)
-		{
-			std::cout << " end: " << i << std::endl; bOne = false;
-		}
-	
-	}
-#endif // LOG_FREE_BLOCK
 
 	X_Assert(can_allocate != false);
 

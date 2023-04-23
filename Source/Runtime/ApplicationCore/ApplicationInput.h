@@ -1,5 +1,9 @@
 #pragma once
 #include "Runtime/HAL/PlatformTypes.h"
+
+class GCamera;
+class GameTimer;
+
 enum class EInputType
 {
 	KEYBOARD,
@@ -41,19 +45,17 @@ class XAppInput
 {
 	friend class XApplication;
 public:
-	static XAppInput* InputPtr;
 	XAppInput();
-	inline int32 GetMouseX() { return MouseX; };
-	inline int32 GetMouseY() { return MouseY; };
-	inline XMousePos& GetMouseDelta() { return MouseDelta; }
-	inline bool GetMousePressed(EInputKey InputKey) { return bMousePressed[int32(InputKey)]; }
-	inline bool GetKeyPressed(EInputKey InputKey) { return bBoardKeyPressed[int32(InputKey)]; }
-
-	static void InputMsgProcsss(EInputType InputType, EInputEvent InputEvent, EInputKey InputKey, int32 PosX, int32 PosY, int32 WHEEL);
+	XMousePos& GetMouseDelta() { return MouseDelta; }
+	bool GetMousePressed(EInputKey InputKey) { return bMousePressed[int32(InputKey)]; }
+	bool GetKeyPressed(EInputKey InputKey) { return bBoardKeyPressed[int32(InputKey)]; }
 	
-	typedef void (*FunPtr)();
-	static void TempUpdate(FunPtr fun) { (*fun)(); }
-	static FunPtr TempUpFun;
+	void SetCamera(GCamera* InCamera){Camera = InCamera;}
+	void SetTimer(GameTimer* InTimera) { Timer = InTimera; }
+	GameTimer* GetTimer() { return Timer; }
+
+	void InputMsgProcesss(EInputType InputType, EInputEvent InputEvent, EInputKey InputKey, int32 PosX, int32 PosY, int32 WHEEL);
+	
 private:
 	inline void SetMousePos(int32 X, int32 Y) { MouseX = X; MouseY = Y; }
 	void OnRMouseDown(int32 X, int32 Y);
@@ -68,4 +70,6 @@ private:
 	XMousePos MouseDelta;
 	int32 MouseX;
 	int32 MouseY;
+	GCamera* Camera;
+	GameTimer* Timer;
 };

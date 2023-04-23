@@ -1,11 +1,36 @@
 #ifdef X_PLATFORM_WIN
 #include "WindowsApplication.h"
 #include "Runtime/RHI/RHI.h"
+#include "UnitTest\GameTimer.h"
 #include <backends/imgui_impl_win32.h>
+#include <string>
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 XApplication* XApplication::APPPtr = nullptr;
 HWND XWindowsApplication::WinHandle = nullptr;
+
+static void CalcFPS(HWND mhMainWnd , GameTimer* InGameTimer)
+{
+	static int frameCnt = 0;
+	static float timeElapsed = 0.0f;
+
+	frameCnt++;
+
+	// Compute averages over one second period.
+	if ((InGameTimer->TotalTime() - timeElapsed) >= 1.0f)
+	{
+		float fps = (float)frameCnt; // fps = frameCnt / 1
+
+		std::wstring fpsStr = std::to_wstring(fps);
+
+		std::wstring windowText = L"fps: " + fpsStr;
+
+		SetWindowText(mhMainWnd, windowText.c_str());
+
+		// Reset for next average.
+		frameCnt = 0;
+		timeElapsed += 1.0f;
+	}
+}
 
 XWindowsApplication::XWindowsApplication()
 {
@@ -85,6 +110,7 @@ bool XWindowsApplication::UISetup()
 bool XWindowsApplication::UINewFrame()
 {
 	ImGui_ImplWin32_NewFrame();
+	CalcFPS(WinHandle, AppInput.GetTimer());
 	return true;
 }
 
@@ -204,34 +230,34 @@ LRESULT WINAPI XWindowsApplication::WindowsMsgProc(HWND hwnd, UINT msg, WPARAM w
 		return 0;
 
 	case WM_LBUTTONDOWN:
-		XAppInput::InputPtr->InputMsgProcsss(EInputType::MOUSE, EInputEvent::DOWN, EInputKey::MOUSE_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::DOWN, EInputKey::MOUSE_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		SetCapture(WinHandle);
 		return 0;
 
 	case WM_LBUTTONUP:
-		XAppInput::InputPtr->InputMsgProcsss(EInputType::MOUSE, EInputEvent::UP, EInputKey::MOUSE_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::UP, EInputKey::MOUSE_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		ReleaseCapture();
 		return 0;
 
 	case WM_RBUTTONDOWN:
-		XAppInput::InputPtr->InputMsgProcsss(EInputType::MOUSE, EInputEvent::DOWN, EInputKey::MOUSE_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::DOWN, EInputKey::MOUSE_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		SetCapture(WinHandle);
 		return 0;
 
 	case WM_RBUTTONUP:
-		XAppInput::InputPtr->InputMsgProcsss(EInputType::MOUSE, EInputEvent::UP, EInputKey::MOUSE_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::UP, EInputKey::MOUSE_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		ReleaseCapture();
 		return 0;
 
 	case WM_MOUSEMOVE:
-		XAppInput::InputPtr->InputMsgProcsss(EInputType::MOUSE, EInputEvent::MOUSE_MOVE, EInputKey::MOUSE_MAX, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::MOUSE_MOVE, EInputKey::MOUSE_MAX, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		return 0;
 
 	case WM_KEYDOWN:
-		XAppInput::InputPtr->InputMsgProcsss(EInputType::KEYBOARD, EInputEvent::DOWN, (EInputKey)WindowKeyMap[wParam], 0, 0, 0);
+		APPPtr->AppInput.InputMsgProcesss(EInputType::KEYBOARD, EInputEvent::DOWN, (EInputKey)WindowKeyMap[wParam], 0, 0, 0);
 		return 0;
 	case WM_KEYUP:
-		XAppInput::InputPtr->InputMsgProcsss(EInputType::KEYBOARD, EInputEvent::UP, (EInputKey)WindowKeyMap[wParam], 0, 0, 0);
+		APPPtr->AppInput.InputMsgProcesss(EInputType::KEYBOARD, EInputEvent::UP, (EInputKey)WindowKeyMap[wParam], 0, 0, 0);
 
 		if (wParam == VK_ESCAPE)
 		{

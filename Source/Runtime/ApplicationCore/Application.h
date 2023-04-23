@@ -2,19 +2,17 @@
 #include "Runtime/HAL/PlatformTypes.h"
 #include "Runtime/ApplicationCore/ApplicationInput.h"
 
-
 class XApplication
 {
-	friend class TestMain;
 public:
 	uint32 ClientWidth;
 	uint32 ClientHeight;
+	XAppInput AppInput;
 	static XApplication* APPPtr;
 	XApplication();
 	virtual ~XApplication();
 	virtual void* GetPlatformHandle();
-protected:
-	virtual void PreInitial();
+
 	virtual bool CreateAppWindow();
 	virtual bool InitRHI();
 
