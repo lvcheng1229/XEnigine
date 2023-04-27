@@ -5,16 +5,18 @@
 class XApplication
 {
 public:
+	static XApplication* Application;
+
 	uint32 ClientWidth;
 	uint32 ClientHeight;
 	XAppInput AppInput;
-	static XApplication* APPPtr;
+	
 	XApplication();
 	virtual ~XApplication();
 	virtual void* GetPlatformHandle();
 
 	virtual bool CreateAppWindow();
-	virtual bool InitRHI();
+	virtual void ApplicationLoop() = 0;;
 
 	virtual bool UISetup() = 0;
 	virtual bool UINewFrame() = 0;

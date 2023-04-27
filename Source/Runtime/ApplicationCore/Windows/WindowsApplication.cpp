@@ -1,11 +1,13 @@
 #ifdef X_PLATFORM_WIN
+#include <string>
+#include <backends/imgui_impl_win32.h>
 #include "WindowsApplication.h"
 #include "Runtime/RHI/RHI.h"
-#include "UnitTest\GameTimer.h"
-#include <backends/imgui_impl_win32.h>
-#include <string>
+#include "Runtime/Core/ComponentNode/GameTimer.h"
+
+
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-XApplication* XApplication::APPPtr = nullptr;
 HWND XWindowsApplication::WinHandle = nullptr;
 
 static void CalcFPS(HWND mhMainWnd , GameTimer* InGameTimer)
@@ -34,7 +36,6 @@ static void CalcFPS(HWND mhMainWnd , GameTimer* InGameTimer)
 
 XWindowsApplication::XWindowsApplication()
 {
-	XApplication::APPPtr = this;
 }
 
 XWindowsApplication::~XWindowsApplication()
@@ -80,10 +81,27 @@ bool XWindowsApplication::CreateAppWindow()
 
 	return true;
 }
-bool XWindowsApplication::InitRHI()
+
+void XWindowsApplication::ApplicationLoop()
 {
-	RHIInit(ClientWidth, ClientHeight);
-	return true;
+	MSG msg = { 0 };
+
+	AppInput.Timer->Reset();
+	while (msg.message != WM_QUIT)
+	{
+		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else
+		{
+			//DeferredShadingRenderer.ViewInfoUpdate(CamIns);
+			//Application->UINewFrame();
+			//DeferredShadingRenderer.Rendering(RHICmdList);
+		}
+		AppInput.Timer->Tick();
+	}
 }
 void* XWindowsApplication::GetPlatformHandle()
 {
@@ -230,34 +248,34 @@ LRESULT WINAPI XWindowsApplication::WindowsMsgProc(HWND hwnd, UINT msg, WPARAM w
 		return 0;
 
 	case WM_LBUTTONDOWN:
-		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::DOWN, EInputKey::MOUSE_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		Application->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::DOWN, EInputKey::MOUSE_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		SetCapture(WinHandle);
 		return 0;
 
 	case WM_LBUTTONUP:
-		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::UP, EInputKey::MOUSE_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		Application->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::UP, EInputKey::MOUSE_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		ReleaseCapture();
 		return 0;
 
 	case WM_RBUTTONDOWN:
-		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::DOWN, EInputKey::MOUSE_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		Application->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::DOWN, EInputKey::MOUSE_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		SetCapture(WinHandle);
 		return 0;
 
 	case WM_RBUTTONUP:
-		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::UP, EInputKey::MOUSE_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		Application->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::UP, EInputKey::MOUSE_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		ReleaseCapture();
 		return 0;
 
 	case WM_MOUSEMOVE:
-		APPPtr->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::MOUSE_MOVE, EInputKey::MOUSE_MAX, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		Application->AppInput.InputMsgProcesss(EInputType::MOUSE, EInputEvent::MOUSE_MOVE, EInputKey::MOUSE_MAX, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		return 0;
 
 	case WM_KEYDOWN:
-		APPPtr->AppInput.InputMsgProcesss(EInputType::KEYBOARD, EInputEvent::DOWN, (EInputKey)WindowKeyMap[wParam], 0, 0, 0);
+		Application->AppInput.InputMsgProcesss(EInputType::KEYBOARD, EInputEvent::DOWN, (EInputKey)WindowKeyMap[wParam], 0, 0, 0);
 		return 0;
 	case WM_KEYUP:
-		APPPtr->AppInput.InputMsgProcesss(EInputType::KEYBOARD, EInputEvent::UP, (EInputKey)WindowKeyMap[wParam], 0, 0, 0);
+		Application->AppInput.InputMsgProcesss(EInputType::KEYBOARD, EInputEvent::UP, (EInputKey)WindowKeyMap[wParam], 0, 0, 0);
 
 		if (wParam == VK_ESCAPE)
 		{

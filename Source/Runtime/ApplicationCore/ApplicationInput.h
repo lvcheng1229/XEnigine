@@ -70,6 +70,7 @@ private:
 	XMousePos MouseDelta;
 	int32 MouseX;
 	int32 MouseY;
+public:
 	GCamera* Camera;
 	GameTimer* Timer;
 };

@@ -11,19 +11,21 @@
 #include "Runtime/Engine/ResourcecConverter.h"
 #include "Runtime/Render/DeferredShadingRenderer.h"
 #include "Runtime/ApplicationCore/Windows/WindowsApplication.h"
-#include "UnitTest/GameTimer.h"
-#include "UnitTest/ResouceLoaderTest.h"
+#include "Runtime/ApplicationCore/GlfwApp/GlfwApplication.h"
+#include "Runtime/Core/ComponentNode/GameTimer.h"
 
-static XApplication* Application = nullptr;
+XApplication* XApplication::Application = nullptr;
+
 class XSandBox
 {
 public:
+    bool bUseVulkan = true;
     XRHICommandList RHICmdList;
 
-    XBoundSphere SceneBoundingSphere;
-    XDeferredShadingRenderer DeferredShadingRenderer;
-
-    std::vector<std::shared_ptr<GGeomertry>> RenderGeos;
+    //XBoundSphere SceneBoundingSphere;
+    //XDeferredShadingRenderer DeferredShadingRenderer;
+    //
+    //std::vector<std::shared_ptr<GGeomertry>> RenderGeos;
     
     //Timer
     GameTimer mTimer;
@@ -39,55 +41,56 @@ public:
     XVector3 LightColor = {1, 1, 1};
     float LightIntensity = 7.0f;
 
-    void SceneBuild()
-    {
-        std::shared_ptr<GGeomertry> DefaultSphere = TempCreateSphereGeoWithMat();
-        DefaultSphere->SetWorldTranslate(XVector3(0, -0.5, 0));
+    //void SceneBuild()
+    //{
+    //    std::shared_ptr<GGeomertry> DefaultSphere = TempCreateSphereGeoWithMat();
+    //    DefaultSphere->SetWorldTranslate(XVector3(0, -0.5, 0));
+    //
+    //    std::shared_ptr<GGeomertry> DefaultCube = TempCreateCubeGeoWithMat();
+    //    DefaultCube->SetWorldTranslate(XVector3(-1, 1.5, 0));
+    //    DefaultCube->GetMaterialInstance()->SetMaterialValueFloat("ConstantMetatllic", 0.8);
+    //    DefaultCube->GetMaterialInstance()->SetMaterialValueFloat("ConstantRoughness", 0.6);
+    //
+    //    std::shared_ptr<GGeomertry> DefaultCubeRight = DefaultCube->CreateGeoInstancewithMat();
+    //    DefaultCubeRight->SetWorldTranslate(XVector3(1, 1.5, 0));
+    //
+    //    std::shared_ptr<GGeomertry> DefaultQuad = TempCreateQuadGeoWithMat();
+    //    DefaultQuad->SetWorldTranslate(XVector3(0.0, 1.0, 0.0));
+    //
+    //    std::shared_ptr<GGeomertry> LeftQuad = DefaultQuad->CreateGeoInstancewithMat();
+    //    LeftQuad->SetWorldRotate(XVector3(0, 0, 1), -(3.14159 * 0.5));
+    //    LeftQuad->SetWorldTranslate(XVector3(-2.0, 0.0, 0.0));
+    //
+    //    std::shared_ptr<GGeomertry> FrontQuad = DefaultQuad->CreateGeoInstancewithMat();
+    //    FrontQuad->SetWorldRotate(XVector3(1, 0, 0), -(3.14159 * 0.5));
+    //    FrontQuad->SetWorldTranslate(XVector3(0.0, 0.0, 2.0));
+    //
+    //    RenderGeos.push_back(DefaultCube);
+    //    RenderGeos.push_back(DefaultCubeRight);
+    //    RenderGeos.push_back(DefaultSphere);
+    //    RenderGeos.push_back(DefaultQuad);
+    //    RenderGeos.push_back(LeftQuad);
+    //    RenderGeos.push_back(FrontQuad);
+    //
+    //    //OBjLoaderTest(RenderGeos);
+    //    for (auto& t : RenderGeos)
+    //    {
+    //        t->GetGVertexBuffer()->CreateRHIBufferChecked();
+    //        t->GetGIndexBuffer()->CreateRHIBufferChecked();
+    //    }
+    //}
 
-        std::shared_ptr<GGeomertry> DefaultCube = TempCreateCubeGeoWithMat();
-        DefaultCube->SetWorldTranslate(XVector3(-1, 1.5, 0));
-        DefaultCube->GetMaterialInstance()->SetMaterialValueFloat("ConstantMetatllic", 0.8);
-        DefaultCube->GetMaterialInstance()->SetMaterialValueFloat("ConstantRoughness", 0.6);
-
-        std::shared_ptr<GGeomertry> DefaultCubeRight = DefaultCube->CreateGeoInstancewithMat();
-        DefaultCubeRight->SetWorldTranslate(XVector3(1, 1.5, 0));
-
-        std::shared_ptr<GGeomertry> DefaultQuad = TempCreateQuadGeoWithMat();
-        DefaultQuad->SetWorldTranslate(XVector3(0.0, 1.0, 0.0));
-
-        std::shared_ptr<GGeomertry> LeftQuad = DefaultQuad->CreateGeoInstancewithMat();
-        LeftQuad->SetWorldRotate(XVector3(0, 0, 1), -(3.14159 * 0.5));
-        LeftQuad->SetWorldTranslate(XVector3(-2.0, 0.0, 0.0));
-
-        std::shared_ptr<GGeomertry> FrontQuad = DefaultQuad->CreateGeoInstancewithMat();
-        FrontQuad->SetWorldRotate(XVector3(1, 0, 0), -(3.14159 * 0.5));
-        FrontQuad->SetWorldTranslate(XVector3(0.0, 0.0, 2.0));
-
-        RenderGeos.push_back(DefaultCube);
-        RenderGeos.push_back(DefaultCubeRight);
-        RenderGeos.push_back(DefaultSphere);
-        RenderGeos.push_back(DefaultQuad);
-        RenderGeos.push_back(LeftQuad);
-        RenderGeos.push_back(FrontQuad);
-
-        //OBjLoaderTest(RenderGeos);
-        for (auto& t : RenderGeos)
-        {
-            t->GetGVertexBuffer()->CreateRHIBufferChecked();
-            t->GetGIndexBuffer()->CreateRHIBufferChecked();
-        }
-    }
-
-    void MainInit()
+    void Init()
     {
         MainInit::Init();
 
-        Application = new XWindowsApplication();
-        Application->CreateAppWindow();
-        Application->InitRHI();
-        Application->AppInput.SetCamera(&CamIns);
-        Application->AppInput.SetTimer(&mTimer);
+        XApplication::Application = new XGlfwApplication();
+        //XApplication::Application = new XWindowsApplication();
+        XApplication::Application->CreateAppWindow();
+        XApplication::Application->AppInput.SetCamera(&CamIns);
+        XApplication::Application->AppInput.SetTimer(&mTimer);
 
+        //RHIInit(XApplication::Application->ClientWidth, XApplication::Application->ClientHeight);
         //RHICmdList = GRHICmdList;
         //RHICmdList.Open();
         //SceneBuild();
@@ -105,43 +108,12 @@ public:
         //RHICmdList.Execute();
     }
 
-    void MainRun()
-    {
-        MSG msg = {0};
-
-        mTimer.Reset();
-        while (msg.message != WM_QUIT)
-        {
-            if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
-            {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-            else
-            {
-                //DeferredShadingRenderer.ViewInfoUpdate(CamIns);
-                //Application->UINewFrame();
-                //DeferredShadingRenderer.Rendering(RHICmdList);
-            }
-            mTimer.Tick();
-        }
-    }
-
-    void MainDestroy()
+    void Destroy()
     {
         MainInit::Destroy();
-        RHIRelease();
-        
-    }
-
-    void MainFun()
-    {
-        MainInit();
-        MainRun();
-        MainDestroy();
+        //RHIRelease();
     }
 };
-
 
 int main()
 {
@@ -149,10 +121,12 @@ int main()
     int* a = new int(5);
     {
         XSandBox SandBox;
-        SandBox.MainFun();
+        SandBox.Init();
+        XApplication::Application->ApplicationLoop();
+        SandBox.Destroy();
     }
     {
-        delete Application;
+        delete XWindowsApplication::Application;
         return 0;
     }
 

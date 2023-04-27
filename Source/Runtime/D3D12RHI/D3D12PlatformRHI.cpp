@@ -40,8 +40,8 @@ XPlatformRHI* XD3D12RHIModule::CreateRHI()
 	AbsDevice->SetViewPort(D3DViewPort);
 
 	XPlatformRHI* RHIRet = new XD3D12PlatformRHI(AbsDevice);
-	D3DViewPort->Create(AbsDevice, XWindowsApplication::APPPtr->ClientWidth, XWindowsApplication::APPPtr->ClientHeight,
-		EPixelFormat::FT_R8G8B8A8_UNORM, (HWND)XWindowsApplication::APPPtr->GetPlatformHandle());
+	D3DViewPort->Create(AbsDevice, XApplication::Application->ClientWidth, XApplication::Application->ClientHeight,
+		EPixelFormat::FT_R8G8B8A8_UNORM, (HWND)XApplication::Application->GetPlatformHandle());
 	XD3DDirectContex* DirectCtx = AbsDevice->GetDirectContex(0);
 	
 	GRHICmdList.SetContext(DirectCtx);
