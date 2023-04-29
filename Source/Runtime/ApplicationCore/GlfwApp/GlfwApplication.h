@@ -6,7 +6,7 @@ class XGlfwApplication :public XApplication
 {
 private:
 	GLFWwindow* window;
-
+	XDeferredShadingRenderer* DeferredShadingRenderer;
 	const wchar_t* WindowsClassName = L"MainWnd";
 	const wchar_t* WindowName = L"XEngine";
 public:
@@ -17,4 +17,5 @@ public:
 	void ApplicationLoop()override;
 	bool UISetup()override;
 	bool UINewFrame()override;
+	void SetRenderer(XDeferredShadingRenderer* InDeferredShadingRenderer)override;
 };

@@ -9,7 +9,7 @@ void XVertexFactory::InitLayout(const XRHIVertexLayoutArray& LayoutArray, ELayou
 	}
 	else
 	{
-		X_Assert(false);
+		XASSERT(false);
 	}
 }
 

@@ -6,10 +6,10 @@ class XD3D12Adapter
 public:
 	void Create();
 	
-	inline IDXGIAdapter* GetDXAdapter() { return dxgi_adapter.Get(); }
-	inline IDXGIFactory4* GetDXFactory() { return dxgi_factory.Get(); }
+	inline IDXGIAdapter* GetDXAdapter() { return DxgiAdapter.Get(); }
+	inline IDXGIFactory4* GetDXFactory() { return DxgiFactory.Get(); }
 
 private:
-	XDxRefCount<IDXGIFactory4> dxgi_factory;
-	XDxRefCount<IDXGIAdapter> dxgi_adapter;
+	XDxRefCount<IDXGIFactory4> DxgiFactory;
+	XDxRefCount<IDXGIAdapter> DxgiAdapter;
 };

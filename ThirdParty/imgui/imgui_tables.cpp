@@ -358,7 +358,7 @@ bool    ImGui::BeginTableEx(const char* name, ImGuiID id, int columns_count, ImG
     table->InnerWidth = inner_width;
     temp_data->UserOuterSize = outer_size;
 
-    // Instance data (for instance 0, TableID == TableInstanceID)
+    // Instance data (for Instance 0, TableID == TableInstanceID)
     ImGuiID instance_id;
     table->InstanceCurrent = (ImS16)instance_no;
     if (instance_no > 0)
@@ -583,7 +583,7 @@ bool    ImGui::BeginTableEx(const char* name, ImGuiID id, int columns_count, ImG
 }
 
 // For reference, the average total _allocation count_ for a table is:
-// + 0 (for ImGuiTable instance, we are pooling allocations in g.Tables)
+// + 0 (for ImGuiTable Instance, we are pooling allocations in g.Tables)
 // + 1 (for table->RawData allocated below)
 // + 1 (for table->ColumnsNames, if names are used)
 // Shared allocations per number of nested tables
@@ -3201,7 +3201,7 @@ void ImGui::TableDrawContextMenu(ImGuiTable* table)
 // [Main] 4: TableSettingsHandler_WriteAll()   When .ini file is dirty (which can come from other source), save TableSettings into .ini file.
 //-------------------------------------------------------------------------
 
-// Clear and initialize empty settings instance
+// Clear and initialize empty settings Instance
 static void TableSettingsInit(ImGuiTableSettings* settings, ImGuiID id, int columns_count, int columns_count_max)
 {
     IM_PLACEMENT_NEW(settings) ImGuiTableSettings();

@@ -1,6 +1,6 @@
 #include "D3D12OnlineDescArray.h"
 
-void XD3D12OnlineDescArray::Create(XD3D12PhysicDevice* device_in)
+void XD3D12OnlineDescArray::Create(XD3D12Device* device_in)
 {
 	SetParentDevice(device_in);
 

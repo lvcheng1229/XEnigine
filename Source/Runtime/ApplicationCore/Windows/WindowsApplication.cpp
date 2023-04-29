@@ -4,6 +4,7 @@
 #include "WindowsApplication.h"
 #include "Runtime/RHI/RHI.h"
 #include "Runtime/Core/ComponentNode/GameTimer.h"
+#include "Runtime\RHI\RHICommandList.h"
 
 
 
@@ -96,9 +97,9 @@ void XWindowsApplication::ApplicationLoop()
 		}
 		else
 		{
-			//DeferredShadingRenderer.ViewInfoUpdate(CamIns);
-			//Application->UINewFrame();
-			//DeferredShadingRenderer.Rendering(RHICmdList);
+			DeferredShadingRenderer->ViewInfoUpdate(*AppInput.Camera);
+			Application->UINewFrame();
+			DeferredShadingRenderer->Rendering(GRHICmdList);
 		}
 		AppInput.Timer->Tick();
 	}
@@ -130,6 +131,11 @@ bool XWindowsApplication::UINewFrame()
 	ImGui_ImplWin32_NewFrame();
 	CalcFPS(WinHandle, AppInput.GetTimer());
 	return true;
+}
+
+void XWindowsApplication::SetRenderer(XDeferredShadingRenderer* InDeferredShadingRenderer)
+{
+	DeferredShadingRenderer = InDeferredShadingRenderer;
 }
 
 static int32 WindowKeyMap[] =

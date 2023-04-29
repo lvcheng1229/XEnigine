@@ -287,7 +287,7 @@ inline std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 he
 
 inline std::shared_ptr<XRHIVertexBuffer>RHIcreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
-	return GPlatformRHI->RHIcreateVertexBuffer(Stride, Size, Usage, ResourceData);
+	return GPlatformRHI->RHICreateVertexBuffer(Stride, Size, Usage, ResourceData);
 }
 
 inline void RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer,uint32 CounterOffset)
@@ -312,7 +312,7 @@ inline std::shared_ptr<XRHIShaderResourceView> RHICreateShaderResourceView(XRHIS
 
 inline std::shared_ptr<XRHIStructBuffer>RHIcreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
-	return GPlatformRHI->RHIcreateStructBuffer(Stride, Size, Usage, ResourceData);
+	return GPlatformRHI->RHICreateStructBuffer(Stride, Size, Usage, ResourceData);
 }
 
 inline std::shared_ptr<XRHIIndexBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)

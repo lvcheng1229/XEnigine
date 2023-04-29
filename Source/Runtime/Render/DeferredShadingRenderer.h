@@ -127,5 +127,5 @@ public:
 	std::vector<std::shared_ptr<GGeomertry>>RenderGeos;
 	
 	XDefaultVertexFactory DefaultVertexFactory;
-	RendererViewInfo RViewInfo;
+	XSceneView RViewInfo;
 };

@@ -10,7 +10,7 @@ void XD3D12Viewport::Resize(
 
     DXGI_FORMAT DxFormat = (DXGI_FORMAT)GPixelFormats[(int)Format].PlatformFormat;
 
-    XD3D12PhysicDevice* PhysicalDevice = AbsDevice->GetPhysicalDevice();
+    XD3D12Device* PhysicalDevice = AbsDevice->GetPhysicalDevice();
     XD3D12CommandQueue* DirectCmdQueue = AbsDevice->GetCmdQueueByType(D3D12_COMMAND_LIST_TYPE_DIRECT);
     XD3DDirectContex* DirectxCtx = AbsDevice->GetDirectContex(0);
 

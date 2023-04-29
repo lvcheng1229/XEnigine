@@ -36,7 +36,7 @@ public:
 
 	inline void SetScale(const XVector3& ScaleIn)
 	{
-		X_Assert(((ScaleIn.x == ScaleIn.y) && (ScaleIn.y == ScaleIn.z)));
+		XASSERT(((ScaleIn.x == ScaleIn.y) && (ScaleIn.y == ScaleIn.z)));
 		Scale = ScaleIn;
 		bNeedRecombine = true;
 	}

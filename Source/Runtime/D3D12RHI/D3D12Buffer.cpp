@@ -33,7 +33,7 @@ BufferType* XD3D12AbstractDevice::DeviceCreateRHIBuffer(
 	{
 		XD3D12ResourcePtr_CPUGPU UpLoadResourcePtr;
 		bool res = UploadHeapAlloc.Allocate(Size, Alignment, UpLoadResourcePtr);
-		X_Assert(res == true);
+		XASSERT(res == true);
 
 		memcpy(UpLoadResourcePtr.GetMappedCPUResourcePtr(), CreateData.ResourceArray->GetResourceData(), CreateData.ResourceArray->GetResourceDataSize());
 
@@ -74,7 +74,7 @@ XD3D12StructBuffer* XD3D12AbstractDevice::DeviceCreateStructBuffer(XD3D12DirectC
 	{
 		XD3D12ResourcePtr_CPUGPU UpLoadResourcePtr;
 		bool res = UploadHeapAlloc.Allocate(Size, Alignment, UpLoadResourcePtr);
-		X_Assert(res == true);
+		XASSERT(res == true);
 
 		memcpy(UpLoadResourcePtr.GetMappedCPUResourcePtr(), CreateData.ResourceArray->GetResourceData(), CreateData.ResourceArray->GetResourceDataSize());
 
@@ -224,8 +224,8 @@ XD3D12UnorderedAcessView* XD3D12AbstractDevice::RHICreateUnorderedAccessView(XRH
 	XD3D12UnorderedAcessView* UnorderedAcessView = new  XD3D12UnorderedAcessView();
 	UnorderedAcessView->Create(PhysicalDevice, D3D12Resource, D3D12Resource, uavDesc, CPU_PTR, GPU_PTR);
 	
-	X_Assert(bUseUAVCounter == true);
-	X_Assert(bAppendBuffer == true);
+	XASSERT(bUseUAVCounter == true);
+	XASSERT(bAppendBuffer == true);
 	return UnorderedAcessView;
 }
 std::shared_ptr<XRHIUnorderedAcessView> XD3D12PlatformRHI::RHICreateUnorderedAccessView(XRHIStructBuffer* StructuredBuffer, bool bUseUAVCounter, bool bAppendBuffer, uint64 CounterOffsetInBytes)
@@ -241,7 +241,7 @@ std::shared_ptr<XRHIShaderResourceView> XD3D12PlatformRHI::RHICreateShaderResour
 }
 
 
-std::shared_ptr<XRHIVertexBuffer> XD3D12PlatformRHI::RHIcreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+std::shared_ptr<XRHIVertexBuffer> XD3D12PlatformRHI::RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	const D3D12_RESOURCE_DESC Desc = CD3DX12_RESOURCE_DESC::Buffer(Size);
 	const uint32 Alignment = 4;
@@ -257,7 +257,7 @@ std::shared_ptr<XRHIIndexBuffer> XD3D12PlatformRHI::RHICreateIndexBuffer(uint32 
 	return std::shared_ptr<XRHIIndexBuffer>(IndexBuffer);
 }
 
-std::shared_ptr<XRHIStructBuffer> XD3D12PlatformRHI::RHIcreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+std::shared_ptr<XRHIStructBuffer> XD3D12PlatformRHI::RHICreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	D3D12_RESOURCE_DESC BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(Size);
 	if ((int)Usage & ((int)EBufferUsage::BUF_UnorderedAccess))

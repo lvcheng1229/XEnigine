@@ -1,6 +1,6 @@
 #include "D3D12DescriptorArray.h"
 
-void XD3D12DescArrayManager::Create(XD3D12PhysicDevice* device_in, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32 num)
+void XD3D12DescArrayManager::Create(XD3D12Device* device_in, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32 num)
 {
 	device = device_in;
 	desc_per_heap = num;

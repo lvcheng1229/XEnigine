@@ -46,7 +46,7 @@ template void XD3D12OnlineDescArrayManager::SetDescTableUAVs<EShaderType::SV_Ver
 	const XD3D12RootSignature* root_signature,
 	XD3D12PassUnorderedAcessManager* UAVManager,
 	uint32& slot_start, uint16& slot_mask);
-void XD3D12OnlineDescArrayManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in)
+void XD3D12OnlineDescArrayManager::Create(XD3D12Device* device_in, XD3DDirectContex* direct_ctx_in)
 {
 	device = device_in;
 	direct_ctx = direct_ctx_in;

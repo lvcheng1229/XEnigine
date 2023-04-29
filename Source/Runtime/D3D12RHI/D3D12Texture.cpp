@@ -44,7 +44,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 
 	if (bTextureArray)
 	{
-		X_Assert(SizeZ > 1);
+		XASSERT(SizeZ > 1);
 	}
 
 	auto cmd_list = x_cmd_list->GetDXCmdList();
@@ -135,7 +135,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 			static_cast<uint32>(Info.SizeInBytes),
 			D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 			default_location);
-		X_Assert(res == true);
+		XASSERT(res == true);
 
 		const D3D12_RESOURCE_STATES ResourceState = (tex_data != nullptr ? D3D12_RESOURCE_STATE_COPY_DEST : InitialState);
 
@@ -275,7 +275,7 @@ XD3D12Texture2D* XD3D12AbstractDevice::CreateD3D12Texture2D(
 
 		XD3D12ResourcePtr_CPUGPU upload_location;
 		bool res = UploadHeapAlloc.Allocate(static_cast<uint32>(uploadBufferSize), D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
-		X_Assert(res == true);
+		XASSERT(res == true);
 
 		D3D12_SUBRESOURCE_DATA textureData = {};
 		textureData.pData = tex_data;
@@ -326,7 +326,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 	if (flag & ETextureCreateFlags::TexCreate_RenderTargetable)
 	{
-		X_Assert(false);
+		XASSERT(false);
 	}
 
 	if (flag & TexCreate_UAV)
@@ -362,7 +362,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 	{
 		bool res = DefaultNonRtDsTextureHeapAlloc.Allocate(static_cast<uint32>(Info.SizeInBytes),
 			D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, default_location);
-		X_Assert(res == true);
+		XASSERT(res == true);
 
 		const D3D12_RESOURCE_STATES ResourceState = (tex_data != nullptr ? D3D12_RESOURCE_STATE_COPY_DEST : InitialState);
 
@@ -408,7 +408,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 	if (bCreateUAV)
 	{
-		X_Assert(NumMipsIn == 1);
+		XASSERT(NumMipsIn == 1);
 		D3D12_UNORDERED_ACCESS_VIEW_DESC UavDesc = {};
 		UavDesc.Format = PlatformShaderResourceFormat;
 		UavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
@@ -430,7 +430,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 	if (bCreateRTV)
 	{
-		X_Assert(false);
+		XASSERT(false);
 		D3D12_RENDER_TARGET_VIEW_DESC rtDesc = {};
 		rtDesc.Format = TextureResource->GetResource()->GetDesc().Format;
 		rtDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
@@ -455,7 +455,7 @@ XD3D12Texture3D* XD3D12AbstractDevice::CreateD3D12Texture3D(
 
 		XD3D12ResourcePtr_CPUGPU upload_location;
 		bool res = UploadHeapAlloc.Allocate(static_cast<uint32>(uploadBufferSize), D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, upload_location);
-		X_Assert(res == true);
+		XASSERT(res == true);
 
 		D3D12_SUBRESOURCE_DATA textureData = {};
 		textureData.pData = tex_data;
@@ -482,7 +482,7 @@ XD3D12CommandQueue* XD3D12AbstractDevice::GetCmdQueueByType(D3D12_COMMAND_LIST_T
 		return ComputeCmdQueue;
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 	return DirectxCmdQueue;

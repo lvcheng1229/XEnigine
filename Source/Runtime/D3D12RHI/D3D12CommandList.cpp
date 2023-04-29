@@ -1,6 +1,6 @@
 #include  "D3D12CommandList.h"
 
-void XD3D12CommandAllocator::Create(XD3D12PhysicDevice* device, D3D12_COMMAND_LIST_TYPE type)
+void XD3D12CommandAllocator::Create(XD3D12Device* device, D3D12_COMMAND_LIST_TYPE type)
 {
 	ThrowIfFailed(device->GetDXDevice()->CreateCommandAllocator(type, IID_PPV_ARGS(&DxCmdAlloc)));
 	DxCmdAlloc->SetName(L"cmd allocator");
@@ -45,7 +45,7 @@ void XD3D12ResourceBarrierManager::Flush(ID3D12GraphicsCommandList* pCommandList
 	barriers.resize(0);
 }
 
-void XD3D12DirectCommandList::CreateDirectCmdList(XD3D12PhysicDevice* device, XD3D12CommandAllocator* cmd_alloc)
+void XD3D12DirectCommandList::CreateDirectCmdList(XD3D12Device* device, XD3D12CommandAllocator* cmd_alloc)
 {
 	ThrowIfFailed(device->GetDXDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmd_alloc->GetDXAlloc(), nullptr, IID_PPV_ARGS(&d3d12_cmd_list)));
 }

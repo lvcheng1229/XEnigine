@@ -1,6 +1,7 @@
 #pragma once
 #include "Runtime/HAL/PlatformTypes.h"
 #include "Runtime/ApplicationCore/ApplicationInput.h"
+#include <Runtime\Render\DeferredShadingRenderer.h>
 
 class XApplication
 {
@@ -20,4 +21,6 @@ public:
 
 	virtual bool UISetup() = 0;
 	virtual bool UINewFrame() = 0;
+
+	virtual void SetRenderer(XDeferredShadingRenderer* InDeferredShadingRenderer) = 0;
 };

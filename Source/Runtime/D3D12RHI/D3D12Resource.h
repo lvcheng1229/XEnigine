@@ -207,7 +207,7 @@ public:
 	{
 		if (HasValueBind && (BufferIndex != BindSlotIndex))
 		{
-			X_Assert(false);
+			XASSERT(false);
 		}
 
 		if (HasValueBind == false)

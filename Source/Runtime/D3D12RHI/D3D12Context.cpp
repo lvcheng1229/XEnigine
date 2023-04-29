@@ -16,7 +16,7 @@ void XD3DDirectContex::Create(XD3D12AbstractDevice* device_in)
 	AbsDevice->GetConstantBufferUploadHeapAlloc()->Allocate(MAX_GLOBAL_CONSTANT_BUFFER_SIZE, 256, CSGlobalConstantBuffer->ResourceLocation);
 
 
-	XD3D12PhysicDevice* PhyDevice = AbsDevice->GetPhysicalDevice();
+	XD3D12Device* PhyDevice = AbsDevice->GetPhysicalDevice();
 	cmd_direct_alloc.Create(PhyDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
 	cmd_direct_alloc.Reset();
 
@@ -72,7 +72,7 @@ void XD3DDirectContex::RHISetShaderUAV(EShaderType ShaderType, uint32 TextureInd
 		PassStateManager.SetUAV<EShaderType::SV_Compute>(D3DUAVPtr, TextureIndex);
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 	
@@ -94,7 +94,7 @@ void XD3DDirectContex::RHISetShaderTexture(EShaderType ShaderType, uint32 Textur
 		PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3DSRVPtr, TextureIndex);
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 }
@@ -114,7 +114,7 @@ void XD3DDirectContex::RHISetShaderSRV(EShaderType ShaderType, uint32 SRVIndex, 
 		PassStateManager.SetShaderResourceView<EShaderType::SV_Compute>(D3D12SRV, SRVIndex);
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 }
@@ -134,7 +134,7 @@ void XD3DDirectContex::SetShaderValue(EShaderType ShaderType, uint32 BufferIndex
 		CSGlobalConstantBuffer->SetSlotIndex(BufferIndex);
 		CSGlobalConstantBuffer->UpdateData(NewValue, NumBytes, VariableOffsetInBuffer);
 		break;
-	default:X_Assert(false); break;
+	default:XASSERT(false); break;
 	}
 
 }
@@ -154,7 +154,7 @@ void XD3DDirectContex::RHISetShaderConstantBuffer(EShaderType ShaderType, uint32
 		PassStateManager.SetCBV<EShaderType::SV_Compute>(ConstantBuffer, BufferIndex);
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 }
@@ -383,7 +383,7 @@ void XD3DDirectContex::SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRend
 		}
 		else
 		{
-			X_Assert(false);
+			XASSERT(false);
 		}
 	}
 	else if (DSVPtr != nullptr)
@@ -395,7 +395,7 @@ void XD3DDirectContex::SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRend
 	}
 	else
 	{
-		X_Assert(false);
+		XASSERT(false);
 	}
 }
 

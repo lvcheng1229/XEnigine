@@ -34,7 +34,7 @@ private:
 public:
 	static RHIStateType* GetRHI()
 	{
-		X_Assert(StaticResource.StateRHI.get() != nullptr);
+		XASSERT(StaticResource.StateRHI.get() != nullptr);
 		return StaticResource.StateRHI.get();
 	};
 };

@@ -18,7 +18,7 @@ private:
 	uint32							desc_per_heap;
 	uint32							element_size;
 
-	XD3D12PhysicDevice*				device;
+	XD3D12Device*				device;
 	D3D12_DESCRIPTOR_HEAP_DESC		desc;
 
 	std::unordered_set<uint32>		free_desc_array_index;;
@@ -27,7 +27,7 @@ public:
 
 	void FreeDesc(uint32 index_of_desc_in_heap, uint32 index_of_heap);
 	void AllocateDesc(uint32& index_of_desc_in_heap, uint32& index_of_heap);
-	void Create(XD3D12PhysicDevice* device_in, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32 num);
+	void Create(XD3D12Device* device_in, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32 num);
 
 	inline ID3D12DescriptorHeap* GetDxHeapByIndex(const uint32 IndexOfHeap)
 	{

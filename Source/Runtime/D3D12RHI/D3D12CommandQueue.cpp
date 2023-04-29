@@ -1,6 +1,6 @@
 #include "D3D12CommandQueue.h"
 
-void XD3D12Fence::Create(XD3D12PhysicDevice* device)
+void XD3D12Fence::Create(XD3D12Device* device)
 {
 	ThrowIfFailed(device->GetDXDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&d3d12_fence)));
 }
@@ -51,7 +51,7 @@ void XD3D12Fence::WaitGPU(XD3D12CommandQueue* cmd_queue)
 }
 
 
-void XD3D12CommandQueue::Create(XD3D12PhysicDevice* device)
+void XD3D12CommandQueue::Create(XD3D12Device* device)
 {
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Type = d3d12_queue_type;
@@ -83,7 +83,7 @@ void XD3D12CommandQueue::ExecuteCommandListInteral(std::vector<XD3D12DirectComma
 	{
 		if (Lists[i].GetPendingResourceBarrier().size() > 0)
 		{
-			X_Assert(false);
+			XASSERT(false);
 		}
 	}
 	std::vector<ID3D12CommandList*>execute_cmd_queue;

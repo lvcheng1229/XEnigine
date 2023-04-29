@@ -66,7 +66,7 @@ public:
 inline XD3D12TextureBase* GetD3D12TextureFromRHITexture(XRHITexture* Texture)
 {
 	if (!Texture) { return NULL; }
-	XD3D12TextureBase* Result = ((XD3D12TextureBase*)Texture->GetTextureBaseRHI()); X_Assert(Result);
+	XD3D12TextureBase* Result = ((XD3D12TextureBase*)Texture->GetTextureBaseRHI()); XASSERT(Result);
 	return Result;
 }
 

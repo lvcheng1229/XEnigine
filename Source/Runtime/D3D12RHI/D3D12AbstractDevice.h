@@ -20,9 +20,9 @@ public:
 		{};
 
 	~XD3D12AbstractDevice();
-	void Create(XD3D12PhysicDevice* PhysicalDeviceIn);
+	void Create(XD3D12Device* PhysicalDeviceIn);
 
-	inline XD3D12PhysicDevice*		GetPhysicalDevice()						{ return PhysicalDevice; }
+	inline XD3D12Device*		GetPhysicalDevice()						{ return PhysicalDevice; }
 
 	//index 0 is default Contex
 	inline XD3DDirectContex*		GetDirectContex(uint32 index_thread)	{ return &DirectCtxs[index_thread]; }
@@ -71,7 +71,7 @@ private:
 	std::unordered_map<std::size_t, std::shared_ptr<XD3DCommandRootSignature>>CmdRootSignatureMap;
 
 	XD3D12Viewport* Viewport;
-	XD3D12PhysicDevice* PhysicalDevice;
+	XD3D12Device* PhysicalDevice;
 
 	XDxRefCount<ID3D12Resource> ID3D12ZeroStructBuffer;
 	XD3D12CommandQueue* DirectxCmdQueue;;

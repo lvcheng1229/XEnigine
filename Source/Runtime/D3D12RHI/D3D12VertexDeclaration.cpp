@@ -26,7 +26,7 @@ struct XD3D12VertexDeclarationKey
 			case EVertexElementType::VET_Float4:		VertexLayoutArray[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
 			case EVertexElementType::VET_Color:			VertexLayoutArray[i].Format = DXGI_FORMAT_B8G8R8A8_UNORM; break;
 			case EVertexElementType::VET_PackedNormal:	VertexLayoutArray[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break; 
-			default:X_Assert(false);
+			default:XASSERT(false);
 			}
 			
 			THashCombine(Hash, VertexLayoutArray[i].Format);

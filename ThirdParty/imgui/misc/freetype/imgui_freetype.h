@@ -35,7 +35,7 @@ namespace ImGuiFreeType
     // This is automatically assigned when using '#define IMGUI_ENABLE_FREETYPE'.
     // If you need to dynamically select between multiple builders:
     // - you can manually assign this builder with 'atlas->FontBuilderIO = ImGuiFreeType::GetBuilderForFreeType()'
-    // - prefer deep-copying this into your own ImFontBuilderIO instance if you use hot-reloading that messes up static data.
+    // - prefer deep-copying this into your own ImFontBuilderIO Instance if you use hot-reloading that messes up static data.
     IMGUI_API const ImFontBuilderIO*    GetBuilderForFreeType();
 
     // Override allocators. By default ImGuiFreeType will use IM_ALLOC()/IM_FREE()

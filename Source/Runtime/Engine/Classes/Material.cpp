@@ -12,7 +12,7 @@ void GMaterialInstance::SetMaterialValueFloat(const std::string& ValueName, floa
 			return;
 		}
 	}
-	X_Assert(false);
+	XASSERT(false);
 }
 
 void GMaterialInstance::SetMaterialValueFloat2(const std::string& ValueName, XVector2 Value)
@@ -28,7 +28,7 @@ void GMaterialInstance::SetMaterialValueFloat2(const std::string& ValueName, XVe
 			return;
 		}
 	}
-	X_Assert(false);
+	XASSERT(false);
 }
 
 void GMaterialInstance::SetMaterialValueFloat3(const std::string& ValueName, XVector3 Value)
@@ -45,7 +45,7 @@ void GMaterialInstance::SetMaterialValueFloat3(const std::string& ValueName, XVe
 			return;
 		}
 	}
-	X_Assert(false);
+	XASSERT(false);
 }
 
 void GMaterialInstance::SetMaterialValueFloat4(const std::string& ValueName, XVector4 Value)
@@ -63,7 +63,7 @@ void GMaterialInstance::SetMaterialValueFloat4(const std::string& ValueName, XVe
 			return;
 		}
 	}
-	X_Assert(false);
+	XASSERT(false);
 }
 
 void GMaterialInstance::SetMaterialTexture2D(const std::string& TexName, std::shared_ptr<GTexture2D> TexPtrIn)
@@ -77,7 +77,7 @@ void GMaterialInstance::SetMaterialTexture2D(const std::string& TexName, std::sh
 			return;
 		}
 	}
-	X_Assert(false);
+	XASSERT(false);
 }
 
 std::shared_ptr<XRHIConstantBuffer> GMaterialInstance::GetRHIConstantBuffer()

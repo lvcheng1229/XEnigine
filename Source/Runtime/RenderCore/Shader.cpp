@@ -15,7 +15,7 @@ std::shared_ptr<XRHIShader> XShaderMappingToRHIShaders_InlineCode::CreateRHIShad
 	case EShaderType::SV_Vertex:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreateVertexShader(CodeView)); break;
 	case EShaderType::SV_Pixel:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreatePixelShader(CodeView)); break;
 	case EShaderType::SV_Compute:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreateComputeShader(CodeView)); break;
-	default:X_Assert(false); break;
+	default:XASSERT(false); break;
 	}
 	RHIShaderRef->SetHash(CodeHash);
 	return RHIShaderRef;
@@ -54,7 +54,7 @@ XXShader* XShaderMappingToXShaders::FindOrAddXShader(const std::size_t HashedSha
 XXShader* XShaderMappingToXShaders::GetXShader(const std::size_t HashedEntryIndex, int32 PermutationId) const
 {
 	auto iter = MapHashedShaderNameIndexToXShaderIndex.find(HashedEntryIndex);
-	X_Assert(iter != MapHashedShaderNameIndexToXShaderIndex.end());
+	XASSERT(iter != MapHashedShaderNameIndexToXShaderIndex.end());
 	std::size_t ShaderPtrArrayIndex = iter->second;
 	return ShaderPtrArray[ShaderPtrArrayIndex].get();
 }

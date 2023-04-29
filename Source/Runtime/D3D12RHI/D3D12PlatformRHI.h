@@ -1,33 +1,26 @@
 #pragma once
 
 #include "Runtime/RHI/PlatformRHI.h"
-
 #include "D3D12View.h"
 #include "D3D12CommandList.h"
 
+class XD3D12Viewport;
 class XD3D12AbstractDevice;
-
-class XD3D12RHIModule :public XRHIModule
-{
-	std::shared_ptr<XD3D12Adapter>D3DAdapterPtr;
-public:
-	void ReleaseRHI()override;
-	XPlatformRHI* CreateRHI()override;
-};
 
 class XD3D12PlatformRHI :public XPlatformRHI
 {
 public:
-	XD3D12PlatformRHI(XD3D12AbstractDevice* InPhyDevice);
-	inline void Init() override {};
+	XD3D12PlatformRHI();
+	~XD3D12PlatformRHI();
+	void Init() override;
 
 	//CreateVertexLayout
 	std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements) final override;
 	
 	//Create buffer
-	std::shared_ptr<XRHIVertexBuffer>RHIcreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override;
+	std::shared_ptr<XRHIVertexBuffer>RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override;
 	std::shared_ptr<XRHIIndexBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override;
-	std::shared_ptr<XRHIStructBuffer>RHIcreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override;
+	std::shared_ptr<XRHIStructBuffer>RHICreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override;
 	std::shared_ptr<XRHIUnorderedAcessView> RHICreateUnorderedAccessView(XRHIStructBuffer* StructuredBuffer, bool bUseUAVCounter, bool bAppendBuffer, uint64 CounterOffsetInBytes) final override;
 	std::shared_ptr<XRHIShaderResourceView> RHICreateShaderResourceView(XRHIStructBuffer* StructuredBuffer) final override;
 	void RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer, uint32 CounterOffset)final override;
@@ -71,9 +64,11 @@ public:
 	void* LockIndexBuffer(XRHIIndexBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)override;
 	void UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)override;
 public:
-	XD3D12PhysicDevice* PhyDevice;
-	XD3D12AbstractDevice* AbsDevice;
-	
+	std::shared_ptr<XD3D12Device>PhyDevice;
+	std::shared_ptr<XD3D12Viewport>D3DViewPort;
+	std::shared_ptr<XD3D12AbstractDevice>AbsDevice;
+	std::shared_ptr<XD3D12Adapter>D3DAdapterPtr;
+
 	static inline void Base_TransitionResource(
 		XD3D12DirectCommandList& direct_cmd_list,
 		XD3D12Resource* pResource,
@@ -99,7 +94,6 @@ public:
 		XD3D12ShaderResourceView* sr_view,
 		D3D12_RESOURCE_STATES after)
 	{
-		//TODO Some Resource Dont Need Resource State Tracking
 		XD3D12Resource* pResource = sr_view->GetResource();
 		Base_TransitionResource(direct_cmd_list, pResource, after);
 	}

@@ -9,7 +9,7 @@ std::shared_ptr<XRHIComputeShader> XD3D12PlatformRHI::RHICreateComputeShader(XAr
 
 	const XShaderResourceCount* ResourceCount = (const XShaderResourceCount*)(ShaderCodeReader.FindOptionalData(
 		XShaderResourceCount::Key, sizeof(XShaderResourceCount)));
-	if (ResourceCount == 0) { X_Assert(false); return nullptr; }
+	if (ResourceCount == 0) { XASSERT(false); return nullptr; }
 
 	const uint8* CodaData = (const uint8*)Code.data();
 	Shader->BinaryCode.insert(Shader->BinaryCode.end(), &CodaData[0], &CodaData[Code.size()]);
@@ -35,7 +35,7 @@ std::shared_ptr<XRHIComputeShader> XD3D12PlatformRHI::RHICreateComputeShader(XAr
 	if (iter == RootMap.end())
 	{
 		std::shared_ptr<XD3D12RootSignature>RootSigPtr = std::make_shared<XD3D12RootSignature>();
-		RootSigPtr->Create(PhyDevice, RegisterBoundCount);
+		RootSigPtr->Create(PhyDevice.get(), RegisterBoundCount);
 		RootMap[RootHash] = RootSigPtr;
 	}
 	Shader->RootSignature = RootMap[RootHash].get();
@@ -50,7 +50,7 @@ std::shared_ptr<XRHIVertexShader> XD3D12PlatformRHI::RHICreateVertexShader(XArra
 
 	const XShaderResourceCount* ResourceCount = (const XShaderResourceCount*)(ShaderCodeReader.FindOptionalData(
 		XShaderResourceCount::Key, sizeof(XShaderResourceCount)));
-	if (ResourceCount == 0) { X_Assert(false); return nullptr; }
+	if (ResourceCount == 0) { XASSERT(false); return nullptr; }
 
 	const uint8* CodaData = (const uint8*)Code.data();
 	VertexShader->BinaryCode.insert(VertexShader->BinaryCode.end(), &CodaData[0], &CodaData[Code.size()]);

@@ -17,7 +17,7 @@
     }
     #endif
     
-    #define X_Assert(condition , ...){if (!(condition)) { __debugbreak(); }}
+    #define XASSERT(condition , ...){if (!(condition)) { __debugbreak(); }}
 
     #ifdef X_RHI_DX12
     #include <wrl.h>
@@ -37,7 +37,7 @@
 #endif
     
 #include <iostream>
-#define XLog(x) {std::cout << (x) << std::endl; }
+#define XLOG(x) {std::cout << (x) << std::endl; }
 
 #include <type_traits>
 template<typename T>

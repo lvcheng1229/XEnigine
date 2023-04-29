@@ -8,9 +8,9 @@ class XWindowsApplication :public XApplication
 {
 private:
 	static HWND WinHandle;
-
 	const wchar_t* WindowsClassName = L"MainWnd";
 	const wchar_t* WindowName = L"XEngine";
+	XDeferredShadingRenderer* DeferredShadingRenderer;
 public:
 	XWindowsApplication();
 	~XWindowsApplication()override;
@@ -21,6 +21,7 @@ protected:
 	void ApplicationLoop()override;
 	bool UISetup()override;
 	bool UINewFrame()override;
+	void SetRenderer(XDeferredShadingRenderer* InDeferredShadingRenderer) override;
 };
 
 

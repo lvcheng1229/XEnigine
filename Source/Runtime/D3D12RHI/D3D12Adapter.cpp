@@ -2,21 +2,21 @@
 
 void XD3D12Adapter::Create()
 {
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&dxgi_factory)));
+	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&DxgiFactory)));
 	
 	//0x10DE : Nvidia | 0x8086 : Intel | 0x1002 : AMD
 	int PreferredVendor = 0x10DE;
 	
-	for (UINT AdapterIndex = 0; dxgi_factory->EnumAdapters(AdapterIndex, &dxgi_adapter) != DXGI_ERROR_NOT_FOUND; ++AdapterIndex)
+	for (UINT AdapterIndex = 0; DxgiFactory->EnumAdapters(AdapterIndex, &DxgiAdapter) != DXGI_ERROR_NOT_FOUND; ++AdapterIndex)
 	{
-		if (dxgi_adapter)
+		if (DxgiAdapter)
 		{
 			DXGI_ADAPTER_DESC AdapterDesc;
-			ThrowIfFailed(dxgi_adapter->GetDesc(&AdapterDesc));
+			ThrowIfFailed(DxgiAdapter->GetDesc(&AdapterDesc));
 			if (PreferredVendor == AdapterDesc.VendorId) { break; }
 		}
 	}
 	
-	X_Assert(((&dxgi_adapter) != nullptr));
+	XASSERT(((&DxgiAdapter) != nullptr));
 }
 

@@ -54,11 +54,11 @@ private:
 	XRefCountPtr<ID3D12RootSignature> root_signature;
 	XDxRefCount<ID3DBlob> serializedRootSig;
 
-	XD3D12PhysicDevice* device;//TODO
+	XD3D12Device* device;//TODO
 public:
 	XD3D12RootSignature() :device(nullptr), serializedRootSig(nullptr), root_signature(nullptr) {}
 	~XD3D12RootSignature() {}
-	void Create(XD3D12PhysicDevice* device_in, XPipelineRegisterBoundCount& register_count);
+	void Create(XD3D12Device* device_in, XPipelineRegisterBoundCount& register_count);
 
 	uint32 GetSRVDescTableBindSlot(EShaderType shader_type)const;
 	uint32 GetUADescTableBindSlot(EShaderType shader_type)const;

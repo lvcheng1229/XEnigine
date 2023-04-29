@@ -15,7 +15,7 @@ static D3D12_COMPARISON_FUNC TranslateCompareFunction(ECompareFunction CompareFu
 	case ECompareFunction::CF_Greater: return D3D12_COMPARISON_FUNC_GREATER;
 	case ECompareFunction::CF_GreaterEqual: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
 	case ECompareFunction::CF_Always:return D3D12_COMPARISON_FUNC_ALWAYS;
-	default: X_Assert(false); return D3D12_COMPARISON_FUNC_ALWAYS;
+	default: XASSERT(false); return D3D12_COMPARISON_FUNC_ALWAYS;
 	};
 }
 
@@ -24,7 +24,7 @@ static D3D12_BLEND_OP TranslateBlendOp(EBlendOperation BlendOp)
 	switch (BlendOp)
 	{
 	case EBlendOperation::BO_Add: return D3D12_BLEND_OP_ADD;
-	default: X_Assert(false); return D3D12_BLEND_OP_ADD;
+	default: XASSERT(false); return D3D12_BLEND_OP_ADD;
 	};
 }
 
@@ -36,7 +36,7 @@ static D3D12_BLEND TranslateBlendFactor(EBlendFactor BlendFactor)
 	case EBlendFactor::BF_Zero: return D3D12_BLEND_ZERO;
 	case EBlendFactor::BF_SourceAlpha: return D3D12_BLEND_SRC_ALPHA;
 	case EBlendFactor::BF_InverseSourceAlpha: return D3D12_BLEND_INV_SRC_ALPHA;
-	default: X_Assert(false); return D3D12_BLEND_ZERO;
+	default: XASSERT(false); return D3D12_BLEND_ZERO;
 	};
 }
 
@@ -138,7 +138,7 @@ std::shared_ptr<XRHICommandSignature> XD3D12PlatformRHI::RHICreateCommandSignatu
 			ByteStride += (sizeof(int32) + sizeof(uint32) * 4);
 			break;
 		default:
-			X_Assert(false);
+			XASSERT(false);
 			break;
 		}
 		ArgumentDescs.push_back(ArgDesc);
@@ -174,7 +174,7 @@ std::shared_ptr<XRHICommandSignature> XD3D12PlatformRHI::RHICreateCommandSignatu
 	if (RootIter == AbsDevice->GetRootSigMap().end())
 	{
 		std::shared_ptr<XD3D12RootSignature>RootSigPtr = std::make_shared<XD3D12RootSignature>();
-		RootSigPtr->Create(PhyDevice, RegisterBoundCount);
+		RootSigPtr->Create(PhyDevice.get(), RegisterBoundCount);
 		AbsDevice->GetRootSigMap()[BoundHash] = RootSigPtr;
 	}
 
@@ -215,7 +215,7 @@ static void GetPSODescAndHash(
 	//default
 	PSODesc.SampleMask = UINT_MAX;
 	PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	X_Assert((PSOInit.RasterState != nullptr));
+	XASSERT((PSOInit.RasterState != nullptr));
 	PSODesc.RasterizerState = static_cast<XD3D12RasterizationState*>(PSOInit.RasterState)->Desc;
 	PSODesc.SampleDesc.Count = 1;
 	PSODesc.SampleDesc.Quality = 0;
@@ -318,7 +318,7 @@ std::shared_ptr<XRHIGraphicsPSO> XD3D12PlatformRHI::RHICreateGraphicsPipelineSta
 	if (RootIter == AbsDevice->GetRootSigMap().end())
 	{
 		std::shared_ptr<XD3D12RootSignature>RootSigPtr = std::make_shared<XD3D12RootSignature>();
-		RootSigPtr->Create(PhyDevice, RegisterBoundCount);
+		RootSigPtr->Create(PhyDevice.get(), RegisterBoundCount);
 		AbsDevice->GetRootSigMap()[BoundHash] = RootSigPtr;
 	}
 	PSODesc.pRootSignature = AbsDevice->GetRootSigMap()[BoundHash]->GetDXRootSignature();

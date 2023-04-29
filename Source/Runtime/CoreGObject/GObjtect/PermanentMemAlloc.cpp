@@ -20,6 +20,6 @@ void* XPermanentMemAlloc::AllocateMem(int32 Size)
 	PermanentObjectPool = Align(PermanentObjectPool, 16) + Size;
 	void* Result = (void*)PermanentObjectPool;
 
-	X_Assert(PermanentObjectPool < OriginPtr + PermanentObjectPoolSize);
+	XASSERT(PermanentObjectPool < OriginPtr + PermanentObjectPoolSize);
 	return Result;
 }

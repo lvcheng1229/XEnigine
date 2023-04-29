@@ -14,7 +14,7 @@ static const D3D12_STATIC_SAMPLER_DESC StaticSamplerDescs[] =
 	MakeStaticSampler(D3D12_FILTER_MIN_MAG_MIP_LINEAR,       D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 5, 1000),
 };
 
-void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegisterBoundCount& register_count)
+void XD3D12RootSignature::Create(XD3D12Device* device_in, XPipelineRegisterBoundCount& register_count)
 {
 	device = device_in;
 	memset(ShaderResourceBindSlotIndexArray, 0xFF, sizeof(ShaderResourceBindSlotIndexArray));
@@ -55,7 +55,7 @@ void XD3D12RootSignature::Create(XD3D12PhysicDevice* device_in, XPipelineRegiste
 			SetCBVDescTableBindSlot(EShaderType(i), root_parameter_count);
 			root_parameter_count++;
 
-			X_Assert(false);
+			XASSERT(false);
 		}
 
 		if (Shader.UnorderedAccessCount > 0)
@@ -134,7 +134,7 @@ uint32 XD3D12RootSignature::GetSRVDescTableBindSlot(EShaderType shader_type)cons
 		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_SRVs];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		return 0;
 		break;
 	}
@@ -151,7 +151,7 @@ uint32 XD3D12RootSignature::GetUADescTableBindSlot(EShaderType shader_type) cons
 		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_UAVs];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		return 0;
 		break;
 	}
@@ -171,7 +171,7 @@ uint32 XD3D12RootSignature::GetCBVDescTableBindSlot(EShaderType shader_type)cons
 		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_CBVs];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		return 0;
 		break;
 	}
@@ -191,7 +191,7 @@ uint32 XD3D12RootSignature::GetSampleDescTableBindSlot(EShaderType shader_type)c
 		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_Samplers];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		return 0;
 		break;
 	}
@@ -211,7 +211,7 @@ uint32 XD3D12RootSignature::GetCBVRootDescBindSlot(EShaderType shader_type)const
 		return ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_RootCBVs];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		return 0;
 		break;
 	}
@@ -232,7 +232,7 @@ void XD3D12RootSignature::SetSRVDescTableBindSlot(EShaderType shader_type, uint8
 		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_SRVs];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 	*pBindSlot = RootParameterIndex;
@@ -253,7 +253,7 @@ void XD3D12RootSignature::SetCBVDescTableBindSlot(EShaderType shader_type, uint8
 		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_CBVs];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 	*pBindSlot = RootParameterIndex;
@@ -274,7 +274,7 @@ void XD3D12RootSignature::SetSampleDescTableBindSlot(EShaderType shader_type, ui
 		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_Samplers];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 	*pBindSlot = RootParameterIndex;
@@ -292,7 +292,7 @@ void XD3D12RootSignature::SetUAVDescTableTBindSlot(EShaderType shader_type, uint
 		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_UAVs];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 	*pBindSlot = RootParameterIndex;
@@ -313,7 +313,7 @@ void XD3D12RootSignature::SetCBVRootDescBindSlot(EShaderType shader_type, uint8 
 		pBindSlot = &ShaderResourceBindSlotIndexArray[(int)ERootParameterKeys::ALL_RootCBVs];
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 	*pBindSlot = RootParameterIndex;
@@ -334,7 +334,7 @@ static D3D12_SHADER_VISIBILITY GetShaderVisibility(EShaderType shader_visibility
 		visibility = D3D12_SHADER_VISIBILITY_ALL;
 		break;
 	default:
-		X_Assert(false);
+		XASSERT(false);
 		break;
 	}
 	return visibility;

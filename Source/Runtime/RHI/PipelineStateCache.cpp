@@ -5,14 +5,14 @@
 void SetComputePipelineStateFromCS(XRHICommandList& RHICmdList, const XRHIComputeShader* CSShader)
 {
 	std::shared_ptr <XRHIComputePSO> RHIComputePSO = PipelineStateCache::GetAndOrCreateComputePipelineState(RHICmdList, CSShader);
-	X_Assert(RHIComputePSO.get() != nullptr);
+	XASSERT(RHIComputePSO.get() != nullptr);
 	RHICmdList.SetComputePipelineState(RHIComputePSO.get());
 }
 
 void SetGraphicsPipelineStateFromPSOInit(XRHICommandList& RHICmdList, const XGraphicsPSOInitializer& Initializer)
 {
 	std::shared_ptr <XRHIGraphicsPSO> RHIGraphicsPSO = PipelineStateCache::GetAndOrCreateGraphicsPipelineState(RHICmdList, Initializer);
-	X_Assert(RHIGraphicsPSO.get() != nullptr);
+	XASSERT(RHIGraphicsPSO.get() != nullptr);
 	RHICmdList.SetGraphicsPipelineState(RHIGraphicsPSO.get());
 }
 

@@ -7,7 +7,7 @@ template void XD3D12PassStateManager::ApplyCurrentStateToPipeline<ED3D12Pipeline
 template void XD3D12PassStateManager::ApplyCurrentStateToPipeline<ED3D12PipelineType::D3D12PT_Compute>();
 
 
-void XD3D12PassStateManager::Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in)
+void XD3D12PassStateManager::Create(XD3D12Device* device_in, XD3DDirectContex* direct_ctx_in)
 {
 	direct_ctx = direct_ctx_in;
 	PipeCurrDescArrayManager.Create(device_in, direct_ctx_in);

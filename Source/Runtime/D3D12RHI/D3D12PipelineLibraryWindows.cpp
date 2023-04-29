@@ -7,7 +7,7 @@
 //https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12PipelineStateCache/src/MemoryMappedPipelineLibrary.cpp
 static const std::wstring FileName = CACHE_PATH;
 
-void XD3D12PipelineLibrary::DeserializingPSOLibrary(XD3D12PhysicDevice* InPhyDevice)
+void XD3D12PipelineLibrary::DeserializingPSOLibrary(XD3D12Device* InPhyDevice)
 {
 	PhyDevice = InPhyDevice;
 	MMappedFile.Init(FileName);
@@ -108,13 +108,13 @@ void MemoryMappedFile::Init(std::wstring filename, UINT fileSize)
     }
 
     m_file = CreateFile2(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, (found) ? OPEN_EXISTING : CREATE_NEW, nullptr);
-    X_Assert(m_file != INVALID_HANDLE_VALUE);
+    XASSERT(m_file != INVALID_HANDLE_VALUE);
 
 
     LARGE_INTEGER realFileSize = {};
     BOOL flag = GetFileSizeEx(m_file, &realFileSize); 
-    X_Assert(flag == true);
-    X_Assert(realFileSize.HighPart == 0);
+    XASSERT(flag == true);
+    XASSERT(realFileSize.HighPart == 0);
     
     m_currentFileSize = realFileSize.LowPart;
 
@@ -124,20 +124,20 @@ void MemoryMappedFile::Init(std::wstring filename, UINT fileSize)
     }
 
     m_mapFile = CreateFileMapping(m_file, nullptr, PAGE_READWRITE, 0, m_currentFileSize, nullptr);
-    X_Assert(m_mapFile != nullptr);
+    XASSERT(m_mapFile != nullptr);
 
     m_mapAddress = MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0, 0, m_currentFileSize);
-    X_Assert(m_mapAddress != nullptr);
+    XASSERT(m_mapAddress != nullptr);
 }
 
 void MemoryMappedFile::Destroy(bool deleteFile)
 {
     if (m_mapAddress)
     {
-        BOOL flag = UnmapViewOfFile(m_mapAddress); X_Assert(flag == true);
+        BOOL flag = UnmapViewOfFile(m_mapAddress); XASSERT(flag == true);
         m_mapAddress = nullptr;
-        flag = CloseHandle(m_mapFile); X_Assert(flag == true);   // Close the file mapping object.
-        flag = CloseHandle(m_file); X_Assert(flag == true);       // Close the file itself.
+        flag = CloseHandle(m_mapFile); XASSERT(flag == true);   // Close the file mapping object.
+        flag = CloseHandle(m_file); XASSERT(flag == true);       // Close the file itself.
     }
 
     if (deleteFile)
@@ -159,7 +159,7 @@ void MemoryMappedFile::GrowMapping(UINT size)
 
     // Flush.
     BOOL flag = FlushViewOfFile(m_mapAddress, 0);
-	X_Assert(flag == true);
+	XASSERT(flag == true);
 
     // Close the current mapping.
     Destroy(false);

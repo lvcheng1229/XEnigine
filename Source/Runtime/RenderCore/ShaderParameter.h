@@ -40,7 +40,7 @@ public:
 			ResourceNum = iter->second.ResourceCount;
 			return;
 		}
-		X_Assert(false);
+		XASSERT(false);
 	}
 	uint16 GetResourceIndex()const { return ResourceIndex; }
 	uint16 GetResourceNum()const { return ResourceNum; };
@@ -64,7 +64,7 @@ inline void SetShaderConstantBufferParameter(
 	uint32 ElementIndex = 0
 )
 {
-	X_Assert(ConstantBufferParameter.GetResourceNum() > 0);
+	XASSERT(ConstantBufferParameter.GetResourceNum() > 0);
 	RHICmdList.SetConstantBuffer(ShaderType, ConstantBufferParameter.GetResourceIndex() + ElementIndex, RHIConstantBuffer);
 }
 
@@ -77,7 +77,7 @@ inline void SetShaderSRVParameter(
 	uint32 ElementIndex = 0
 )
 {
-	X_Assert(SRVParameter.GetResourceNum() > 0);
+	XASSERT(SRVParameter.GetResourceNum() > 0);
 	RHICmdList.SetShaderSRV(ShaderType, SRVParameter.GetResourceIndex() + ElementIndex, RHISRV);
 }
 
@@ -90,7 +90,7 @@ inline void SetShaderValue(
 	uint32 ElementIndex = 0
 )
 {
-	X_Assert(sizeof(ParameterType) == ShaderVariableParameter.GetNumBytes());
+	XASSERT(sizeof(ParameterType) == ShaderVariableParameter.GetNumBytes());
 	RHICmdList.SetShaderValue(
 		ShaderType,
 		ShaderVariableParameter.GetBufferIndex(),
@@ -107,7 +107,7 @@ inline void SetTextureParameter(
 	uint32 ElementIndex = 0
 )
 {
-	X_Assert(TextureParameter.GetResourceNum() > 0);
+	XASSERT(TextureParameter.GetResourceNum() > 0);
 	RHICmdList.SetShaderTexture(ShaderType, TextureParameter.GetResourceIndex() + ElementIndex, TextureRHI);
 }
 
@@ -120,6 +120,6 @@ inline void SetShaderUAVParameter(
 	uint32 ElementIndex = 0
 )
 {
-	X_Assert(UAVParameter.GetResourceNum() > 0);
+	XASSERT(UAVParameter.GetResourceNum() > 0);
 	RHICmdList.SetShaderUAV(ShaderType, UAVParameter.GetResourceIndex() + ElementIndex, InUAV);
 }

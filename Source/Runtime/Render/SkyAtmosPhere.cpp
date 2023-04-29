@@ -246,7 +246,7 @@ void XDeferredShadingRenderer::SkyAtmosPhereUpdata(XRHICommandList& RHICmdList)
 	float DotMainDir = abs(SkyUp.Dot(CamForward));
 	if (DotMainDir > 0.999f)
 	{
-		X_Assert(false);
+		XASSERT(false);
 		XVector3 UpStore = SkyUp;
 		const float Sign = UpStore.z >= 0.0f ? 1.0f : -1.0f;
 		const float a = -1.0f / (Sign + UpStore.z);

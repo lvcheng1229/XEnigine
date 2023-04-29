@@ -8,7 +8,7 @@ class XD3D12Fence
 {
 public:
 	XD3D12Fence() :curr_gpu_fence(0), curr_cpu_fence(0)/*, eventHandle(nullptr)*/ {}
-	void Create(XD3D12PhysicDevice* device);
+	void Create(XD3D12Device* device);
 	void SignalGPU(XD3D12CommandQueue* cmd_queue);
 	void SignalGPU(XD3D12CommandQueue* cmd_queue, uint64 fence);
 	void WaitCPU();
@@ -28,7 +28,7 @@ class XD3D12CommandQueue
 {
 public:
 	XD3D12CommandQueue(D3D12_COMMAND_LIST_TYPE queue_type_in): d3d12_queue_type(queue_type_in) {};
-	void Create(XD3D12PhysicDevice* device);
+	void Create(XD3D12Device* device);
 	void CommandQueueWaitFlush();
 	
 	void SignalGPU();

@@ -6,7 +6,7 @@
 class XD3D12CommandAllocator
 {
 public:
-	void Create(XD3D12PhysicDevice* device, D3D12_COMMAND_LIST_TYPE type);
+	void Create(XD3D12Device* device, D3D12_COMMAND_LIST_TYPE type);
 	void Reset();
 	
 	ID3D12CommandAllocator* GetDXAlloc() { return DxCmdAlloc.Get(); };
@@ -32,7 +32,7 @@ private:
 class XD3D12DirectCommandList
 {
 public:
-	void CreateDirectCmdList(XD3D12PhysicDevice* device, XD3D12CommandAllocator* cmd_alloc);
+	void CreateDirectCmdList(XD3D12Device* device, XD3D12CommandAllocator* cmd_alloc);
 	void Reset(XD3D12CommandAllocator* cmd_alloc);
 	void Close();
 

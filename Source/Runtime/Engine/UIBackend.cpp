@@ -302,7 +302,7 @@ void XUIRender::ImGui_Impl_RHI_RenderDrawData(ImDrawData* draw_data, XRHICommand
 				// (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
 				if (pcmd->UserCallback == ImDrawCallback_ResetRenderState)
 				{
-					X_Assert(false);
+					XASSERT(false);
 					ImGui_Impl_RHI_SetupRenderState(draw_data, RHICmdList, SceneColorTex);
 				}
 				else

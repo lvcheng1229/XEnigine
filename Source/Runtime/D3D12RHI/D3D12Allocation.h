@@ -53,7 +53,7 @@ public:
 	XD3DBuddyAllocator() : max_block_size(0), min_block_size(0), max_order(-1), TotalUsed(0) {};
 	~XD3DBuddyAllocator() {};
 	
-	void Create(XD3D12PhysicDevice* device_in, XAllocConfig config_in, uint32 max_block_size_in, uint32 min_block_size_in, AllocStrategy strategy_in);
+	void Create(XD3D12Device* device_in, XAllocConfig config_in, uint32 max_block_size_in, uint32 min_block_size_in, AllocStrategy strategy_in);
 
 	bool Allocate(uint32 allocate_size_byte, uint32 alignment, XD3D12ResourcePtr_CPUGPU& resource_location);
 	void Deallocate(XD3D12ResourcePtr_CPUGPU& ResourceLocation);

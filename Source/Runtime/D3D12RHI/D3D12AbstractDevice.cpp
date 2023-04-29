@@ -10,7 +10,7 @@ XD3D12AbstractDevice::~XD3D12AbstractDevice()
 	delete DirectxCmdQueue;
 }
 
-void XD3D12AbstractDevice::Create(XD3D12PhysicDevice* PhysicalDeviceIn)
+void XD3D12AbstractDevice::Create(XD3D12Device* PhysicalDeviceIn)
 {
 	//TODO
 	//if dont reserve at start,then the address that ptr point to maybe change when resize is excuted

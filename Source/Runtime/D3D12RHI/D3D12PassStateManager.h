@@ -65,7 +65,7 @@ private:
 public:
 	
 	void ResetState();
-	void Create(XD3D12PhysicDevice* device_in, XD3DDirectContex* direct_ctx_in);
+	void Create(XD3D12Device* device_in, XD3DDirectContex* direct_ctx_in);
 	void SetRenderTarget(uint32 num_rt, XD3D12RenderTargetView** rt_array_ptr, XD3D12DepthStencilView* ds_ptr);
 
 	template<ED3D12PipelineType PipelineType>

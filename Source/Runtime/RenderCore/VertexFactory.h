@@ -23,7 +23,7 @@ public:
 			return DefaultLayout;
 
 		default:
-			X_Assert(false);
+			XASSERT(false);
 			break;
 		}
 	}

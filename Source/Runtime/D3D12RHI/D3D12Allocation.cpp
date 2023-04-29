@@ -5,7 +5,7 @@
 
 
 void XD3DBuddyAllocator::Create(
-	XD3D12PhysicDevice* device_in, 
+	XD3D12Device* device_in, 
 	
 	XAllocConfig config_in,
 
@@ -93,7 +93,7 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment
 		uint32 order = SizeToOrder(allocate_size_byte);
 		TotalUsed += min_block_size * (1 << order);
 		
-		X_Assert(TotalUsed < max_block_size);
+		XASSERT(TotalUsed < max_block_size);
 
 		uint32 OffsetRes = Allocate_Impl(order);
 
@@ -121,7 +121,7 @@ bool XD3DBuddyAllocator::Allocate(uint32 allocate_size_byte_in, uint32 alignment
 		}
 	}
 
-	X_Assert(can_allocate != false);
+	XASSERT(can_allocate != false);
 
 	return can_allocate;
 }
@@ -138,7 +138,7 @@ uint32 XD3DBuddyAllocator::Allocate_Impl(uint32 order)
 {
 	uint32 offset_left;
 	
-	X_Assert(order <= max_order);
+	XASSERT(order <= max_order);
 	
 	if (offset_from_left[order].size() == 0)
 	{
@@ -148,7 +148,7 @@ uint32 XD3DBuddyAllocator::Allocate_Impl(uint32 order)
 	}
 	else
 	{
-		X_Assert(offset_from_left[order].size() > 0)
+		XASSERT(offset_from_left[order].size() > 0)
 		offset_left = *(offset_from_left[order].begin());
 		offset_from_left[order].erase(offset_left);
 	}

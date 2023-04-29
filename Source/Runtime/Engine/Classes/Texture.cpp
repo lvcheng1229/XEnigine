@@ -9,7 +9,7 @@
 void GTexture::LoadTextureFromImage(const char* Name)
 {
 	unsigned char* ColorData = stbi_load(Name, &SizeX, &SizeY, &Channel, 0);
-	if (Channel != 4) { X_Assert(false); }
+	if (Channel != 4) { XASSERT(false); }
 	TextureDataArray.insert(TextureDataArray.end(), ColorData, ColorData + SizeX * SizeY * Channel);
 	stbi_image_free(ColorData);
 }

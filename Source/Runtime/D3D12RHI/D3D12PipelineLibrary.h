@@ -3,7 +3,7 @@
 #include <string>
 #include "Runtime/HAL/Mch.h"
 
-class XD3D12PhysicDevice;
+class XD3D12Device;
 class MemoryMappedFile
 {
 public:
@@ -65,12 +65,12 @@ public:
 	
     void StorePSOToLibrary(LPCWSTR pName,ID3D12PipelineState* pPipeline);   //ID3D12PipelineLibrary::StorePipeline
 	void SerializingPSOLibrary();                                           //ID3D12PipelineLibrary::Serialize			
-	void DeserializingPSOLibrary(XD3D12PhysicDevice* PhyDevice);            //ID3D12Device1::CreatePipelineLibrary
+	void DeserializingPSOLibrary(XD3D12Device* PhyDevice);            //ID3D12Device1::CreatePipelineLibrary
 
 	inline ID3D12PipelineLibrary* GetID3D12PipelineLibrary() { return m_pipelineLibrary.Get(); }
 private:
 	bool Changed;
     MemoryMappedFile MMappedFile;
-	XD3D12PhysicDevice* PhyDevice;
+	XD3D12Device* PhyDevice;
 	XDxRefCount<ID3D12PipelineLibrary> m_pipelineLibrary;
 };

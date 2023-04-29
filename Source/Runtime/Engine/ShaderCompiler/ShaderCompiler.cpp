@@ -115,7 +115,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 		case EShaderType::SV_Vertex:Target = "vs_5_1"; break;
 		case EShaderType::SV_Pixel:Target = "ps_5_1"; break;
 		case EShaderType::SV_Compute:Target = "cs_5_1"; break;
-		default:X_Assert(false); break;
+		default:XASSERT(false); break;
 		}
 
 		std::vector<D3D_SHADER_MACRO>Macro;
@@ -238,7 +238,7 @@ static void CompileDX12Shader(XShaderCompileInput& Input, XShaderCompileOutput& 
 			}
 			else
 			{
-				X_Assert(false);
+				XASSERT(false);
 			}
 			
 			

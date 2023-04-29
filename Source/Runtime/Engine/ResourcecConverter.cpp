@@ -34,7 +34,7 @@ std::shared_ptr<GTexture2D> CreateTextureFromImageFile(const std::string& FilePa
 		stbi_image_free(ColorData);
 		return Result;
 	}
-	X_Assert(false);
+	XASSERT(false);
 }
 
 std::shared_ptr<GMaterial> CreateMaterialFromCode(const std::wstring& CodePathIn)

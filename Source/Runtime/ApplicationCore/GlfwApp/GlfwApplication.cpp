@@ -44,3 +44,8 @@ bool XGlfwApplication::UINewFrame()
 {
     return false;
 }
+
+void XGlfwApplication::SetRenderer(XDeferredShadingRenderer* InDeferredShadingRenderer)
+{
+    DeferredShadingRenderer = InDeferredShadingRenderer;
+}

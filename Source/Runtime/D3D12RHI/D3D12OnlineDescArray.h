@@ -5,7 +5,7 @@
 class XD3D12OnlineDescArray :public XD3D12DeviceChild
 {
 public:
-	void Create(XD3D12PhysicDevice* device_in);
+	void Create(XD3D12Device* device_in);
 	
 	inline uint32 GetElemSize() { return elemt_size; }
 	inline ID3D12DescriptorHeap* GetDescHeapPtr() { return DescArray.Get(); }
@@ -25,7 +25,7 @@ public:
 	inline uint32 GetCurrentFrameSlotStart(uint32 NumSlotUsed)
 	{
 		uint32 RetValue = CurrentSlotIndex;
-		X_Assert(CurrentSlotIndex + NumSlotUsed < TotalNum);
+		XASSERT(CurrentSlotIndex + NumSlotUsed < TotalNum);
 		CurrentSlotIndex += NumSlotUsed;
 		return RetValue;
 	}

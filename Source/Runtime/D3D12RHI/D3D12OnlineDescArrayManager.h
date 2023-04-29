@@ -70,12 +70,12 @@ struct XD3D12PassUnorderedAcessManager : public SlotManager<uint16>
 class XD3D12OnlineDescArrayManager
 {
 private:
-	XD3D12PhysicDevice*				device;
+	XD3D12Device*				device;
 	XD3DDirectContex*				direct_ctx;
 	XD3D12OnlineDescArray	pipeline_current_desc_array;
 public:
 	XD3D12OnlineDescArrayManager() :device(nullptr), direct_ctx(nullptr) {};
-	void Create(XD3D12PhysicDevice* device_in,XD3DDirectContex* direct_ctx_in);
+	void Create(XD3D12Device* device_in,XD3DDirectContex* direct_ctx_in);
 	inline XD3D12OnlineDescArray* GetCurrentDescArray() { return &pipeline_current_desc_array; }
 
 	template<EShaderType shader_type>

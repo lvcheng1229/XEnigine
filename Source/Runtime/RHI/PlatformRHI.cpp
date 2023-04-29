@@ -3,34 +3,41 @@
 #include "Runtime/RenderCore/RenderResource.h"
 #include "Runtime/RHI/RHICommandList.h"
 
+#include "Runtime/VulkanRHI/VulkanPlatformRHI.h"
 #include "Runtime/D3D12RHI/D3D12PlatformRHI.h"
 
 XPlatformRHI* GPlatformRHI = nullptr;
 XRHICommandList GRHICmdList;
 bool GIsRHIInitialized = false;
 
-static XRHIModule* RHIModule;
-
 void RHIRelease()
 {
-	RHIModule->ReleaseRHI();
-	delete RHIModule;
 	delete GPlatformRHI;
 }
 
-void RHIInit(uint32 Width, uint32 Height)
+void RHIInit(uint32 Width, uint32 Height , bool bUseDX12)
 {
 	if (GPlatformRHI == nullptr)
 	{
-		RHIModule = new XD3D12RHIModule();
-		GPlatformRHI = RHIModule->CreateRHI();
+		if (bUseDX12)
+		{
+			GPlatformRHI = new XD3D12PlatformRHI();
+		}
+		else
+		{
+			GPlatformRHI = new XVulkanPlatformRHI();
+		}
+		
+		GPlatformRHI->Init();
 	}
 	
+#if USE_DX12
 	GRHICmdList.ReseizeViewport(Width, Height);
 	GRHICmdList.Open();
 	XRenderResource::InitRHIForAllResources();
 	GRHICmdList.Execute();
+#endif USE_DX12
 
-	X_Assert(GIsRHIInitialized == false);
+	XASSERT(GIsRHIInitialized == false);
 	GIsRHIInitialized = true;
 }
