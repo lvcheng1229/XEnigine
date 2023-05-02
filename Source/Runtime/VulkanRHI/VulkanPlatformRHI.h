@@ -3,15 +3,21 @@
 #include <vulkan\vulkan_core.h>
 #include "Runtime\RHI\PlatformRHI.h"
 
+
 #define VULKAN_VARIFY(x)										\
     {															\
         VkResult Result = (x);									\
         if(Result != VkResult::VK_SUCCESS) { __debugbreak(); }	\
     }
+class XVulkanViewport;
+class XVulkanDevice;
+
 
 class XVulkanPlatformRHI :public XPlatformRHI
 {
 public:
+	
+
 	XVulkanPlatformRHI();
 	~XVulkanPlatformRHI();
 	void Init() override;
@@ -76,6 +82,10 @@ public:
 	static void GetInstanceLayersAndExtensions(std::vector<const ACHAR*>& OutLayer, std::vector<const ACHAR*>& OutExtension);
 	static VKAPI_ATTR VkBool32 VKAPI_CALL VkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData); 
 private:
+	friend class VkHack;
 	VkInstance Instance;
 	VkDebugUtilsMessengerEXT DebugMessenger;
+	XVulkanDevice* Device;
+	XVulkanViewport* VulkanViewport;
+	void SelectAndInitDevice();
 };

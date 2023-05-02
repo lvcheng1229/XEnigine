@@ -36,8 +36,67 @@ void RHIInit(uint32 Width, uint32 Height , bool bUseDX12)
 	GRHICmdList.Open();
 	XRenderResource::InitRHIForAllResources();
 	GRHICmdList.Execute();
+	XASSERT(GIsRHIInitialized == false);
 #endif USE_DX12
 
-	XASSERT(GIsRHIInitialized == false);
+	
 	GIsRHIInitialized = true;
+}
+
+#include "Runtime\VulkanRHI\VulaknHack.h"
+#include "Runtime\VulkanRHI\VulkanPlatformRHI.h"
+#include "Runtime\VulkanRHI\VulkanDevice.h"
+#include "Runtime\VulkanRHI\VulkanViewport.h"
+#include "Runtime\VulkanRHI\VulkanSwapChain.h"
+#include "Runtime\VulkanRHI\VulkanCommandBuffer.h"
+
+VkDevice VkHack::GetVkDevice()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return VkRHI->Device->Device;
+}
+
+VkExtent2D VkHack::GetBkBufferExtent()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return VkRHI->VulkanViewport->SwapChainExtent;
+}
+
+std::vector<VkImageView>& VkHack::GetBkImageViews()
+{
+	static std::vector<VkImageView> Views(2);
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	Views[0] = VkRHI->VulkanViewport->ImageViews[0].View;
+	Views[1] = VkRHI->VulkanViewport->ImageViews[1].View;
+	return Views;
+}
+
+uint32 VkHack::GetgraphicsFamilyIndex()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return VkRHI->Device->GfxQueueIndex;
+}
+
+VkQueue VkHack::GetVkQueue()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return VkRHI->Device->GfxQueue->Queue;
+}
+
+VkSwapchainKHR VkHack::GetVkSwapChain()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return VkRHI->VulkanViewport->VulkanSwapChain->swapChain;
+}
+
+VkCommandPool VkHack::GetCmdPool()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return VkRHI->Device->GfxContext->CmdBufferManager->Pool.CmdPool;
+}
+
+const VkCommandBuffer* VkHack::GetCmdBuffer()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return &VkRHI->Device->GfxContext->CmdBufferManager->Pool.CmdBuffers[0]->CommandBufferHandle;
 }

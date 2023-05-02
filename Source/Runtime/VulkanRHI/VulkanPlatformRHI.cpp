@@ -1,13 +1,35 @@
 
 #include "VulkanPlatformRHI.h"
-
+#include "VulkanDevice.h"
+#include "VulkanSwapChain.h"
+#include "VulkanViewport.h"
+#include "Runtime\Core\PixelFormat.h"
+#include <Runtime\ApplicationCore\Application.h>
+#include <set>
 
 XVulkanPlatformRHI::XVulkanPlatformRHI()
 {
+    GPixelFormats[(int)EPixelFormat::FT_Unknown].PlatformFormat = DXGI_FORMAT_UNKNOWN;
+    //GPixelFormats[(int)EPixelFormat::FT_R16G16B16A16_FLOAT].PlatformFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+    GPixelFormats[(int)EPixelFormat::FT_R8G8B8A8_UNORM].PlatformFormat = VK_FORMAT_R8G8B8A8_UNORM;
+    GPixelFormats[(int)EPixelFormat::FT_R8G8B8A8_UNORM_SRGB].PlatformFormat = VK_FORMAT_R8G8B8A8_SRGB;
+    //GPixelFormats[(int)EPixelFormat::FT_R24G8_TYPELESS].PlatformFormat = DXGI_FORMAT_R24G8_TYPELESS;
+    //GPixelFormats[(int)EPixelFormat::FT_R11G11B10_FLOAT].PlatformFormat = DXGI_FORMAT_R11G11B10_FLOAT;
+    //GPixelFormats[(int)EPixelFormat::FT_R16_FLOAT].PlatformFormat = DXGI_FORMAT_R16_FLOAT;
+    //GPixelFormats[(int)EPixelFormat::FT_R32_UINT].PlatformFormat = DXGI_FORMAT_R32_UINT;
+    //GPixelFormats[(int)EPixelFormat::FT_R32G32B32A32_UINT].PlatformFormat = DXGI_FORMAT_R32G32B32A32_UINT;
+    //GPixelFormats[(int)EPixelFormat::FT_R32_TYPELESS].PlatformFormat = DXGI_FORMAT_R32_TYPELESS;
 }
 
 XVulkanPlatformRHI::~XVulkanPlatformRHI()
 {
+    delete VulkanViewport;
+    delete Device;
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(Instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) 
+    {
+        func(Instance, DebugMessenger, nullptr);
+    }
     vkDestroyInstance(Instance, nullptr);
 }
 
@@ -52,6 +74,59 @@ void XVulkanPlatformRHI::Init()
     {
         XASSERT(false);
     }
+
+    SelectAndInitDevice();
+
+    EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM;
+    VulkanViewport = new XVulkanViewport(BackBufferFormat, Device, XApplication::Application->GetPlatformHandle(), Instance);
+
+    GRHICmdList.SetContext(Device->GetGfxContex());
 }
+
+bool IsDeviceSuitable(VkPhysicalDevice device) 
+{  
+    //get a gfx queue
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            return true;
+        }
+    }
+
+    //swap chain support
+
+    return false;
+}
+
+void XVulkanPlatformRHI::SelectAndInitDevice()
+{
+    uint32 deviceCount = 0;
+    vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);
+    XASSERT(deviceCount != 0);
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(Instance, &deviceCount, devices.data());
+
+    VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
+    for (const auto& device : devices) 
+    {
+        if (IsDeviceSuitable(device))
+        {
+            PhysicalDevice = device;
+            break;
+        }
+    }
+
+    Device = new XVulkanDevice(this, PhysicalDevice);
+    Device->CreateDevice();
+    Device->InitGPU();
+}
+
+
 
 

@@ -8,6 +8,7 @@ class XRHICommandList;
 class XPlatformRHI
 {
 public:
+	virtual ~XPlatformRHI() {}
 	virtual void Init() = 0;
 	
 	//CreateVertexLayout

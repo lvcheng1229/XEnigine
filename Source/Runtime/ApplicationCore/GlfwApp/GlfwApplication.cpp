@@ -13,7 +13,7 @@ XGlfwApplication::~XGlfwApplication()
 
 void* XGlfwApplication::GetPlatformHandle()
 {
-    return nullptr;
+    return window;
 }
 
 bool XGlfwApplication::CreateAppWindow()

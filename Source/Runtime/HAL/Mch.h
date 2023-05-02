@@ -39,6 +39,9 @@
 #include <iostream>
 #define XLOG(x) {std::cout << (x) << std::endl; }
 
+//#define XASSERT_TEMP(condition , ...){if (!(condition)) { __debugbreak(); }}
+#define XASSERT_TEMP(condition , ...)
+
 #include <type_traits>
 template<typename T>
 requires(!std::is_lvalue_reference_v<T>)

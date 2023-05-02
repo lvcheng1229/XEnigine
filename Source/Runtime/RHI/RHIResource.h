@@ -265,6 +265,7 @@ struct XRHIRenderPassInfo
 	{
 		XRHITexture* RenderTarget;
 		ERenderTargetLoadAction LoadAction;
+		ERenderTargetStoreAction StoreAction;
 	};
 	XColorTarget RenderTargets[8];
 
@@ -272,6 +273,7 @@ struct XRHIRenderPassInfo
 	{
 		XRHITexture* DepthStencilTarget;
 		EDepthStencilLoadAction LoadAction;
+		ERenderTargetStoreAction StoreAction;
 	};
 	EDepthStencilTarget DepthStencilRenderTarget;
 
@@ -296,12 +298,17 @@ struct XRHIRenderPassInfo
 		XRHITexture* ColorRTs[],
 		ERenderTargetLoadAction ColorLoadAction,
 		XRHITexture* DepthRT,
-		EDepthStencilLoadAction DSLoadAction)
+		EDepthStencilLoadAction DSLoadAction,
+
+		ERenderTargetStoreAction ColorStoreAction = ERenderTargetStoreAction::ENoAction,
+		ERenderTargetStoreAction DSStoreAction = ERenderTargetStoreAction::ENoAction
+	)
 	{
 		for (int i = 0; i < NumColorRTs; i++)
 		{
 			RenderTargets[i].RenderTarget = ColorRTs[i];
 			RenderTargets[i].LoadAction = ColorLoadAction;
+			RenderTargets[i].StoreAction = ColorStoreAction;
 		}
 		memset(&RenderTargets[NumColorRTs], 0, sizeof(XColorTarget) * (8 - NumColorRTs));
 
@@ -309,11 +316,13 @@ struct XRHIRenderPassInfo
 		{
 			DepthStencilRenderTarget.DepthStencilTarget = DepthRT;
 			DepthStencilRenderTarget.LoadAction = DSLoadAction;
+			DepthStencilRenderTarget.StoreAction = DSStoreAction;
 		}
 		else
 		{
 			DepthStencilRenderTarget.DepthStencilTarget = nullptr;
 			DepthStencilRenderTarget.LoadAction = EDepthStencilLoadAction::ENoAction;
+			DepthStencilRenderTarget.StoreAction = ERenderTargetStoreAction::ENoAction;
 		}
 	}
 };

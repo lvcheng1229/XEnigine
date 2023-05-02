@@ -67,6 +67,12 @@ enum class EDepthStencilLoadAction
 	EClear,
 };
 
+enum class ERenderTargetStoreAction
+{
+	ENoAction,
+	EStore,
+};
+
 enum class EVertexElementType
 {
 	VET_None,
@@ -93,3 +99,5 @@ enum class EBufferUsage
 	BUF_StructuredBuffer = 0x40000,
 	BUF_AnyDynamic = BUF_Dynamic,
 };
+
+#define MaxSimultaneousRenderTargets 8
