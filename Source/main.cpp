@@ -308,23 +308,23 @@ public:
             throw std::runtime_error("failed to begin recording command buffer!");
         }
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-        renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = mVkHack.GetBkBufferExtent();
+        //VkRenderPassBeginInfo renderPassInfo{};
+        //renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        //renderPassInfo.renderPass = renderPass;
+        //renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
+        //renderPassInfo.renderArea.offset = { 0, 0 };
+        //renderPassInfo.renderArea.extent = mVkHack.GetBkBufferExtent();
+        //
+        //VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+        //renderPassInfo.clearValueCount = 1;
+        //renderPassInfo.pClearValues = &clearColor;
+        //
+        //vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        XRHIRenderPassInfo RPInfos(0, nullptr, ERenderTargetLoadAction::ELoad, nullptr, EDepthStencilLoadAction::ENoAction);
+        XRHITexture* BackTex = RHIGetCurrentBackTexture();
+        XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
         RHICmdList.RHIBeginRenderPass(RPInfos, "VulkanTestRP", sizeof("VulkanTestRP"));
-
-
+        
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
         VkViewport viewport{};
@@ -415,6 +415,7 @@ public:
 
         vkQueuePresentKHR(mVkHack.GetVkQueue(), &presentInfo);
 
+        RHICmdList.RHIEndFrame();
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 #endif

@@ -77,10 +77,15 @@ void XVulkanPlatformRHI::Init()
 
     SelectAndInitDevice();
 
-    EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM;
-    VulkanViewport = new XVulkanViewport(BackBufferFormat, Device, XApplication::Application->GetPlatformHandle(), Instance);
+    EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM_SRGB;
+    VulkanViewport = new XVulkanViewport(BackBufferFormat, Device, XApplication::Application->ClientWidth, XApplication::Application->ClientHeight, XApplication::Application->GetPlatformHandle(), Instance);
 
     GRHICmdList.SetContext(Device->GetGfxContex());
+}
+
+XRHITexture* XVulkanPlatformRHI::RHIGetCurrentBackTexture()
+{
+    return VulkanViewport->GetCurrentBackTexture();
 }
 
 bool IsDeviceSuitable(VkPhysicalDevice device) 

@@ -5,17 +5,15 @@ class XVulkanDevice;
 class XVulkanRenderTargetLayout;
 class XVulkanCmdBuffer;
 class XVulkanCommandListContext;
+class XVulkanTextureView;
 
 class XVulkanFramebuffer
 {
 public:
 	XVulkanFramebuffer(XVulkanDevice* Device, const XRHISetRenderTargetsInfo* InRTInfo, const XVulkanRenderTargetLayout* RTLayout, const XVulkanRenderPass* RenderPass);
 	bool Matches(const XRHISetRenderTargetsInfo& RTInfo) const;
-
-	inline VkRect2D GetRenderArea() const
-	{
-		return RenderArea;
-	}
+	const VkFramebuffer GetFramebuffer()const { return Framebuffer; }
+	inline VkRect2D GetRenderArea() const { return RenderArea; }
 private:
 	VkFramebuffer Framebuffer;
 	VkRect2D RenderArea;
@@ -25,6 +23,9 @@ private:
 	uint32 NumColorAttachments;
 	VkImage ColorRenderTargetImages[MaxSimultaneousRenderTargets];
 	VkImage DepthStencilRenderTargetImage;
+
+	std::vector<VkImageView>AttachmentViews;
+	std::vector<XVulkanTextureView> VulkanTextureViews;
 };
 
 class XVulkanLayoutManager
@@ -43,11 +44,7 @@ public:
 		const XVulkanRenderTargetLayout* RTLayout, 
 		XVulkanRenderPass* RenderPass);
 
-	void BeginRenderPass(
-		XVulkanCommandListContext* Context, 
-		XVulkanDevice* InDevice, 
-		XVulkanCmdBuffer* CmdBuffer,
-		const XRHIRenderPassInfo* RPInfo, const XVulkanRenderTargetLayout* RTLayout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer);
+	void BeginRenderPass(XVulkanCmdBuffer* CmdBuffer, const XVulkanRenderTargetLayout* RTLayout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer);
 
 	XVulkanRenderPass* GetOrCreateRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout);
 private:

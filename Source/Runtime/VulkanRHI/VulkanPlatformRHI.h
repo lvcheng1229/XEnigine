@@ -69,7 +69,7 @@ public:
 		return nullptr;
 	};
 
-	XRHITexture* RHIGetCurrentBackTexture()override { XASSERT(false); return nullptr; };
+	XRHITexture* RHIGetCurrentBackTexture()override;
 
 	//Lock/UnLock Vertex Buffer
 	void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)override{ XASSERT(false); return nullptr;}
@@ -81,6 +81,7 @@ public:
 	//Vulkan
 	static void GetInstanceLayersAndExtensions(std::vector<const ACHAR*>& OutLayer, std::vector<const ACHAR*>& OutExtension);
 	static VKAPI_ATTR VkBool32 VKAPI_CALL VkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData); 
+	XVulkanViewport* GetVulkanViewport() { return VulkanViewport; }
 private:
 	friend class VkHack;
 	VkInstance Instance;

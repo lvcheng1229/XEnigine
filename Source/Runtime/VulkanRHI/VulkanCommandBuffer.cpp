@@ -3,6 +3,7 @@
 #include "VulkanQueue.h"
 #include "VulkanPlatformRHI.h"
 #include "VulkanDevice.h"
+#include "VulkanRHIPrivate.h"
 
 XVulkanCmdBuffer::XVulkanCmdBuffer(XVulkanDevice* InDevice, XVulkanCommandBufferPool* InCommandBufferPool)
 	: Device(InDevice)
@@ -20,6 +21,21 @@ void XVulkanCmdBuffer::AllocMemory()
 	allocInfo.commandBufferCount = 1;
 
 	VULKAN_VARIFY(vkAllocateCommandBuffers(Device->GetVkDevice(), &allocInfo, &CommandBufferHandle));
+}
+
+void XVulkanCmdBuffer::BeginRenderPass(const XVulkanRenderTargetLayout* Layout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer)
+{
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = RenderPass->GetRenderPass();
+	renderPassInfo.framebuffer = Framebuffer->GetFramebuffer();
+	renderPassInfo.renderArea = Framebuffer->GetRenderArea();
+	
+	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(CommandBufferHandle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 XVulkanCommandBufferPool::XVulkanCommandBufferPool(XVulkanDevice* InDevice, XVulkanCommandBufferManager* InVulkanCommandBufferManager)

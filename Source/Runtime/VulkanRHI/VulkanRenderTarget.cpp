@@ -2,12 +2,14 @@
 #include "VulkanDevice.h"
 #include "VulkanRHIPrivate.h"
 #include "VulkanCommandBuffer.h"
+#include "VulkanResource.h"
 
 
 XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(XVulkanDevice& InDevice, const XRHIRenderPassInfo& RPInfo, VkImageLayout CurrentDSLayout)
 {
 	RenderPassFullHash = 42;
 	RenderPassCompatibleHash = 42;
+	bool bSetExtent = false;
 	for (int32 Index = 0; Index < MaxSimultaneousRenderTargets; Index++)
 	{
 		if (RPInfo.RenderTargets[Index].RenderTarget == nullptr)
@@ -15,7 +17,21 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(XVulkanDevice& InDevice, co
 			break;
 		}
 
-		VkAttachmentDescription CurrDesc;
+		XVulkanTextureBase* Texture = GetVulkanTextureFromRHITexture(RPInfo.RenderTargets[Index].RenderTarget);
+
+		if (!bSetExtent)
+		{
+			bSetExtent = true;
+			Extent2D.width = Texture->Surface.Width;
+			Extent2D.height = Texture->Surface.Height;
+		}
+		else
+		{
+			XASSERT(Extent2D.width == Texture->Surface.Width);
+			XASSERT(Extent2D.height = Texture->Surface.Height);
+		}
+
+		VkAttachmentDescription CurrDesc{};
 		CurrDesc.format = VkFormat(GPixelFormats[(int)RPInfo.RenderTargets[Index].RenderTarget->GetFormat()].PlatformFormat);
 		XASSERT(CurrDesc.format == VK_FORMAT_R8G8B8A8_SRGB);
 		CurrDesc.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -37,16 +53,18 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(XVulkanDevice& InDevice, co
 		AttachCount++;
 
 		THashCombine(RenderPassCompatibleHash, CurrDesc.format);
+
+		Desc[Index] = CurrDesc;
 	}
 
 	VkImageLayout DepthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	if (RPInfo.DepthStencilRenderTarget.DepthStencilTarget)
 	{
 		XASSERT(false);
-
+		//Desc[MaxSimultaneousRenderTargets] = CurrDesc;
 		AttachCount++;
 	}
-
+;
 	THashCombine(RenderPassFullHash, RenderPassCompatibleHash);
 }
 
@@ -71,6 +89,6 @@ void XVulkanCommandListContext::RHIBeginRenderPass(const XRHIRenderPassInfo& InI
 	XRHISetRenderTargetsInfo RTInfo;
 	InInfo.ConvertToRenderTargetsInfo(RTInfo);
 	XVulkanFramebuffer* Framebuffer = GlobalLayoutManager.GetOrCreateFramebuffer(Device, &RTInfo, &RTLayout, RenderPass);
-	GlobalLayoutManager.BeginRenderPass(this, Device, CmdBuffer, &InInfo, &RTLayout, RenderPass, Framebuffer);
+	GlobalLayoutManager.BeginRenderPass(CmdBuffer, &RTLayout, RenderPass, Framebuffer);
 
 }

@@ -2,6 +2,8 @@
 #include "VulkanDevice.h"
 #include "VulkanRHIPrivate.h"
 #include "VulkanBarriers.h"
+#include "VulkanResource.h"
+#include "VulkanCommandBuffer.h"
 
 XVulkanLayoutManager XVulkanCommandListContext::GlobalLayoutManager;
 
@@ -31,13 +33,14 @@ XVulkanFramebuffer* XVulkanLayoutManager::GetOrCreateFramebuffer(XVulkanDevice* 
 		Framebuffers[RTLayoutHash] = FramebufferList;
 	}
 	
-	XVulkanFramebuffer* Framebuffer = new XVulkanFramebuffer(InDevice, RenderTargetsInfo, RTLayout, *RenderPass);
+	XVulkanFramebuffer* Framebuffer = new XVulkanFramebuffer(InDevice, RenderTargetsInfo, RTLayout, RenderPass);
 	FramebufferList->Framebuffer.push_back(Framebuffer);
 	return Framebuffer;
 }
 
-void XVulkanLayoutManager::BeginRenderPass(XVulkanCommandListContext* Context, XVulkanDevice* InDevice, XVulkanCmdBuffer* CmdBuffer, const XRHIRenderPassInfo* RPInfo, const XVulkanRenderTargetLayout* RTLayout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer)
+void XVulkanLayoutManager::BeginRenderPass(XVulkanCmdBuffer* CmdBuffer, const XVulkanRenderTargetLayout* RTLayout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer)
 {
+	CmdBuffer->BeginRenderPass(RTLayout, RenderPass, Framebuffer);
 }
 
 XVulkanRenderPass* XVulkanLayoutManager::GetOrCreateRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout)
@@ -54,23 +57,6 @@ XVulkanRenderPass* XVulkanLayoutManager::GetOrCreateRenderPass(XVulkanDevice* In
 	return RenderPass;
 }
 
-XVulkanFramebuffer::XVulkanFramebuffer(XVulkanDevice* Device, const XRHISetRenderTargetsInfo* InRTInfo, const XVulkanRenderTargetLayout* RTLayout, const XVulkanRenderPass* RenderPass)
-	: Framebuffer(VK_NULL_HANDLE)
-	, NumColorRenderTargets(InRTInfo->NumColorRenderTargets)
-	, NumColorAttachments(0)
-	, DepthStencilRenderTargetImage(VK_NULL_HANDLE)
-{
-	VkFramebufferCreateInfo framebufferInfo{};
-	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	framebufferInfo.renderPass = renderPass;
-	framebufferInfo.attachmentCount = 1;
-	framebufferInfo.pAttachments = attachments;
-	framebufferInfo.width = mVkHack.GetBkBufferExtent().width;
-	framebufferInfo.height = mVkHack.GetBkBufferExtent().height;
-	framebufferInfo.layers = 1;
-
-	VULKAN_VARIFY(vkCreateFramebuffer(Device->GetVkDevice(), &framebufferInfo, nullptr, &Framebuffer));
-}
 
 bool XVulkanFramebuffer::Matches(const XRHISetRenderTargetsInfo& RTInfo) const
 {

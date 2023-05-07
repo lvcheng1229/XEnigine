@@ -6,27 +6,27 @@
 class XVulkanDevice;
 class XVulkanSwapChain;
 
-class XVulkanBackBuffer : XVulkanTexture2D
-{
-public:
-	//XVulkanBackBuffer();
-};
-
 class XVulkanViewport
 {
 public:
-	XVulkanViewport(EPixelFormat& InOutPixelFormat, XVulkanDevice* VulkanDevice, void* InWindowHandle, VkInstance InInstance);
+	XVulkanViewport(EPixelFormat& InOutPixelFormat, XVulkanDevice* VulkanDevice, uint32 InSizeX, uint32 InSizeY, void* InWindowHandle, VkInstance InInstance);
 	~XVulkanViewport();
+	void Prsent();
+	inline XVulkanTexture2D* GetCurrentBackTexture() { return BackBufferTextures[CurrentBackBuffer].get(); }
 private:
-	XVulkanDevice* Device;
+
 	void* WindowHandle;
 	VkInstance Instance;
-	
+	XVulkanDevice* Device;
 	XVulkanSwapChain* VulkanSwapChain;
-	std::vector<XVulkanTextureView> ImageViews;
+	
+	uint32 CurrentBackBuffer;
+	VkExtent2D SwapChainExtent;
+
+	std::vector<std::shared_ptr<XVulkanTexture2D>>BackBufferTextures;
+	std::vector<XVulkanTextureView> ImageViews;//Unused
 	std::vector<VkImage> swapChainImages;
 
-	VkExtent2D SwapChainExtent;
 
 	friend class VkHack;
 };

@@ -220,6 +220,7 @@ extern XRHICommandList GRHICmdList;
 
 inline XRHITexture* RHIGetCurrentBackTexture()
 {
+
 	return GPlatformRHI->RHIGetCurrentBackTexture();
 }
 

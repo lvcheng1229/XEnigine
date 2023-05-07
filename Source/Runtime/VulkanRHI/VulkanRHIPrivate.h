@@ -3,6 +3,7 @@ class XVulkanRenderPass
 {
 public:
 	XVulkanRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout);
+	const VkRenderPass GetRenderPass()const { return RenderPass; }
 private:
 	VkRenderPass	RenderPass;
 };
@@ -16,9 +17,10 @@ static inline VkAttachmentLoadOp RenderTargetLoadActionToVulkan(ERenderTargetLoa
 	case ERenderTargetLoadAction::ELoad:		OutLoadAction = VK_ATTACHMENT_LOAD_OP_LOAD;			break;
 	case ERenderTargetLoadAction::EClear:		OutLoadAction = VK_ATTACHMENT_LOAD_OP_CLEAR;		break;
 	case ERenderTargetLoadAction::ENoAction:	OutLoadAction = VK_ATTACHMENT_LOAD_OP_DONT_CARE;	break;
-	default:																						break;
+	default:	
+		XASSERT(false); break;
 	}
-	XASSERT(false);
+	
 	return OutLoadAction;
 }
 
@@ -35,9 +37,9 @@ static inline VkAttachmentStoreOp RenderTargetStoreActionToVulkan(ERenderTargetS
 		OutStoreAction = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		break;
 	default:
-		break;
+		XASSERT(false); break;
 	}
-	XASSERT(false);
+	
 	return OutStoreAction;
 }
 
@@ -48,9 +50,12 @@ public:
 	const uint32 GetRenderPassFullHash()const { return RenderPassFullHash; }
 	const uint32 GetRenderPassCompatibleHash()const { return RenderPassCompatibleHash; }
 	const VkAttachmentDescription* GetAttachment()const { return Desc; }
+	const VkExtent2D GetExtent2D() const { return Extent2D; }
 	uint32 AttachCount = 0;
 private:
 	std::size_t RenderPassFullHash = 0;
 	std::size_t RenderPassCompatibleHash = 0;
 	VkAttachmentDescription Desc[MaxSimultaneousRenderTargets + 1];
+
+	VkExtent2D Extent2D;
 };

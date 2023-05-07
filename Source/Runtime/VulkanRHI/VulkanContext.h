@@ -45,7 +45,7 @@ public:
 	//DrawCall/DisPatch
 	void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size)override { XASSERT(false) };
 	void RHIEventEnd()override { XASSERT(false) };
-	void RHIEndFrame()override { XASSERT(false) };
+	void RHIEndFrame()override;
 	void RHIBeginFrame()override { XASSERT(false) };
 	void RHIEndRenderPass()override { XASSERT(false) };
 	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const char* InName, uint32 Size)override;
