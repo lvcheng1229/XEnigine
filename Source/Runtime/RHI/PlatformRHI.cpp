@@ -49,6 +49,7 @@ void RHIInit(uint32 Width, uint32 Height , bool bUseDX12)
 #include "Runtime\VulkanRHI\VulkanViewport.h"
 #include "Runtime\VulkanRHI\VulkanSwapChain.h"
 #include "Runtime\VulkanRHI\VulkanCommandBuffer.h"
+#include "Runtime\VulkanRHI\VulkanRHIPrivate.h"
 
 VkDevice VkHack::GetVkDevice()
 {
@@ -99,4 +100,17 @@ const VkCommandBuffer* VkHack::GetCmdBuffer()
 {
 	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
 	return &VkRHI->Device->GfxContext->CmdBufferManager->Pool.CmdBuffers[0]->CommandBufferHandle;
+}
+
+VkRenderPass VkHack::GetVkRenderPas()
+{
+	for (
+		auto iter = XVulkanCommandListContext::GlobalLayoutManager.RenderPasses.begin(); 
+		iter != XVulkanCommandListContext::GlobalLayoutManager.RenderPasses.end(); 
+		iter++)
+	{
+		return iter->second->GetRenderPass();
+	}
+	XASSERT(false);
+	return VkRenderPass();
 }

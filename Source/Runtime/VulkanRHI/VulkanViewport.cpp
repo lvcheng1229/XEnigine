@@ -17,7 +17,7 @@ XVulkanViewport::XVulkanViewport(EPixelFormat& InOutPixelFormat, XVulkanDevice* 
 	{
 		XASSERT_TEMP(false);
 
-		ImageViews[Index].Create(Device, swapChainImages[Index], VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_B8G8R8A8_SRGB);
+		ImageViews[Index].Create(Device, swapChainImages[Index], VK_IMAGE_VIEW_TYPE_2D, VkFormat(GPixelFormats[(int32)InOutPixelFormat].PlatformFormat));
 		std::shared_ptr<XVulkanTexture2D> BackTex2D =
 			std::make_shared<XVulkanTexture2D>(VulkanDevice, InOutPixelFormat, InSizeX, InSizeY, VK_IMAGE_VIEW_TYPE_2D, swapChainImages[Index]);
 		BackBufferTextures.push_back(BackTex2D);
@@ -59,6 +59,7 @@ XVulkanFramebuffer::XVulkanFramebuffer(XVulkanDevice* Device, const XRHISetRende
 		VulkanTextureView.Create(Device, Texture->Surface.Image, Texture->Surface.GetViewType(), Texture->Surface.ViewFormat);
 		VulkanTextureViews.push_back(VulkanTextureView);
 		AttachmentViews.push_back(VulkanTextureView.View);
+		ColorRenderTargetImages[Index] = Texture->Surface.Image;
 	}
 	const VkExtent2D RTExtents = RTLayout->GetExtent2D();
 

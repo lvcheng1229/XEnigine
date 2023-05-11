@@ -48,6 +48,8 @@ public:
 
 	XVulkanRenderPass* GetOrCreateRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout);
 private:
+	friend class VkHack;
+
 	struct XFramebufferList
 	{
 		std::vector<XVulkanFramebuffer*> Framebuffer;

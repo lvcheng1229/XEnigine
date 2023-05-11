@@ -33,19 +33,19 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(XVulkanDevice& InDevice, co
 
 		VkAttachmentDescription CurrDesc{};
 		CurrDesc.format = VkFormat(GPixelFormats[(int)RPInfo.RenderTargets[Index].RenderTarget->GetFormat()].PlatformFormat);
-		XASSERT(CurrDesc.format == VK_FORMAT_R8G8B8A8_SRGB);
+		XASSERT(CurrDesc.format == VK_FORMAT_B8G8R8A8_SRGB);
 		CurrDesc.samples = VK_SAMPLE_COUNT_1_BIT;
 		CurrDesc.loadOp = RenderTargetLoadActionToVulkan(RPInfo.RenderTargets[Index].LoadAction);
 		CurrDesc.storeOp = RenderTargetStoreActionToVulkan(RPInfo.RenderTargets[Index].StoreAction);
 		CurrDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		CurrDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-		CurrDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		CurrDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		//CurrDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		//CurrDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		XASSERT_TEMP(false);
-		//colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		//colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		CurrDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //VK_IMAGE_LAYOUT_UNDEFINED
+		CurrDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		THashCombine(RenderPassFullHash, CurrDesc.loadOp);
 		THashCombine(RenderPassFullHash, CurrDesc.storeOp);

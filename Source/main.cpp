@@ -24,18 +24,23 @@ public:
 #if !USE_DX12
     VkHack mVkHack;
     VkPipelineLayout pipelineLayout;
-    VkRenderPass renderPass;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
+    //VkRenderPass renderPass;
+    //std::vector<VkFramebuffer> swapChainFramebuffers;
 
     VkPipeline graphicsPipeline;
 
     //VkCommandPool commandPool;
     //std::vector<VkCommandBuffer> commandBuffers;
 
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    uint32_t currentFrame = 0;
+    //std::vector<VkSemaphore> imageAvailableSemaphores;
+    //std::vector<VkSemaphore> renderFinishedSemaphores;
+    //std::vector<VkFence> inFlightFences;
+
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderFinishedSemaphore;
+    VkFence inFlightFence;
+
+    //uint32_t currentFrame = 0;
 #endif
 
     XRHICommandList RHICmdList;
@@ -134,6 +139,16 @@ public:
     }
 
     void createGraphicsPipeline() {
+        static bool bPSOCreated = false;
+        if (!bPSOCreated)
+        {
+            bPSOCreated = true;
+        }
+        else
+        {
+            return;
+        }
+
         auto vertShaderCode = readFile("G:/XEngineF/XEnigine/Source/Shaders/VulkanShaderTest/vert.spv");
         auto fragShaderCode = readFile("G:/XEngineF/XEnigine/Source/Shaders/VulkanShaderTest/frag.spv");
 
@@ -229,7 +244,7 @@ public:
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipelineLayout;
-        pipelineInfo.renderPass = renderPass;
+        pipelineInfo.renderPass = mVkHack.GetVkRenderPas();
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -241,64 +256,64 @@ public:
         vkDestroyShaderModule(mVkHack.GetVkDevice(), vertShaderModule, nullptr);
     }
 
-    void createRenderPass() {
-        VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    //void createRenderPass() {
+    //    VkAttachmentDescription colorAttachment{};
+    //    colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB;
+    //    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    //    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    //    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    //    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    //    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    //
+    //    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    //    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    //
+    //    //colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //    //colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    //
+    //    VkAttachmentReference colorAttachmentRef{};
+    //    colorAttachmentRef.attachment = 0;
+    //    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    //
+    //    VkSubpassDescription subpass{};
+    //    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    //    subpass.colorAttachmentCount = 1;
+    //    subpass.pColorAttachments = &colorAttachmentRef;
+    //
+    //    VkRenderPassCreateInfo renderPassInfo{};
+    //    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    //    renderPassInfo.attachmentCount = 1;
+    //    renderPassInfo.pAttachments = &colorAttachment;
+    //    renderPassInfo.subpassCount = 1;
+    //    renderPassInfo.pSubpasses = &subpass;
+    //
+    //    if (vkCreateRenderPass(mVkHack.GetVkDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    //        throw std::runtime_error("failed to create render pass!");
+    //    }
+    //}
 
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        //colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        //colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-
-        VkRenderPassCreateInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-
-        if (vkCreateRenderPass(mVkHack.GetVkDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create render pass!");
-        }
-    }
-
-    void createFramebuffers() {
-        swapChainFramebuffers.resize(mVkHack.GetBkImageViews().size());
-
-        for (size_t i = 0; i < mVkHack.GetBkImageViews().size(); i++) {
-            VkImageView attachments[] = {
-                mVkHack.GetBkImageViews()[i]
-            };
-
-            VkFramebufferCreateInfo framebufferInfo{};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = renderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = attachments;
-            framebufferInfo.width = mVkHack.GetBkBufferExtent().width;
-            framebufferInfo.height = mVkHack.GetBkBufferExtent().height;
-            framebufferInfo.layers = 1;
-
-            if (vkCreateFramebuffer(mVkHack.GetVkDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create framebuffer!");
-            }
-        }
-    }
+    //void createFramebuffers() {
+    //    swapChainFramebuffers.resize(mVkHack.GetBkImageViews().size());
+    //
+    //    for (size_t i = 0; i < mVkHack.GetBkImageViews().size(); i++) {
+    //        VkImageView attachments[] = {
+    //            mVkHack.GetBkImageViews()[i]
+    //        };
+    //
+    //        VkFramebufferCreateInfo framebufferInfo{};
+    //        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    //        framebufferInfo.renderPass = renderPass;
+    //        framebufferInfo.attachmentCount = 1;
+    //        framebufferInfo.pAttachments = attachments;
+    //        framebufferInfo.width = mVkHack.GetBkBufferExtent().width;
+    //        framebufferInfo.height = mVkHack.GetBkBufferExtent().height;
+    //        framebufferInfo.layers = 1;
+    //
+    //        if (vkCreateFramebuffer(mVkHack.GetVkDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+    //            throw std::runtime_error("failed to create framebuffer!");
+    //        }
+    //    }
+    //}
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         VkCommandBufferBeginInfo beginInfo{};
@@ -325,6 +340,7 @@ public:
         XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
         RHICmdList.RHIBeginRenderPass(RPInfos, "VulkanTestRP", sizeof("VulkanTestRP"));
         
+        createGraphicsPipeline();
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
         VkViewport viewport{};
@@ -350,11 +366,27 @@ public:
         }
     }
 
+    //void createSyncObjects() {
+    //    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    //    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    //    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    //
+    //    VkSemaphoreCreateInfo semaphoreInfo{};
+    //    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    //
+    //    VkFenceCreateInfo fenceInfo{};
+    //    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    //    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    //
+    //    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    //        if (vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+    //            vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+    //            vkCreateFence(mVkHack.GetVkDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+    //            throw std::runtime_error("failed to create synchronization objects for a frame!");
+    //        }
+    //    }
+    //}
     void createSyncObjects() {
-        imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -362,21 +394,19 @@ public:
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(mVkHack.GetVkDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create synchronization objects for a frame!");
-            }
+        if (vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
+            vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
+            vkCreateFence(mVkHack.GetVkDevice(), &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create synchronization objects for a frame!");
         }
-    }
 
-    void drawFrame() {
-        vkWaitForFences(mVkHack.GetVkDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-        vkResetFences(mVkHack.GetVkDevice(), 1, &inFlightFences[currentFrame]);
+    }
+    void drawFrame2() {
+        vkWaitForFences(mVkHack.GetVkDevice(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+        vkResetFences(mVkHack.GetVkDevice(), 1, &inFlightFence);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(mVkHack.GetVkDevice(), mVkHack.GetVkSwapChain(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        vkAcquireNextImageKHR(mVkHack.GetVkDevice(), mVkHack.GetVkSwapChain(), UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
         vkResetCommandBuffer(*mVkHack.GetCmdBuffer(), /*VkCommandBufferResetFlagBits*/ 0);
         recordCommandBuffer(*mVkHack.GetCmdBuffer(), imageIndex);
@@ -384,7 +414,7 @@ public:
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+        VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
@@ -393,11 +423,11 @@ public:
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = (mVkHack.GetCmdBuffer());
 
-        VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+        VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(mVkHack.GetVkQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+        if (vkQueueSubmit(mVkHack.GetVkQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -414,10 +444,55 @@ public:
         presentInfo.pImageIndices = &imageIndex;
 
         vkQueuePresentKHR(mVkHack.GetVkQueue(), &presentInfo);
-
-        RHICmdList.RHIEndFrame();
-        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
+
+    //void drawFrame() {
+    //    vkWaitForFences(mVkHack.GetVkDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    //    vkResetFences(mVkHack.GetVkDevice(), 1, &inFlightFences[currentFrame]);
+    //
+    //    uint32_t imageIndex;
+    //    vkAcquireNextImageKHR(mVkHack.GetVkDevice(), mVkHack.GetVkSwapChain(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    //
+    //    vkResetCommandBuffer(*mVkHack.GetCmdBuffer(), /*VkCommandBufferResetFlagBits*/ 0);
+    //    recordCommandBuffer(*mVkHack.GetCmdBuffer(), imageIndex);
+    //
+    //    VkSubmitInfo submitInfo{};
+    //    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    //
+    //    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+    //    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    //    submitInfo.waitSemaphoreCount = 1;
+    //    submitInfo.pWaitSemaphores = waitSemaphores;
+    //    submitInfo.pWaitDstStageMask = waitStages;
+    //
+    //    submitInfo.commandBufferCount = 1;
+    //    submitInfo.pCommandBuffers = (mVkHack.GetCmdBuffer());
+    //
+    //    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+    //    submitInfo.signalSemaphoreCount = 1;
+    //    submitInfo.pSignalSemaphores = signalSemaphores;
+    //
+    //    if (vkQueueSubmit(mVkHack.GetVkQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+    //        throw std::runtime_error("failed to submit draw command buffer!");
+    //    }
+    //
+    //    VkPresentInfoKHR presentInfo{};
+    //    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    //
+    //    presentInfo.waitSemaphoreCount = 1;
+    //    presentInfo.pWaitSemaphores = signalSemaphores;
+    //
+    //    VkSwapchainKHR swapChains[] = { mVkHack.GetVkSwapChain() };
+    //    presentInfo.swapchainCount = 1;
+    //    presentInfo.pSwapchains = swapChains;
+    //
+    //    presentInfo.pImageIndices = &imageIndex;
+    //
+    //    vkQueuePresentKHR(mVkHack.GetVkQueue(), &presentInfo);
+    //
+    //    RHICmdList.RHIEndFrame();
+    //    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    //}
 #endif
     void Init()
     {
@@ -454,9 +529,9 @@ public:
             LightDir, LightColor, LightIntensity, RHICmdList);
         RHICmdList.Execute();
 #else
-        createRenderPass();
-        createGraphicsPipeline();
-        createFramebuffers();
+        //createRenderPass();
+        //createGraphicsPipeline();
+        //createFramebuffers();
         createSyncObjects();
 #endif
     }
@@ -477,7 +552,7 @@ int main()
         SandBox.Init();
         while (!glfwWindowShouldClose((GLFWwindow*)XApplication::Application->GetPlatformHandle())) {
             glfwPollEvents();
-            SandBox.drawFrame();
+            SandBox.drawFrame2();
         }
         //XApplication::Application->ApplicationLoop();
         SandBox.Destroy();

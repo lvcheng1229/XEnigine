@@ -19,6 +19,7 @@ XVulkanPlatformRHI::XVulkanPlatformRHI()
     //GPixelFormats[(int)EPixelFormat::FT_R32_UINT].PlatformFormat = DXGI_FORMAT_R32_UINT;
     //GPixelFormats[(int)EPixelFormat::FT_R32G32B32A32_UINT].PlatformFormat = DXGI_FORMAT_R32G32B32A32_UINT;
     //GPixelFormats[(int)EPixelFormat::FT_R32_TYPELESS].PlatformFormat = DXGI_FORMAT_R32_TYPELESS;
+    GPixelFormats[(int)EPixelFormat::FT_B8G8A8A8_UNORM_SRGB].PlatformFormat = VK_FORMAT_B8G8R8A8_SRGB;
 }
 
 XVulkanPlatformRHI::~XVulkanPlatformRHI()
@@ -77,7 +78,7 @@ void XVulkanPlatformRHI::Init()
 
     SelectAndInitDevice();
 
-    EPixelFormat BackBufferFormat = EPixelFormat::FT_R8G8B8A8_UNORM_SRGB;
+    EPixelFormat BackBufferFormat = EPixelFormat::FT_B8G8A8A8_UNORM_SRGB;
     VulkanViewport = new XVulkanViewport(BackBufferFormat, Device, XApplication::Application->ClientWidth, XApplication::Application->ClientHeight, XApplication::Application->GetPlatformHandle(), Instance);
 
     GRHICmdList.SetContext(Device->GetGfxContex());

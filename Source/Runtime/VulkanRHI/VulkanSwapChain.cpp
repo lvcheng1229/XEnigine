@@ -59,7 +59,8 @@ XVulkanSwapChain::XVulkanSwapChain(EPixelFormat& InOutPixelFormat, XVulkanDevice
     createInfo.surface = Surface;
 
     createInfo.minImageCount = DesiredNumBuffers;
-    createInfo.imageFormat = VK_FORMAT_B8G8R8A8_SRGB;// VkFormat(GPixelFormats[(int32)InOutPixelFormat].PlatformFormat);
+    createInfo.imageFormat = VkFormat(GPixelFormats[(int32)InOutPixelFormat].PlatformFormat);
+
     createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     createInfo.imageExtent = Capabilities.currentExtent;
     createInfo.imageArrayLayers = 1;

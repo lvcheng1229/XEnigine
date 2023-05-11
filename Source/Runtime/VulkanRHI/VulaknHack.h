@@ -13,5 +13,6 @@ public:
 	VkSwapchainKHR GetVkSwapChain();
 	VkCommandPool GetCmdPool();
 	const VkCommandBuffer* GetCmdBuffer();
+	VkRenderPass GetVkRenderPas();
 };
 ;

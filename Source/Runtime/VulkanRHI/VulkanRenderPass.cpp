@@ -48,3 +48,13 @@ XVulkanRenderPass::XVulkanRenderPass(XVulkanDevice* InDevice, const XVulkanRende
 
     VULKAN_VARIFY(vkCreateRenderPass(InDevice->GetVkDevice(), &renderPassInfo, nullptr, &RenderPass));
 }
+//vkQueuePresentKHR(queue, pPresentInfo) 
+//returns VkResultvalidation layer : Validation Error : 
+//[VUID - VkPresentInfoKHR - pImageIndices - 01296] 
+//Object 0 : handle = 0x1c422d0dc80, type = VK_OBJECT_TYPE_QUEUE; | MessageID = 0xc7aabc16 | vkQueuePresentKHR() : 
+//    pSwapchains[0] images passed to present must be in layout VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR 
+//    but is in VK_IMAGE_LAYOUT_UNDEFINED.The Vulkan spec states : 
+//Each element of pImageIndices must be the index of a presentable image acquired from the swapchain 
+//specified by the corresponding element of the pSwapchains array, 
+//and the presented image subresource must be in the VK_IMAGE_LAYOUT_PRESENT_SRC_KHR layout at the time the operation is executed on a VkDevice(
+//    https ://github.com/KhronosGroup/Vulkan-Docs/search?q=)VUID-VkPresentInfoKHR-pImageIndices-01296)

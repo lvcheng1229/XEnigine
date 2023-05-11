@@ -2,6 +2,7 @@
 #include "VulkanDevice.h"
 #include "VulkanRHIPrivate.h"
 #include "VulkanBarriers.h"
+
 #include "VulkanResource.h"
 #include "VulkanCommandBuffer.h"
 
@@ -17,22 +18,28 @@ XVulkanLayoutManager::~XVulkanLayoutManager()
 
 XVulkanFramebuffer* XVulkanLayoutManager::GetOrCreateFramebuffer(XVulkanDevice* InDevice, const XRHISetRenderTargetsInfo* RenderTargetsInfo, const XVulkanRenderTargetLayout* RTLayout, XVulkanRenderPass* RenderPass)
 {
-	uint32 RTLayoutHash = RTLayout->GetRenderPassCompatibleHash();
+	static uint32 HashHackTemp = 0;
+	HashHackTemp++;
+	HashHackTemp = HashHackTemp % 2;
+
+	uint32 RTLayoutHash = RTLayout->GetRenderPassCompatibleHash() + HashHackTemp;
 
 	auto iter = Framebuffers.find(RTLayoutHash);
 	XFramebufferList* FramebufferList = nullptr;
 	if (iter != Framebuffers.end())
 	{
 		XASSERT_TEMP(false);
-		FramebufferList = iter->second;
-		return FramebufferList->Framebuffer[0];
-	}
-	else
-	{
-		FramebufferList = new XFramebufferList;
-		Framebuffers[RTLayoutHash] = FramebufferList;
+		for (int32 Index = 0; Index < iter->second->Framebuffer.size(); Index++)
+		{
+			if (iter->second->Framebuffer[Index]->Matches(*RenderTargetsInfo))
+			{
+				return iter->second->Framebuffer[Index];
+			}
+		}
 	}
 	
+	FramebufferList = new XFramebufferList;
+	Framebuffers[RTLayoutHash] = FramebufferList;
 	XVulkanFramebuffer* Framebuffer = new XVulkanFramebuffer(InDevice, RenderTargetsInfo, RTLayout, RenderPass);
 	FramebufferList->Framebuffer.push_back(Framebuffer);
 	return Framebuffer;
@@ -60,6 +67,15 @@ XVulkanRenderPass* XVulkanLayoutManager::GetOrCreateRenderPass(XVulkanDevice* In
 
 bool XVulkanFramebuffer::Matches(const XRHISetRenderTargetsInfo& RTInfo) const
 {
+	bool bMatch = false;
+	for (int32 Index = 0; Index < RTInfo.NumColorRenderTargets; Index++)
+	{
+		const VkImage Image = GetVulkanTextureFromRHITexture(RTInfo.ColorRenderTarget[Index].Texture)->Surface.Image;
+		if (ColorRenderTargetImages[Index] != Image)
+		{
+			return false;
+		}
+	}
 	XASSERT_TEMP(false);
 	return true;
 }
