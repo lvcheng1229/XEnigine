@@ -14,6 +14,8 @@ XApplication* XApplication::Application = nullptr;
 #include <fstream>
 #include "Runtime\VulkanRHI\VulkanResource.h"
 #include <Runtime\VulkanRHI\VulaknHack.h>
+#include "Runtime\RHI\RHIStaticStates.h"
+#include "Runtime\RHI\PipelineStateCache.h"
 const int MAX_FRAMES_IN_FLIGHT = 2;
 #endif
 
@@ -139,13 +141,16 @@ public:
     }
 
     void createGraphicsPipeline() {
+        std::cout << "CreateShaderShawn" << std::endl;
         static bool bPSOCreated = false;
         if (!bPSOCreated)
         {
+            std::cout << "CreateShaderShawn" << std::endl;
             bPSOCreated = true;
         }
         else
         {
+            std::cout << "CreateShaderShawn2" << std::endl;
             return;
         }
 
@@ -256,65 +261,6 @@ public:
         vkDestroyShaderModule(mVkHack.GetVkDevice(), vertShaderModule, nullptr);
     }
 
-    //void createRenderPass() {
-    //    VkAttachmentDescription colorAttachment{};
-    //    colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB;
-    //    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    //    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    //    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    //    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    //    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    //
-    //    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    //    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    //
-    //    //colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //    //colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    //
-    //    VkAttachmentReference colorAttachmentRef{};
-    //    colorAttachmentRef.attachment = 0;
-    //    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    //
-    //    VkSubpassDescription subpass{};
-    //    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    //    subpass.colorAttachmentCount = 1;
-    //    subpass.pColorAttachments = &colorAttachmentRef;
-    //
-    //    VkRenderPassCreateInfo renderPassInfo{};
-    //    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    //    renderPassInfo.attachmentCount = 1;
-    //    renderPassInfo.pAttachments = &colorAttachment;
-    //    renderPassInfo.subpassCount = 1;
-    //    renderPassInfo.pSubpasses = &subpass;
-    //
-    //    if (vkCreateRenderPass(mVkHack.GetVkDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-    //        throw std::runtime_error("failed to create render pass!");
-    //    }
-    //}
-
-    //void createFramebuffers() {
-    //    swapChainFramebuffers.resize(mVkHack.GetBkImageViews().size());
-    //
-    //    for (size_t i = 0; i < mVkHack.GetBkImageViews().size(); i++) {
-    //        VkImageView attachments[] = {
-    //            mVkHack.GetBkImageViews()[i]
-    //        };
-    //
-    //        VkFramebufferCreateInfo framebufferInfo{};
-    //        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    //        framebufferInfo.renderPass = renderPass;
-    //        framebufferInfo.attachmentCount = 1;
-    //        framebufferInfo.pAttachments = attachments;
-    //        framebufferInfo.width = mVkHack.GetBkBufferExtent().width;
-    //        framebufferInfo.height = mVkHack.GetBkBufferExtent().height;
-    //        framebufferInfo.layers = 1;
-    //
-    //        if (vkCreateFramebuffer(mVkHack.GetVkDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-    //            throw std::runtime_error("failed to create framebuffer!");
-    //        }
-    //    }
-    //}
-
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -323,23 +269,25 @@ public:
             throw std::runtime_error("failed to begin recording command buffer!");
         }
 
-        //VkRenderPassBeginInfo renderPassInfo{};
-        //renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        //renderPassInfo.renderPass = renderPass;
-        //renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-        //renderPassInfo.renderArea.offset = { 0, 0 };
-        //renderPassInfo.renderArea.extent = mVkHack.GetBkBufferExtent();
-        //
-        //VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-        //renderPassInfo.clearValueCount = 1;
-        //renderPassInfo.pClearValues = &clearColor;
-        //
-        //vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
         XRHITexture* BackTex = RHIGetCurrentBackTexture();
         XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
         RHICmdList.RHIBeginRenderPass(RPInfos, "VulkanTestRP", sizeof("VulkanTestRP"));
         
+        XGraphicsPSOInitializer GraphicsPSOInit;
+        //GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+        //GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+        //GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
+
+        //TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
+        //TShaderReference<XToneMappingPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XToneMappingPassPS>();
+        
+        //GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
+        //GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
+        //GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
+        
+        //RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+        SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
+
         createGraphicsPipeline();
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
@@ -366,26 +314,6 @@ public:
         }
     }
 
-    //void createSyncObjects() {
-    //    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    //    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    //    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    //
-    //    VkSemaphoreCreateInfo semaphoreInfo{};
-    //    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    //
-    //    VkFenceCreateInfo fenceInfo{};
-    //    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    //    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    //
-    //    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    //        if (vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-    //            vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-    //            vkCreateFence(mVkHack.GetVkDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-    //            throw std::runtime_error("failed to create synchronization objects for a frame!");
-    //        }
-    //    }
-    //}
     void createSyncObjects() {
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -444,55 +372,8 @@ public:
         presentInfo.pImageIndices = &imageIndex;
 
         vkQueuePresentKHR(mVkHack.GetVkQueue(), &presentInfo);
+        mVkHack.TempPresent();
     }
-
-    //void drawFrame() {
-    //    vkWaitForFences(mVkHack.GetVkDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    //    vkResetFences(mVkHack.GetVkDevice(), 1, &inFlightFences[currentFrame]);
-    //
-    //    uint32_t imageIndex;
-    //    vkAcquireNextImageKHR(mVkHack.GetVkDevice(), mVkHack.GetVkSwapChain(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-    //
-    //    vkResetCommandBuffer(*mVkHack.GetCmdBuffer(), /*VkCommandBufferResetFlagBits*/ 0);
-    //    recordCommandBuffer(*mVkHack.GetCmdBuffer(), imageIndex);
-    //
-    //    VkSubmitInfo submitInfo{};
-    //    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    //
-    //    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-    //    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    //    submitInfo.waitSemaphoreCount = 1;
-    //    submitInfo.pWaitSemaphores = waitSemaphores;
-    //    submitInfo.pWaitDstStageMask = waitStages;
-    //
-    //    submitInfo.commandBufferCount = 1;
-    //    submitInfo.pCommandBuffers = (mVkHack.GetCmdBuffer());
-    //
-    //    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
-    //    submitInfo.signalSemaphoreCount = 1;
-    //    submitInfo.pSignalSemaphores = signalSemaphores;
-    //
-    //    if (vkQueueSubmit(mVkHack.GetVkQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
-    //        throw std::runtime_error("failed to submit draw command buffer!");
-    //    }
-    //
-    //    VkPresentInfoKHR presentInfo{};
-    //    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    //
-    //    presentInfo.waitSemaphoreCount = 1;
-    //    presentInfo.pWaitSemaphores = signalSemaphores;
-    //
-    //    VkSwapchainKHR swapChains[] = { mVkHack.GetVkSwapChain() };
-    //    presentInfo.swapchainCount = 1;
-    //    presentInfo.pSwapchains = swapChains;
-    //
-    //    presentInfo.pImageIndices = &imageIndex;
-    //
-    //    vkQueuePresentKHR(mVkHack.GetVkQueue(), &presentInfo);
-    //
-    //    RHICmdList.RHIEndFrame();
-    //    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-    //}
 #endif
     void Init()
     {
@@ -550,11 +431,14 @@ int main()
     {
         XSandBox SandBox;
         SandBox.Init();
+#if !USE_DX12
         while (!glfwWindowShouldClose((GLFWwindow*)XApplication::Application->GetPlatformHandle())) {
             glfwPollEvents();
             SandBox.drawFrame2();
         }
-        //XApplication::Application->ApplicationLoop();
+#else
+        XApplication::Application->ApplicationLoop();
+#endif
         SandBox.Destroy();
     }
     {

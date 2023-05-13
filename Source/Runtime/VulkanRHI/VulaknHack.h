@@ -14,5 +14,6 @@ public:
 	VkCommandPool GetCmdPool();
 	const VkCommandBuffer* GetCmdBuffer();
 	VkRenderPass GetVkRenderPas();
+	void TempPresent();
 };
 ;

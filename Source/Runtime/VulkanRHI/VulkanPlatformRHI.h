@@ -52,7 +52,7 @@ public:
 	std::shared_ptr<XRHIComputeShader> RHICreateComputeShader(XArrayView<uint8> Code)final override { XASSERT(false); return nullptr; };
 
 	//CreatePSO
-	std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)final override { XASSERT(false); return nullptr; };
+	std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)final override;
 	std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)final override { XASSERT(false); return nullptr; };
 
 	std::shared_ptr<XRHIConstantBuffer> RHICreateConstantBuffer(uint32 size)override { XASSERT(false); return nullptr; };

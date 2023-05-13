@@ -300,8 +300,8 @@ struct XRHIRenderPassInfo
 		XRHITexture* DepthRT,
 		EDepthStencilLoadAction DSLoadAction,
 
-		ERenderTargetStoreAction ColorStoreAction = ERenderTargetStoreAction::ENoAction,
-		ERenderTargetStoreAction DSStoreAction = ERenderTargetStoreAction::ENoAction
+		ERenderTargetStoreAction ColorStoreAction = ERenderTargetStoreAction::EStore,//TempHack
+		ERenderTargetStoreAction DSStoreAction = ERenderTargetStoreAction::EStore
 	)
 	{
 		for (int i = 0; i < NumColorRTs; i++)
