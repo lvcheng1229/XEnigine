@@ -31,7 +31,7 @@ struct XRHIResourceCreateData
 
 struct XRasterizationStateInitializerRHI
 {
-	bool bConservative; 
+	bool bConservative; //for svogi
 	EFaceCullMode CullMode;
 	XRasterizationStateInitializerRHI(
 		bool bConservativeIn,

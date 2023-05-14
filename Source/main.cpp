@@ -198,13 +198,6 @@ public:
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
-        TShaderReference<XHLSL2SPIRVS> VertexShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRVS>();
-        TShaderReference<XHLSL2SPIRPS> PixelShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRPS>();
-        std::cout << VertexShader.GetVertexShader() << std::endl;
-        std::cout << PixelShader.GetPixelShader() << std::endl;
-        //GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
-        //GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
-
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -319,21 +312,21 @@ public:
         RHICmdList.RHIBeginRenderPass(RPInfos, "VulkanTestRP", sizeof("VulkanTestRP"));
         
         XGraphicsPSOInitializer GraphicsPSOInit;
-        //GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-        //GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
-        //GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
+        GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+        GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+        GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
 
-        //TShaderReference<RFullScreenQuadVS> VertexShader = GetGlobalShaderMapping()->GetShader<RFullScreenQuadVS>();
-        //TShaderReference<XToneMappingPassPS> PixelShader = GetGlobalShaderMapping()->GetShader<XToneMappingPassPS>();
+        TShaderReference<XHLSL2SPIRVS> VertexShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRVS>();
+        TShaderReference<XHLSL2SPIRPS> PixelShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRPS>();
         
-        //GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
-        //GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
+        GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
+        GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
         //GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
         
-        //RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-        //SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
+        RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+        SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
         //
-        createGraphicsPipeline();
+        //createGraphicsPipeline();
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
         VkViewport viewport{};

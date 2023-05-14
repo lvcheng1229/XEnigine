@@ -96,7 +96,7 @@ public:
 	};
 };
 
-class XVulkanPixelShader : public XRHIVertexShader, public XVulkanShader
+class XVulkanPixelShader : public XRHIPixelShader, public XVulkanShader
 {
 public:
 	enum
