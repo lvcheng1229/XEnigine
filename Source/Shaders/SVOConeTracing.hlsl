@@ -66,7 +66,7 @@ void RotateConesDir( float3 normal, inout float3 coneDir[conesNum] )
 
 float GetNodeWidth( in uint octreeLevel )
 {
-    return ( MaxBound.x - MinBound.x ) / ( OctreeResolution >> ( OctreeHeight - octreeLevel -1) );
+    return ( MaxBound.x - MinBound.x ) / ( uint(OctreeResolution) >> uint( OctreeHeight - octreeLevel -1) );
 }
 
 uint PackUint3ToUint( uint3 Value )

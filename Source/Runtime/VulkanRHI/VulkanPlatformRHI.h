@@ -47,7 +47,7 @@ public:
 	std::shared_ptr<XRHIBlendState> RHICreateBlendState(const XBlendStateInitializerRHI& Initializer)final override { XASSERT(false); return nullptr; };
 
 	//Create Shader
-	std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8> Code)final override { XASSERT(false); return nullptr; };
+	std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8> Code)final override;
 	std::shared_ptr<XRHIPixelShader> RHICreatePixelShader(XArrayView<uint8> Code)final override { XASSERT(false); return nullptr; };
 	std::shared_ptr<XRHIComputeShader> RHICreateComputeShader(XArrayView<uint8> Code)final override { XASSERT(false); return nullptr; };
 

@@ -17,6 +17,44 @@ XApplication* XApplication::Application = nullptr;
 #include "Runtime\RHI\RHIStaticStates.h"
 #include "Runtime\RHI\PipelineStateCache.h"
 const int MAX_FRAMES_IN_FLIGHT = 2;
+#include "Runtime\RenderCore\GlobalShader.h"
+
+class XHLSL2SPIRPS :public XGloablShader
+{
+public:
+    static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+    {
+        return new XHLSL2SPIRPS(Initializer);
+    }
+
+    static ShaderInfos StaticShaderInfos;
+    static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+
+public:
+    XHLSL2SPIRPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer) {}
+};
+
+class XHLSL2SPIRVS :public XGloablShader
+{
+public:
+    static XXShader* CustomConstrucFunc(const XShaderInitlizer& Initializer)
+    {
+        return new XHLSL2SPIRVS(Initializer);
+    }
+    static ShaderInfos StaticShaderInfos;
+    static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
+
+public:
+    XHLSL2SPIRVS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer) {}
+};
+XHLSL2SPIRVS::ShaderInfos XHLSL2SPIRVS::StaticShaderInfos(
+    "XHLSL2SPIRVS", GET_SHADER_PATH("VulkanShaderTest/hlsl2spirtest.hlsl"),
+    "VS", EShaderType::SV_Vertex, XHLSL2SPIRVS::CustomConstrucFunc,
+    XHLSL2SPIRVS::ModifyShaderCompileSettings);
+XHLSL2SPIRPS::ShaderInfos XHLSL2SPIRPS::StaticShaderInfos(
+    "XHLSL2SPIRPS", GET_SHADER_PATH("VulkanShaderTest/hlsl2spirtest.hlsl"),
+    "PS", EShaderType::SV_Pixel, XHLSL2SPIRPS::CustomConstrucFunc,
+    XHLSL2SPIRPS::ModifyShaderCompileSettings);
 #endif
 
 
@@ -160,6 +198,13 @@ public:
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
+        TShaderReference<XHLSL2SPIRVS> VertexShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRVS>();
+        TShaderReference<XHLSL2SPIRPS> PixelShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRPS>();
+        std::cout << VertexShader.GetVertexShader() << std::endl;
+        std::cout << PixelShader.GetPixelShader() << std::endl;
+        //GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
+        //GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
+
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -286,8 +331,8 @@ public:
         //GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
         
         //RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-        SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-
+        //SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
+        //
         createGraphicsPipeline();
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
@@ -397,7 +442,9 @@ public:
 #if USE_DX12
         RHICmdList.Open();
         SceneBuild();
+#endif
         MainInit::InitAfterRHI();
+#if USE_DX12
         XApplication::Application->UISetup();
         SceneBoundingSphere.Center = XVector3(0, 0, 0);
         SceneBoundingSphere.Radius = 48.0f;
@@ -410,9 +457,6 @@ public:
             LightDir, LightColor, LightIntensity, RHICmdList);
         RHICmdList.Execute();
 #else
-        //createRenderPass();
-        //createGraphicsPipeline();
-        //createFramebuffers();
         createSyncObjects();
 #endif
     }

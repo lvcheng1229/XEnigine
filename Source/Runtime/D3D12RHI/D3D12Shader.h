@@ -15,6 +15,7 @@ public:
 		VertexElements(InVertexElements) {}
 };
 
+//TODO:XD3D12Shader
 
 class XD3D12VertexShader :public XRHIVertexShader
 {

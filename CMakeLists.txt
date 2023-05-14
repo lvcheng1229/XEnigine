@@ -27,11 +27,12 @@ link_libraries(imgui)
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/Source" FILES ${HEADER_FILES} ${SOURCE_FILES} ${SOURCE_FILES_CC})
 
-link_libraries("d3dcompiler.lib")
+#link_libraries("d3dcompiler.lib")
 link_libraries("D3D12.lib")
 link_libraries("dxgi.lib")
 link_libraries(${XENGINE_ROOT_DIR}/ThirdParty/glfw-3.3.8.bin.WIN64/lib-vc2022/glfw3.lib)
 link_libraries(${XENGINE_ROOT_DIR}/ThirdParty/vk_1.3.243.0/Lib/vulkan-1.lib)
+link_libraries(${XENGINE_ROOT_DIR}/ThirdParty/vk_1.3.243.0/Lib/dxcompiler.lib)
 
 include_directories(${XENGINE_ROOT_DIR}/ThirdParty/glfw-3.3.8.bin.WIN64/include)
 include_directories(${XENGINE_ROOT_DIR}/ThirdParty/glm-0.9.9.8/glm)

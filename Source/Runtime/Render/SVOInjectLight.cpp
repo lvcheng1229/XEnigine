@@ -7,6 +7,7 @@
 #include "VoxelizationScene.h"
 #include "ShadowMap_Old.h"
 
+#if USE_SVOGI
 class ShadowMapInjectLightCS :public XGloablShader
 {
 public:
@@ -181,9 +182,10 @@ GatherValuesFromLowLevelCS::ShaderInfos GatherValuesFromLowLevelCS::StaticShader
 	"GatherValuesFromLowLevelCS", GET_SHADER_PATH("SVOInjectLight.hlsl"),
 	"GatherValuesFromLowLevelCS", EShaderType::SV_Compute, GatherValuesFromLowLevelCS::CustomConstrucFunc,
 	GatherValuesFromLowLevelCS::ModifyShaderCompileSettings);
-
+#endif
 void XDeferredShadingRenderer::SVOInjectLightPass(XRHICommandList& RHICmdList)
 {
+#if USE_SVOGI
 	cbMainLightStruct cbMainLightins;
 	cbMainLightins.LightColor = MainLightColor;
 	cbMainLightins.LightIntensity = LightIntensity;
@@ -259,4 +261,5 @@ void XDeferredShadingRenderer::SVOInjectLightPass(XRHICommandList& RHICmdList)
 		RHICmdList.RHIEventEnd();
 		SVOGIResourece.PingPongIndex++;
 	}
+#endif
 }

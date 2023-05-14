@@ -40,7 +40,7 @@ public:
 			ResourceNum = iter->second.ResourceCount;
 			return;
 		}
-		XASSERT(false);
+		XASSERT_TEMP(false);
 	}
 	uint16 GetResourceIndex()const { return ResourceIndex; }
 	uint16 GetResourceNum()const { return ResourceNum; };
@@ -64,8 +64,15 @@ inline void SetShaderConstantBufferParameter(
 	uint32 ElementIndex = 0
 )
 {
-	XASSERT(ConstantBufferParameter.GetResourceNum() > 0);
-	RHICmdList.SetConstantBuffer(ShaderType, ConstantBufferParameter.GetResourceIndex() + ElementIndex, RHIConstantBuffer);
+	XASSERT_TEMP(ConstantBufferParameter.GetResourceNum() > 0);
+	if (ConstantBufferParameter.GetResourceNum() > 0)
+	{
+		RHICmdList.SetConstantBuffer(ShaderType, ConstantBufferParameter.GetResourceIndex() + ElementIndex, RHIConstantBuffer);
+	}
+	else
+	{
+		XLOG("ConstantBufferParameter.GetResourceNum() > 0");
+	}
 }
 
 template<typename TRHICmdList>
@@ -77,8 +84,15 @@ inline void SetShaderSRVParameter(
 	uint32 ElementIndex = 0
 )
 {
-	XASSERT(SRVParameter.GetResourceNum() > 0);
-	RHICmdList.SetShaderSRV(ShaderType, SRVParameter.GetResourceIndex() + ElementIndex, RHISRV);
+	XASSERT_TEMP(SRVParameter.GetResourceNum() > 0);
+	if (SRVParameter.GetResourceNum() > 0)
+	{
+		RHICmdList.SetShaderSRV(ShaderType, SRVParameter.GetResourceIndex() + ElementIndex, RHISRV);
+	}
+	else
+	{
+		XLOG("ERROR:SRVParameter.GetResourceNum() > 0");
+	}
 }
 
 template<typename TRHICmdList, class ParameterType>
@@ -90,13 +104,20 @@ inline void SetShaderValue(
 	uint32 ElementIndex = 0
 )
 {
-	XASSERT(sizeof(ParameterType) == ShaderVariableParameter.GetNumBytes());
-	RHICmdList.SetShaderValue(
-		ShaderType,
-		ShaderVariableParameter.GetBufferIndex(),
-		ShaderVariableParameter.GetVariableOffsetInBuffer(),
-		ShaderVariableParameter.GetNumBytes(),
-		&Value);
+	XASSERT_TEMP(sizeof(ParameterType) == ShaderVariableParameter.GetNumBytes());
+	if (sizeof(ParameterType) == ShaderVariableParameter.GetNumBytes())
+	{
+		RHICmdList.SetShaderValue(
+			ShaderType,
+			ShaderVariableParameter.GetBufferIndex(),
+			ShaderVariableParameter.GetVariableOffsetInBuffer(),
+			ShaderVariableParameter.GetNumBytes(),
+			&Value);
+	}
+	else
+	{
+		XLOG("ERROR:sizeof(ParameterType) == ShaderVariableParameter.GetNumBytes()");
+	}
 }
 template<typename TRHICmdList>
 inline void SetTextureParameter(
@@ -107,8 +128,15 @@ inline void SetTextureParameter(
 	uint32 ElementIndex = 0
 )
 {
-	XASSERT(TextureParameter.GetResourceNum() > 0);
-	RHICmdList.SetShaderTexture(ShaderType, TextureParameter.GetResourceIndex() + ElementIndex, TextureRHI);
+	XASSERT_TEMP(TextureParameter.GetResourceNum() > 0);
+	if (TextureParameter.GetResourceNum() > 0)
+	{
+		RHICmdList.SetShaderTexture(ShaderType, TextureParameter.GetResourceIndex() + ElementIndex, TextureRHI);
+	}
+	else
+	{
+		XLOG("ERROR:TextureParameter.GetResourceNum() > 0 == false");
+	}
 }
 
 template<typename TRHICmdList>
@@ -120,6 +148,13 @@ inline void SetShaderUAVParameter(
 	uint32 ElementIndex = 0
 )
 {
-	XASSERT(UAVParameter.GetResourceNum() > 0);
-	RHICmdList.SetShaderUAV(ShaderType, UAVParameter.GetResourceIndex() + ElementIndex, InUAV);
+	XASSERT_TEMP(UAVParameter.GetResourceNum() > 0);
+	if (UAVParameter.GetResourceNum() > 0)
+	{
+		RHICmdList.SetShaderUAV(ShaderType, UAVParameter.GetResourceIndex() + ElementIndex, InUAV);
+	}
+	else
+	{
+		XLOG("ERROR:UAVParameter.GetResourceNum() > 0 == false");
+	}
 }

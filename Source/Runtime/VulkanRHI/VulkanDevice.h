@@ -2,6 +2,8 @@
 #include "VulkanPlatformRHI.h"
 #include "VulkanQueue.h"
 #include "VulkanContext.h"
+#include "VulkanResource.h"
+
 class XVulkanDevice
 {
 public:
@@ -23,6 +25,8 @@ public:
 	}
 
 	XVulkanCommandListContext* GetGfxContex() { return GfxContext; }
+
+	XVulkanShaderFactory* GetVkShaderFactory() { return &ShaderFactory; }
 private:
 	friend class VkHack;
 
@@ -36,4 +40,6 @@ private:
 	XVulkanQueue* PresentQueue;
 
 	XVulkanCommandListContext* GfxContext;
+
+	XVulkanShaderFactory ShaderFactory;
 };

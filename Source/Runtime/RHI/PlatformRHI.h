@@ -2,7 +2,7 @@
 #include <memory>
 #include "RHIResource.h"
 
-#define USE_DX12 1
+#define USE_DX12 0
 
 class XRHICommandList;
 class XPlatformRHI

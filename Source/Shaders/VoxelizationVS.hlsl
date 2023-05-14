@@ -46,7 +46,7 @@ void VS(FVertexFactoryInput Input,
     float3 AbsNormal = abs(normalize(Output.TangentToWorld2.xyz));
 
     float4 PosW = mul(gWorld,Input.Position);
-    Output.TestWorldPosition = PosW;
+    Output.TestWorldPosition = PosW.xyz;
 
     
     float4 PosH;

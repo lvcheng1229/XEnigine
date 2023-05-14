@@ -28,3 +28,5 @@ void XVulkanTextureView::Create(XVulkanDevice* Device, VkImage InImage, VkImageV
 	CreateImpl(Device, InImage, ViewType, Format);
 	Image = InImage;
 }
+
+

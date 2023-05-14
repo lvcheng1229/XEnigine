@@ -58,7 +58,7 @@ float ComputeShadowFactor(float2 UVShadowSpace ,uint ObjectShadowDepth , uint Bi
 [numthreads(16, 16, 1)]
 void ShadowMaskGenCS(uint2 DispatchThreadID :SV_DispatchThreadID)
 {
-    float DeviceZ = SceneDepthInput.Load(int3(DispatchThreadID,0));
+    float DeviceZ = SceneDepthInput.Load(int3(DispatchThreadID,0)).x;
     float2 UV = DispatchThreadID * View_BufferSizeAndInvSize.zw;
 
     if(UV.x > 1.0f || UV.y > 1.0f)

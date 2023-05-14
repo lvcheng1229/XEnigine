@@ -42,7 +42,7 @@ uint2 InitialTilePixelPositionForReduction2x2(const uint TileSizeLog2, uint Shar
 	for (uint i = 0; i < TileSizeLog2; i++)
 	{
 		const uint DestBitId = TileSizeLog2 - 1 - i;
-		const uint DestBitMask = 1 << DestBitId;
+		const uint DestBitMask = 1u << DestBitId;
 		x |= DestBitMask & SignedRightShift(SharedArrayId, int(DestBitId) - int(i * 2 + 0));
 		y |= DestBitMask & SignedRightShift(SharedArrayId, int(DestBitId) - int(i * 2 + 1));
 	}
@@ -101,7 +101,7 @@ void HZBBuildCS(
     [unroll]
 	for (uint MipLevel = 1; MipLevel < DIM_MIP_LEVEL_COUNT; MipLevel++)
 	{
-		const uint TileSize = GROUP_TILE_SIZE / (1 << MipLevel);
+		const uint TileSize = GROUP_TILE_SIZE / (1u << MipLevel);
 		const uint ReduceBankSize = TileSize * TileSize;
 		
 		if (MipLevel == 1)

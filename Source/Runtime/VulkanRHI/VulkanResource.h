@@ -1,7 +1,9 @@
+#pragma once
+#include <map>
 #include <vulkan\vulkan_core.h>
+#include <Runtime\HAL\Mch.h>
 #include <Runtime\HAL\PlatformTypes.h>
 #include "Runtime\RHI\RHIResource.h"
-#include <Runtime\HAL\Mch.h>
 
 class XVulkanDevice;
 struct XVulkanTextureView
@@ -73,3 +75,48 @@ inline XVulkanTextureBase* GetVulkanTextureFromRHITexture(XRHITexture* Texture)
 	XVulkanTextureBase* Result = ((XVulkanTextureBase*)Texture->GetTextureBaseRHI()); XASSERT(Result);
 	return Result;
 }
+
+class XVulkanShader
+{
+public:
+	class XSpirvContainer
+	{
+	public:
+		friend class XVulkanShader;
+		std::vector<uint8>	SpirvCode;
+	} SpirvContainer;
+};
+
+class XVulkanVertexShader : public XRHIVertexShader , public XVulkanShader
+{
+public:
+	enum
+	{
+		ShaderTypeStatic = EShaderType::SV_Vertex
+	};
+};
+
+class XVulkanPixelShader : public XRHIVertexShader, public XVulkanShader
+{
+public:
+	enum
+	{
+		ShaderTypeStatic = EShaderType::SV_Pixel
+	};
+};
+
+class XVulkanShaderFactory
+{
+public:
+	~XVulkanShaderFactory();
+
+	template <typename ShaderType>
+	ShaderType* CreateShader(XArrayView<uint8> Code, XVulkanDevice* Device);
+
+	template <typename ShaderType>
+	ShaderType* LookupShader(uint64 ShaderKey) const;
+
+private:
+	std::map<uint64,XVulkanShader*>MapToVkShader[(uint32)EShaderType::SV_ShaderCount];
+	
+};

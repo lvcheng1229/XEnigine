@@ -10,7 +10,7 @@
 #include "Runtime/Engine/Material/MaterialShared.h"
 #include "MeshPassProcessor.h"
 
-
+#if USE_SVOGI
 class CheckSVOFlagCS :public XGloablShader
 {
 public:
@@ -171,10 +171,11 @@ ConnectNodesToVoxelsCS::ShaderInfos ConnectNodesToVoxelsCS::StaticShaderInfos(
 	"ConnectNodesToVoxelsCS", GET_SHADER_PATH("SVOBuildCS.hlsl"),
 	"ConnectNodesToVoxelsCS", EShaderType::SV_Compute, ConnectNodesToVoxelsCS::CustomConstrucFunc,
 	ConnectNodesToVoxelsCS::ModifyShaderCompileSettings);
-
+#endif
 
 void XDeferredShadingRenderer::SpaseVoxelOctreeBuild(XRHICommandList& RHICmdList)
 {
+#if USE_SVOGI
 	if (VoxelSceneInitialize == true) 
 	{
 		return;
@@ -254,5 +255,5 @@ void XDeferredShadingRenderer::SpaseVoxelOctreeBuild(XRHICommandList& RHICmdList
 		RHICmdList.RHIDispatchComputeShader(static_cast<UINT>(ApproxVoxelDimension / float(128)), 1, 1);
 		RHICmdList.RHIEventEnd();
 	}
-
+#endif
 }
