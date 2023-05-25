@@ -5,6 +5,40 @@
 #include "VulkanResource.h"
 
 
+XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(const XGraphicsPSOInitializer& Initializer)
+{
+	RenderPassFullHash = 42;
+	RenderPassCompatibleHash = 42;
+	bool bSetExtent = false;
+	for (int32 Index = 0; Index < Initializer.RTNums; Index++)
+	{
+		VkAttachmentDescription CurrDesc{};
+		CurrDesc.format = VkFormat(GPixelFormats[(int)Initializer.RT_Format[Index]].PlatformFormat);
+		XASSERT(CurrDesc.format == VK_FORMAT_B8G8R8A8_SRGB);
+		CurrDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+		CurrDesc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		CurrDesc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		CurrDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		CurrDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		CurrDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		CurrDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		THashCombine(RenderPassFullHash, CurrDesc.loadOp);
+		THashCombine(RenderPassFullHash, CurrDesc.storeOp);
+		AttachCount++;
+		THashCombine(RenderPassCompatibleHash, CurrDesc.format);
+		Desc[Index] = CurrDesc;
+	}
+
+	VkImageLayout DepthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	if (Initializer.DS_Format != EPixelFormat::FT_Unknown)
+	{
+		XASSERT(false);
+		AttachCount++;//Desc[MaxSimultaneousRenderTargets] = CurrDesc;
+	}
+	THashCombine(RenderPassFullHash, RenderPassCompatibleHash);
+}
+
 XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(XVulkanDevice& InDevice, const XRHIRenderPassInfo& RPInfo, VkImageLayout CurrentDSLayout)
 {
 	RenderPassFullHash = 42;
@@ -91,4 +125,10 @@ void XVulkanCommandListContext::RHIBeginRenderPass(const XRHIRenderPassInfo& InI
 	XVulkanFramebuffer* Framebuffer = GlobalLayoutManager.GetOrCreateFramebuffer(Device, &RTInfo, &RTLayout, RenderPass);
 	GlobalLayoutManager.BeginRenderPass(CmdBuffer, &RTLayout, RenderPass, Framebuffer);
 
+}
+
+XVulkanRenderPass* XVulkanCommandListContext::PrepareRenderPassForPSOCreation(const XGraphicsPSOInitializer& Initializer)
+{
+	XVulkanRenderTargetLayout RTLayout(Initializer);
+	return GlobalLayoutManager.GetOrCreateRenderPass(Device, &RTLayout);;
 }

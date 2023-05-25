@@ -1,4 +1,7 @@
+#pragma once
+#include "Runtime\RHI\RHIResource.h"
 #include "VulkanContext.h"
+
 class XVulkanRenderPass
 {
 public:
@@ -46,6 +49,7 @@ static inline VkAttachmentStoreOp RenderTargetStoreActionToVulkan(ERenderTargetS
 class XVulkanRenderTargetLayout
 {
 public:
+	XVulkanRenderTargetLayout(const XGraphicsPSOInitializer& Initializer);
 	XVulkanRenderTargetLayout(XVulkanDevice& InDevice, const XRHIRenderPassInfo& RPInfo, VkImageLayout CurrentDSLayout);
 	const uint32 GetRenderPassFullHash()const { return RenderPassFullHash; }
 	const uint32 GetRenderPassCompatibleHash()const { return RenderPassCompatibleHash; }

@@ -30,7 +30,7 @@ inline ShaderType* XVulkanShaderFactory::CreateShader(XArrayView<uint8> Code, XV
 		return ShaderPtr;
 	}
 	
-	ShaderPtr = new ShaderType();
+	ShaderPtr = new ShaderType(Device);
 	const uint8* CodaData = (const uint8*)Code.data();
 	ShaderPtr->SpirvContainer.SpirvCode.insert(ShaderPtr->SpirvContainer.SpirvCode.end(), &CodaData[0], &CodaData[Code.size()]);
 	

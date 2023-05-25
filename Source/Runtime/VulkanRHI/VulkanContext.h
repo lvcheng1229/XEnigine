@@ -52,7 +52,10 @@ public:
 
 	//Vulkan
 	XVulkanQueue* GetQueue() { return Queue; }
+	XVulkanRenderPass* PrepareRenderPassForPSOCreation(const XGraphicsPSOInitializer& Initializer);
 private:
+	
+
 	friend class VkHack;
 
 	XVulkanPlatformRHI* RHI;

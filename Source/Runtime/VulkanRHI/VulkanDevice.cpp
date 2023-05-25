@@ -1,4 +1,5 @@
 #include "VulkanDevice.h"
+#include "VulkanPipeline.h"
 
 const std::vector<const ACHAR*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -11,10 +12,12 @@ XVulkanDevice::XVulkanDevice(XVulkanPlatformRHI* InRHI, VkPhysicalDevice InGpu)
     , GfxQueue(nullptr)
     , PresentQueue(nullptr)
 {
+    PipelineStateCache = new XVulkanPipelineStateCacheManager(this);
 }
 
 XVulkanDevice::~XVulkanDevice()
 {
+    delete PipelineStateCache;
     delete GfxContext;
     delete GfxQueue;
     vkDestroyDevice(Device, nullptr);

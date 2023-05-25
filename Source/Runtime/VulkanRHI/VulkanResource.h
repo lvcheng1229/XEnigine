@@ -4,6 +4,7 @@
 #include <Runtime\HAL\Mch.h>
 #include <Runtime\HAL\PlatformTypes.h>
 #include "Runtime\RHI\RHIResource.h"
+#include "VulkanPipeline.h"
 
 class XVulkanDevice;
 struct XVulkanTextureView
@@ -79,17 +80,37 @@ inline XVulkanTextureBase* GetVulkanTextureFromRHITexture(XRHITexture* Texture)
 class XVulkanShader
 {
 public:
+	XVulkanShader(XVulkanDevice* InDevice, EShaderType InShaderType);
+	
 	class XSpirvContainer
 	{
 	public:
 		friend class XVulkanShader;
 		std::vector<uint8>	SpirvCode;
 	} SpirvContainer;
+
+	VkShaderModule GetOrCreateHandle(const XGfxPipelineDesc& Desc, const XVulkanLayout* Layout, uint32 LayoutHash)
+	{
+		auto iter = ShaderModules.find(LayoutHash);;
+		if (iter != ShaderModules.end())
+		{
+			return iter->second;
+		}
+
+		return CreateHandle(Desc, Layout, LayoutHash);
+	}
+
+	XVulkanDevice* Device;
+	std::map<uint32, VkShaderModule> ShaderModules;
+protected:
+	VkShaderModule CreateHandle(const XGfxPipelineDesc& Desc, const XVulkanLayout* Layout, uint32 LayoutHash);
 };
 
 class XVulkanVertexShader : public XRHIVertexShader , public XVulkanShader
 {
 public:
+	XVulkanVertexShader(XVulkanDevice* InDevice)
+		:XVulkanShader(InDevice, EShaderType::SV_Vertex) {}
 	enum
 	{
 		ShaderTypeStatic = EShaderType::SV_Vertex
@@ -99,6 +120,9 @@ public:
 class XVulkanPixelShader : public XRHIPixelShader, public XVulkanShader
 {
 public:
+	XVulkanPixelShader(XVulkanDevice* InDevice)
+		:XVulkanShader(InDevice, EShaderType::SV_Pixel) {}
+
 	enum
 	{
 		ShaderTypeStatic = EShaderType::SV_Pixel

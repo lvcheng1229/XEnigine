@@ -29,4 +29,26 @@ void XVulkanTextureView::Create(XVulkanDevice* Device, VkImage InImage, VkImageV
 	Image = InImage;
 }
 
+static VkShaderModule CreateShaderModule(XVulkanDevice* Device, XVulkanShader::XSpirvContainer& SpirvCode)
+{
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = SpirvCode.SpirvCode.size();
+	createInfo.pCode = reinterpret_cast<const uint32_t*>(SpirvCode.SpirvCode.data());
 
+	VkShaderModule shaderModule;
+	VULKAN_VARIFY(vkCreateShaderModule(Device->GetVkDevice(), &createInfo, nullptr, &shaderModule));
+	return shaderModule;
+}
+
+XVulkanShader::XVulkanShader(XVulkanDevice* InDevice, EShaderType InShaderType)
+	:Device(InDevice)
+{
+}
+
+VkShaderModule XVulkanShader::CreateHandle(const XGfxPipelineDesc& Desc, const XVulkanLayout* Layout, uint32 LayoutHash)
+{
+	VkShaderModule ShaderModule = CreateShaderModule(Device, SpirvContainer);
+	ShaderModules[LayoutHash] = ShaderModule;
+	return ShaderModule;
+}

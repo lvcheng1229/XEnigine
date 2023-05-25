@@ -1,108 +1,85 @@
+#include "VulkanPipeline.h"
 #include "VulkanPlatformRHI.h"
 #include "VulkanDevice.h"
 #include "VulkanState.h"
+#include "VulkanRHIPrivate.h"
 
-static void GetPSOCreateInfoAndHash(
-	const XGraphicsPSOInitializer& PSOInit,
-	VkGraphicsPipelineCreateInfo& PSODesc,
-	std::size_t& OutHash,
-    XVulkanDevice* Device)
+XVulkanPipelineStateCacheManager::XVulkanPipelineStateCacheManager(XVulkanDevice* InDevice)
+    :Device(InDevice)
 {
-    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+}
 
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = vertShaderModule;
-    vertShaderStageInfo.pName = "main";
+std::size_t XGfxPipelineDesc::CreateKey()
+{
+    return std::size_t();
+}
 
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShaderModule;
-    fragShaderStageInfo.pName = "main";
+void GetVulkanShaders(const XRHIBoundShaderStateInput& BSI, XVulkanShader* OutShaders[(uint32)EShaderType::SV_ShaderCount])
+{
+    OutShaders[(uint32)EShaderType::SV_Vertex] = static_cast<XVulkanVertexShader*>(BSI.RHIVertexShader);
+    OutShaders[(uint32)EShaderType::SV_Pixel] = static_cast<XVulkanPixelShader*>(BSI.RHIPixelShader); 
+}
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+std::shared_ptr<XRHIGraphicsPSO> XVulkanPipelineStateCacheManager::RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
+{
+    std::size_t Key;
+    XGfxPipelineDesc Desc;
+    XVulkanDescriptorSetsLayoutInfo DescriptorSetLayoutInfo;//UnUsed For Now
 
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    CreateGfxEntry(PSOInit, DescriptorSetLayoutInfo, &Desc);
+    Key = Desc.CreateKey();
 
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    inputAssembly.primitiveRestartEnable = VK_FALSE;
+    XVulkanRHIGraphicsPipelineState* NewPSO = nullptr;
+    auto iter = GraphicsPSOMap.find(Key);
+    if (iter != GraphicsPSOMap.end())
+    {
+        return  std::shared_ptr<XVulkanRHIGraphicsPipelineState>(iter->second);
+    }
 
-    VkPipelineViewportStateCreateInfo viewportState{};
-    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportState.viewportCount = 1;
-    viewportState.scissorCount = 1;
+    NewPSO = new XVulkanRHIGraphicsPipelineState(Device, PSOInit, Desc, Key);
+    NewPSO->RenderPass = Device->GetGfxContex()->PrepareRenderPassForPSOCreation(PSOInit);
 
-    VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    XVulkanShader* VulkanShaders[(uint32)EShaderType::SV_ShaderCount];
+    memset(VulkanShaders, 0, sizeof(XVulkanShader*) * (uint32)EShaderType::SV_ShaderCount);
+    GetVulkanShaders(PSOInit.BoundShaderState, VulkanShaders);
+    CreateGfxPipelineFromEntry(NewPSO, VulkanShaders, &NewPSO->VulkanPipeline);
 
-    VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = PSOInit.RTNums;
-    colorBlending.pAttachments = static_cast<XVulkanBlendState*>(PSOInit.BlendState)->BlendStates;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
+    GraphicsPSOMap[Key] = NewPSO;
+    return std::shared_ptr<XRHIGraphicsPSO>(NewPSO);
+}
 
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
+void XVulkanPipelineStateCacheManager::CreateGfxEntry(const XGraphicsPSOInitializer& PSOInitializer, XVulkanDescriptorSetsLayoutInfo& DescriptorSetLayoutInfo, XGfxPipelineDesc* Desc)
+{
+    XGfxPipelineDesc* OutGfxEntry = Desc;
+}
 
-    VkPipelineDynamicStateCreateInfo dynamicState{};
-    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-    dynamicState.pDynamicStates = dynamicStates.data();
+void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGraphicsPipelineState* PSO, XVulkanShader* Shaders[(uint32)EShaderType::SV_ShaderCount], VkPipeline* Pipeline)
+{
+    XGfxPipelineDesc* GfxEntry = &PSO->Desc;
+    PSO->GetOrCreateShaderModules(Shaders);
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-
-    VkPipelineLayout pipelineLayout;
-    VULKAN_VARIFY(vkCreatePipelineLayout(Device->GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout));
-
-	VkGraphicsPipelineCreateInfo pipelineInfo{};
-	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 2;
-	pipelineInfo.layout = pipelineLayout;
-	pipelineInfo.renderPass = mVkHack.GetVkRenderPas();
-	pipelineInfo.subpass = 0;
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-    pipelineInfo.pStages = shaderStages;
-    pipelineInfo.pVertexInputState = &vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.pRasterizationState = &static_cast<XVulkanRasterizerState*>(PSOInit.RasterState)->RasterizerState;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = &dynamicState
+    VkGraphicsPipelineCreateInfo PipelineInfo;
+    VULKAN_VARIFY(vkCreateGraphicsPipelines(Device->GetVkDevice(), PipelineCache, 1, &PipelineInfo, nullptr, Pipeline));
 }
 
 std::shared_ptr<XRHIGraphicsPSO> XVulkanPlatformRHI::RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
 {
-	XASSERT_TEMP(false);//PipelineLayout
+    return Device->PipelineStateCache->RHICreateGraphicsPipelineState(PSOInit);
+}
 
-	std::size_t PSOHash;
-	VkGraphicsPipelineCreateInfo pipelineInfo{};
-    GetPSOCreateInfoAndHash(PSOInit, pipelineInfo, PSOHash, Device);
-	
-	//CreateGfxEntry(Initializer, DescriptorSetLayoutInfo, &Desc);
-	//
-	//vkCreateGraphicsPipelines(Device->GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline)
-	//VULKAN_VARIFY(vkCreateGraphicsPipelines(Device->GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline));
-	return std::shared_ptr<XRHIGraphicsPSO>();
+XVulkanRHIGraphicsPipelineState::XVulkanRHIGraphicsPipelineState(XVulkanDevice* Device, const XGraphicsPSOInitializer& PSOInitializer, XGfxPipelineDesc& Desc, std::size_t Key)
+{
+
+}
+
+void XVulkanRHIGraphicsPipelineState::GetOrCreateShaderModules(XVulkanShader* const* Shaders)
+{
+    for (int32 Index = 0; Index < (int32)EShaderType::SV_ShaderCount; ++Index)
+    {
+        XVulkanShader* Shader = Shaders[Index];
+        if (Shader)
+        {
+            ShaderModules[Index] = Shader->GetOrCreateHandle(Desc, Layout, Layout->GetDescriptorSetLayoutHash());
+        }
+    }
 }

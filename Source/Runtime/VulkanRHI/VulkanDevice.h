@@ -27,6 +27,8 @@ public:
 	XVulkanCommandListContext* GetGfxContex() { return GfxContext; }
 
 	XVulkanShaderFactory* GetVkShaderFactory() { return &ShaderFactory; }
+
+	class XVulkanPipelineStateCacheManager* PipelineStateCache;
 private:
 	friend class VkHack;
 
@@ -40,6 +42,5 @@ private:
 	XVulkanQueue* PresentQueue;
 
 	XVulkanCommandListContext* GfxContext;
-
 	XVulkanShaderFactory ShaderFactory;
 };
