@@ -389,7 +389,8 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 #if !USE_DX12
 	Args.push_back(TEXT("-spirv"));
 	Args.push_back(TEXT("-fspv-reflect"));
-	Args.push_back(TEXT("-fspv-target-env=vulkan1.1"));
+	Args.push_back(TEXT("-fspv-target-env=vulkan1.0"));
+	//Args.push_back(TEXT("-fspv-target-env=vulkan1.1"));
 #else
 	Args.push_back(TEXT("-Qstrip_reflect"));
 

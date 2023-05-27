@@ -122,3 +122,9 @@ void VkHack::TempPresent()
 	VkRHI->GetVulkanViewport()->Prsent();
 	return;
 }
+
+VkPipeline VkHack::GetVkPipeline()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return VkRHI->Device->PipelineStateCache->GraphicsPSOMap.begin()->second->VulkanPipeline;
+}

@@ -11,25 +11,28 @@ struct XGfxPipelineDesc
 {
 	struct XBlendAttachment
 	{
+		bool bBlendEnable;
 		uint8 ColorBlendOp;
 		uint8 SrcColorBlendFactor;
 		uint8 DstColorBlendFactor;
 		uint8 AlphaBlendOp;
 		uint8 SrcAlphaBlendFactor;
 		uint8 DstAlphaBlendFactor;
+		void WriteInto(VkPipelineColorBlendAttachmentState& OutState) const;
 	};
 	std::vector<XBlendAttachment> ColorAttachmentStates;
 
 	struct XDepthStencil
 	{
 		bool bEnableDepthWrite;
-		ECompareFunction DepthTest;
+		VkCompareOp DSCompareOp;
 	};
 	XDepthStencil DepthStencil;
 
 	struct XRenderTargets
 	{
-
+		VkFormat RtFotmats[MaxSimultaneousRenderTargets];
+		VkFormat DsFotmats;
 	};
 	XRenderTargets RenderTargets;
 
@@ -56,6 +59,8 @@ public:
 	XVulkanPipelineStateCacheManager(XVulkanDevice* Device);
 	std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit);
 private:
+	friend class VkHack;
+
 	void CreateGfxEntry(const XGraphicsPSOInitializer& PSOInitializer, XVulkanDescriptorSetsLayoutInfo& DescriptorSetLayoutInfo, XGfxPipelineDesc* Desc);
 	void CreateGfxPipelineFromEntry(XVulkanRHIGraphicsPipelineState* PSO, XVulkanShader* Shaders[(uint32)EShaderType::SV_ShaderCount], VkPipeline* Pipeline);
 	

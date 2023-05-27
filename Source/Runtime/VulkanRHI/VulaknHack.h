@@ -15,5 +15,6 @@ public:
 	const VkCommandBuffer* GetCmdBuffer();
 	VkRenderPass GetVkRenderPas();
 	void TempPresent();
+	VkPipeline GetVkPipeline();
 };
 ;

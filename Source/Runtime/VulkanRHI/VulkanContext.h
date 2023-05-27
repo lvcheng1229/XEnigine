@@ -28,7 +28,7 @@ public:
 	void SetShaderValue(EShaderType ShaderType, uint32 BufferIndex, uint32 VariableOffsetInBuffer, uint32 NumBytes, const void* NewValue)override { XASSERT(false) };
 
 	//SetPSO
-	void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)override { XASSERT(false) };
+	void RHISetGraphicsPipelineState(XRHIGraphicsPSO* GraphicsState)override { XASSERT_TEMP(false) };
 	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override { XASSERT(false) };
 
 	void RHIExecuteIndirect(XRHICommandSignature* RHICmdSig, uint32 CmdCount, XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset, XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset)override { XASSERT(false) };
