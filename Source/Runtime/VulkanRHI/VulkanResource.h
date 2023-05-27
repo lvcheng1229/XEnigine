@@ -24,6 +24,14 @@ private:
 	void CreateImpl(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkFormat Format);
 };
 
+class XVulkanVertexLayout :public XRHIVertexLayout
+{
+public:
+	XRHIVertexLayoutArray VertexElements;
+	explicit XVulkanVertexLayout(const XRHIVertexLayoutArray& InVertexElements) :
+		VertexElements(InVertexElements) {}
+};
+
 class XVulkanSurface
 {
 public:

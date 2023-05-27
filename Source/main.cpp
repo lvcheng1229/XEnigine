@@ -55,8 +55,62 @@ XHLSL2SPIRPS::ShaderInfos XHLSL2SPIRPS::StaticShaderInfos(
     "XHLSL2SPIRPS", GET_SHADER_PATH("VulkanShaderTest/hlsl2spirtest.hlsl"),
     "PS", EShaderType::SV_Pixel, XHLSL2SPIRPS::CustomConstrucFunc,
     XHLSL2SPIRPS::ModifyShaderCompileSettings);
+
+class XTestVertexLayout : public XRenderResource
+{
+public:
+    std::shared_ptr<XRHIVertexLayout> RHIVertexLayout;
+    virtual void InitRHI()override
+    {
+        XRHIVertexLayoutArray LayoutArray;
+        LayoutArray.push_back(XVertexElement(0, EVertexElementType::VET_Float2, 0, 0));
+        LayoutArray.push_back(XVertexElement(1, EVertexElementType::VET_Float3, 0, 0 + sizeof(DirectX::XMFLOAT2)));
+        RHIVertexLayout = RHICreateVertexLayout(LayoutArray);
+    }
+
+    virtual void ReleaseRHI()override
+    {
+        RHIVertexLayout.reset();
+    }
+};
+TGlobalResource<XTestVertexLayout> GTestVtxLayout;
 #endif
 
+struct Vertex {
+    XVector2 pos;
+    XVector3 color;
+
+    static VkVertexInputBindingDescription getBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(Vertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDescription;
+    }
+
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+        return attributeDescriptions;
+    }
+};
+
+const std::vector<Vertex> vertices = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
 
 class XSandBox
 {
@@ -64,6 +118,10 @@ public:
 #if !USE_DX12
     VkHack mVkHack;
     VkPipelineLayout pipelineLayout;
+
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
+
     //VkRenderPass renderPass;
     //std::vector<VkFramebuffer> swapChainFramebuffers;
 
@@ -144,38 +202,49 @@ public:
         }
     }
 #else
-    static std::vector<char> readFile(const std::string& filename) 
-    {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
-        if (!file.is_open()) 
-        {
-            throw std::runtime_error("failed to open file!");
+    void createVertexBuffer() {
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(mVkHack.GetVkDevice(), &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create vertex buffer!");
         }
 
-        size_t fileSize = (size_t)file.tellg();
-        std::vector<char> buffer(fileSize);
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(mVkHack.GetVkDevice(), vertexBuffer, &memRequirements);
 
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        file.close();
+        if (vkAllocateMemory(mVkHack.GetVkDevice(), &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate vertex buffer memory!");
+        }
 
-        return buffer;
+        vkBindBufferMemory(mVkHack.GetVkDevice(), vertexBuffer, vertexBufferMemory, 0);
+
+        void* data;
+        vkMapMemory(mVkHack.GetVkDevice(), vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+        memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+        vkUnmapMemory(mVkHack.GetVkDevice(), vertexBufferMemory);
     }
 
-    VkShaderModule createShaderModule(const std::vector<char>& code) {
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(mVkHack.GetVkPhyDevice(), &memProperties);
 
-        VkShaderModule shaderModule;
-        if (vkCreateShaderModule(mVkHack.GetVkDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create shader module!");
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+                return i;
+            }
         }
 
-        return shaderModule;
+        throw std::runtime_error("failed to find suitable memory type!");
     }
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
@@ -201,12 +270,10 @@ public:
         
         GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
         GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
-        //GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GFullScreenLayout.RHIVertexLayout.get();
+        GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GTestVtxLayout.RHIVertexLayout.get();
         
         RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
         SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-        
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mVkHack.GetVkPipeline());
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -222,7 +289,11 @@ public:
         scissor.extent = mVkHack.GetBkBufferExtent();
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        VkBuffer vertexBuffers[] = { vertexBuffer };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+        vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -329,6 +400,7 @@ public:
             LightDir, LightColor, LightIntensity, RHICmdList);
         RHICmdList.Execute();
 #else
+        createVertexBuffer();
         createSyncObjects();
 #endif
     }
@@ -343,7 +415,7 @@ public:
 int main()
 {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    //_CrtSetBreakAlloc(473);
+    //_CrtSetBreakAlloc(10686);
     {
         XSandBox SandBox;
         SandBox.Init();

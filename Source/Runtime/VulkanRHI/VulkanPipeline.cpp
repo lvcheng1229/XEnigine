@@ -3,6 +3,8 @@
 #include "VulkanDevice.h"
 #include "VulkanState.h"
 #include "VulkanRHIPrivate.h"
+#include "VulkanResource.h"
+#include <Runtime\Core\Math\Math.h>
 
 
 XVulkanPipelineStateCacheManager::XVulkanPipelineStateCacheManager(XVulkanDevice* InDevice)
@@ -85,6 +87,45 @@ void XVulkanPipelineStateCacheManager::CreateGfxEntry(const XGraphicsPSOInitiali
     {
         OutGfxEntry->RenderTargets.RtFotmats[Index] = VulkanRenderTargetLayout.GetAttachment()[Index].format;
     }
+
+    XVulkanVertexLayout* const VtxLayout = static_cast<XVulkanVertexLayout* const>(PSOInitializer.BoundShaderState.RHIVertexLayout);
+    
+    int32 Stride = 0;
+    for (int32 Index = 0; Index < VtxLayout->VertexElements.size(); Index++)
+    {
+        switch (VtxLayout->VertexElements[Index].Format)
+        {
+        case EVertexElementType::VET_Float1:		Stride += sizeof(float); break;
+        case EVertexElementType::VET_Float2:		Stride += sizeof(float)*2; break;
+        case EVertexElementType::VET_Float3:		Stride += sizeof(float)*3; break;
+        case EVertexElementType::VET_Float4:		Stride += sizeof(float)*4; break;
+        case EVertexElementType::VET_Color:			Stride += sizeof(int32); break;
+        case EVertexElementType::VET_PackedNormal:	Stride += sizeof(int32); break;
+        default:XASSERT(false);
+        }
+    }
+    OutGfxEntry->VertexBinding.Stride = Stride;
+
+    for (int32 Index = 0; Index < VtxLayout->VertexElements.size(); Index++)
+    {
+        XGfxPipelineDesc::XVertexAttribute VertexAttribute = {};
+        VertexAttribute.Location = Index;
+        VertexAttribute.Binding = 0;
+
+        switch (VtxLayout->VertexElements[Index].Format)
+        {
+        case EVertexElementType::VET_Float1:		VertexAttribute.Format = VK_FORMAT_R32_SFLOAT; break;
+        case EVertexElementType::VET_Float2:		VertexAttribute.Format = VK_FORMAT_R32G32_SFLOAT; break;
+        case EVertexElementType::VET_Float3:		VertexAttribute.Format = VK_FORMAT_R32G32B32_SFLOAT; break;
+        case EVertexElementType::VET_Float4:		VertexAttribute.Format = VK_FORMAT_R32G32B32A32_SFLOAT; break;
+        case EVertexElementType::VET_Color:			VertexAttribute.Format = VK_FORMAT_R8G8B8A8_UNORM; break;
+        case EVertexElementType::VET_PackedNormal:	VertexAttribute.Format = VK_FORMAT_R8G8B8A8_SNORM; break;
+        default:XASSERT(false);
+        }
+
+        VertexAttribute.Offset = VtxLayout->VertexElements[Index].AlignedByteOffset;
+        OutGfxEntry->VertexAttributes.push_back(VertexAttribute);
+    }
 }
 
 void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGraphicsPipelineState* PSO, XVulkanShader* Shaders[(uint32)EShaderType::SV_ShaderCount], VkPipeline* Pipeline)
@@ -115,11 +156,30 @@ void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGrap
     PipelineInfo.pStages = shaderStages;
     
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    XASSERT_TEMP(false);
+
+    VkVertexInputBindingDescription bindingDescription{};
+    bindingDescription.binding = 0;
+    bindingDescription.stride = PSO->Desc.VertexBinding.Stride;
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    std::vector<VkVertexInputAttributeDescription>attributeDescriptions;
+    for (int32 Index = 0; Index < PSO->Desc.VertexAttributes.size(); Index++)
+    {
+        VkVertexInputAttributeDescription InputAttributeDescription = {};
+        InputAttributeDescription.binding = 0;
+        InputAttributeDescription.location = PSO->Desc.VertexAttributes[Index].Location;
+        InputAttributeDescription.format = PSO->Desc.VertexAttributes[Index].Format;
+        InputAttributeDescription.offset = PSO->Desc.VertexAttributes[Index].Offset;
+        attributeDescriptions.push_back(InputAttributeDescription);
+    }
+
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
     PipelineInfo.pVertexInputState = &vertexInputInfo;
+    XASSERT_TEMP(false);
    
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

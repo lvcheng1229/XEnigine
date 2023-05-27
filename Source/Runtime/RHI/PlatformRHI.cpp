@@ -58,6 +58,12 @@ VkDevice VkHack::GetVkDevice()
 	return VkRHI->Device->Device;
 }
 
+VkPhysicalDevice VkHack::GetVkPhyDevice()
+{
+	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	return VkRHI->Device->Gpu;
+}
+
 VkExtent2D VkHack::GetBkBufferExtent()
 {
 	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;

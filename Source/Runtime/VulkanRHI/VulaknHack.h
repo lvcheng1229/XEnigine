@@ -6,6 +6,7 @@ class VkHack
 {
 public:
 	VkDevice GetVkDevice();
+	VkPhysicalDevice GetVkPhyDevice();
 	VkExtent2D GetBkBufferExtent();
 	std::vector<VkImageView>& GetBkImageViews();
 	uint32 GetgraphicsFamilyIndex();

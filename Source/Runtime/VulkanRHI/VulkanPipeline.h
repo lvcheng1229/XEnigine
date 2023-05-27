@@ -29,6 +29,22 @@ struct XGfxPipelineDesc
 	};
 	XDepthStencil DepthStencil;
 
+
+	struct XVertexBinding
+	{
+		uint32 Stride;
+	};
+	XVertexBinding VertexBinding;
+
+	struct XVertexAttribute
+	{
+		uint32 Location;
+		uint32 Binding;
+		VkFormat Format;
+		uint32 Offset;
+	};
+	std::vector<XVertexAttribute> VertexAttributes;
+
 	struct XRenderTargets
 	{
 		VkFormat RtFotmats[MaxSimultaneousRenderTargets];
@@ -44,6 +60,11 @@ class XVulkanRHIGraphicsPipelineState : public XRHIGraphicsPSO
 public:
 	XVulkanRHIGraphicsPipelineState(XVulkanDevice* Device, const XGraphicsPSOInitializer& PSOInitializer, XGfxPipelineDesc& Desc, std::size_t Key);
 	void GetOrCreateShaderModules(XVulkanShader* const* Shaders);
+
+	inline void Bind(VkCommandBuffer CmdBuffer)
+	{
+		vkCmdBindPipeline(CmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, VulkanPipeline);
+	}
 
 	XVulkanRenderPass* RenderPass;
 	VkPipeline VulkanPipeline;

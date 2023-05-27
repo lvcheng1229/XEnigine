@@ -23,7 +23,7 @@ public:
 	void Init() override;
 
 	//CreateVertexLayout
-	std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements) final override { XASSERT_TEMP(false); return nullptr;};
+	std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements) final override;
 
 	//Create buffer
 	std::shared_ptr<XRHIVertexBuffer>RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override { XASSERT_TEMP(false); return nullptr; };
