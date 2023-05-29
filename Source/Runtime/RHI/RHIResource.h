@@ -42,10 +42,10 @@ public:
 };
 
 
-class XRHIVertexBuffer
+class XRHIBuffer
 {
 public:
-	XRHIVertexBuffer(uint32 StrideIn, uint32 SizeIn) :
+	XRHIBuffer(uint32 StrideIn, uint32 SizeIn) :
 		Size(SizeIn),
 		Stride(StrideIn) {}
 	inline uint32 GetStride()const { return Stride; }
@@ -157,7 +157,7 @@ public:
 struct XRHICommandData
 {
 	std::vector<XRHIConstantBuffer*>CBVs;
-	XRHIVertexBuffer* VB;
+	XRHIBuffer* VB;
 	XRHIIndexBuffer* IB;
 
 	uint32 IndexCountPerInstance;

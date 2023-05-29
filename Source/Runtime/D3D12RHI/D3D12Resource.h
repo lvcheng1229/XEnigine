@@ -153,12 +153,12 @@ public:
 };
 
 //No Multi Inherit !!
-class XD3D12VertexBuffer :public XRHIVertexBuffer
+class XD3D12VertexBuffer :public XRHIBuffer
 {
 public:
 	//StrideIn is Unused
 	XD3D12VertexBuffer(uint32 StrideIn, uint32 SizeIn) :
-		XRHIVertexBuffer(StrideIn,SizeIn) {}
+		XRHIBuffer(StrideIn,SizeIn) {}
 
 	XD3D12ResourcePtr_CPUGPU ResourcePtr;
 };

@@ -93,6 +93,8 @@ enum class EBufferUsage
 	BUF_None = 0x0000,
 	BUF_Static = 0x0001,
 	BUF_Dynamic = 0x0002,
+	BUF_Vertex = 0x0002,
+	BUF_Index = 0x0002,
 	BUF_UnorderedAccess = 0x0008,
 	BUF_DrawIndirect = 0x0100,
 	BUF_ShaderResource = 0x0200,

@@ -9,7 +9,7 @@ XRHITexture* XD3D12PlatformRHI::RHIGetCurrentBackTexture()
     return D3DViewPort->GetCurrentBackTexture();
 }
 
-void* XD3D12PlatformRHI::LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)
+void* XD3D12PlatformRHI::LockVertexBuffer(XRHIBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)
 {
     XD3D12VertexBuffer* D3DVertexBuffer = static_cast<XD3D12VertexBuffer*>(VertexBuffer);
     return D3DVertexBuffer->ResourcePtr.GetMappedCPUResourcePtr();
@@ -25,7 +25,7 @@ void XD3D12PlatformRHI::UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)
 {
 }
 
-void XD3D12PlatformRHI::UnLockVertexBuffer(XRHIVertexBuffer* VertexBuffer)
+void XD3D12PlatformRHI::UnLockVertexBuffer(XRHIBuffer* VertexBuffer)
 {
 }
 

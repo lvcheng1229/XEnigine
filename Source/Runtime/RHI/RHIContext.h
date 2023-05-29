@@ -33,7 +33,7 @@ public:
 	virtual void RHISetComputePipelineState(XRHIComputePSO* ComputeState) = 0;
 
 	//SetVB IB
-	virtual void SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin) = 0;
+	virtual void SetVertexBuffer(XRHIBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin) = 0;
 
 	//Misc
 	virtual void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ) = 0;

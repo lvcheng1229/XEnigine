@@ -5,6 +5,7 @@
 #include <Runtime\HAL\PlatformTypes.h>
 #include "Runtime\RHI\RHIResource.h"
 #include "VulkanPipeline.h"
+#include "VulkanMemory.h"
 
 class XVulkanDevice;
 struct XVulkanTextureView
@@ -135,6 +136,16 @@ public:
 	{
 		ShaderTypeStatic = EShaderType::SV_Pixel
 	};
+};
+
+//TODO XVulkanResourceMultiBuffer
+class XVulkanResourceMultiBuffer : public XRHIBuffer ,public XVulkanEvictable
+{
+public:
+	XVulkanResourceMultiBuffer(XVulkanDevice* Device,uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData);
+	static VkBufferUsageFlags UEToVKBufferUsageFlags(EBufferUsage InUEUsage);
+	XVulkanAllocation Buffer;
+	VkBufferUsageFlags BufferUsageFlags;
 };
 
 class XVulkanShaderFactory

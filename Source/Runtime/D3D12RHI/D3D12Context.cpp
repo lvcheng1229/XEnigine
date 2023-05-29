@@ -207,7 +207,7 @@ void XD3DDirectContex::RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32
 	PassStateManager.ResetState();
 }
 
-void XD3DDirectContex::SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
+void XD3DDirectContex::SetVertexBuffer(XRHIBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
 {
 	PassStateManager.SetVertexBuffer(RHIVertexBuffer, VertexBufferSlot, OffsetFormVBBegin);
 }

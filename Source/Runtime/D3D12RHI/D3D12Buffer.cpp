@@ -241,12 +241,12 @@ std::shared_ptr<XRHIShaderResourceView> XD3D12PlatformRHI::RHICreateShaderResour
 }
 
 
-std::shared_ptr<XRHIVertexBuffer> XD3D12PlatformRHI::RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+std::shared_ptr<XRHIBuffer> XD3D12PlatformRHI::RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	const D3D12_RESOURCE_DESC Desc = CD3DX12_RESOURCE_DESC::Buffer(Size);
 	const uint32 Alignment = 4;
 	XD3D12VertexBuffer* VertexBuffer = AbsDevice->DeviceCreateRHIBuffer<XD3D12VertexBuffer>(AbsDevice->GetDirectContex(0)->GetCmdList(), Desc, Alignment, Stride, Size, Usage, ResourceData);
-	return std::shared_ptr<XRHIVertexBuffer>(VertexBuffer);
+	return std::shared_ptr<XRHIBuffer>(VertexBuffer);
 }
 
 std::shared_ptr<XRHIIndexBuffer> XD3D12PlatformRHI::RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)

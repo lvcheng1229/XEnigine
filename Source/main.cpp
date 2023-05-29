@@ -74,6 +74,31 @@ public:
     }
 };
 TGlobalResource<XTestVertexLayout> GTestVtxLayout;
+
+struct XTestVertex
+{
+    XVector2 Position;
+    XVector2 Color;
+    struct XTestVertex
+    (XVector2 PositionIn, XVector3 ColorIn)
+        :Position(PositionIn), Color(ColorIn) {}
+};
+
+class XTestVertexBuffer :public RVertexBuffer
+{
+public:
+    void InitRHI()override
+    {
+        TResourceVector<XTestVertex>Vertices;
+        Vertices.PushBack(XTestVertex(XVector2(0.0f, 0.5f), XVector3(1.0f, 0.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector2(0.5f, 0.5f), XVector3(0.0f, 1.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector2(-0.5f, 0.5f), XVector3(0.0f, 0.0f, 1.0f)));
+
+        XRHIResourceCreateData CreateData(&Vertices);
+        RHIVertexBuffer = RHIcreateVertexBuffer(sizeof(XTestVertex), 3 * sizeof(XTestVertex), EBufferUsage::BUF_Static, CreateData);
+    }
+};
+TGlobalResource<XTestVertexBuffer> GTestVertexRHI;
 #endif
 
 struct Vertex {
@@ -204,34 +229,82 @@ public:
 #else
 
     void createVertexBuffer() {
+        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(mVkHack.GetVkDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, vertices.data(), (size_t)bufferSize);
+        vkUnmapMemory(mVkHack.GetVkDevice(), stagingBufferMemory);
+
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+
+        copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+        vkDestroyBuffer(mVkHack.GetVkDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(mVkHack.GetVkDevice(), stagingBufferMemory, nullptr);
+    }
+
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(mVkHack.GetVkDevice(), &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create vertex buffer!");
+        if (vkCreateBuffer(mVkHack.GetVkDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create buffer!");
         }
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(mVkHack.GetVkDevice(), vertexBuffer, &memRequirements);
+        vkGetBufferMemoryRequirements(mVkHack.GetVkDevice(), buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        if (vkAllocateMemory(mVkHack.GetVkDevice(), &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate vertex buffer memory!");
+        if (vkAllocateMemory(mVkHack.GetVkDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate buffer memory!");
         }
 
-        vkBindBufferMemory(mVkHack.GetVkDevice(), vertexBuffer, vertexBufferMemory, 0);
+        vkBindBufferMemory(mVkHack.GetVkDevice(), buffer, bufferMemory, 0);
+    }
 
-        void* data;
-        vkMapMemory(mVkHack.GetVkDevice(), vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-        memcpy(data, vertices.data(), (size_t)bufferInfo.size);
-        vkUnmapMemory(mVkHack.GetVkDevice(), vertexBufferMemory);
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = mVkHack.GetCmdPool();
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        vkAllocateCommandBuffers(mVkHack.GetVkDevice(), &allocInfo, &commandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        vkQueueSubmit(mVkHack.GetVkQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(mVkHack.GetVkQueue());
+
+        vkFreeCommandBuffers(mVkHack.GetVkDevice(), mVkHack.GetCmdPool(), 1, &commandBuffer);
     }
 
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
@@ -246,7 +319,6 @@ public:
 
         throw std::runtime_error("failed to find suitable memory type!");
     }
-
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -254,7 +326,6 @@ public:
         if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
             throw std::runtime_error("failed to begin recording command buffer!");
         }
-
         XRHITexture* BackTex = RHIGetCurrentBackTexture();
         XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
         RHICmdList.RHIBeginRenderPass(RPInfos, "VulkanTestRP", sizeof("VulkanTestRP"));

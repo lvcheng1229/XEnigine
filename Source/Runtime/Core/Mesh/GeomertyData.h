@@ -53,14 +53,14 @@ public:
 	{
 		return RHIVertexLayout;
 	}
-	inline std::shared_ptr<XRHIVertexBuffer> GetRHIVertexBuffer()const
+	inline std::shared_ptr<XRHIBuffer> GetRHIVertexBuffer()const
 	{
 		return RHIVertexBuffer;
 	}
 private:
 	std::shared_ptr<GDataBuffer> DataBufferPtrArray[(int)EVertexAttributeType::VAT_MAX_NUM];
 	std::shared_ptr<XRHIVertexLayout> RHIVertexLayout;
-	std::shared_ptr<XRHIVertexBuffer> RHIVertexBuffer;
+	std::shared_ptr<XRHIBuffer> RHIVertexBuffer;
 };
 
 class GIndexBuffer : public GObject
@@ -105,7 +105,7 @@ public:
 	inline uint64 GetIndexCount()const { return MeshDataPtr->IndexBufferPtr->IndexBufferPtr->GetDataNum(); }
 	inline std::shared_ptr<GVertexBuffer> GetGVertexBuffer()const { return MeshDataPtr->VertexBufferPtr; }
 	inline std::shared_ptr<XRHIVertexLayout> GetRHIVertexLayout()const { return MeshDataPtr->VertexBufferPtr->GetRHIVertexLayout(); }
-	inline std::shared_ptr<XRHIVertexBuffer> GetRHIVertexBuffer()const { return MeshDataPtr->VertexBufferPtr->GetRHIVertexBuffer(); }
+	inline std::shared_ptr<XRHIBuffer> GetRHIVertexBuffer()const { return MeshDataPtr->VertexBufferPtr->GetRHIVertexBuffer(); }
 
 	inline std::shared_ptr<GIndexBuffer> GetGIndexBuffer()const { return MeshDataPtr->IndexBufferPtr; }
 	inline std::shared_ptr<XRHIIndexBuffer> GetRHIIndexBuffer()const { return MeshDataPtr->IndexBufferPtr->GetRHIIndexBuffer(); }

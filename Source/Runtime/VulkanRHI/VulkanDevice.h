@@ -3,6 +3,7 @@
 #include "VulkanQueue.h"
 #include "VulkanContext.h"
 #include "VulkanResource.h"
+#include "VulkanMemory.h"
 
 class XVulkanDevice
 {
@@ -28,6 +29,10 @@ public:
 
 	XVulkanShaderFactory* GetVkShaderFactory() { return &ShaderFactory; }
 
+	XMemoryManager& GetMemoryManager() { return MemoryManager; }
+	XStagingManager& GetStagingManager() { return StagingManager; }
+	XDeviceMemoryManager& GetDeviceMemoryManager() { return DeviceMemoryManager; }
+
 	class XVulkanPipelineStateCacheManager* PipelineStateCache;
 private:
 	friend class VkHack;
@@ -43,4 +48,9 @@ private:
 
 	XVulkanCommandListContext* GfxContext;
 	XVulkanShaderFactory ShaderFactory;
+
+	XMemoryManager MemoryManager;
+	XDeviceMemoryManager DeviceMemoryManager;
+
+	XStagingManager StagingManager;
 };

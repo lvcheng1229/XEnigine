@@ -115,7 +115,7 @@ XUIBackendPS::ShaderInfos XUIBackendPS::StaticShaderInfos(
 
 struct RHIUI_VBIB
 {
-	std::shared_ptr<XRHIVertexBuffer>VertexBuffer;
+	std::shared_ptr<XRHIBuffer>VertexBuffer;
 	std::shared_ptr<XRHIIndexBuffer>IndexBuffer;
 
 	int VertexBufferSize;

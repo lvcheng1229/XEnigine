@@ -71,7 +71,7 @@ public:
 	template<ED3D12PipelineType PipelineType>
 	void ApplyCurrentStateToPipeline();
 
-	inline void SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
+	inline void SetVertexBuffer(XRHIBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
 	{
 		XD3D12ResourcePtr_CPUGPU* VertexBufferPtr = &static_cast<XD3D12VertexBuffer*>(RHIVertexBuffer)->ResourcePtr;
 		

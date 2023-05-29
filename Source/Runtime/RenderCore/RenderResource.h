@@ -63,7 +63,7 @@ private:
 class RVertexBuffer :public XRenderResource
 {
 public:
-	std::shared_ptr<XRHIVertexBuffer>RHIVertexBuffer;
+	std::shared_ptr<XRHIBuffer>RHIVertexBuffer;
 };
 
 class RIndexBuffer :public XRenderResource

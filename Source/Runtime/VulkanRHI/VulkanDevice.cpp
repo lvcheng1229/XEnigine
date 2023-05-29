@@ -11,6 +11,7 @@ XVulkanDevice::XVulkanDevice(XVulkanPlatformRHI* InRHI, VkPhysicalDevice InGpu)
 	, Gpu(InGpu)
     , GfxQueue(nullptr)
     , PresentQueue(nullptr)
+    , MemoryManager(this, &DeviceMemoryManager)
 {
     PipelineStateCache = new XVulkanPipelineStateCacheManager(this);
 }
@@ -72,7 +73,8 @@ void XVulkanDevice::CreateDevice()
     VULKAN_VARIFY(vkCreateDevice(Gpu, &createInfo, nullptr, &Device));
     GfxQueue = new XVulkanQueue(this, GfxQueueFamilyIndex);
     
-
+    DeviceMemoryManager.Init(this);
+    StagingManager.Init(this);
 }
 
 

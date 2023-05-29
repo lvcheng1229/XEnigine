@@ -195,7 +195,7 @@ public:
 		GetContext()->RHISetShaderTexture(ShaderType, TextureIndex, Texture);
 	}
 
-	inline void SetVertexBuffer(XRHIVertexBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
+	inline void SetVertexBuffer(XRHIBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
 	{
 		GetContext()->SetVertexBuffer(RHIVertexBuffer, VertexBufferSlot, OffsetFormVBBegin);
 	}
@@ -250,11 +250,11 @@ inline std::shared_ptr<XRHICommandSignature> RHICreateCommandSignature(
 	return GPlatformRHI->RHICreateCommandSignature(RHIIndirectArg, ArgCount, VertexShader, PixelShader);
 }
 
-inline void* LockVertexBuffer(XRHIVertexBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)
+inline void* LockVertexBuffer(XRHIBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)
 {
 	return GPlatformRHI->LockVertexBuffer(VertexBuffer, Offset, SizeRHI);
 }
-inline void UnLockVertexBuffer(XRHIVertexBuffer* VertexBuffer)
+inline void UnLockVertexBuffer(XRHIBuffer* VertexBuffer)
 {
 	return GPlatformRHI->UnLockVertexBuffer(VertexBuffer);
 }
@@ -286,7 +286,7 @@ inline std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 he
 	return GPlatformRHI->RHICreateTexture3D(width, height, SizeZ, Format, flag, NumMipsIn, tex_data);
 }
 
-inline std::shared_ptr<XRHIVertexBuffer>RHIcreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+inline std::shared_ptr<XRHIBuffer>RHIcreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	return GPlatformRHI->RHICreateVertexBuffer(Stride, Size, Usage, ResourceData);
 }
