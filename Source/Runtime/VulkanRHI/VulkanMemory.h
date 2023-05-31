@@ -100,11 +100,28 @@ private:
 	XVulkanDevice* Device;
 };
 
+struct XVulkanPageSizeBucket
+{
+	uint64 AllocationMax;
+	uint32 PageSize;
+	enum
+	{
+		BUCKET_MASK_IMAGE = 0x1,
+		BUCKET_MASK_BUFFER = 0x2,
+	};
+	uint32 BucketMask;
+};
+
+
 class XVulkanResourceHeap
 {
 public:
 	XVulkanResourceHeap(XMemoryManager* InOwner, uint32 InMemoryTypeIndex, uint32 InOverridePageSize = 0);
 	bool AllocateResource(XVulkanAllocation& OutAllocation, XVulkanEvictable* AllocationOwner, EType Type, uint32 Size, uint32 Alignment, EVulkanAllocationMetaType MetaType);
+	static constexpr int32 MAX_BUCKETS = 5;
+	std::vector<XVulkanPageSizeBucket>PageSizeBuckets;
+private:
+	XMemoryManager* Owner;
 };
 
 class XDeviceMemoryManager
@@ -117,6 +134,11 @@ public:
 	VkResult GetMemoryTypeFromProperties(uint32 TypeBits, VkMemoryPropertyFlags Properties, uint32* OutTypeIndex);
 	XDeviceMemoryAllocation* Alloc(VkDeviceSize AllocationSize, uint32 MemoryTypeIndex);
 	
+	VkPhysicalDeviceMemoryProperties GetMemoryProperties()
+	{
+		return MemoryProperties;
+	}
+
 	struct XHeapInfo
 	{
 		VkDeviceSize UsedSize;
@@ -157,6 +179,9 @@ public:
 	std::vector<XVulkanSubresourceAllocator*>UsedBufferAllocations;
 	~XMemoryManager();
 	XMemoryManager(XVulkanDevice* InDevice, XDeviceMemoryManager* InDeviceMemoryManager);
+	
+	void Init();
+	
 	bool AllocateBufferMemory(XVulkanAllocation& OutAllocation, XVulkanEvictable* AllocationOwner, const VkMemoryRequirements& MemoryReqs, VkMemoryPropertyFlags MemoryPropertyFlags, EVulkanAllocationMetaType MetaType);
 	void AllocateBufferPooled(
 		XVulkanAllocation& OutAllocation, 
@@ -164,6 +189,13 @@ public:
 		VkBufferUsageFlags BufferUsage, 
 		VkMemoryPropertyFlags MemoryPropertyFlags, 
 		EVulkanAllocationMetaType MetaType);
+
+
+
+	XVulkanDevice* GetDevice()
+	{
+		return Device;
+	}
 private:
 	XDeviceMemoryManager* DeviceMemoryManager;
 	XVulkanDevice* Device;

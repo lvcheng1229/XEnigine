@@ -3,6 +3,15 @@
 #include "VulkanDevice.h"
 #include <Runtime\Core\Template\AlignmentTemplate.h>
 
+enum
+{
+	GPU_ONLY_HEAP_PAGE_SIZE = 128 * 1024 * 1024,
+	STAGING_HEAP_PAGE_SIZE = 32 * 1024 * 1024,
+	ANDROID_MAX_HEAP_PAGE_SIZE = 16 * 1024 * 1024,
+	ANDROID_MAX_HEAP_IMAGE_PAGE_SIZE = 16 * 1024 * 1024,
+	ANDROID_MAX_HEAP_BUFFER_PAGE_SIZE = 4 * 1024 * 1024,
+
+};
 constexpr static uint32 PoolSize = 8192;
 constexpr static uint32 BufferSize = 1 * 1024 * 1024;
 
@@ -50,6 +59,26 @@ XMemoryManager::XMemoryManager(XVulkanDevice* InDevice, XDeviceMemoryManager* In
 	:Device(InDevice)
 	,DeviceMemoryManager(InDeviceMemoryManager)
 {
+}
+
+void XMemoryManager::Init()
+{
+
+	const VkPhysicalDeviceMemoryProperties& MemoryProperties = DeviceMemoryManager->GetMemoryProperties();
+	const uint32 TypeBits = (1 << MemoryProperties.memoryTypeCount) - 1;
+	ResourceTypeHeaps.resize(MemoryProperties.memoryTypeCount);
+
+	{
+		uint32 TypeIndex;
+		VULKAN_VARIFY(DeviceMemoryManager->GetMemoryTypeFromProperties(TypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &TypeIndex));
+		ResourceTypeHeaps[TypeIndex] = new XVulkanResourceHeap(this, TypeIndex, STAGING_HEAP_PAGE_SIZE);
+
+		auto& Buckets = ResourceTypeHeaps[TypeIndex]->PageSizeBuckets;
+		XVulkanPageSizeBucket Bucket0 = { STAGING_HEAP_PAGE_SIZE, STAGING_HEAP_PAGE_SIZE, XVulkanPageSizeBucket::BUCKET_MASK_IMAGE | XVulkanPageSizeBucket::BUCKET_MASK_BUFFER };
+		XVulkanPageSizeBucket Bucket1 = { UINT64_MAX, 0, XVulkanPageSizeBucket::BUCKET_MASK_IMAGE | XVulkanPageSizeBucket::BUCKET_MASK_BUFFER };
+		Buckets.push_back(Bucket0);
+		Buckets.push_back(Bucket1);
+	}
 }
 
 void XMemoryManager::AllocateBufferPooled(XVulkanAllocation& OutAllocation, XVulkanEvictable* AllocationOwner, uint32 Size, VkBufferUsageFlags BufferUsage, VkMemoryPropertyFlags MemoryPropertyFlags, EVulkanAllocationMetaType MetaType)
@@ -113,6 +142,8 @@ void XDeviceMemoryManager::Init(XVulkanDevice* InDevice)
 	Device = InDevice;
 	vkGetPhysicalDeviceMemoryProperties(*Device->GetVkPhysicalDevice(), &MemoryProperties);
 	HeapInfos.resize(MemoryProperties.memoryHeapCount);
+
+
 }
 
 VkResult XDeviceMemoryManager::GetMemoryTypeFromProperties(uint32 TypeBits, VkMemoryPropertyFlags Properties, uint32* OutTypeIndex)
@@ -243,11 +274,12 @@ XStagingBuffer::XStagingBuffer(XVulkanDevice* InDevice)
 }
 
 XVulkanResourceHeap::XVulkanResourceHeap(XMemoryManager* InOwner, uint32 InMemoryTypeIndex, uint32 InOverridePageSize)
+	: Owner(InOwner)
 {
 
 }
 
 bool XVulkanResourceHeap::AllocateResource(XVulkanAllocation& OutAllocation, XVulkanEvictable* AllocationOwner, EType Type, uint32 Size, uint32 Alignment, EVulkanAllocationMetaType MetaType)
 {
-
+	XDeviceMemoryManager& DeviceMemoryManager = Owner->GetDevice()->GetDeviceMemoryManager();
 }
