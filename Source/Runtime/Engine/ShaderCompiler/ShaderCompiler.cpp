@@ -334,6 +334,11 @@ public:
 	}
 };
 
+#if !USE_DX12
+#include <vulkan/vulkan.h>
+#include "spirv_reflect.h"
+#endif
+
 static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutput& Output)
 {
 	if (!pUtils)
@@ -383,8 +388,6 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 	}
 
 	Args.push_back(TEXT("-Zi"));
-
-	
 
 #if !USE_DX12
 	Args.push_back(TEXT("-spirv"));
@@ -453,7 +456,7 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 			ReflectionData.Ptr = pReflectionData->GetBufferPointer();
 			ReflectionData.Size = pReflectionData->GetBufferSize();
 			pUtils->CreateReflection(&ReflectionData, IID_PPV_ARGS(&Reflection));
-		}
+		} 
 
 		D3D12_SHADER_DESC ShaderDesc;
 		Reflection->GetDesc(&ShaderDesc);
@@ -521,6 +524,58 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 
 
 		}
+		int32 TotalOptionalDataSize = 0;
+		XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount };
+
+		int32 ResoucrCountSize = static_cast<int32>(sizeof(XShaderResourceCount));
+		Output.ShaderCode.push_back(XShaderResourceCount::Key);
+		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&ResoucrCountSize), (uint8*)(&ResoucrCountSize) + 4);
+		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&ResourceCount), (uint8*)(&ResourceCount) + sizeof(XShaderResourceCount));
+
+		TotalOptionalDataSize += sizeof(uint8);//XShaderResourceCount::Key
+		TotalOptionalDataSize += sizeof(int32);//ResoucrCountSize
+		TotalOptionalDataSize += sizeof(XShaderResourceCount);//XShaderResourceCount
+		TotalOptionalDataSize += sizeof(int32);//TotalOptionalDataSize
+		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&TotalOptionalDataSize), (uint8*)(&TotalOptionalDataSize) + 4);
+	}
+#else
+	//\VulkanShaderFormat\Private\VulkanShaderCompiler.cpp
+	spv_reflect::ShaderModule SpirvReflection(CodeGened->GetBufferSize(), CodeGened->GetBufferPointer());
+
+	uint32 NumBindings = 0;
+	SpvReflectResult SpvResult = SpirvReflection.EnumerateDescriptorBindings(&NumBindings, nullptr);
+
+	uint8 NumSRVCount = 0;
+	uint8 NumCBVCount = 0;
+	uint8 NumUAVCount = 0;
+	uint8 NumSamplerCount = 0;
+
+	if (NumBindings > 0)
+	{
+		std::vector<SpvReflectDescriptorBinding*> Bindings;
+		Bindings.resize(NumBindings);
+		SpvResult = SpirvReflection.EnumerateDescriptorBindings(&NumBindings, &Bindings[0]);
+		XASSERT(SpvResult == SPV_REFLECT_RESULT_SUCCESS);
+
+
+		for (SpvReflectDescriptorBinding* BindingEntry : Bindings)
+		{
+			XShaderParameterInfo ParameterInfo;
+			ParameterInfo.BufferIndex = BindingEntry->binding;
+			ParameterInfo.ResourceCount = BindingEntry->count;
+			if (BindingEntry->resource_type == SPV_REFLECT_RESOURCE_FLAG_CBV)
+			{
+				NumCBVCount++;
+				ParameterInfo.Parametertype = EShaderParametertype::CBV;
+				Output.ShaderParameterMap.MapNameToParameter[BindingEntry->name] = ParameterInfo;
+				//if (strncmp(ResourceDesc.Name, "cbView", 64) != 0)
+			}
+			else
+			{
+				XASSERT(false);
+			}
+		}
+
 		int32 TotalOptionalDataSize = 0;
 		XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount };
 

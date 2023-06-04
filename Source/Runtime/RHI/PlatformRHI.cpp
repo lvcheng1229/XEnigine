@@ -133,3 +133,10 @@ VkPipeline VkHack::GetVkPipeline()
 	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
 	return VkRHI->Device->PipelineStateCache->GraphicsPSOMap.begin()->second->VulkanPipeline;
 }
+
+
+
+//VkPipelineLayout VkHack::GetVkPipelineLayout()
+//{
+//	return VkPipelineLayout();
+//}

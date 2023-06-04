@@ -5,7 +5,7 @@
 #include "VulkanRHIPrivate.h"
 #include "VulkanResource.h"
 #include <Runtime\Core\Math\Math.h>
-
+#include "VulaknHack.h"
 
 XVulkanPipelineStateCacheManager::XVulkanPipelineStateCacheManager(XVulkanDevice* InDevice)
     :Device(InDevice)
@@ -128,6 +128,18 @@ void XVulkanPipelineStateCacheManager::CreateGfxEntry(const XGraphicsPSOInitiali
     }
 }
 
+
+static VkDescriptorSetLayout descriptorSetLayout;
+static VkPipelineLayout pipelineLayout;;
+VkDescriptorSetLayout VkHack::GetVkDescriptorSetLayout()
+{
+    return descriptorSetLayout;
+}
+VkPipelineLayout VkHack::GetVkPipelineLayout()
+{
+    return pipelineLayout;
+}
+
 void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGraphicsPipelineState* PSO, XVulkanShader* Shaders[(uint32)EShaderType::SV_ShaderCount], VkPipeline* Pipeline)
 {
     XGfxPipelineDesc* GfxEntry = &PSO->Desc;
@@ -200,7 +212,11 @@ void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGrap
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+   
+    XASSERT_TEMP(false);
+    //rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    
     rasterizer.depthBiasEnable = VK_FALSE;
     PipelineInfo.pRasterizationState = &rasterizer;
 
@@ -240,12 +256,34 @@ void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGrap
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-    VkPipelineLayout pipelineLayout;
+    XASSERT_TEMP(false);
+    
+    {
+        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        uboLayoutBinding.binding = 0;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.pImmutableSamplers = nullptr;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &uboLayoutBinding;
+
+        if (vkCreateDescriptorSetLayout(Device->GetVkDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor set layout!");
+        }
+    }
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+
+    //VkPipelineLayout pipelineLayout;
     VULKAN_VARIFY(vkCreatePipelineLayout(Device->GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout));
     PipelineInfo.layout = pipelineLayout;
+    
 
     PipelineInfo.renderPass = PSO->RenderPass->GetRenderPass();
     PipelineInfo.subpass = 0;

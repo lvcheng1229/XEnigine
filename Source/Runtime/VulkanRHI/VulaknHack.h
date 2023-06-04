@@ -17,5 +17,7 @@ public:
 	VkRenderPass GetVkRenderPas();
 	void TempPresent();
 	VkPipeline GetVkPipeline();
+	VkPipelineLayout GetVkPipelineLayout();
+	VkDescriptorSetLayout GetVkDescriptorSetLayout();
 };
 ;

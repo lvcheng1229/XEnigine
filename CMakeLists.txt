@@ -11,6 +11,7 @@ add_definitions(-D ROOT_DIR_XENGINE=${XENGINE_ROOT_DIR})
 file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.h")
 file(GLOB_RECURSE SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp")
 file(GLOB_RECURSE SOURCE_FILES_CC "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cc")
+file(GLOB_RECURSE SOURCE_FILES_C "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.c")
 
 set(imgui_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/imgui)
 file(GLOB imgui_sources "${imgui_SOURCE_DIR}/*.cpp")
@@ -25,7 +26,7 @@ add_library(imgui STATIC ${imgui_sources} ${imgui_impl})
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 link_libraries(imgui)
 
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/Source" FILES ${HEADER_FILES} ${SOURCE_FILES} ${SOURCE_FILES_CC})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/Source" FILES ${HEADER_FILES} ${SOURCE_FILES} ${SOURCE_FILES_CC} ${SOURCE_FILES_C})
 
 #link_libraries("d3dcompiler.lib")
 link_libraries("D3D12.lib")
@@ -46,4 +47,4 @@ add_definitions(-DX_RHI_DX12)
 add_definitions(-DUNICODE)
 add_definitions(-D_UNICODE)#for imgui
 
-add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${SOURCE_FILES_CC})
+add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${SOURCE_FILES_CC} ${SOURCE_FILES_C})

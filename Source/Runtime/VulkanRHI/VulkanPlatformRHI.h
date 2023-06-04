@@ -56,6 +56,7 @@ public:
 	std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)final override;
 	std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)final override { XASSERT(false); return nullptr; };
 
+	//RHICreateUniformBuffer
 	std::shared_ptr<XRHIConstantBuffer> RHICreateConstantBuffer(uint32 size)override { XASSERT_TEMP(false); return nullptr; };
 
 	std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
