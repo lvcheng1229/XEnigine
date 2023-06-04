@@ -31,7 +31,7 @@ void VS(VertexIn vin,
     out float4 Position : SV_POSITION
 )
 {
-    Position = float4(vin.PosIn, 0.0f, 1.0f);
+    Position = float4(vin.PosIn, 1.0f, 1.0f);
     fragColor = vin.ColorIn;
 }
 

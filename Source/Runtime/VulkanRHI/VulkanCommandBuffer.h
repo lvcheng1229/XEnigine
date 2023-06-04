@@ -10,6 +10,7 @@ public:
 	void AllocMemory();
 	void BeginRenderPass(const XVulkanRenderTargetLayout* Layout,XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer);
 	VkCommandBuffer GetHandle() { return CommandBufferHandle; }
+	VkCommandBuffer* GetHandlePtr() { return &CommandBufferHandle; }
 private:
 	friend class VkHack;
 	VkCommandBuffer CommandBufferHandle;

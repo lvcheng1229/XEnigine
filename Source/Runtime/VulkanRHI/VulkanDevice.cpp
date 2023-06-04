@@ -75,6 +75,7 @@ void XVulkanDevice::CreateDevice()
     
     DeviceMemoryManager.Init(this);
     StagingManager.Init(this);
+    MemoryManager.Init();
 }
 
 

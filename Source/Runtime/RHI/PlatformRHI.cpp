@@ -33,13 +33,12 @@ void RHIInit(uint32 Width, uint32 Height , bool bUseDX12)
 	
 #if USE_DX12
 	GRHICmdList.ReseizeViewport(Width, Height);
-	GRHICmdList.Open();
 #endif
+	GRHICmdList.Open();
 	XRenderResource::InitRHIForAllResources();
-#if USE_DX12
+
 	GRHICmdList.Execute();
 	XASSERT(GIsRHIInitialized == false);
-#endif
 	
 	GIsRHIInitialized = true;
 }

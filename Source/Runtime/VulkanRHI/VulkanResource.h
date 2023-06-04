@@ -143,9 +143,18 @@ class XVulkanResourceMultiBuffer : public XRHIBuffer ,public XVulkanEvictable
 {
 public:
 	XVulkanResourceMultiBuffer(XVulkanDevice* Device,uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData);
+	
+	void* Lock(EResourceLockMode LockMode, uint32 LockSize, uint32 Offset);
+	
 	static VkBufferUsageFlags UEToVKBufferUsageFlags(EBufferUsage InUEUsage);
+	
+	
 	XVulkanAllocation Buffer;
 	VkBufferUsageFlags BufferUsageFlags;
+	static void InternalUnlock(class XVulkanCommandListContext* Context, class XPendingBufferLock* PendingLock, XVulkanResourceMultiBuffer* MultiBuffer);
+private:
+	XVulkanDevice* Device;
+
 };
 
 class XVulkanShaderFactory

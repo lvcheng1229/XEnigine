@@ -16,8 +16,8 @@ public:
 
 	void ReseizeViewport(uint32 Width, uint32 Height)override { XASSERT(false)};
 
-	void Execute()override { XASSERT(false) };
-	void OpenCmdList()override { XASSERT(false) };
+	void Execute()override;
+	void OpenCmdList()override;
 	void CloseCmdList()override { XASSERT(false) };
 
 	//SetShaderParameter
@@ -53,6 +53,7 @@ public:
 	//Vulkan
 	XVulkanQueue* GetQueue() { return Queue; }
 	XVulkanRenderPass* PrepareRenderPassForPSOCreation(const XGraphicsPSOInitializer& Initializer);
+	XVulkanCommandBufferManager* GetCommandBufferManager() { return CmdBufferManager; }
 private:
 	
 

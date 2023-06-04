@@ -24,3 +24,22 @@ XVulkanCommandListContext::~XVulkanCommandListContext()
 {
 	delete CmdBufferManager;
 }
+
+void XVulkanCommandListContext::Execute()
+{
+	vkEndCommandBuffer(CmdBufferManager->GetActiveCmdBuffer()->GetHandle());
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = CmdBufferManager->GetActiveCmdBuffer()->GetHandlePtr();
+	vkQueueSubmit(GetQueue()->GetVkQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(GetQueue()->GetVkQueue());
+}
+
+void XVulkanCommandListContext::OpenCmdList()
+{
+	vkResetCommandBuffer(CmdBufferManager->GetActiveCmdBuffer()->GetHandle(), /*VkCommandBufferResetFlagBits*/ 0);
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	vkBeginCommandBuffer(CmdBufferManager->GetActiveCmdBuffer()->GetHandle(), &beginInfo);
+}

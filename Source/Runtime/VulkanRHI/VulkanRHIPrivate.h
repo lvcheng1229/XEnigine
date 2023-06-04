@@ -2,6 +2,22 @@
 #include "Runtime\RHI\RHIResource.h"
 #include "VulkanContext.h"
 
+
+class XStagingBuffer;
+struct XPendingBufferLock
+{
+	XStagingBuffer* StagingBuffer;
+	uint32 Offset;
+	uint32 Size;
+	EResourceLockMode LockMode;
+};
+
+template<typename BitsType>
+constexpr bool VKHasAllFlags(VkFlags Flags, BitsType Contains)
+{
+	return (Flags & Contains) == Contains;
+}
+
 class XVulkanRenderPass
 {
 public:
