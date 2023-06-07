@@ -149,15 +149,25 @@ void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGrap
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertShaderStageInfo.module = PSO->ShaderModules[(uint32)EShaderType::SV_Vertex];
-    XASSERT_TEMP(false);
-    vertShaderStageInfo.pName = "VS";
+
+    //std::string VSName = Shaders[(uint32)EShaderType::SV_Vertex]->GetEntryPoint();
+    //vertShaderStageInfo.pName = VSName.c_str();
+
+    //UE vulkan Shader Entry point设置
+    //1.将所有shader的EntryPoint设置为main_00000000_00000000
+    //2.编译Shader
+    //3.从得到的ShaderCode查找EntryPoint，将其替换为"main_%0.8x_%0.8x", SpirvByteSize, CRC
+
+    std::string pNameVS = Shaders[(uint32)EShaderType::SV_Vertex]->GetEntryPoint();
+    vertShaderStageInfo.pName = pNameVS.c_str();
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
     fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.module = PSO->ShaderModules[(uint32)EShaderType::SV_Pixel];
-    XASSERT_TEMP(false);
-    fragShaderStageInfo.pName = "PS";
+
+    std::string pNamePS = Shaders[(uint32)EShaderType::SV_Pixel]->GetEntryPoint();
+    fragShaderStageInfo.pName = pNamePS.c_str();
 
     VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 

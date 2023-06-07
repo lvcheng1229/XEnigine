@@ -4,6 +4,7 @@
 #include <Runtime\HAL\Mch.h>
 #include <Runtime\HAL\PlatformTypes.h>
 #include "Runtime\RHI\RHIResource.h"
+#include "Runtime\RenderCore\ShaderCore.h"
 #include "VulkanPipeline.h"
 #include "VulkanMemory.h"
 
@@ -97,6 +98,15 @@ public:
 		friend class XVulkanShader;
 		std::vector<uint8>	SpirvCode;
 	} SpirvContainer;
+
+	XShaderResourceCount ResourceCount;
+	std::string EntryName;
+
+
+	std::string GetEntryPoint()
+	{
+		return EntryName;
+	}
 
 	VkShaderModule GetOrCreateHandle(const XGfxPipelineDesc& Desc, const XVulkanLayout* Layout, uint32 LayoutHash)
 	{

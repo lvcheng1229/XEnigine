@@ -572,24 +572,33 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 			}
 			else
 			{
-				XASSERT(false);
+				XASSERT_TEMP(false);
 			}
 		}
-
-		int32 TotalOptionalDataSize = 0;
-		XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount };
-
-		int32 ResoucrCountSize = static_cast<int32>(sizeof(XShaderResourceCount));
-		Output.ShaderCode.push_back(XShaderResourceCount::Key);
-		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&ResoucrCountSize), (uint8*)(&ResoucrCountSize) + 4);
-		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&ResourceCount), (uint8*)(&ResourceCount) + sizeof(XShaderResourceCount));
-
-		TotalOptionalDataSize += sizeof(uint8);//XShaderResourceCount::Key
-		TotalOptionalDataSize += sizeof(int32);//ResoucrCountSize
-		TotalOptionalDataSize += sizeof(XShaderResourceCount);//XShaderResourceCount
-		TotalOptionalDataSize += sizeof(int32);//TotalOptionalDataSize
-		Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&TotalOptionalDataSize), (uint8*)(&TotalOptionalDataSize) + 4);
 	}
+
+	int32 TotalOptionalDataSize = 0;
+	XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount };
+
+	int32 ResoucrCountSize = static_cast<int32>(sizeof(XShaderResourceCount));
+	Output.ShaderCode.push_back(XShaderResourceCount::Key);
+	Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&ResoucrCountSize), (uint8*)(&ResoucrCountSize) + 4);
+	Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&ResourceCount), (uint8*)(&ResourceCount) + sizeof(XShaderResourceCount));
+
+	std::string EntryPointName = SpirvReflection.GetEntryPointName();
+	int32 EntryPointSize = EntryPointName.size();
+	Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&EntryPointSize), (uint8*)(&EntryPointSize) + 4);
+	Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(EntryPointName.c_str()), (uint8*)(EntryPointName.c_str()) + EntryPointName.size());
+
+	TotalOptionalDataSize += sizeof(uint8);//XShaderResourceCount::Key
+	TotalOptionalDataSize += sizeof(int32);//ResoucrCountSize
+	TotalOptionalDataSize += sizeof(XShaderResourceCount);//XShaderResourceCount
+
+	TotalOptionalDataSize += sizeof(int32);//EntryPointSize
+	TotalOptionalDataSize += EntryPointSize;//EntryPointName
+
+	TotalOptionalDataSize += sizeof(int32);//TotalOptionalDataSize
+	Output.ShaderCode.insert(Output.ShaderCode.end(), (uint8*)(&TotalOptionalDataSize), (uint8*)(&TotalOptionalDataSize) + 4);
 #endif
 }
 

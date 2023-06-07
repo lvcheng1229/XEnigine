@@ -31,9 +31,20 @@ inline ShaderType* XVulkanShaderFactory::CreateShader(XArrayView<uint8> Code, XV
 	}
 	
 	ShaderPtr = new ShaderType(Device);
+
+	XShaderCodeReader ShaderCodeReader(Code);
+	const XShaderResourceCount* ResourceCount = (const XShaderResourceCount*)(ShaderCodeReader.FindOptionalData(
+		XShaderResourceCount::Key, sizeof(XShaderResourceCount)));
+	if (ResourceCount == nullptr) { return nullptr; }
+
+	int32 EntryNameSize = *(int32*)((const char*)ResourceCount + sizeof(XShaderResourceCount));
+	const char* EntryName = ((const char*)ResourceCount + sizeof(XShaderResourceCount) + sizeof(int32));
+	ShaderPtr->EntryName = std::string(EntryName, EntryNameSize);
+
 	const uint8* CodaData = (const uint8*)Code.data();
-	ShaderPtr->SpirvContainer.SpirvCode.insert(ShaderPtr->SpirvContainer.SpirvCode.end(), &CodaData[0], &CodaData[Code.size()]);
-	
+	ShaderPtr->SpirvContainer.SpirvCode.insert(ShaderPtr->SpirvContainer.SpirvCode.end(), &CodaData[0], &CodaData[Code.size() - ShaderCodeReader.GetOptionalDataSize()]);
+	ShaderPtr->ResourceCount = *ResourceCount;
+
 	return ShaderPtr;
 }
 
