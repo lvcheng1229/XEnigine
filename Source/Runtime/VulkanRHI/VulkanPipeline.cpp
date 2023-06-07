@@ -153,10 +153,10 @@ void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGrap
     //std::string VSName = Shaders[(uint32)EShaderType::SV_Vertex]->GetEntryPoint();
     //vertShaderStageInfo.pName = VSName.c_str();
 
-    //UE vulkan Shader Entry point设置
-    //1.将所有shader的EntryPoint设置为main_00000000_00000000
-    //2.编译Shader
-    //3.从得到的ShaderCode查找EntryPoint，将其替换为"main_%0.8x_%0.8x", SpirvByteSize, CRC
+    //UE vulkan Shader Entry point
+    //1.set EntryPoint = main_00000000_00000000
+    //2.compile Shader
+    //3.get ShaderCode EntryPoint to"main_%0.8x_%0.8x", SpirvByteSize, CRC
 
     std::string pNameVS = Shaders[(uint32)EShaderType::SV_Vertex]->GetEntryPoint();
     vertShaderStageInfo.pName = pNameVS.c_str();
