@@ -38,6 +38,22 @@ void XVulkanCmdBuffer::BeginRenderPass(const XVulkanRenderTargetLayout* Layout, 
 	vkCmdBeginRenderPass(CommandBufferHandle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
+bool XVulkanCmdBuffer::AcquirePoolSetAndDescriptorsIfNeeded(const XVulkanDescriptorSetsLayout* Layout, bool bNeedDescriptors, VkDescriptorSet* OutDescriptors)
+{
+	if (CurrentDescriptorPoolSetContainer == nullptr)
+	{
+		AcquirePoolSetContainer();
+	}
+
+
+	return false;
+}
+
+void XVulkanCmdBuffer::AcquirePoolSetContainer()
+{
+	CurrentDescriptorPoolSetContainer = &Device->GetDescriptorPoolsManager()->AcquirePoolSetContainer();
+}
+
 XVulkanCommandBufferPool::XVulkanCommandBufferPool(XVulkanDevice* InDevice, XVulkanCommandBufferManager* InVulkanCommandBufferManager)
 	: Device(InDevice)
 	, CmdBufferManager(InVulkanCommandBufferManager)

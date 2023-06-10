@@ -9,6 +9,13 @@ class XVulkanRenderPass;
 
 struct XGfxPipelineDesc
 {
+	struct XDepthStencil
+	{
+		bool bEnableDepthWrite;
+		VkCompareOp DSCompareOp;
+	};
+	XDepthStencil DepthStencil;
+
 	struct XBlendAttachment
 	{
 		bool bBlendEnable;
@@ -21,14 +28,6 @@ struct XGfxPipelineDesc
 		void WriteInto(VkPipelineColorBlendAttachmentState& OutState) const;
 	};
 	std::vector<XBlendAttachment> ColorAttachmentStates;
-
-	struct XDepthStencil
-	{
-		bool bEnableDepthWrite;
-		VkCompareOp DSCompareOp;
-	};
-	XDepthStencil DepthStencil;
-
 
 	struct XVertexBinding
 	{
@@ -59,6 +58,7 @@ class XVulkanRHIGraphicsPipelineState : public XRHIGraphicsPSO
 {
 public:
 	XVulkanRHIGraphicsPipelineState(XVulkanDevice* Device, const XGraphicsPSOInitializer& PSOInitializer, XGfxPipelineDesc& Desc, std::size_t Key);
+	~XVulkanRHIGraphicsPipelineState();
 	void GetOrCreateShaderModules(XVulkanShader* const* Shaders);
 
 	inline void Bind(VkCommandBuffer CmdBuffer)
@@ -78,6 +78,7 @@ class XVulkanPipelineStateCacheManager
 {
 public:
 	XVulkanPipelineStateCacheManager(XVulkanDevice* Device);
+	~XVulkanPipelineStateCacheManager();
 	std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit);
 private:
 	friend class VkHack;
@@ -85,7 +86,12 @@ private:
 	void CreateGfxEntry(const XGraphicsPSOInitializer& PSOInitializer, XVulkanDescriptorSetsLayoutInfo& DescriptorSetLayoutInfo, XGfxPipelineDesc* Desc);
 	void CreateGfxPipelineFromEntry(XVulkanRHIGraphicsPipelineState* PSO, XVulkanShader* Shaders[(uint32)EShaderType::SV_ShaderCount], VkPipeline* Pipeline);
 	
+	XVulkanLayout* FindOrAddLayout(const XVulkanDescriptorSetsLayoutInfo& DescriptorSetLayoutInfo, bool bGfxLayout);
+
 	XVulkanDevice* Device;
 	VkPipelineCache PipelineCache;
-	std::map<std::size_t, XVulkanRHIGraphicsPipelineState*>GraphicsPSOMap;
+	std::map<std::size_t, std::shared_ptr<XVulkanRHIGraphicsPipelineState>>GraphicsPSOMap;
+	
+	std::map<uint32, XVulkanLayout*> LayoutMap;
+	XVulkanDescriptorSetLayoutMap DSetLayoutMap;
 };

@@ -3,6 +3,8 @@
 #include "VulkanContext.h"
 
 class XVulkanCommandBufferPool;
+class XVulkanDescriptorPoolSetContainer;
+
 class XVulkanCmdBuffer
 {
 public:
@@ -11,7 +13,13 @@ public:
 	void BeginRenderPass(const XVulkanRenderTargetLayout* Layout,XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer);
 	VkCommandBuffer GetHandle() { return CommandBufferHandle; }
 	VkCommandBuffer* GetHandlePtr() { return &CommandBufferHandle; }
+
+	bool AcquirePoolSetAndDescriptorsIfNeeded(const class XVulkanDescriptorSetsLayout* Layout, bool bNeedDescriptors, VkDescriptorSet* OutDescriptors);
 private:
+	void AcquirePoolSetContainer();
+
+	XVulkanDescriptorPoolSetContainer* CurrentDescriptorPoolSetContainer = nullptr;
+
 	friend class VkHack;
 	VkCommandBuffer CommandBufferHandle;
 	XVulkanDevice* Device;

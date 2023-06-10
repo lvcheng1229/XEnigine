@@ -17,6 +17,7 @@ std::size_t XGfxPipelineDesc::CreateKey()
     return std::hash<std::string>{}(std::string((char*)this, sizeof(XGfxPipelineDesc)));
 }
 
+
 void GetVulkanShaders(const XRHIBoundShaderStateInput& BSI, XVulkanShader* OutShaders[(uint32)EShaderType::SV_ShaderCount])
 {
     OutShaders[(uint32)EShaderType::SV_Vertex] = static_cast<XVulkanVertexShader*>(BSI.RHIVertexShader);
@@ -42,6 +43,10 @@ std::shared_ptr<XRHIGraphicsPSO> XVulkanPipelineStateCacheManager::RHICreateGrap
     NewPSO = new XVulkanRHIGraphicsPipelineState(Device, PSOInit, Desc, Key);
     NewPSO->RenderPass = Device->GetGfxContex()->PrepareRenderPassForPSOCreation(PSOInit);
 
+
+    XVulkanLayout* Layout = FindOrAddLayout(DescriptorSetLayoutInfo, true);;
+    NewPSO->Layout = Layout;
+
     XVulkanShader* VulkanShaders[(uint32)EShaderType::SV_ShaderCount];
     memset(VulkanShaders, 0, sizeof(XVulkanShader*) * (uint32)EShaderType::SV_ShaderCount);
     GetVulkanShaders(PSOInit.BoundShaderState, VulkanShaders);
@@ -49,8 +54,9 @@ std::shared_ptr<XRHIGraphicsPSO> XVulkanPipelineStateCacheManager::RHICreateGrap
     //TODO VS PS Shader Layout
     CreateGfxPipelineFromEntry(NewPSO, VulkanShaders, &NewPSO->VulkanPipeline);
 
-    GraphicsPSOMap[Key] = NewPSO;
-    return std::shared_ptr<XRHIGraphicsPSO>(NewPSO);
+    GraphicsPSOMap[Key] = std::shared_ptr<XVulkanRHIGraphicsPipelineState>(NewPSO);
+    
+    return GraphicsPSOMap[Key];
 }
 
 void XVulkanPipelineStateCacheManager::CreateGfxEntry(const XGraphicsPSOInitializer& PSOInitializer, XVulkanDescriptorSetsLayoutInfo& DescriptorSetLayoutInfo, XGfxPipelineDesc* Desc)
@@ -61,6 +67,11 @@ void XVulkanPipelineStateCacheManager::CreateGfxEntry(const XGraphicsPSOInitiali
     VkPipelineDepthStencilStateCreateInfo DSStateInfo = static_cast<XVulkanDepthStencilState*>(PSOInitializer.DepthStencilState)->DepthStencilState;
     OutGfxEntry->DepthStencil.bEnableDepthWrite = DSStateInfo.depthWriteEnable;
     OutGfxEntry->DepthStencil.DSCompareOp = DSStateInfo.depthCompareOp;
+
+    //FinalizeBindings
+    DescriptorSetLayoutInfo.FinalizeBindings_Gfx(
+        static_cast<XVulkanVertexShader*>(PSOInitializer.BoundShaderState.RHIVertexShader),
+        static_cast<XVulkanPixelShader*>(PSOInitializer.BoundShaderState.RHIPixelShader));
 
     //Blend State
     for (int32 Index = 0; Index < MaxSimultaneousRenderTargets; Index++)
@@ -131,6 +142,7 @@ void XVulkanPipelineStateCacheManager::CreateGfxEntry(const XGraphicsPSOInitiali
 
 static VkDescriptorSetLayout descriptorSetLayout;
 static VkPipelineLayout pipelineLayout;;
+
 VkDescriptorSetLayout VkHack::GetVkDescriptorSetLayout()
 {
     return descriptorSetLayout;
@@ -263,43 +275,57 @@ void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGrap
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
     PipelineInfo.pDynamicState = &dynamicState;
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-
-    XASSERT_TEMP(false);
+    
+    PipelineInfo.layout = PSO->Layout->PipelineLayout;
     
     {
-        VkDescriptorSetLayoutBinding uboLayoutBinding{};
-        uboLayoutBinding.binding = 0;
-        uboLayoutBinding.descriptorCount = 1;
-        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboLayoutBinding.pImmutableSamplers = nullptr;
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 1;
-        layoutInfo.pBindings = &uboLayoutBinding;
-
-        if (vkCreateDescriptorSetLayout(Device->GetVkDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor set layout!");
-        }
+        descriptorSetLayout = PSO->Layout->DescriptorSetLayout.LayoutHandle;
+        pipelineLayout = PSO->Layout->PipelineLayout;
     }
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-
-    //VkPipelineLayout pipelineLayout;
-    VULKAN_VARIFY(vkCreatePipelineLayout(Device->GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout));
-    PipelineInfo.layout = pipelineLayout;
-    
 
     PipelineInfo.renderPass = PSO->RenderPass->GetRenderPass();
     PipelineInfo.subpass = 0;
     PipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     VULKAN_VARIFY(vkCreateGraphicsPipelines(Device->GetVkDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, Pipeline));
+}
+
+XVulkanPipelineStateCacheManager::~XVulkanPipelineStateCacheManager()
+{
+    for (auto iter = LayoutMap.begin(); iter != LayoutMap.end(); iter++)
+    {
+        if (iter->second)
+        {
+            delete iter->second;
+        }
+    }
+}
+
+XVulkanLayout* XVulkanPipelineStateCacheManager::FindOrAddLayout(const XVulkanDescriptorSetsLayoutInfo& DescriptorSetLayoutInfo, bool bGfxLayout)
+{
+    uint32 Hash = DescriptorSetLayoutInfo.GetHash();
+    auto iter = LayoutMap.find(Hash);
+    if (iter != LayoutMap.end())
+    {
+        return iter->second;
+    }
+
+    XVulkanLayout* Layout = nullptr;
+    if (bGfxLayout)
+    {
+        Layout = new XVulkanGfxLayout(Device);
+    }
+    else
+    {
+        XASSERT(false);
+    }
+
+    Layout->DescriptorSetLayout.SetLayout = DescriptorSetLayoutInfo.SetLayout;
+    Layout->DescriptorSetLayout.Hash = DescriptorSetLayoutInfo.Hash;
+    Layout->Compile(DSetLayoutMap);
+    
+    LayoutMap[Hash] = Layout;
+    return Layout;
 }
 
 std::shared_ptr<XRHIGraphicsPSO> XVulkanPlatformRHI::RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
@@ -320,13 +346,14 @@ void XVulkanRHIGraphicsPipelineState::GetOrCreateShaderModules(XVulkanShader* co
         XVulkanShader* Shader = Shaders[Index];
         if (Shader)
         {
-            Layout = new XVulkanLayout();
-            XASSERT_TEMP(false);
-
-            //ShaderModules[Index] = Shader->GetOrCreateHandle(Desc, Layout, Layout->GetDescriptorSetLayoutHash());
-            ShaderModules[Index] = Shader->GetOrCreateHandle(Desc, Layout, Index);
+            ShaderModules[Index] = Shader->GetOrCreateHandle(Desc, Index);
         }
     }
+}
+
+XVulkanRHIGraphicsPipelineState::~XVulkanRHIGraphicsPipelineState()
+{
+
 }
 
 void XGfxPipelineDesc::XBlendAttachment::WriteInto(VkPipelineColorBlendAttachmentState& Out) const

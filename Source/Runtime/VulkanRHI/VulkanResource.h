@@ -108,7 +108,7 @@ public:
 		return EntryName;
 	}
 
-	VkShaderModule GetOrCreateHandle(const XGfxPipelineDesc& Desc, const XVulkanLayout* Layout, uint32 LayoutHash)
+	VkShaderModule GetOrCreateHandle(const XGfxPipelineDesc& Desc, uint32 LayoutHash)
 	{
 		auto iter = ShaderModules.find(LayoutHash);;
 		if (iter != ShaderModules.end())
@@ -116,13 +116,13 @@ public:
 			return iter->second;
 		}
 
-		return CreateHandle(Desc, Layout, LayoutHash);
+		return CreateHandle(Desc, LayoutHash);
 	}
 
 	XVulkanDevice* Device;
 	std::map<uint32, VkShaderModule> ShaderModules;
 protected:
-	VkShaderModule CreateHandle(const XGfxPipelineDesc& Desc, const XVulkanLayout* Layout, uint32 LayoutHash);
+	VkShaderModule CreateHandle(const XGfxPipelineDesc& Desc, uint32 LayoutHash);
 };
 
 class XVulkanVertexShader : public XRHIVertexShader , public XVulkanShader

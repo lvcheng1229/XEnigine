@@ -5,6 +5,8 @@
 #include "VulkanResource.h"
 #include "VulkanMemory.h"
 
+class XVulkanDescriptorPoolsManager;
+
 class XVulkanDevice
 {
 public:
@@ -33,6 +35,8 @@ public:
 	XStagingManager& GetStagingManager() { return StagingManager; }
 	XDeviceMemoryManager& GetDeviceMemoryManager() { return DeviceMemoryManager; }
 
+	XVulkanDescriptorPoolsManager* GetDescriptorPoolsManager(){return DescriptorPoolsManager;}
+
 	class XVulkanPipelineStateCacheManager* PipelineStateCache;
 private:
 	friend class VkHack;
@@ -53,4 +57,6 @@ private:
 	XDeviceMemoryManager DeviceMemoryManager;
 
 	XStagingManager StagingManager;
+
+	XVulkanDescriptorPoolsManager* DescriptorPoolsManager = nullptr;
 };

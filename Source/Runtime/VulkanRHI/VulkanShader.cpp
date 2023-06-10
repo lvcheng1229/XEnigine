@@ -1,6 +1,7 @@
 #include "VulkanPlatformRHI.h"
 #include "VulkanResource.h"
 #include "VulkanDevice.h"
+#include "VulkanDescriptorSets.h"
 #include "Runtime\Core\Template\XEngineTemplate.h"
 
 template XVulkanVertexShader* XVulkanShaderFactory::CreateShader<XVulkanVertexShader>(XArrayView<uint8> Code, XVulkanDevice* Device);
@@ -8,6 +9,21 @@ template XVulkanPixelShader* XVulkanShaderFactory::CreateShader<XVulkanPixelShad
 
 template XVulkanVertexShader* XVulkanShaderFactory::LookupShader<XVulkanVertexShader>(uint64 ShaderKey) const;
 template XVulkanPixelShader* XVulkanShaderFactory::LookupShader<XVulkanPixelShader>(uint64 ShaderKey) const;
+
+
+void XVulkanLayout::Compile(XVulkanDescriptorSetLayoutMap& InDSetLayoutMap)
+{
+	DescriptorSetLayout.Compile(InDSetLayoutMap);
+
+	const VkDescriptorSetLayout LayoutHandle = DescriptorSetLayout.LayoutHandle;
+	VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo = {};
+	PipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	PipelineLayoutCreateInfo.setLayoutCount = 1;
+	PipelineLayoutCreateInfo.pSetLayouts = &LayoutHandle;
+
+	VULKAN_VARIFY(vkCreatePipelineLayout(Device->GetVkDevice(), &PipelineLayoutCreateInfo, nullptr, &PipelineLayout));
+}
+
 
 XVulkanShaderFactory::~XVulkanShaderFactory()
 {
