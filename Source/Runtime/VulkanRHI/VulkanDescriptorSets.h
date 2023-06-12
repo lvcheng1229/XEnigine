@@ -8,6 +8,18 @@
 class XVulkanDevice;
 class XVulkanShader;
 
+// Information for remapping descriptor sets when combining layouts
+struct XDescriptorSetRemappingInfo
+{
+	struct XSetInfo
+	{
+		std::vector<VkDescriptorType>	Types;
+		uint16						NumImageInfos = 0;
+		uint16						NumBufferInfos = 0;
+	};
+	XSetInfo SetInfo;
+};
+
 // Information for the layout of descriptor sets; does not hold runtime objects
 class XVulkanDescriptorSetsLayoutInfo
 {
@@ -40,6 +52,8 @@ protected:
 	XSetLayout SetLayout;//r.Vulkan.DescriptorSetLayoutMode
 
 	uint32 Hash = 0;
+
+	XDescriptorSetRemappingInfo	RemappingInfo;
 
 	friend class XVulkanLayout;
 	friend class XVulkanPipelineStateCacheManager;
@@ -79,6 +93,8 @@ protected:
 
 	friend class XVulkanPipelineStateCacheManager;
 };
+
+
 
 class XVulkanGfxLayout : public XVulkanLayout
 {

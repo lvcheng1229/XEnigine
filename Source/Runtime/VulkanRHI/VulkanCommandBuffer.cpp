@@ -109,6 +109,7 @@ XVulkanCommandBufferManager::XVulkanCommandBufferManager(XVulkanDevice* InDevice
 	, Pool(InDevice, this)
 	, Queue(InContext->GetQueue())
 {
+
 	Pool.Create(Queue->GetFamilyIndex());
 	ActiveCmdBuffer = Pool.CreateCmdBuffer();
 }

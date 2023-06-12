@@ -18,12 +18,12 @@ public:
 private:
 	void AcquirePoolSetContainer();
 
-	XVulkanDescriptorPoolSetContainer* CurrentDescriptorPoolSetContainer = nullptr;
-
 	friend class VkHack;
 	VkCommandBuffer CommandBufferHandle;
 	XVulkanDevice* Device;
 	XVulkanCommandBufferPool* CmdBufferPool;
+
+	XVulkanDescriptorPoolSetContainer* CurrentDescriptorPoolSetContainer = nullptr;
 };
 
 class XVulkanCommandBufferPool

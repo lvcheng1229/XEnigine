@@ -525,7 +525,7 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 
 		}
 		int32 TotalOptionalDataSize = 0;
-		XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount };
+		XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount ,NumSamplerCount};
 
 		int32 ResoucrCountSize = static_cast<int32>(sizeof(XShaderResourceCount));
 		Output.ShaderCode.push_back(XShaderResourceCount::Key);
@@ -570,6 +570,18 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 				Output.ShaderParameterMap.MapNameToParameter[BindingEntry->name] = ParameterInfo;
 				//if (strncmp(ResourceDesc.Name, "cbView", 64) != 0)
 			}
+			else if(BindingEntry->resource_type == SPV_REFLECT_RESOURCE_FLAG_SRV)
+			{
+				NumSRVCount++;
+				ParameterInfo.Parametertype = EShaderParametertype::SRV;
+				Output.ShaderParameterMap.MapNameToParameter[BindingEntry->name] = ParameterInfo;
+			}
+			else if (BindingEntry->resource_type == SPV_REFLECT_RESOURCE_FLAG_SAMPLER)
+			{
+				NumSamplerCount++;
+				ParameterInfo.Parametertype = EShaderParametertype::Sampler;
+				Output.ShaderParameterMap.MapNameToParameter[BindingEntry->name] = ParameterInfo;
+			}
 			else
 			{
 				XASSERT_TEMP(false);
@@ -578,7 +590,7 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 	}
 
 	int32 TotalOptionalDataSize = 0;
-	XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount };
+	XShaderResourceCount ResourceCount = { NumSRVCount ,NumCBVCount ,NumUAVCount ,NumSamplerCount };
 
 	int32 ResoucrCountSize = static_cast<int32>(sizeof(XShaderResourceCount));
 	Output.ShaderCode.push_back(XShaderResourceCount::Key);

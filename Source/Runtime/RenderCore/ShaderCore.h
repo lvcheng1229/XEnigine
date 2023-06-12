@@ -73,6 +73,7 @@ struct XShaderResourceCount
 	uint8 NumSRV;
 	uint8 NumCBV;
 	uint8 NumUAV;
+	uint8 NumSampler;
 };
 
 enum class EShaderParametertype
