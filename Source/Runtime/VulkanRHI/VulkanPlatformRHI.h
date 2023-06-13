@@ -60,10 +60,7 @@ public:
 	std::shared_ptr<XRHIConstantBuffer> RHICreateConstantBuffer(uint32 size)override { XASSERT_TEMP(false); return nullptr; };
 
 	std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
-		bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data) override {
-		XASSERT_TEMP(false);
-		return nullptr;
-	};
+		bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data) override;
 
 	std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)override {

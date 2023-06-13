@@ -19,6 +19,8 @@ enum EVulkanAllocationMetaType : uint8
 	EVulkanAllocationMetaUnknown,
 	EVulkanAllocationMetaMultiBuffer,
 	EVulkanAllocationMetaBufferStaging,
+	EVulkanAllocationMetaImageRenderTarget,
+	EVulkanAllocationMetaImageOther,
 	EVulkanAllocationMetaSize,
 };
 
@@ -227,6 +229,12 @@ public:
 		VkMemoryPropertyFlags MemoryPropertyFlags,
 		EVulkanAllocationMetaType MetaType);
 
+	bool AllocateImageMemory(
+		XVulkanAllocation& Allocation, 
+		XVulkanEvictable* AllocationOwner, 
+		const VkMemoryRequirements& MemoryReqs,
+		VkMemoryPropertyFlags MemoryPropertyFlags, 
+		EVulkanAllocationMetaType MetaType);
 
 	inline XVulkanSubresourceAllocator* GetSubresourceAllocator(const uint32 AllocatorIndex)
 	{

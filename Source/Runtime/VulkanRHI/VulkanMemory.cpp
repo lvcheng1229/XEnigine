@@ -360,6 +360,14 @@ void XMemoryManager::AllocateBufferPooled(XVulkanAllocation& OutAllocation, XVul
 	XASSERT(Result = true);
 }
 
+bool XMemoryManager::AllocateImageMemory(XVulkanAllocation& Allocation, XVulkanEvictable* AllocationOwner, const VkMemoryRequirements& MemoryReqs, VkMemoryPropertyFlags MemoryPropertyFlags, EVulkanAllocationMetaType MetaType)
+{
+	uint32 TypeIndex = 0;
+	VkResult Result = DeviceMemoryManager->GetMemoryTypeFromProperties(MemoryReqs.memoryTypeBits, MemoryPropertyFlags, &TypeIndex);
+	bool bMapped = VKHasAllFlags(MemoryPropertyFlags, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	return ResourceTypeHeaps[TypeIndex]->AllocateResource(Allocation, AllocationOwner, EType::Image, MemoryReqs.size, MemoryReqs.alignment, MetaType, bMapped);
+}
+
 bool XMemoryManager::AllocateBufferMemory(XVulkanAllocation& OutAllocation, XVulkanEvictable* AllocationOwner, const VkMemoryRequirements& MemoryReqs, VkMemoryPropertyFlags MemoryPropertyFlags, EVulkanAllocationMetaType MetaType)
 {
 	uint32 TypeIndex = 0;

@@ -40,7 +40,8 @@ public:
 	XVulkanSurface(XVulkanDevice* Device, EPixelFormat Format, uint32 Width , uint32 Height ,VkImageViewType	InViewType);
 	
 	// Constructor for externally owned Image
-	XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat , uint32 Width, uint32 Height, VkImageViewType	ViewType ,VkImage InImage);
+	XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat, uint32 Width, uint32 Height, VkImageViewType	ViewType ,VkImage InImage);
+	XVulkanSurface(XVulkanEvictable* Owner, XVulkanDevice* InDevice, EPixelFormat InFormat, uint32 Width, uint32 Height, VkImageViewType	InViewType, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData);
 
 	inline VkImageViewType GetViewType() const { return ViewType; }
 
@@ -53,17 +54,19 @@ public:
 	uint32 Width;
 	uint32 Height;
 
+	VkMemoryRequirements MemoryRequirements;
 private:
+	XVulkanAllocation Allocation;
 	VkImageViewType	ViewType;
 };
 
-class XVulkanTextureBase
+class XVulkanTextureBase :public XVulkanEvictable
 {
 public:
 	XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, VkImageViewType	InViewType);
 	XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, VkImageViewType	InViewType, VkImage InImage);
 
-
+	XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, VkImageViewType	InViewType, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData);
 
 	XVulkanSurface Surface;
 };
@@ -73,6 +76,8 @@ class XVulkanTexture2D : public XRHITexture2D, public XVulkanTextureBase
 public:
 	XVulkanTexture2D(XVulkanDevice* Device, EPixelFormat Forma, uint32 Width, uint32 Height, VkImageViewType	InViewType);
 	XVulkanTexture2D(XVulkanDevice* Device, EPixelFormat Forma, uint32 Width, uint32 Height, VkImageViewType	InViewType, VkImage InImage);
+	
+	XVulkanTexture2D(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData);
 
 	virtual void* GetTextureBaseRHI()
 	{
