@@ -12,6 +12,28 @@ struct XPendingBufferLock
 	EResourceLockMode LockMode;
 };
 
+inline VkFormat ToVkTextureFormat(EPixelFormat UEFormat, const bool bIsSRGB)
+{
+	VkFormat Format = (VkFormat)GPixelFormats[(int)UEFormat].PlatformFormat;
+	if (bIsSRGB)
+	{
+		switch (Format)
+		{
+		case VK_FORMAT_B8G8R8A8_UNORM:				Format = VK_FORMAT_B8G8R8A8_SRGB; break;
+		case VK_FORMAT_A8B8G8R8_UNORM_PACK32:		Format = VK_FORMAT_A8B8G8R8_SRGB_PACK32; break;
+		case VK_FORMAT_R8G8_UNORM:					Format = VK_FORMAT_R8G8_SRGB; break;
+		case VK_FORMAT_R8G8B8_UNORM:				Format = VK_FORMAT_R8G8B8_SRGB; break;
+		case VK_FORMAT_R8G8B8A8_UNORM:				Format = VK_FORMAT_R8G8B8A8_SRGB; break;
+		default:	
+			XASSERT(false);
+			break;
+		}
+	}
+
+	return Format;
+}
+
+
 template<typename BitsType>
 constexpr bool VKHasAllFlags(VkFlags Flags, BitsType Contains)
 {

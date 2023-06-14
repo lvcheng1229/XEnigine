@@ -20,7 +20,7 @@ std::shared_ptr<XRHIConstantBuffer> XD3D12PlatformRHI::RHICreateConstantBuffer(u
 }
 
 std::shared_ptr<XRHITexture2D> XD3D12PlatformRHI::RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
-	bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
+	bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data,uint32 Size)
 {
 	return std::shared_ptr<XRHITexture2D>(AbsDevice->CreateD3D12Texture2D(AbsDevice->GetDirectContex(0)->GetCmdList(), width, height, SizeZ, bTextureArray, bCubeTexture, Format, flag, NumMipsIn, tex_data));
 }

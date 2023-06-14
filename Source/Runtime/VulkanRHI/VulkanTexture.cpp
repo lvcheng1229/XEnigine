@@ -1,6 +1,9 @@
 #include "VulkanResource.h"
 #include "VulkanPlatformRHI.h"
 #include "VulkanDevice.h"
+#include "VulkanRHIPrivate.h"
+#include "VulkanContext.h"
+#include "VulkanCommandBuffer.h"
 
 XVulkanSurface::XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat, uint32 InWidth, uint32 InHeight, VkImageViewType	InViewType)
 	: Device(InDevice)
@@ -23,14 +26,14 @@ XVulkanSurface::XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat, u
 	ViewFormat = VkFormat(GPixelFormats[(int)PixelFormat].PlatformFormat);
 }
 
-XVulkanSurface::XVulkanSurface(XVulkanEvictable* Owner, XVulkanDevice* InDevice, EPixelFormat InFormat, uint32 Width, uint32 Height, VkImageViewType InViewType, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData)
+XVulkanSurface::XVulkanSurface(XVulkanEvictable* Owner, XVulkanDevice* InDevice, EPixelFormat InFormat, uint32 Width, uint32 Height, VkImageViewType InViewType, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData, uint32 DataSize)
 	: Device(InDevice)
 	, PixelFormat(InFormat)
 	, ViewType(InViewType)
 	, Width(Width)
 	, Height(Height)
 {
-	ViewFormat = VkFormat(GPixelFormats[(int)PixelFormat].PlatformFormat);
+	ViewFormat = ToVkTextureFormat(InFormat, ((Flag & ETextureCreateFlags::TexCreate_SRGB) != 0));
 	VkImageType ImageType;
 	switch (InViewType)
 	{
@@ -91,6 +94,15 @@ XVulkanSurface::XVulkanSurface(XVulkanEvictable* Owner, XVulkanDevice* InDevice,
 	Device->GetMemoryManager().AllocateImageMemory(Allocation, Owner, MemoryRequirements, MemoryFlags, MetaType);
 }
 
+void XVulkanSurface::InternalLockWrite(XVulkanCommandListContext* Context, XVulkanSurface* Surface, const VkBufferImageCopy& Region, XStagingBuffer* StagingBuffer)
+{
+	XVulkanCmdBuffer* Cmd = Context->GetCommandBufferManager()->GetActiveCmdBuffer();
+	VkCommandBuffer CmdBuffer = Cmd->GetHandle();
+
+}
+
+
+
 XVulkanTextureBase::XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, VkImageViewType	InViewType)
 	:Surface(Device,Format, Width, Height, InViewType)
 {
@@ -103,9 +115,37 @@ XVulkanTextureBase::XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Forma
 	
 }
 
-XVulkanTextureBase::XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, VkImageViewType InViewType, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData)
-	:Surface(Device, Format, Width, Height, VK_IMAGE_VIEW_TYPE_2D, Flag, NumMipsIn, TexData)
+XVulkanTextureBase::XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, VkImageViewType InViewType, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData, uint32 DataSize)
+	:Surface(this, Device, Format, Width, Height, VK_IMAGE_VIEW_TYPE_2D, Flag, NumMipsIn, TexData, DataSize)
 {
+	DefaultView.Create(Device, Surface.Image, VK_IMAGE_VIEW_TYPE_2D, Surface.ViewFormat);
+
+	if (TexData == nullptr)
+	{
+		return;
+	}
+
+	XStagingBuffer* StagingBuffer = Device->GetStagingManager().AcquireBuffer(DataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+	void* Data = StagingBuffer->GetMappedPointer();
+	memcpy(Data, TexData, DataSize);
+	//CreateInfo.BulkData->Discard();
+
+	VkBufferImageCopy Region{};
+	Region.bufferOffset = 0;
+	Region.bufferRowLength = Surface.Width;
+	Region.bufferImageHeight = Surface.Height;
+
+	Region.imageSubresource.mipLevel = 0;
+	Region.imageSubresource.baseArrayLayer = 0;
+	Region.imageSubresource.layerCount = 1;
+	Region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+	Region.imageExtent.width = Region.bufferRowLength;
+	Region.imageExtent.height = Region.bufferImageHeight;
+	Region.imageExtent.depth = 1;
+
+	XVulkanSurface::InternalLockWrite(Device->GetGfxContex(), &Surface, Region, StagingBuffer);
+
 }
 
 XVulkanTexture2D::XVulkanTexture2D(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, VkImageViewType	InViewType)
@@ -121,13 +161,13 @@ XVulkanTexture2D::XVulkanTexture2D(XVulkanDevice* Device, EPixelFormat Format, u
 {
 }
 
-XVulkanTexture2D::XVulkanTexture2D(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData)
+XVulkanTexture2D::XVulkanTexture2D(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData, uint32 DataSize)
 	: XRHITexture2D(Format)
-	, XVulkanTextureBase(Device, Format, Width, Height, VK_IMAGE_VIEW_TYPE_2D, Flag, NumMipsIn, TexData)
+	, XVulkanTextureBase(Device, Format, Width, Height, VK_IMAGE_VIEW_TYPE_2D, Flag, NumMipsIn, TexData, DataSize)
 {
 }
 
-std::shared_ptr<XRHITexture2D> XVulkanPlatformRHI::RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
+std::shared_ptr<XRHITexture2D> XVulkanPlatformRHI::RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data, uint32 Size = 0)
 {
 	return std::make_shared<XVulkanTexture2D>();
 }

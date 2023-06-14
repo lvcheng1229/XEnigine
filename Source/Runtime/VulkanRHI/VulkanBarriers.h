@@ -57,3 +57,10 @@ private:
 	std::map<uint32, XVulkanRenderPass*>RenderPasses;
 	std::map<uint32, XFramebufferList*> Framebuffers;
 };
+
+struct XVulkanPipelineBarrier
+{
+	XVulkanPipelineBarrier() {}
+	void AddImageLayoutTransition(VkImage Image, VkImageAspectFlags AspectMask, const struct XVulkanImageLayout& SrcLayout, const struct XVulkanImageLayout& DstLayout);
+	void Execute(VkCommandBuffer CmdBuffer);
+};
