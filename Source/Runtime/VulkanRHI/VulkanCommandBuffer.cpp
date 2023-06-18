@@ -8,8 +8,10 @@
 XVulkanCmdBuffer::XVulkanCmdBuffer(XVulkanDevice* InDevice, XVulkanCommandBufferPool* InCommandBufferPool)
 	: Device(InDevice)
 	, CmdBufferPool(InCommandBufferPool)
+	, State(EState::NotAllocated)
 {
 	AllocMemory();
+	Fence = Device->GetFenceManager().AllocateFence();
 }
 
 void XVulkanCmdBuffer::AllocMemory()
@@ -21,6 +23,8 @@ void XVulkanCmdBuffer::AllocMemory()
 	allocInfo.commandBufferCount = 1;
 
 	VULKAN_VARIFY(vkAllocateCommandBuffers(Device->GetVkDevice(), &allocInfo, &CommandBufferHandle));
+
+	State = EState::ReadyForBegin;
 }
 
 void XVulkanCmdBuffer::BeginRenderPass(const XVulkanRenderTargetLayout* Layout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer)
@@ -49,6 +53,39 @@ bool XVulkanCmdBuffer::AcquirePoolSetAndDescriptorsIfNeeded(const XVulkanDescrip
 	return false;
 }
 
+void XVulkanCmdBuffer::RefreshFenceStatus()
+{
+	if (State == EState::Submitted)
+	{
+		XFenceManager* FenceMgr = Fence->GetOwner();
+		if (FenceMgr->IsFenceSignaled(Fence))
+		{
+			Fence->GetOwner()->ResetFence(Fence);
+			State = EState::NeedReset;
+		}
+	}
+}
+
+void XVulkanCmdBuffer::Begin()
+{
+	if (State == EState::NeedReset)
+	{
+		vkResetCommandBuffer(CommandBufferHandle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+	}
+	State = EState::IsInsideBegin;
+
+	VkCommandBufferBeginInfo CmdBufBeginInfo = {};
+	CmdBufBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	CmdBufBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	vkBeginCommandBuffer(CommandBufferHandle, &CmdBufBeginInfo);
+}
+
+void XVulkanCmdBuffer::End()
+{
+	VULKAN_VARIFY(vkEndCommandBuffer(GetHandle()));
+	State = EState::HasEnded;
+}
+
 void XVulkanCmdBuffer::AcquirePoolSetContainer()
 {
 	CurrentDescriptorPoolSetContainer = &Device->GetDescriptorPoolsManager()->AcquirePoolSetContainer();
@@ -57,6 +94,7 @@ void XVulkanCmdBuffer::AcquirePoolSetContainer()
 XVulkanCommandBufferPool::XVulkanCommandBufferPool(XVulkanDevice* InDevice, XVulkanCommandBufferManager* InVulkanCommandBufferManager)
 	: Device(InDevice)
 	, CmdBufferManager(InVulkanCommandBufferManager)
+
 {
 }
 
@@ -103,15 +141,87 @@ VkCommandPool XVulkanCommandBufferPool::GetVkPool()
 	return CmdPool;
 }
 
+void XVulkanCommandBufferPool::RefreshFenceStatus(XVulkanCmdBuffer* SkipCmdBuffer)
+{
+	for (int32 Index = 0; Index < CmdBuffers.size(); ++Index)
+	{
+		XVulkanCmdBuffer* CmdBuffer = CmdBuffers[Index];
+		if (CmdBuffer != SkipCmdBuffer)
+		{
+			CmdBuffer->RefreshFenceStatus();
+		}
+	}
+}
+
 XVulkanCommandBufferManager::XVulkanCommandBufferManager(XVulkanDevice* InDevice, XVulkanCommandListContext* InContext)
 	: Device(InDevice)
 	, Context(InContext)
 	, Pool(InDevice, this)
 	, Queue(InContext->GetQueue())
+	, UploadCmdBuffer(nullptr)
 {
 
 	Pool.Create(Queue->GetFamilyIndex());
 	ActiveCmdBuffer = Pool.CreateCmdBuffer();
+}
+
+XVulkanCmdBuffer* XVulkanCommandBufferManager::GetUploadCmdBuffer()
+{
+	if (!UploadCmdBuffer)
+	{
+		for (int32 Index = 0; Index < Pool.CmdBuffers.size(); ++Index)
+		{
+			XVulkanCmdBuffer* CmdBuffer = Pool.CmdBuffers[Index];
+			CmdBuffer->RefreshFenceStatus();
+			if (CmdBuffer->State == XVulkanCmdBuffer::EState::ReadyForBegin || CmdBuffer->State == XVulkanCmdBuffer::EState::NeedReset)
+			{
+				UploadCmdBuffer = CmdBuffer;
+				UploadCmdBuffer->Begin();
+				return UploadCmdBuffer;
+			}
+		}
+		UploadCmdBuffer = Pool.CreateCmdBuffer();
+		UploadCmdBuffer->Begin();
+	}
+	return UploadCmdBuffer;
+}
+
+void XVulkanCommandBufferManager::SubmitUploadCmdBuffer(uint32 NumSignalSemaphores, VkSemaphore* SignalSemaphores)
+{
+	if (!UploadCmdBuffer->IsSubmitted() && UploadCmdBuffer->HasBegun())
+	{
+		UploadCmdBuffer->End();
+		Queue->Submit(UploadCmdBuffer, NumSignalSemaphores, SignalSemaphores);
+	}
+	UploadCmdBuffer = nullptr;
+}
+
+void XVulkanCommandBufferManager::SubmitActiveCmdBuffer(std::vector<XSemaphore*> SignalSemaphores)
+{
+	std::vector<VkSemaphore> SemaphoreHandles;
+	SemaphoreHandles.reserve(SignalSemaphores.size() + 1);
+	for (XSemaphore* Semaphore : SignalSemaphores)
+	{
+		SemaphoreHandles.push_back(Semaphore->GetHandle());
+	}
+
+	if (!ActiveCmdBuffer->IsSubmitted() && ActiveCmdBuffer->HasBegun())
+	{
+		if (!ActiveCmdBuffer->IsOutsideRenderPass())
+		{
+			ActiveCmdBuffer->EndRenderPass();
+		}
+
+		ActiveCmdBuffer->End();
+		Queue->Submit(ActiveCmdBuffer, SemaphoreHandles.size(), SemaphoreHandles.data());
+	}
+
+	ActiveCmdBuffer = nullptr;
+	if (ActiveCmdBufferSemaphore != nullptr)
+	{
+		delete ActiveCmdBufferSemaphore;
+		ActiveCmdBufferSemaphore = nullptr;
+	}
 }
 
 

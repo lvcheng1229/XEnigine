@@ -135,6 +135,12 @@ void XVulkanAllocation::BindBuffer(XVulkanDevice* Device, VkBuffer Buffer)
 	VkResult Result = vkBindBufferMemory(Device->GetVkDevice(), Buffer, MemoryHandle, Offset);
 }
 
+void XVulkanAllocation::BindImage(XVulkanDevice* Device, VkImage Image)
+{
+	VkDeviceMemory MemoryHandle = GetDeviceMemoryHandle(Device);
+	VULKAN_VARIFY(vkBindImageMemory(Device->GetVkDevice(), Image, MemoryHandle, Offset));
+}
+
 VkDeviceMemory XVulkanAllocation::GetDeviceMemoryHandle(XVulkanDevice* Device) const
 {
 	XVulkanSubresourceAllocator* Allocator = GetSubresourceAllocator(Device);
@@ -306,6 +312,7 @@ void XMemoryManager::Init()
 	const uint32 TypeBits = (1 << MemoryProperties.memoryTypeCount) - 1;
 	ResourceTypeHeaps.resize(MemoryProperties.memoryTypeCount);
 
+	// Upload heap
 	{
 		uint32 TypeIndex;
 		VULKAN_VARIFY(DeviceMemoryManager->GetMemoryTypeFromProperties(TypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &TypeIndex));
@@ -316,6 +323,26 @@ void XMemoryManager::Init()
 		XVulkanPageSizeBucket Bucket1 = { UINT64_MAX, 0, XVulkanPageSizeBucket::BUCKET_MASK_IMAGE | XVulkanPageSizeBucket::BUCKET_MASK_BUFFER };
 		Buckets.push_back(Bucket0);
 		Buckets.push_back(Bucket1);
+	}
+
+	//Main Heap
+	{
+		uint32 Index;
+		VULKAN_VARIFY(DeviceMemoryManager->GetMemoryTypeFromProperties(TypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &Index));
+
+		for (Index = 0; Index < MemoryProperties.memoryTypeCount; ++Index)
+		{
+			if (!ResourceTypeHeaps[Index])
+			{
+				ResourceTypeHeaps[Index] = new XVulkanResourceHeap(this, Index);
+				auto& PageSizeBuckets = ResourceTypeHeaps[Index]->PageSizeBuckets;
+
+				XVulkanPageSizeBucket BucketImage = { UINT64_MAX, (uint32)ANDROID_MAX_HEAP_IMAGE_PAGE_SIZE, XVulkanPageSizeBucket::BUCKET_MASK_IMAGE };
+				XVulkanPageSizeBucket BucketBuffer = { UINT64_MAX, (uint32)ANDROID_MAX_HEAP_BUFFER_PAGE_SIZE, XVulkanPageSizeBucket::BUCKET_MASK_BUFFER };
+				PageSizeBuckets.push_back(BucketImage);
+				PageSizeBuckets.push_back(BucketBuffer);
+			}
+		}
 	}
 }
 
@@ -426,4 +453,95 @@ XStagingBuffer* XStagingManager::AcquireBuffer(uint32 Size, VkBufferUsageFlags I
 	StagingBuffer->Allocation.BindBuffer(Device, StagingBuffer->Buffer);
 	UsedStagingBuffers.push_back(StagingBuffer);
 	return StagingBuffer;
+}
+
+XSemaphore::XSemaphore(XVulkanDevice* InDevice)
+	:Device(InDevice),
+	SemaphoreHandle(VK_NULL_HANDLE),
+	bExternallyOwned(false)
+{
+	VkSemaphoreCreateInfo CreateInfo = {};
+	CreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	VULKAN_VARIFY(vkCreateSemaphore(Device->GetVkDevice(), &CreateInfo, nullptr, &SemaphoreHandle));
+}
+
+XSemaphore::XSemaphore(XVulkanDevice* InDevice, const VkSemaphore& InExternalSemaphore)
+	:Device(InDevice), 
+	SemaphoreHandle(InExternalSemaphore),
+	bExternallyOwned(true)
+{
+
+}
+
+XFenceManager::~XFenceManager()
+{
+	for (auto iter = FreeFences.begin(); iter != FreeFences.end(); iter++)
+	{
+		if (*iter)
+			delete* iter;
+	}
+	for (auto iter = UsedFences.begin(); iter != UsedFences.end(); iter++)
+	{
+		if (*iter)
+			delete* iter;
+	}
+}
+
+XFence* XFenceManager::AllocateFence(bool bCreateSignaled)
+{
+	if (FreeFences.size() != 0)
+	{
+		XFence* Fence = FreeFences[0];
+		FreeFences.erase(FreeFences.begin());
+		UsedFences.push_back(Fence);
+
+		if (bCreateSignaled)
+		{
+			Fence->State = XFence::EState::Signaled;
+		}
+		return Fence;
+	}
+
+	XFence* NewFence = new XFence(Device, this, bCreateSignaled);
+	UsedFences.push_back(NewFence);
+	return NewFence;
+}
+
+void XFenceManager::ResetFence(XFence* Fence)
+{
+	if (Fence->State != XFence::EState::NotReady)
+	{
+		vkResetFences(Device->GetVkDevice(), 1, &Fence->Handle);
+		Fence->State = XFence::EState::NotReady;
+	}
+}
+
+bool XFenceManager::CheckFenceState(XFence* Fence)
+{
+	VkResult Result = vkGetFenceStatus(Device->GetVkDevice(), Fence->Handle);
+	switch (Result)
+	{
+	case VK_SUCCESS:
+		Fence->State = XFence::EState::Signaled;
+		return true;
+
+	case VK_NOT_READY:
+		break;
+
+	default:
+		XASSERT(false);
+		break;
+	}
+
+	return false;
+}
+
+XFence::XFence(XVulkanDevice* InDevice, XFenceManager* InOwner, bool bCreateSignaled)
+	: State(bCreateSignaled ? XFence::EState::Signaled : XFence::EState::NotReady)
+	, Owner(InOwner)
+{
+	VkFenceCreateInfo Info = {};
+	Info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	Info.flags = bCreateSignaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
+	VULKAN_VARIFY(vkCreateFence(InDevice->GetVkDevice(), &Info, nullptr, &Handle));
 }

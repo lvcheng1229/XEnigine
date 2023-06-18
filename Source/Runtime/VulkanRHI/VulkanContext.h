@@ -54,6 +54,13 @@ public:
 	XVulkanQueue* GetQueue() { return Queue; }
 	XVulkanRenderPass* PrepareRenderPassForPSOCreation(const XGraphicsPSOInitializer& Initializer);
 	XVulkanCommandBufferManager* GetCommandBufferManager() { return CmdBufferManager; }
+
+	inline XVulkanLayoutManager& GetLayoutManager()
+	{
+		return GlobalLayoutManager;
+	}
+
+	
 private:
 	
 
@@ -63,6 +70,9 @@ private:
 	XVulkanDevice* Device;
 	XVulkanQueue* Queue;
 	XVulkanCommandBufferManager* CmdBufferManager;
+
+
+	
 
 	class XVulkanPendingGfxState* PendingGfxState;
 	static XVulkanLayoutManager GlobalLayoutManager;

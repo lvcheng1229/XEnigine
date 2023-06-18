@@ -92,13 +92,33 @@ XVulkanSurface::XVulkanSurface(XVulkanEvictable* Owner, XVulkanDevice* InDevice,
 	VkMemoryPropertyFlags MemoryFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	EVulkanAllocationMetaType MetaType = (bRenderTarget || bUAV) ? EVulkanAllocationMetaImageRenderTarget : EVulkanAllocationMetaImageOther;
 	Device->GetMemoryManager().AllocateImageMemory(Allocation, Owner, MemoryRequirements, MemoryFlags, MetaType);
+	Allocation.BindImage(Device, Image);
 }
 
 void XVulkanSurface::InternalLockWrite(XVulkanCommandListContext* Context, XVulkanSurface* Surface, const VkBufferImageCopy& Region, XStagingBuffer* StagingBuffer)
 {
-	XVulkanCmdBuffer* Cmd = Context->GetCommandBufferManager()->GetActiveCmdBuffer();
+	XVulkanCmdBuffer* Cmd = Context->GetCommandBufferManager()->GetUploadCmdBuffer();
 	VkCommandBuffer CmdBuffer = Cmd->GetHandle();
 
+	XVulkanImageLayout& TrackedTextureLayout = Context->GetLayoutManager().GetOrAddFullLayout(Surface, VK_IMAGE_LAYOUT_UNDEFINED);
+	XVulkanImageLayout TransferTextureLayout = TrackedTextureLayout;
+	TransferTextureLayout.Set(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	{
+		XVulkanPipelineBarrier Barrier;
+		Barrier.AddImageLayoutTransition(Surface->Image, Region.imageSubresource.aspectMask, TrackedTextureLayout, TransferTextureLayout);
+		Barrier.Execute(CmdBuffer);
+	}
+	vkCmdCopyBufferToImage(CmdBuffer, StagingBuffer->Buffer, Surface->Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &Region);
+
+	TrackedTextureLayout.Set(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	{
+		XVulkanPipelineBarrier Barrier;
+		Barrier.AddImageLayoutTransition(Surface->Image, Region.imageSubresource.aspectMask, TransferTextureLayout, TrackedTextureLayout);
+		Barrier.Execute(CmdBuffer);
+	}
+
+	//Surface->Device->GetStagingManager().ReleaseBuffer(CmdBuffer, StagingBuffer);
+	Context->GetCommandBufferManager()->SubmitUploadCmdBuffer();
 }
 
 
@@ -167,7 +187,7 @@ XVulkanTexture2D::XVulkanTexture2D(XVulkanDevice* Device, EPixelFormat Format, u
 {
 }
 
-std::shared_ptr<XRHITexture2D> XVulkanPlatformRHI::RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data, uint32 Size = 0)
+std::shared_ptr<XRHITexture2D> XVulkanPlatformRHI::RHICreateTexture2D2(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data, uint32 Size)
 {
-	return std::make_shared<XVulkanTexture2D>();
+	return std::make_shared<XVulkanTexture2D>(Device, Format, width, height, flag, NumMipsIn, tex_data, Size);
 }

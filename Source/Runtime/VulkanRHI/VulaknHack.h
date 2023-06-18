@@ -19,5 +19,7 @@ public:
 	VkPipeline GetVkPipeline();
 	VkPipelineLayout GetVkPipelineLayout();
 	VkDescriptorSetLayout GetVkDescriptorSetLayout();
+
+	VkImageView GetTexView(XRHITexture2D* Tex);
 };
 ;

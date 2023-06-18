@@ -12,6 +12,7 @@ XVulkanDevice::XVulkanDevice(XVulkanPlatformRHI* InRHI, VkPhysicalDevice InGpu)
     , GfxQueue(nullptr)
     , PresentQueue(nullptr)
     , MemoryManager(this, &DeviceMemoryManager)
+    , FenceManager(this)
 {
     PipelineStateCache = new XVulkanPipelineStateCacheManager(this);
 }

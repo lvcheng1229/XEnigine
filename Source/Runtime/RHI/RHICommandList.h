@@ -280,6 +280,13 @@ inline std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 he
 	return GPlatformRHI->RHICreateTexture2D(width, height, SizeZ, bTextureArray, bCubeTexture, Format, flag, NumMipsIn, tex_data);
 }
 
+inline std::shared_ptr<XRHITexture2D> RHICreateTexture2D2(uint32 width, uint32 height, uint32 SizeZ,
+	bool bTextureArray, bool bCubeTexture, EPixelFormat Format,
+	ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data, uint32 Size)
+{
+	return GPlatformRHI->RHICreateTexture2D2(width, height, SizeZ, bTextureArray, bCubeTexture, Format, flag, NumMipsIn, tex_data, Size);
+}
+
 inline std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 	ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)
 {

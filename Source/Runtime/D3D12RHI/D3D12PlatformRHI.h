@@ -53,6 +53,13 @@ public:
 	std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
 		bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data, uint32 Size = 0) override;
 
+	std::shared_ptr<XRHITexture2D> RHICreateTexture2D2(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray,
+		bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data, uint32 Size = 0) override
+	{
+		XASSERT(false);
+		return nullptr;
+	}
+
 	std::shared_ptr<XRHITexture3D> RHICreateTexture3D(uint32 width, uint32 height, uint32 SizeZ, EPixelFormat Format,
 		ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data)override;
 

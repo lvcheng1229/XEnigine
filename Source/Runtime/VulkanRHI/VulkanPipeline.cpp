@@ -147,6 +147,10 @@ VkDescriptorSetLayout VkHack::GetVkDescriptorSetLayout()
 {
     return descriptorSetLayout;
 }
+VkImageView VkHack::GetTexView(XRHITexture2D* Tex)
+{
+    return static_cast<XVulkanTexture2D*>(Tex)->DefaultView.View;
+}
 VkPipelineLayout VkHack::GetVkPipelineLayout()
 {
     return pipelineLayout;

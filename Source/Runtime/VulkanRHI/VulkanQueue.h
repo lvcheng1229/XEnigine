@@ -1,5 +1,6 @@
 #pragma once
 class XVulkanDevice;
+class XVulkanCmdBuffer;
 class XVulkanQueue
 {
 public:
@@ -10,6 +11,7 @@ public:
 		return Queue;
 	};
 
+	void Submit(XVulkanCmdBuffer* CmdBuffer, uint32 NumSignalSemaphores = 0, VkSemaphore* SignalSemaphores = nullptr);
 private:
 	friend class VkHack;
 

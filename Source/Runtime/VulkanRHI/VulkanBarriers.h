@@ -6,7 +6,7 @@ class XVulkanRenderTargetLayout;
 class XVulkanCmdBuffer;
 class XVulkanCommandListContext;
 class XVulkanTextureView;
-
+class XVulkanSurface;
 class XVulkanFramebuffer
 {
 public:
@@ -28,6 +28,20 @@ private:
 	std::vector<XVulkanTextureView> VulkanTextureViews;
 };
 
+struct XVulkanImageLayout
+{
+	XVulkanImageLayout() {}
+	XVulkanImageLayout(VkImageLayout MainLayoutIn) :MainLayout(MainLayoutIn) {}
+	
+	VkImageLayout MainLayout;
+	std::vector<VkImageLayout>SubresLayouts;
+	bool AreAllSubresourcesSameLayout() const
+	{
+		return SubresLayouts.size() == 0;
+	}
+	void Set(VkImageLayout Layout);
+};
+
 class XVulkanLayoutManager
 {
 public:
@@ -47,9 +61,13 @@ public:
 	void BeginRenderPass(XVulkanCmdBuffer* CmdBuffer, const XVulkanRenderTargetLayout* RTLayout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer);
 
 	XVulkanRenderPass* GetOrCreateRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout);
+
+	XVulkanImageLayout& GetOrAddFullLayout(const XVulkanSurface* Surface, VkImageLayout LayoutIfNotFound);
+
 private:
 	friend class VkHack;
 
+	std::map<VkImage, XVulkanImageLayout> Layouts;
 	struct XFramebufferList
 	{
 		std::vector<XVulkanFramebuffer*> Framebuffer;
@@ -60,7 +78,23 @@ private:
 
 struct XVulkanPipelineBarrier
 {
-	XVulkanPipelineBarrier() {}
+	XVulkanPipelineBarrier() : SrcStageMask(0), DstStageMask(0),bHasMemoryBarrier(false)
+	{
+		mMemoryBarrier = {};
+		mMemoryBarrier.sType= VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	}
 	void AddImageLayoutTransition(VkImage Image, VkImageAspectFlags AspectMask, const struct XVulkanImageLayout& SrcLayout, const struct XVulkanImageLayout& DstLayout);
+	void AddImageLayoutTransition(VkImage Image, VkImageAspectFlags AspectMask, VkImageLayout SrcLayout, const XVulkanImageLayout& DstLayout);
+	void AddImageLayoutTransition(VkImage Image, VkImageAspectFlags AspectMask, const XVulkanImageLayout& SrcLayout, VkImageLayout DstLayout);
+	void AddImageLayoutTransition(VkImage Image, VkImageLayout SrcLayout, VkImageLayout DstLayout, const VkImageSubresourceRange& SubresourceRange);
+
+	static VkImageSubresourceRange MakeSubresourceRange(VkImageAspectFlags AspectMask, uint32 FirstMip = 0, uint32 NumMips = VK_REMAINING_MIP_LEVELS, uint32 FirstLayer = 0, uint32 NumLayers = VK_REMAINING_ARRAY_LAYERS);
+
+	bool bHasMemoryBarrier;
+	std::vector<VkImageMemoryBarrier>ImageBarriers;
+
+	VkMemoryBarrier mMemoryBarrier;
+	VkPipelineStageFlags SrcStageMask, DstStageMask;
+
 	void Execute(VkCommandBuffer CmdBuffer);
 };

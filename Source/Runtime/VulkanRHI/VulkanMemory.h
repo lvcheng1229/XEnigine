@@ -5,6 +5,7 @@
 class XMemoryManager;
 class XVulkanDevice;
 class XVulkanSubresourceAllocator;
+class XFenceManager;
 
 enum EVulkanAllocationType : uint8 {
 	EVulkanAllocationEmpty,
@@ -34,6 +35,110 @@ enum class EType
 class XVulkanEvictable
 {
 
+};
+
+class XFence
+{
+public:
+	XFence(XVulkanDevice* InDevice, XFenceManager* InOwner, bool bCreateSignaled);
+
+	inline VkFence GetHandle() const
+	{
+		return Handle;
+	}
+
+	inline bool IsSignaled() const
+	{
+		return State == EState::Signaled;
+	}
+
+	XFenceManager* GetOwner()
+	{
+		return Owner;
+	}
+
+protected:
+	VkFence Handle;
+
+	enum class EState
+	{
+		// Initial state
+		NotReady,
+
+		// After GPU processed it
+		Signaled,
+	};
+
+	EState State;
+
+	XFenceManager* Owner;
+
+	// Only owner can delete!
+	~XFence()
+	{
+	}
+	friend class XFenceManager;
+};
+
+class XFenceManager
+{
+public:
+	XFenceManager()
+		: Device(nullptr)
+	{
+	}
+
+	XFenceManager(XVulkanDevice* InDevice)
+		: Device(InDevice)
+	{
+	}
+
+	~XFenceManager();
+
+	XFence* AllocateFence(bool bCreateSignaled = false);
+
+	inline bool IsFenceSignaled(XFence* Fence)
+	{
+		if (Fence->IsSignaled())
+		{
+			return true;
+		}
+
+		return CheckFenceState(Fence);
+	}
+
+	void ResetFence(XFence* Fence);
+protected:
+	bool CheckFenceState(XFence* Fence);
+	XVulkanDevice* Device;
+
+	std::vector<XFence*> FreeFences;
+	std::vector<XFence*> UsedFences;
+};
+class XSemaphore
+{
+public:
+	XSemaphore(XVulkanDevice* InDevice);
+	XSemaphore(XVulkanDevice* InDevice, const VkSemaphore& InExternalSemaphore);
+	virtual ~XSemaphore()
+	{
+
+	}
+
+	inline VkSemaphore GetHandle() const
+	{
+		return SemaphoreHandle;
+	}
+
+	inline bool IsExternallyOwned() const
+	{
+		return bExternallyOwned;
+	}
+
+private:
+	XVulkanDevice* Device;
+	VkSemaphore SemaphoreHandle;
+	bool bExternallyOwned;
 };
 
 class XDeviceMemoryAllocation
@@ -113,6 +218,7 @@ public:
 	void* GetMappedPointer(XVulkanDevice* Device);
 
 	void BindBuffer(XVulkanDevice* Device, VkBuffer Buffer);
+	void BindImage(XVulkanDevice* Device, VkImage Image);
 	VkDeviceMemory GetDeviceMemoryHandle(XVulkanDevice* Device) const;
 	//void* Lock(EResourceLockMode LockMode, uint32 Size, uint32 Offset);
 	//void Unlock();

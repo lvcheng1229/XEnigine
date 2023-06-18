@@ -25,7 +25,6 @@ inline VkFormat ToVkTextureFormat(EPixelFormat UEFormat, const bool bIsSRGB)
 		case VK_FORMAT_R8G8B8_UNORM:				Format = VK_FORMAT_R8G8B8_SRGB; break;
 		case VK_FORMAT_R8G8B8A8_UNORM:				Format = VK_FORMAT_R8G8B8A8_SRGB; break;
 		default:	
-			XASSERT(false);
 			break;
 		}
 	}

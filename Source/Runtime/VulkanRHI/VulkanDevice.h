@@ -37,6 +37,11 @@ public:
 
 	XVulkanDescriptorPoolsManager* GetDescriptorPoolsManager(){return DescriptorPoolsManager;}
 
+	inline XFenceManager& GetFenceManager()
+	{
+		return FenceManager;
+	}
+
 	class XVulkanPipelineStateCacheManager* PipelineStateCache;
 private:
 	friend class VkHack;
@@ -53,6 +58,7 @@ private:
 	XVulkanCommandListContext* GfxContext;
 	XVulkanShaderFactory ShaderFactory;
 
+	XFenceManager FenceManager;
 	XMemoryManager MemoryManager;
 	XDeviceMemoryManager DeviceMemoryManager;
 
