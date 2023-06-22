@@ -5,6 +5,39 @@
 #include "VulkanContext.h"
 #include "VulkanCommandBuffer.h"
 
+void XVulkanSurface::SetInitialImageState(XVulkanCommandListContext& Context, VkImageLayout InitialLayout, bool bClear)
+{
+	XVulkanCmdBuffer* CmdBuffer = Context.GetCommandBufferManager()->GetUploadCmdBuffer();
+
+	VkImageSubresourceRange SubresourceRange = XVulkanPipelineBarrier::MakeSubresourceRange(FullAspectMask);
+
+	VkImageLayout CurrentLayout;
+	if (bClear)
+	{
+		VulkanSetImageLayout(CmdBuffer->GetHandle(), Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, SubresourceRange);
+		if (FullAspectMask == VK_IMAGE_ASPECT_COLOR_BIT)
+		{
+			VkClearColorValue Color = {};
+			vkCmdClearColorImage(CmdBuffer->GetHandle(), Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &Color, 1, &SubresourceRange);
+		}
+		else
+		{
+			VkClearDepthStencilValue Value = {};
+			vkCmdClearDepthStencilImage(CmdBuffer->GetHandle(), Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &Value, 1, &SubresourceRange);
+		}
+		CurrentLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	}
+	else
+	{
+		CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	}
+
+	if (InitialLayout != CurrentLayout && InitialLayout != VK_IMAGE_LAYOUT_UNDEFINED)
+	{
+		VulkanSetImageLayout(CmdBuffer->GetHandle(), Image, CurrentLayout, InitialLayout, SubresourceRange);
+	}
+}
+
 XVulkanSurface::XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat, uint32 InWidth, uint32 InHeight, VkImageViewType	InViewType)
 	: Device(InDevice)
 	, PixelFormat(InFormat)
@@ -33,6 +66,7 @@ XVulkanSurface::XVulkanSurface(XVulkanEvictable* Owner, XVulkanDevice* InDevice,
 	, Width(Width)
 	, Height(Height)
 {
+	FullAspectMask = GetAspectMaskFromFormat(InFormat, true, true);
 	ViewFormat = ToVkTextureFormat(InFormat, ((Flag & ETextureCreateFlags::TexCreate_SRGB) != 0));
 	VkImageType ImageType;
 	switch (InViewType)
@@ -61,23 +95,29 @@ XVulkanSurface::XVulkanSurface(XVulkanEvictable* Owner, XVulkanDevice* InDevice,
 	ImageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	ImageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 	
+	VkImageLayout InitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	if (((Flag & ETextureCreateFlags::TexCreate_RenderTargetable) != 0))
 	{
+		InitialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		ImageCreateInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	}
-
-	if (((Flag & ETextureCreateFlags::TexCreate_DepthStencilTargetable) != 0))
+	else if (((Flag & ETextureCreateFlags::TexCreate_DepthStencilTargetable) != 0))
 	{
+		InitialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		ImageCreateInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	}
-
-	if (((Flag & ETextureCreateFlags::TexCreate_UAV) != 0))
+	else if (((Flag & ETextureCreateFlags::TexCreate_UAV) != 0))
 	{
 		ImageCreateInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+	}
+	else
+	{
+		InitialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 	
 	ImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	ImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	//ImageCreateInfo.initialLayout = InitialLayout;
 
 	VULKAN_VARIFY(vkCreateImage(Device->GetVkDevice(), &ImageCreateInfo, nullptr, &Image));
 
@@ -93,6 +133,10 @@ XVulkanSurface::XVulkanSurface(XVulkanEvictable* Owner, XVulkanDevice* InDevice,
 	EVulkanAllocationMetaType MetaType = (bRenderTarget || bUAV) ? EVulkanAllocationMetaImageRenderTarget : EVulkanAllocationMetaImageOther;
 	Device->GetMemoryManager().AllocateImageMemory(Allocation, Owner, MemoryRequirements, MemoryFlags, MetaType);
 	Allocation.BindImage(Device, Image);
+
+	SetInitialImageState(*Device->GetGfxContex(), InitialLayout, false);
+	auto& Ret = InDevice->GetGfxContex()->GetLayoutManager().GetOrAddFullLayout(this, InitialLayout);
+	Ret.MainLayout = InitialLayout;
 }
 
 void XVulkanSurface::InternalLockWrite(XVulkanCommandListContext* Context, XVulkanSurface* Surface, const VkBufferImageCopy& Region, XStagingBuffer* StagingBuffer)
@@ -138,7 +182,7 @@ XVulkanTextureBase::XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Forma
 XVulkanTextureBase::XVulkanTextureBase(XVulkanDevice* Device, EPixelFormat Format, uint32 Width, uint32 Height, VkImageViewType InViewType, ETextureCreateFlags Flag, uint32 NumMipsIn, uint8* TexData, uint32 DataSize)
 	:Surface(this, Device, Format, Width, Height, VK_IMAGE_VIEW_TYPE_2D, Flag, NumMipsIn, TexData, DataSize)
 {
-	DefaultView.Create(Device, Surface.Image, VK_IMAGE_VIEW_TYPE_2D, Surface.ViewFormat);
+	DefaultView.Create(Device, Surface.Image, VK_IMAGE_VIEW_TYPE_2D, Surface.FullAspectMask, Surface.ViewFormat);
 
 	if (TexData == nullptr)
 	{

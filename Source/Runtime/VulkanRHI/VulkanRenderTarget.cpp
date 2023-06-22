@@ -10,8 +10,11 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(const XGraphicsPSOInitializ
 	RenderPassFullHash = 42;
 	RenderPassCompatibleHash = 42;
 	bool bSetExtent = false;
-	for (int32 Index = 0; Index < Initializer.RTNums; Index++)
+	int32 Index = 0;
+	for (; Index < Initializer.RTNums; Index++)
 	{
+		//PSO不需要LoadStore信息 RenderPass需要LS信息??
+
 		VkAttachmentDescription CurrDesc{};
 		CurrDesc.format = VkFormat(GPixelFormats[(int)Initializer.RT_Format[Index]].PlatformFormat);
 		XASSERT(CurrDesc.format == VK_FORMAT_B8G8R8A8_SRGB);
@@ -25,7 +28,7 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(const XGraphicsPSOInitializ
 
 		THashCombine(RenderPassFullHash, CurrDesc.loadOp);
 		THashCombine(RenderPassFullHash, CurrDesc.storeOp);
-		AttachCount++;
+		ColorAttachCount++;
 		THashCombine(RenderPassCompatibleHash, CurrDesc.format);
 		Desc[Index] = CurrDesc;
 	}
@@ -33,8 +36,26 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(const XGraphicsPSOInitializ
 	VkImageLayout DepthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	if (Initializer.DS_Format != EPixelFormat::FT_Unknown)
 	{
-		XASSERT(false);
-		AttachCount++;//Desc[MaxSimultaneousRenderTargets] = CurrDesc;
+		//RenderPass
+		//PSO不需要LoadStore信息 RenderPass需要LS信息??
+
+		//XASSERT(false);
+		VkAttachmentDescription CurrDesc{};
+		CurrDesc.format = VkFormat(GPixelFormats[(int)Initializer.DS_Format].PlatformFormat);
+		CurrDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+		CurrDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		CurrDesc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		CurrDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		CurrDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		CurrDesc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		CurrDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		Desc[Index] = CurrDesc;
+		THashCombine(RenderPassFullHash, CurrDesc.loadOp);
+		THashCombine(RenderPassFullHash, CurrDesc.storeOp);
+		THashCombine(RenderPassCompatibleHash, CurrDesc.format);
+		//ColorAttachCount++;
+		HashDS = true;
+	
 	}
 	THashCombine(RenderPassFullHash, RenderPassCompatibleHash);
 }
@@ -44,7 +65,8 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(XVulkanDevice& InDevice, co
 	RenderPassFullHash = 42;
 	RenderPassCompatibleHash = 42;
 	bool bSetExtent = false;
-	for (int32 Index = 0; Index < MaxSimultaneousRenderTargets; Index++)
+	int32 Index = 0;
+	for (;Index < MaxSimultaneousRenderTargets; Index++)
 	{
 		if (RPInfo.RenderTargets[Index].RenderTarget == nullptr)
 		{
@@ -78,25 +100,35 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(XVulkanDevice& InDevice, co
 		//CurrDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		XASSERT_TEMP(false);
-		CurrDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //VK_IMAGE_LAYOUT_UNDEFINED
+		CurrDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
 		CurrDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		THashCombine(RenderPassFullHash, CurrDesc.loadOp);
 		THashCombine(RenderPassFullHash, CurrDesc.storeOp);
 
-		AttachCount++;
+		ColorAttachCount++;
 
 		THashCombine(RenderPassCompatibleHash, CurrDesc.format);
 
 		Desc[Index] = CurrDesc;
 	}
 
-	VkImageLayout DepthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	if (RPInfo.DepthStencilRenderTarget.DepthStencilTarget)
 	{
-		XASSERT(false);
-		//Desc[MaxSimultaneousRenderTargets] = CurrDesc;
-		AttachCount++;
+		VkAttachmentDescription CurrDesc{};
+		CurrDesc.format = VkFormat(GPixelFormats[(int)RPInfo.DepthStencilRenderTarget.DepthStencilTarget->GetFormat()].PlatformFormat);
+		CurrDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+		CurrDesc.loadOp = RenderTargetLoadActionToVulkan(RPInfo.DepthStencilRenderTarget.LoadAction);
+		CurrDesc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		CurrDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		CurrDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		CurrDesc.initialLayout = CurrentDSLayout;
+		CurrDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		Desc[Index] = CurrDesc;
+		THashCombine(RenderPassFullHash, CurrDesc.loadOp);
+		THashCombine(RenderPassFullHash, CurrDesc.storeOp);
+		THashCombine(RenderPassCompatibleHash, CurrDesc.format);
+		HashDS = true;
 	}
 ;
 	THashCombine(RenderPassFullHash, RenderPassCompatibleHash);
@@ -111,7 +143,8 @@ void XVulkanCommandListContext::RHIBeginRenderPass(const XRHIRenderPassInfo& InI
 	XRHITexture* DSTexture = InInfo.DepthStencilRenderTarget.DepthStencilTarget;
 	if (DSTexture)
 	{
-		XASSERT(false);
+		XVulkanSurface& Surface = static_cast<XVulkanTexture2D*>(DSTexture)->Surface;
+		CurrentDSLayout = GlobalLayoutManager.GetFullLayout(&Surface).MainLayout;
 	}
 	else
 	{

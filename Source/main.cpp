@@ -64,7 +64,7 @@ public:
     virtual void InitRHI()override
     {
         XRHIVertexLayoutArray LayoutArray;
-        LayoutArray.push_back(XVertexElement(0, EVertexElementType::VET_Float2, 0, 0));
+        LayoutArray.push_back(XVertexElement(0, EVertexElementType::VET_Float3, 0, 0));
         LayoutArray.push_back(XVertexElement(1, EVertexElementType::VET_Float3, 0, 0 + sizeof(DirectX::XMFLOAT2)));
         LayoutArray.push_back(XVertexElement(2, EVertexElementType::VET_Float2, 0, 0 + sizeof(DirectX::XMFLOAT2) + sizeof(DirectX::XMFLOAT3)));
         RHIVertexLayout = RHICreateVertexLayout(LayoutArray);
@@ -79,11 +79,11 @@ TGlobalResource<XTestVertexLayout> GTestVtxLayout;
 
 struct XTestVertex
 {
-    XVector2 Position;
+    XVector3 Position;
     XVector3 Color;
     XVector2 TexCoord;
     struct XTestVertex
-    (XVector2 PositionIn, XVector3 ColorIn, XVector2 TexCoordIn)
+    (XVector3 PositionIn, XVector3 ColorIn, XVector2 TexCoordIn)
         :Position(PositionIn), Color(ColorIn), TexCoord(TexCoordIn){}
 };
 
@@ -93,10 +93,15 @@ public:
     void InitRHI()override
     {
         TResourceVector<XTestVertex>Vertices;
-        Vertices.PushBack(XTestVertex(XVector2(-0.5f, -0.5f), XVector3(1.0f, 0.0f, 0.0f), XVector2(1.0f, 0.0f)));
-        Vertices.PushBack(XTestVertex(XVector2(0.5f, -0.5f), XVector3(0.0f, 1.0f, 0.0f), XVector2(0.0f, 0.0f)));
-        Vertices.PushBack(XTestVertex(XVector2(0.5f, 0.5f), XVector3(0.0f, 0.0f, 1.0f), XVector2(0.0f, 1.0f)));
-        Vertices.PushBack(XTestVertex(XVector2(-0.5f, 0.5f), XVector3(1.0f, 1.0f, 1.0f), XVector2(1.0f, 1.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, -0.5f, 0.0f), XVector3(1.0f, 0.0f, 0.0f), XVector2(1.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, -0.5f, 0.0f), XVector3(0.0f, 1.0f, 0.0f), XVector2(0.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, 0.5f, 0.0f), XVector3(0.0f, 0.0f, 1.0f), XVector2(0.0f, 1.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, 0.5f, 0.0f), XVector3(1.0f, 1.0f, 1.0f), XVector2(1.0f, 1.0f)));
+
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, -0.5f, -0.5f), XVector3(1.0f, 0.0f, 0.0f), XVector2(1.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, -0.5f, -0.5f), XVector3(0.0f, 1.0f, 0.0f), XVector2(0.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, 0.5f, -0.5f), XVector3(0.0f, 0.0f, 1.0f), XVector2(0.0f, 1.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, 0.5f, -0.5f), XVector3(1.0f, 1.0f, 1.0f), XVector2(1.0f, 1.0f)));
 
         XRHIResourceCreateData CreateData(&Vertices);
         RHIVertexBuffer = RHIcreateVertexBuffer(sizeof(XTestVertex), 4 * sizeof(XTestVertex), EBufferUsage::BUF_Static, CreateData);
@@ -115,8 +120,16 @@ public:
         Indecies.PushBack(2);
         Indecies.PushBack(3);
         Indecies.PushBack(0);
+
+        Indecies.PushBack(4);
+        Indecies.PushBack(5);
+        Indecies.PushBack(6);
+        Indecies.PushBack(6);
+        Indecies.PushBack(7);
+        Indecies.PushBack(4);
+
         XRHIResourceCreateData CreateData(&Indecies);
-        RHIVertexBuffer = RHIcreateVertexBuffer(sizeof(uint16), 6 * sizeof(uint16), EBufferUsage::BUF_Static, CreateData);
+        RHIVertexBuffer = RHIcreateVertexBuffer(sizeof(uint16), 12 * sizeof(uint16), EBufferUsage::BUF_Static, CreateData);
     }
 };
 TGlobalResource<XTestVertexBuffer> GTestVertexRHI;
@@ -139,6 +152,7 @@ public:
 #if !USE_DX12
     VkHack mVkHack;
     std::shared_ptr<XRHITexture2D> RHITestTexture2D;
+    std::shared_ptr<XRHITexture2D> RHITestTexture2DDepth;
     
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -239,6 +253,7 @@ public:
         }
     }
 
+
    void createTextureImage()
    {
        int texWidth, texHeight, texChannels;
@@ -253,6 +268,10 @@ public:
            false, false, EPixelFormat::FT_R8G8B8A8_UNORM_SRGB, ETextureCreateFlags((uint32)TexCreate_ShaderResource | (uint32)TexCreate_SRGB), 1, pixels, imageSize);
 
        stbi_image_free(pixels);
+
+       RHITestTexture2DDepth = RHICreateTexture2D2(mVkHack.GetBkBufferExtent().width, mVkHack.GetBkBufferExtent().height, 1, false, false,
+           EPixelFormat::FT_R24G8_TYPELESS, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource)
+           , 1, nullptr, 0);
    }
    
 
@@ -406,14 +425,16 @@ public:
         if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
             throw std::runtime_error("failed to begin recording command buffer!");
         }
+
         XRHITexture* BackTex = RHIGetCurrentBackTexture();
-        XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, nullptr, EDepthStencilLoadAction::ENoAction);
+        
+        XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, RHITestTexture2DDepth.get(), EDepthStencilLoadAction::EClear);
         RHICmdList.RHIBeginRenderPass(RPInfos, "VulkanTestRP", sizeof("VulkanTestRP"));
         RHICmdList.CacheActiveRenderTargets(RPInfos);
 
         XGraphicsPSOInitializer GraphicsPSOInit;
         GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-        GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, ECompareFunction::CF_Always>::GetRHI();
+        GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<true, ECompareFunction::CF_Less>::GetRHI();
         GraphicsPSOInit.RasterState = TStaticRasterizationState<>::GetRHI();
 
         TShaderReference<XHLSL2SPIRVS> VertexShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRVS>();
@@ -457,7 +478,7 @@ public:
 
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mVkHack.GetVkPipelineLayout(), 0, 1, &descriptorSets[0], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, 6, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, 12, 1, 0, 0, 0);
         //vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);

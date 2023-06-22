@@ -17,7 +17,7 @@ XVulkanViewport::XVulkanViewport(EPixelFormat& InOutPixelFormat, XVulkanDevice* 
 	{
 		XASSERT_TEMP(false);
 
-		ImageViews[Index].Create(Device, swapChainImages[Index], VK_IMAGE_VIEW_TYPE_2D, VkFormat(GPixelFormats[(int32)InOutPixelFormat].PlatformFormat));
+		ImageViews[Index].Create(Device, swapChainImages[Index], VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, VkFormat(GPixelFormats[(int32)InOutPixelFormat].PlatformFormat));
 		std::shared_ptr<XVulkanTexture2D> BackTex2D =
 			std::make_shared<XVulkanTexture2D>(VulkanDevice, InOutPixelFormat, InSizeX, InSizeY, VK_IMAGE_VIEW_TYPE_2D, swapChainImages[Index]);
 		BackBufferTextures.push_back(BackTex2D);
@@ -54,12 +54,18 @@ XVulkanFramebuffer::XVulkanFramebuffer(XVulkanDevice* Device, const XRHISetRende
 			continue;
 		}
 
+		//TODO
 		XVulkanTextureBase* Texture = GetVulkanTextureFromRHITexture(RHITexture);
 		XVulkanTextureView VulkanTextureView;
-		VulkanTextureView.Create(Device, Texture->Surface.Image, Texture->Surface.GetViewType(), Texture->Surface.ViewFormat);
+		VulkanTextureView.Create(Device, Texture->Surface.Image, Texture->Surface.GetViewType(), VK_IMAGE_ASPECT_COLOR_BIT, Texture->Surface.ViewFormat);
 		VulkanTextureViews.push_back(VulkanTextureView);
 		AttachmentViews.push_back(VulkanTextureView.View);
 		ColorRenderTargetImages[Index] = Texture->Surface.Image;
+	}
+
+	if (InRTInfo->DepthStencilRenderTarget.Texture)
+	{
+		AttachmentViews.push_back(static_cast<XVulkanTexture2D*>(InRTInfo->DepthStencilRenderTarget.Texture)->DefaultView.View);
 	}
 	const VkExtent2D RTExtents = RTLayout->GetExtent2D();
 

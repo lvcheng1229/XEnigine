@@ -6,6 +6,12 @@
 #include "Runtime/Core/PixelFormat.h"
 #include "Runtime/Core/ResourceCreateDataInterface.h"
 
+template<typename Enum>
+constexpr bool EnumHasAnyFlags(Enum Flags, Enum Contains)
+{
+	return (((__underlying_type(Enum))Flags) & (__underlying_type(Enum))Contains) != 0;
+}
+
 struct FPixelFormatInfo
 {
 	const wchar_t* Name;

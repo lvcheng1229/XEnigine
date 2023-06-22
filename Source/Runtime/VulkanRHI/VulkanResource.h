@@ -18,12 +18,12 @@ struct XVulkanTextureView
 	{
 	}
 
-	void Create(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkFormat Format);
+	void Create(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkImageAspectFlags Aspect,VkFormat Format);
 	VkImageView View;
 	VkImage Image;
 	uint32 ViewId;
 private:
-	void CreateImpl(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkFormat Format);
+	void CreateImpl(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkImageAspectFlags Aspect, VkFormat Format);
 };
 
 class XVulkanVertexLayout :public XRHIVertexLayout
@@ -56,8 +56,11 @@ public:
 	uint32 Width;
 	uint32 Height;
 
+	VkImageAspectFlags FullAspectMask;
 	VkMemoryRequirements MemoryRequirements;
 private:
+	void SetInitialImageState(XVulkanCommandListContext& Context, VkImageLayout InitialLayout, bool bClear);
+
 	XVulkanAllocation Allocation;
 	VkImageViewType	ViewType;
 };

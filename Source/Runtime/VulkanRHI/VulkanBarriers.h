@@ -63,7 +63,7 @@ public:
 	XVulkanRenderPass* GetOrCreateRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout);
 
 	XVulkanImageLayout& GetOrAddFullLayout(const XVulkanSurface* Surface, VkImageLayout LayoutIfNotFound);
-
+	XVulkanImageLayout& GetFullLayout(const XVulkanSurface* Surface);
 private:
 	friend class VkHack;
 

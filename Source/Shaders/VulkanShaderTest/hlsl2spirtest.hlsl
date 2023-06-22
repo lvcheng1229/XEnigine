@@ -46,7 +46,7 @@
 #include "../Math.hlsl"
 struct VertexIn
 {
-    float2 PosIn        : ATTRIBUTE0;
+    float3 PosIn        : ATTRIBUTE0;
     float3 ColorIn      : ATTRIBUTE1;
     float2 inTexCoord   : ATTRIBUTE2;
 };
@@ -64,7 +64,7 @@ void VS(VertexIn vin,
     out float4 Position : SV_POSITION
 )
 {
-    float4 PosW = mul_x(float4(vin.PosIn,0.0,1.0), cbView_model);
+    float4 PosW = mul_x(float4(vin.PosIn,1.0), cbView_model);
     float4 PosV = mul_x(PosW, cbView_view);
     float4 PosC = mul_x(PosV, cbView_proj);
     Position = PosC;
@@ -86,7 +86,7 @@ void PS(
 ) 
 {
     //OutColor= texSampler.Sample(mySampler, fragTexCoord);
-    OutColor = texSampler.Sample(gsamPointWarp, fragTexCoord);
+    OutColor = texSampler.Sample(gsamPointWarp, fragTexCoord)*float4(fragColor,1.0);
     //OutColor = float4(fragColor,1.0);
 }
 //dxc G:\XEngineF\XEnigine\Source\Shaders\VulkanShaderTest\hlsl2spirtest.hlsl -E VS -T vs_6_1 -Zi -Qstrip_reflect -spirv -fspv-target-env=vulkan1.1

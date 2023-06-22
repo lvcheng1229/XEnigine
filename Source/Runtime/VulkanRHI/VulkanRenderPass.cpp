@@ -10,13 +10,13 @@
 //
 //    VkSubpassDescription subpass{};
 //    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-//    subpass.colorAttachmentCount = RTLayout->AttachCount;
-//    XASSERT(RTLayout->AttachCount <= 1);
+//    subpass.colorAttachmentCount = RTLayout->ColorAttachCount;
+//    XASSERT(RTLayout->ColorAttachCount <= 1);
 //    subpass.pColorAttachments = &colorAttachmentRef;
 //
 //    VkRenderPassCreateInfo renderPassInfo{};
 //    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-//    renderPassInfo.attachmentCount = RTLayout->AttachCount;
+//    renderPassInfo.attachmentCount = RTLayout->ColorAttachCount;
 //    renderPassInfo.pAttachments = RTLayout->GetAttachment();
 //    renderPassInfo.subpassCount = 1;
 //    renderPassInfo.pSubpasses = &subpass;
@@ -33,18 +33,37 @@ XVulkanRenderPass::XVulkanRenderPass(XVulkanDevice* InDevice, const XVulkanRende
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentReference depthAttachmentRef{};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = RTLayout->AttachCount;
-    XASSERT(RTLayout->AttachCount <= 1);
+    subpass.colorAttachmentCount = RTLayout->ColorAttachCount;
     subpass.pColorAttachments = &colorAttachmentRef;
+
+    if(RTLayout->HashDS)
+        subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = RTLayout->AttachCount;
+    renderPassInfo.attachmentCount = RTLayout->HashDS ? (RTLayout->ColorAttachCount + 1) : RTLayout->ColorAttachCount;
     renderPassInfo.pAttachments = RTLayout->GetAttachment();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+   
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    
 
     VULKAN_VARIFY(vkCreateRenderPass(InDevice->GetVkDevice(), &renderPassInfo, nullptr, &RenderPass));
 }

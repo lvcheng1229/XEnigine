@@ -40,6 +40,7 @@ enum class EResourceLockMode
 enum class ECompareFunction
 {
 	CF_Greater,
+	CF_Less,
 	CF_GreaterEqual,
 	CF_Always,
 };

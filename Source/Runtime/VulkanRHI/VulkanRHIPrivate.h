@@ -12,6 +12,8 @@ struct XPendingBufferLock
 	EResourceLockMode LockMode;
 };
 
+void VulkanSetImageLayout(VkCommandBuffer CmdBuffer, VkImage Image, VkImageLayout OldLayout, VkImageLayout NewLayout, const VkImageSubresourceRange& SubresourceRange);
+
 inline VkFormat ToVkTextureFormat(EPixelFormat UEFormat, const bool bIsSRGB)
 {
 	VkFormat Format = (VkFormat)GPixelFormats[(int)UEFormat].PlatformFormat;
@@ -48,6 +50,17 @@ private:
 	VkRenderPass	RenderPass;
 };
 
+static VkImageAspectFlags GetAspectMaskFromFormat(EPixelFormat Format, bool bIncludeStencil, bool bIncludeDepth = true)
+{
+	switch (Format)
+	{
+	case EPixelFormat::FT_R24G8_TYPELESS:
+		return (bIncludeDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (bIncludeStencil ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+	default:
+		return VK_IMAGE_ASPECT_COLOR_BIT;
+	}
+}
+
 static inline VkAttachmentLoadOp RenderTargetLoadActionToVulkan(ERenderTargetLoadAction InLoadAction)
 {
 	VkAttachmentLoadOp OutLoadAction = VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
@@ -61,6 +74,22 @@ static inline VkAttachmentLoadOp RenderTargetLoadActionToVulkan(ERenderTargetLoa
 		XASSERT(false); break;
 	}
 	
+	return OutLoadAction;
+}
+
+static inline VkAttachmentLoadOp RenderTargetLoadActionToVulkan(EDepthStencilLoadAction InLoadAction)
+{
+	VkAttachmentLoadOp OutLoadAction = VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
+
+	switch (InLoadAction)
+	{
+	case EDepthStencilLoadAction::ELoad:		OutLoadAction = VK_ATTACHMENT_LOAD_OP_LOAD;			break;
+	case EDepthStencilLoadAction::EClear:		OutLoadAction = VK_ATTACHMENT_LOAD_OP_CLEAR;		break;
+	case EDepthStencilLoadAction::ENoAction:	OutLoadAction = VK_ATTACHMENT_LOAD_OP_DONT_CARE;	break;
+	default:
+		XASSERT(false); break;
+	}
+
 	return OutLoadAction;
 }
 
@@ -83,6 +112,7 @@ static inline VkAttachmentStoreOp RenderTargetStoreActionToVulkan(ERenderTargetS
 	return OutStoreAction;
 }
 
+
 class XVulkanRenderTargetLayout
 {
 public:
@@ -92,11 +122,16 @@ public:
 	const uint32 GetRenderPassCompatibleHash()const { return RenderPassCompatibleHash; }
 	const VkAttachmentDescription* GetAttachment()const { return Desc; }
 	const VkExtent2D GetExtent2D() const { return Extent2D; }
-	uint32 AttachCount = 0;
+	uint32 ColorAttachCount = 0;
+
+	bool HashDS = false;
+
 private:
 	std::size_t RenderPassFullHash = 0;
 	std::size_t RenderPassCompatibleHash = 0;
 	VkAttachmentDescription Desc[MaxSimultaneousRenderTargets + 1];
+
+	
 
 	VkExtent2D Extent2D;
 };

@@ -35,9 +35,22 @@ void XVulkanCmdBuffer::BeginRenderPass(const XVulkanRenderTargetLayout* Layout, 
 	renderPassInfo.framebuffer = Framebuffer->GetFramebuffer();
 	renderPassInfo.renderArea = Framebuffer->GetRenderArea();
 	
+	std::vector<VkClearValue> clearValues;
+	{
+		VkClearValue ClearValue;
+		ClearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+		clearValues.push_back(ClearValue);
+	}
+	if (Layout->HashDS)
+	{
+		VkClearValue ClearValue;
+		ClearValue.depthStencil = { 1.0f, 0 };
+		clearValues.push_back(ClearValue);
+	}
+
 	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearColor;
+	renderPassInfo.clearValueCount = clearValues.size();
+	renderPassInfo.pClearValues = clearValues.data();
 
 	vkCmdBeginRenderPass(CommandBufferHandle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }

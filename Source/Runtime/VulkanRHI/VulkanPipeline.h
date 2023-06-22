@@ -9,13 +9,6 @@ class XVulkanRenderPass;
 
 struct XGfxPipelineDesc
 {
-	struct XDepthStencil
-	{
-		bool bEnableDepthWrite;
-		VkCompareOp DSCompareOp;
-	};
-	XDepthStencil DepthStencil;
-
 	struct XBlendAttachment
 	{
 		bool bBlendEnable;
@@ -28,6 +21,18 @@ struct XGfxPipelineDesc
 		void WriteInto(VkPipelineColorBlendAttachmentState& OutState) const;
 	};
 	std::vector<XBlendAttachment> ColorAttachmentStates;
+
+	int32 RTNums = 0;
+
+	struct XDepthStencil
+	{
+		uint8 DepthCompareOp;
+		bool bDepthTestEnable;
+		bool bDepthWriteEnable;
+		void WriteInto(VkPipelineDepthStencilStateCreateInfo& OutState) const;
+	};
+
+	XDepthStencil DepthStencil;
 
 	struct XVertexBinding
 	{

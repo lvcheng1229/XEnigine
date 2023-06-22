@@ -39,7 +39,7 @@ std::shared_ptr<XRHIGraphicsPSO> XVulkanPipelineStateCacheManager::RHICreateGrap
     {
         return  std::shared_ptr<XVulkanRHIGraphicsPipelineState>(iter->second);
     }
-
+    
     NewPSO = new XVulkanRHIGraphicsPipelineState(Device, PSOInit, Desc, Key);
     NewPSO->RenderPass = Device->GetGfxContex()->PrepareRenderPassForPSOCreation(PSOInit);
 
@@ -65,8 +65,9 @@ void XVulkanPipelineStateCacheManager::CreateGfxEntry(const XGraphicsPSOInitiali
 
     //Depth Stencil State
     VkPipelineDepthStencilStateCreateInfo DSStateInfo = static_cast<XVulkanDepthStencilState*>(PSOInitializer.DepthStencilState)->DepthStencilState;
-    OutGfxEntry->DepthStencil.bEnableDepthWrite = DSStateInfo.depthWriteEnable;
-    OutGfxEntry->DepthStencil.DSCompareOp = DSStateInfo.depthCompareOp;
+    OutGfxEntry->DepthStencil.bDepthWriteEnable = DSStateInfo.depthWriteEnable;
+    OutGfxEntry->DepthStencil.bDepthTestEnable = DSStateInfo.depthTestEnable;
+    OutGfxEntry->DepthStencil.DepthCompareOp = DSStateInfo.depthCompareOp;
 
     //FinalizeBindings
     DescriptorSetLayoutInfo.FinalizeBindings_Gfx(
@@ -91,13 +92,14 @@ void XVulkanPipelineStateCacheManager::CreateGfxEntry(const XGraphicsPSOInitiali
         OutGfxEntry->ColorAttachmentStates.push_back(BlendAttachment);
     }
 
-    //
-    XVulkanRenderTargetLayout VulkanRenderTargetLayout(PSOInitializer);
-    XASSERT_TEMP(false);
-    for (int32 Index = 0; Index < MaxSimultaneousRenderTargets; Index++)
+
+    OutGfxEntry->RTNums = PSOInitializer.RTNums;
+
+    for (int32 Index = 0; Index < PSOInitializer.RTNums; Index++)
     {
-        OutGfxEntry->RenderTargets.RtFotmats[Index] = VulkanRenderTargetLayout.GetAttachment()[Index].format;
+        OutGfxEntry->RenderTargets.RtFotmats[Index] = VkFormat(GPixelFormats[(int)PSOInitializer.RT_Format[Index]].PlatformFormat);
     }
+    OutGfxEntry->RenderTargets.DsFotmats = VkFormat(GPixelFormats[(int)PSOInitializer.DS_Format].PlatformFormat);
 
     XVulkanVertexLayout* const VtxLayout = static_cast<XVulkanVertexLayout* const>(PSOInitializer.BoundShaderState.RHIVertexLayout);
     
@@ -194,7 +196,7 @@ void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGrap
     PipelineInfo.pStages = shaderStages;
     
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     VkVertexInputBindingDescription bindingDescription{};
     bindingDescription.binding = 0;
     bindingDescription.stride = PSO->Desc.VertexBinding.Stride;
@@ -261,14 +263,18 @@ void XVulkanPipelineStateCacheManager::CreateGfxPipelineFromEntry(XVulkanRHIGrap
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = PSO->Desc.ColorAttachmentStates.size();
+    colorBlending.logicOp = VK_LOGIC_OP_COPY; 
+    colorBlending.attachmentCount = PSO->Desc.RTNums;
     colorBlending.pAttachments = BlendStates;
     colorBlending.blendConstants[0] = 0.0f;
     colorBlending.blendConstants[1] = 0.0f;
     colorBlending.blendConstants[2] = 0.0f;
     colorBlending.blendConstants[3] = 0.0f;
     PipelineInfo.pColorBlendState = &colorBlending;
+
+    VkPipelineDepthStencilStateCreateInfo DepthStencilInfo{};
+    PSO->Desc.DepthStencil.WriteInto(DepthStencilInfo);
+    PipelineInfo.pDepthStencilState = &DepthStencilInfo;
 
     std::vector<VkDynamicState> dynamicStates = {
     VK_DYNAMIC_STATE_VIEWPORT,
@@ -370,4 +376,15 @@ void XGfxPipelineDesc::XBlendAttachment::WriteInto(VkPipelineColorBlendAttachmen
     Out.srcAlphaBlendFactor = (VkBlendFactor)SrcAlphaBlendFactor;
     Out.dstAlphaBlendFactor = (VkBlendFactor)DstAlphaBlendFactor;
     Out.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+}
+
+void XGfxPipelineDesc::XDepthStencil::WriteInto(VkPipelineDepthStencilStateCreateInfo& Out) const
+{
+    Out = {};
+    Out.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    Out.depthCompareOp = (VkCompareOp)DepthCompareOp;
+    Out.depthTestEnable = bDepthTestEnable;
+    Out.depthWriteEnable = bDepthWriteEnable;
+    Out.depthBoundsTestEnable = VK_FALSE;
+    Out.stencilTestEnable = VK_FALSE;
 }

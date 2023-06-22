@@ -8,6 +8,13 @@
 
 XVulkanLayoutManager XVulkanCommandListContext::GlobalLayoutManager;
 
+void VulkanSetImageLayout(VkCommandBuffer CmdBuffer, VkImage Image, VkImageLayout OldLayout, VkImageLayout NewLayout, const VkImageSubresourceRange& SubresourceRange)
+{
+	XVulkanPipelineBarrier Barrier;
+	Barrier.AddImageLayoutTransition(Image, OldLayout, NewLayout, SubresourceRange);
+	Barrier.Execute(CmdBuffer);
+}
+
 XVulkanLayoutManager::~XVulkanLayoutManager()
 {
 	for (auto iter = RenderPasses.begin(); iter != RenderPasses.end(); iter++)
@@ -73,6 +80,19 @@ XVulkanImageLayout& XVulkanLayoutManager::GetOrAddFullLayout(const XVulkanSurfac
 	}
 	Layouts[Surface->Image] = XVulkanImageLayout(LayoutIfNotFound);
 	return Layouts[Surface->Image];
+}
+
+XVulkanImageLayout& XVulkanLayoutManager::GetFullLayout(const XVulkanSurface* Surface)
+{
+	auto iter = Layouts.find(Surface->Image);
+	if (iter != Layouts.end())
+	{
+		return iter->second;
+	}
+	else
+	{
+		XASSERT(false);
+	}
 }
 
 
@@ -155,6 +175,12 @@ static VkPipelineStageFlags GetVkStageFlagsForLayout(VkImageLayout Layout)
 	case VK_IMAGE_LAYOUT_UNDEFINED:
 		Flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		break;
+	case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+		Flags = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		break;
+	case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+		Flags = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		break;
 	default:XASSERT(false);
 	}
 	return Flags;
@@ -176,6 +202,9 @@ static VkAccessFlags GetVkAccessMaskForLayout(VkImageLayout Layout)
 		break;
 	case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
 		Flags = VK_ACCESS_SHADER_READ_BIT;
+		break;
+	case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+		Flags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		break;
 	case VK_IMAGE_LAYOUT_GENERAL:
 	case VK_IMAGE_LAYOUT_UNDEFINED:

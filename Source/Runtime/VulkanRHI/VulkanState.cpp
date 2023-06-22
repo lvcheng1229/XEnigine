@@ -60,6 +60,7 @@ static inline VkCompareOp CompareOpToVulkan(ECompareFunction InOp)
 	switch (InOp)
 	{
 	case ECompareFunction::CF_Greater:		return VK_COMPARE_OP_GREATER;
+	case ECompareFunction::CF_Less:			return VK_COMPARE_OP_LESS;
 	case ECompareFunction::CF_GreaterEqual:	return VK_COMPARE_OP_GREATER_OR_EQUAL;
 	case ECompareFunction::CF_Always:		return VK_COMPARE_OP_ALWAYS;
 	default:
