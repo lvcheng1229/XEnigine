@@ -27,7 +27,7 @@ public:
 
 	//Create buffer
 	std::shared_ptr<XRHIBuffer>RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override;
-	std::shared_ptr<XRHIIndexBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override { XASSERT_TEMP(false); return nullptr; };
+	std::shared_ptr<XRHIBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override { XASSERT_TEMP(false); return nullptr; };
 	std::shared_ptr<XRHIStructBuffer>RHICreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override { XASSERT_TEMP(false); return nullptr; };
 	std::shared_ptr<XRHIUnorderedAcessView> RHICreateUnorderedAccessView(XRHIStructBuffer* StructuredBuffer, bool bUseUAVCounter, bool bAppendBuffer, uint64 CounterOffsetInBytes) final override { XASSERT_TEMP(false); return nullptr; };
 	std::shared_ptr<XRHIShaderResourceView> RHICreateShaderResourceView(XRHIStructBuffer* StructuredBuffer) final override { XASSERT_TEMP(false); return nullptr; };
@@ -80,8 +80,8 @@ public:
 	void* LockVertexBuffer(XRHIBuffer* VertexBuffer, uint32 Offset, uint32 SizeRHI)override{ XASSERT(false); return nullptr;}
 	void UnLockVertexBuffer(XRHIBuffer* VertexBuffer)override { XASSERT(false); };
 
-	void* LockIndexBuffer(XRHIIndexBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)override { XASSERT(false); return nullptr;};
-	void UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)override { XASSERT(false); };
+	void* LockIndexBuffer(XRHIBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)override { XASSERT(false); return nullptr;};
+	void UnLockIndexBuffer(XRHIBuffer* IndexBuffer)override { XASSERT(false); };
 
 	//Vulkan
 	static void GetInstanceLayersAndExtensions(std::vector<const ACHAR*>& OutLayer, std::vector<const ACHAR*>& OutExtension);

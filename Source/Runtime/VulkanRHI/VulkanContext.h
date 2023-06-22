@@ -8,6 +8,7 @@ class XVulkanCommandBufferManager;
 class XVulkanPlatformRHI;
 class XVulkanDevice;
 class XVulkanQueue;
+class XVulkanPendingGfxState;
 class XVulkanCommandListContext :public IRHIContext
 {
 public:
@@ -32,14 +33,14 @@ public:
 	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override { XASSERT(false) };
 
 	void RHIExecuteIndirect(XRHICommandSignature* RHICmdSig, uint32 CmdCount, XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset, XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset)override { XASSERT(false) };
-	void RHIDrawIndexedPrimitive(XRHIIndexBuffer* IndexBuffer, uint32 IndexCountPerInstance, uint32 InstanceCount, uint32 StartIndexLocation, uint32 BaseVertexLocation, uint32 StartInstanceLocation) final override { XASSERT(false) };
+	void RHIDrawIndexedPrimitive(XRHIBuffer* IndexBuffer, uint32 IndexCountPerInstance, uint32 InstanceCount, uint32 StartIndexLocation, uint32 BaseVertexLocation, uint32 StartInstanceLocation) final override;
 	void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) final override { XASSERT(false) };
 
-	//SetVB IB
-	void SetVertexBuffer(XRHIBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin) final override { XASSERT(false) };
+	//SetVB IB RHISetStreamSource
+	void SetVertexBuffer(XRHIBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin) final override;
 
 	//Misc
-	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)override { XASSERT(false) };
+	void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ);
 	void SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRenderTargetView* RTViews, const XRHIDepthStencilView* DSView)override { XASSERT(false) };
 
 	//DrawCall/DisPatch
@@ -60,7 +61,10 @@ public:
 		return GlobalLayoutManager;
 	}
 
-	
+	XVulkanPendingGfxState* GetPendingGfxState()
+	{
+		return PendingGfxState;
+	}
 private:
 	
 
@@ -71,9 +75,7 @@ private:
 	XVulkanQueue* Queue;
 	XVulkanCommandBufferManager* CmdBufferManager;
 
+	XVulkanPendingGfxState* PendingGfxState;
 
-	
-
-	class XVulkanPendingGfxState* PendingGfxState;
 	static XVulkanLayoutManager GlobalLayoutManager;
 };

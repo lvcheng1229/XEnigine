@@ -28,6 +28,7 @@ XVulkanDevice::~XVulkanDevice()
 void XVulkanDevice::InitGPU()
 {
     GfxContext = new XVulkanCommandListContext(RHI, this, GfxQueue);
+   
 }
 
 void XVulkanDevice::CreateDevice()

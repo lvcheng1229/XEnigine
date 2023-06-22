@@ -5,6 +5,7 @@
 
 #include "VulkanResource.h"
 #include "VulkanCommandBuffer.h"
+#include "VulkanPendingState.h"
 
 XVulkanLayoutManager XVulkanCommandListContext::GlobalLayoutManager;
 
@@ -55,6 +56,8 @@ XVulkanFramebuffer* XVulkanLayoutManager::GetOrCreateFramebuffer(XVulkanDevice* 
 void XVulkanLayoutManager::BeginRenderPass(XVulkanCmdBuffer* CmdBuffer, const XVulkanRenderTargetLayout* RTLayout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer)
 {
 	CmdBuffer->BeginRenderPass(RTLayout, RenderPass, Framebuffer);
+	const VkExtent2D& Extents = RTLayout->GetExtent2D();
+	GfxContex->GetPendingGfxState()->SetViewport(0, 0, 0, Extents.width, Extents.height, 1);
 }
 
 XVulkanRenderPass* XVulkanLayoutManager::GetOrCreateRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout)

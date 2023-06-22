@@ -72,13 +72,13 @@ public:
 	{
 		IndexBufferPtr = DataBufferIn;
 	}
-	inline std::shared_ptr<XRHIIndexBuffer> GetRHIIndexBuffer()const
+	inline std::shared_ptr<XRHIBuffer> GetRHIIndexBuffer()const
 	{
 		return RHIIndexBuffer;
 	}
 private:
 	std::shared_ptr<GDataBuffer> IndexBufferPtr;
-	std::shared_ptr<XRHIIndexBuffer> RHIIndexBuffer;
+	std::shared_ptr<XRHIBuffer> RHIIndexBuffer;
 };
 
 class GMeshData :public GObject
@@ -108,7 +108,7 @@ public:
 	inline std::shared_ptr<XRHIBuffer> GetRHIVertexBuffer()const { return MeshDataPtr->VertexBufferPtr->GetRHIVertexBuffer(); }
 
 	inline std::shared_ptr<GIndexBuffer> GetGIndexBuffer()const { return MeshDataPtr->IndexBufferPtr; }
-	inline std::shared_ptr<XRHIIndexBuffer> GetRHIIndexBuffer()const { return MeshDataPtr->IndexBufferPtr->GetRHIIndexBuffer(); }
+	inline std::shared_ptr<XRHIBuffer> GetRHIIndexBuffer()const { return MeshDataPtr->IndexBufferPtr->GetRHIIndexBuffer(); }
 	inline std::shared_ptr<GMaterialInstance>& GetMaterialInstance() { return MaterialInstancePtr; }
 
 	inline void SetMeshData(std::shared_ptr<GMeshData>MeshDataPtrIn) { MeshDataPtr = MeshDataPtrIn; }

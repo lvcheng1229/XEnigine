@@ -15,13 +15,13 @@ void* XD3D12PlatformRHI::LockVertexBuffer(XRHIBuffer* VertexBuffer, uint32 Offse
     return D3DVertexBuffer->ResourcePtr.GetMappedCPUResourcePtr();
 }
 
-void* XD3D12PlatformRHI::LockIndexBuffer(XRHIIndexBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)
+void* XD3D12PlatformRHI::LockIndexBuffer(XRHIBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)
 {
     XD3D12IndexBuffer* D3DIndexBuffer = static_cast<XD3D12IndexBuffer*>(IndexBuffer);
     return D3DIndexBuffer->ResourcePtr.GetMappedCPUResourcePtr();
 }
 
-void XD3D12PlatformRHI::UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)
+void XD3D12PlatformRHI::UnLockIndexBuffer(XRHIBuffer* IndexBuffer)
 {
 }
 

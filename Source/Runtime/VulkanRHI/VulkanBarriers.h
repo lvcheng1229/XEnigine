@@ -45,9 +45,14 @@ struct XVulkanImageLayout
 class XVulkanLayoutManager
 {
 public:
-	XVulkanLayoutManager()
+	XVulkanLayoutManager() 
 	{
 
+	}
+
+	void SetGfxContex(XVulkanCommandListContext* GfxCtx)
+	{
+		GfxContex = GfxCtx;
 	}
 
 	~XVulkanLayoutManager();
@@ -66,6 +71,8 @@ public:
 	XVulkanImageLayout& GetFullLayout(const XVulkanSurface* Surface);
 private:
 	friend class VkHack;
+
+	XVulkanCommandListContext* GfxContex;
 
 	std::map<VkImage, XVulkanImageLayout> Layouts;
 	struct XFramebufferList

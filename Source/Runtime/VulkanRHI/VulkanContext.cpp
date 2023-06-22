@@ -11,6 +11,7 @@ XVulkanCommandListContext::XVulkanCommandListContext(XVulkanPlatformRHI* InRHI, 
 	, Device(InDevice)
 	, Queue(InQueue)
 {
+	GlobalLayoutManager.SetGfxContex(this);
 	CmdBufferManager = new XVulkanCommandBufferManager(Device, this);
 	PendingGfxState = new XVulkanPendingGfxState();
 }

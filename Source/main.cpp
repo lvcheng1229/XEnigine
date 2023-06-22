@@ -447,27 +447,8 @@ public:
         RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
         SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
 
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = (float)mVkHack.GetBkBufferExtent().width;
-        viewport.height = (float)mVkHack.GetBkBufferExtent().height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        RHICmdList.SetVertexBuffer(GTestVertexRHI.RHIVertexBuffer.get(), 0, 0);
 
-        VkRect2D scissor{};
-        scissor.offset = { 0, 0 };
-        scissor.extent = mVkHack.GetBkBufferExtent();
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        XVulkanAllocation& TT = static_cast<XVulkanResourceMultiBuffer*>(GTestVertexRHI.RHIVertexBuffer.get())->Buffer;
-        VkBuffer vertexBuffers[] = { TT.VulkanHandle };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-        vkCmdBindIndexBuffer(commandBuffer, static_cast<XVulkanResourceMultiBuffer*>(GTestIndexRHI.RHIVertexBuffer.get())->Buffer.VulkanHandle, 0, VK_INDEX_TYPE_UINT16);
-       
         static bool bInitOnce = false;
         if (!bInitOnce)
         {
@@ -476,10 +457,8 @@ public:
             bInitOnce = true;
         }
 
-
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mVkHack.GetVkPipelineLayout(), 0, 1, &descriptorSets[0], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, 12, 1, 0, 0, 0);
-        //vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        RHICmdList.RHIDrawIndexedPrimitive(GTestIndexRHI.RHIVertexBuffer.get(), 12, 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 

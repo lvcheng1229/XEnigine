@@ -165,7 +165,7 @@ public:
 	}
 
 	inline void RHIDrawIndexedPrimitive(
-		XRHIIndexBuffer* IndexBuffer,
+		XRHIBuffer* IndexBuffer,
 		uint32 IndexCountPerInstance,
 		uint32 InstanceCount,
 		uint32 StartIndexLocation,
@@ -259,11 +259,11 @@ inline void UnLockVertexBuffer(XRHIBuffer* VertexBuffer)
 	return GPlatformRHI->UnLockVertexBuffer(VertexBuffer);
 }
 
-inline void* LockIndexBuffer(XRHIIndexBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)
+inline void* LockIndexBuffer(XRHIBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)
 {
 	return GPlatformRHI->LockIndexBuffer(IndexBuffer, Offset, SizeRHI);
 }
-inline void UnLockIndexBuffer(XRHIIndexBuffer* IndexBuffer)
+inline void UnLockIndexBuffer(XRHIBuffer* IndexBuffer)
 {
 	return GPlatformRHI->UnLockIndexBuffer(IndexBuffer);
 }
@@ -323,7 +323,7 @@ inline std::shared_ptr<XRHIStructBuffer>RHIcreateStructBuffer(uint32 Stride, uin
 	return GPlatformRHI->RHICreateStructBuffer(Stride, Size, Usage, ResourceData);
 }
 
-inline std::shared_ptr<XRHIIndexBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+inline std::shared_ptr<XRHIBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	return GPlatformRHI->RHICreateIndexBuffer(Stride, Size, Usage, ResourceData);
 }

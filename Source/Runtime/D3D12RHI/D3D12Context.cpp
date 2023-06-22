@@ -240,7 +240,7 @@ void XD3DDirectContex::RHIExecuteIndirect(XRHICommandSignature* RHICmdSig, uint3
 	cmd_dirrect_list.GetDXCmdList()->ExecuteIndirect(CmdSig, CmdCount, ArgRes, ArgumentBufferOffset, CounterRes, CountBufferOffset);
 }
 void XD3DDirectContex::RHIDrawIndexedPrimitive(
-	XRHIIndexBuffer* IndexBuffer,
+	XRHIBuffer* IndexBuffer,
 	uint32 IndexCountPerInstance,
 	uint32 InstanceCount,
 	uint32 StartIndexLocation,

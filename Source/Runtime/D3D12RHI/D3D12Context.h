@@ -39,7 +39,7 @@ public:
 	void RHISetComputePipelineState(XRHIComputePSO* ComputeState)override;
 	
 	void RHIExecuteIndirect(XRHICommandSignature* RHICmdSig, uint32 CmdCount,XRHIStructBuffer* ArgumentBuffer, uint64 ArgumentBufferOffset,XRHIStructBuffer* CountBuffer, uint64 CountBufferOffset)override;
-	void RHIDrawIndexedPrimitive(XRHIIndexBuffer* IndexBuffer,uint32 IndexCountPerInstance,uint32 InstanceCount,uint32 StartIndexLocation,uint32 BaseVertexLocation,uint32 StartInstanceLocation) final override;
+	void RHIDrawIndexedPrimitive(XRHIBuffer* IndexBuffer,uint32 IndexCountPerInstance,uint32 InstanceCount,uint32 StartIndexLocation,uint32 BaseVertexLocation,uint32 StartInstanceLocation) final override;
 	void RHIDispatchComputeShader(uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 ThreadGroupCountZ) final override;
 	
 	//SetVB IB

@@ -3,6 +3,13 @@
 #include "VulkanDevice.h"
 #include "VulkanPlatformRHI.h"
 #include "VulkanRHIPrivate.h"
+#include "VulkanContext.h"
+#include "VulkanPendingState.h"
+
+void XVulkanCommandListContext::RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ)
+{
+	PendingGfxState->SetViewport(MinX, MinY, MinZ, MaxX, MaxY, MaxZ);
+}
 
 XVulkanViewport::XVulkanViewport(EPixelFormat& InOutPixelFormat, XVulkanDevice* VulkanDevice, uint32 InSizeX, uint32 InSizeY, void* InWindowHandle, VkInstance InInstance)
 	: Device(VulkanDevice)

@@ -163,11 +163,11 @@ public:
 	XD3D12ResourcePtr_CPUGPU ResourcePtr;
 };
 
-class XD3D12IndexBuffer :public XRHIIndexBuffer
+class XD3D12IndexBuffer :public XRHIBuffer
 {
 public:
 	XD3D12IndexBuffer(uint32 StrideIn, uint32 SizeIn) :
-		XRHIIndexBuffer(StrideIn, SizeIn) {}
+		XRHIBuffer(StrideIn, SizeIn) {}
 
 	XD3D12ResourcePtr_CPUGPU ResourcePtr;
 };
