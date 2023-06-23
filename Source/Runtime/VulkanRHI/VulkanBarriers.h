@@ -69,6 +69,12 @@ public:
 
 	XVulkanImageLayout& GetOrAddFullLayout(const XVulkanSurface* Surface, VkImageLayout LayoutIfNotFound);
 	XVulkanImageLayout& GetFullLayout(const XVulkanSurface* Surface);
+
+	VkImageLayout FindLayout(VkImage Image) const
+	{
+		const XVulkanImageLayout& Layout = Layouts.find(Image)->second;
+		return Layout.MainLayout;
+	}
 private:
 	friend class VkHack;
 

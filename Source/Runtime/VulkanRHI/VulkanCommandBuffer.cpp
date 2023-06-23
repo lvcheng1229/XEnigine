@@ -53,6 +53,11 @@ void XVulkanCmdBuffer::BeginRenderPass(const XVulkanRenderTargetLayout* Layout, 
 	renderPassInfo.pClearValues = clearValues.data();
 
 	vkCmdBeginRenderPass(CommandBufferHandle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	if (CurrentDescriptorPoolSetContainer == nullptr)
+	{
+		AcquirePoolSetContainer();
+	}
 }
 
 bool XVulkanCmdBuffer::AcquirePoolSetAndDescriptorsIfNeeded(const XVulkanDescriptorSetsLayout* Layout, bool bNeedDescriptors, VkDescriptorSet* OutDescriptors)
@@ -62,6 +67,23 @@ bool XVulkanCmdBuffer::AcquirePoolSetAndDescriptorsIfNeeded(const XVulkanDescrip
 		AcquirePoolSetContainer();
 	}
 
+	uint32 Hash = Layout->GetHash();
+	auto iter = TypedDescriptorPoolSets.find(Hash);
+	XVulkanTypedDescriptorPoolSet* FoundTypedSet;
+	if (iter == TypedDescriptorPoolSets.end())
+	{
+		FoundTypedSet = CurrentDescriptorPoolSetContainer->AcquireTypedPoolSet(Layout);
+		bNeedDescriptors = true;
+	}
+	else
+	{
+		FoundTypedSet = iter->second;
+	}
+
+	if (bNeedDescriptors)
+	{
+		return FoundTypedSet->AllocateDescriptorSets(Layout, OutDescriptors);
+	}
 
 	return false;
 }

@@ -9,6 +9,9 @@ XVulkanDescriptorSetsLayout::XVulkanDescriptorSetsLayout(XVulkanDevice* InDevice
 void XVulkanDescriptorSetsLayout::Compile(XVulkanDescriptorSetLayoutMap& LayoutMap)
 {
 	//LayoutHandles.reserve(SetLayouts.size());
+	
+	//static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	
 	//for (XSetLayout& Layout : SetLayouts)
 	{
 		VkDescriptorSetLayout* DesSetLayoutPtr = &LayoutHandle;
@@ -30,4 +33,10 @@ void XVulkanDescriptorSetsLayout::Compile(XVulkanDescriptorSetLayoutMap& LayoutM
 
 		LayoutMap[LayoutHash] = *DesSetLayoutPtr;
 	}
+
+	DescriptorSetAllocateInfo = {};
+	DescriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	
+	DescriptorSetAllocateInfo.descriptorSetCount = 1;//static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	DescriptorSetAllocateInfo.pSetLayouts = &LayoutHandle;
 }

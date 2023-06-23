@@ -155,6 +155,7 @@ struct XRHICommandData
 };
 
 
+class XRHISamplerState {};
 class XRHIBlendState {};
 class XRHIDepthStencilState {};
 class XRHIRasterizationState {};

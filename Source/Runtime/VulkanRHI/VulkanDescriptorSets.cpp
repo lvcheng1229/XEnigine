@@ -15,6 +15,8 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
             uboLayoutBinding.pImmutableSamplers = nullptr;
             uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
             SetLayout.LayoutBindings.push_back(uboLayoutBinding);
+
+            LayoutTypes[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER]++;
         }
     }
 
@@ -30,6 +32,8 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
             uboLayoutBinding.pImmutableSamplers = nullptr;
             uboLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
             SetLayout.LayoutBindings.push_back(uboLayoutBinding);
+
+            LayoutTypes[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER]++;
         }
     }
 
@@ -47,6 +51,8 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
             textureLayoutBinding.pImmutableSamplers = nullptr;
             textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
             SetLayout.LayoutBindings.push_back(textureLayoutBinding);
+
+            LayoutTypes[VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE]++;
         }
     }
 
@@ -62,6 +68,8 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
             samplerBinding.pImmutableSamplers = nullptr;
             samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
             SetLayout.LayoutBindings.push_back(samplerBinding);
+
+            LayoutTypes[VK_DESCRIPTOR_TYPE_SAMPLER]++;
         }
     }
 
@@ -71,7 +79,18 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
 
 XVulkanDescriptorPoolSetContainer& XVulkanDescriptorPoolsManager::AcquirePoolSetContainer()
 {
-    // TODO: 在此处插入 return 语句
-    XVulkanDescriptorPoolSetContainer aa;
-    return aa;
+    for (int32 Index = 0; Index < PoolSets.size(); ++Index)
+    {
+        auto* PoolSet = PoolSets[Index];
+        if (PoolSet->IsUnused())
+        {
+            PoolSet->SetUsed(true);
+            return *PoolSet;
+        }
+    }
+
+    XVulkanDescriptorPoolSetContainer* PoolSet = new XVulkanDescriptorPoolSetContainer(Device);
+    PoolSets.push_back(PoolSet);
+    return *PoolSet;
 }
+

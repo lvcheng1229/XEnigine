@@ -88,3 +88,46 @@ std::shared_ptr<XRHIPixelShader> XVulkanPlatformRHI::RHICreatePixelShader(XArray
 	return std::shared_ptr<XVulkanPixelShader>(Device->GetVkShaderFactory()->CreateShader<XVulkanPixelShader>(Code, Device));
 }
 
+uint32 XVulkanDescriptorSetWriter::SetupDescriptorWrites(
+	const std::vector<VkDescriptorType>& Types, VkWriteDescriptorSet* InWriteDescriptors,
+	VkDescriptorImageInfo* InImageInfo, VkDescriptorBufferInfo* InBufferInfo,
+	const XVulkanSamplerState& DefaultSampler, const XVulkanTextureView& DefaultImageView)
+{
+	NumWrites = Types.size();
+
+	for (int32 Index = 0; Index < Types.size(); ++Index)
+	{
+		InWriteDescriptors->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		InWriteDescriptors->dstBinding = Index;
+		InWriteDescriptors->descriptorCount = 1;
+		InWriteDescriptors->descriptorType = Types[Index];
+
+		switch (Types[Index])
+		{
+		case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+		case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+			InWriteDescriptors->pBufferInfo = InBufferInfo++;
+			break;
+		case VK_DESCRIPTOR_TYPE_SAMPLER:
+		case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+		case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+		case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+		case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+			InImageInfo->sampler = DefaultSampler.Sampler;
+			InImageInfo->imageView = DefaultImageView.View;
+			InImageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+			InWriteDescriptors->pImageInfo = InImageInfo++;
+			break;
+		case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+		case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+			break;
+		default:
+			XASSERT(false);
+			break;
+		}
+		++InWriteDescriptors;
+	}
+
+
+	return uint32();
+}

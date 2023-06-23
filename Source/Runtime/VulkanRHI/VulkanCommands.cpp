@@ -4,6 +4,14 @@
 #include "VulkanCommandBuffer.h"
 #include "VulkanResource.h"
 
+void XVulkanCommandListContext::RHISetShaderTexture(EShaderType ShaderType, uint32 TextureIndex, XRHITexture* NewTextureRHI)
+{
+	XVulkanTextureBase* Texture = GetVulkanTextureFromRHITexture(NewTextureRHI);
+	VkImageLayout Layout = GlobalLayoutManager.FindLayout(Texture->Surface.Image);
+
+	PendingGfxState->SetTextureForStage(ShaderType, TextureIndex, Texture, Layout);
+}
+
 void XVulkanCommandListContext::SetVertexBuffer(XRHIBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
 {
 	XVulkanResourceMultiBuffer* VertexBuffer = static_cast<XVulkanResourceMultiBuffer*>(RHIVertexBuffer);

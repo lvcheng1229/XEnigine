@@ -1,10 +1,18 @@
 #pragma once
-#include "VulkanPipeline.h"
-#include "VulkanCommandBuffer.h"
+#include "VulkanPipelineState.h"
+#include <vector>
+
+
 
 class XVulkanPendingGfxState
 {
 public:
+	XVulkanPendingGfxState(XVulkanDevice* InDevice)
+		:Device(InDevice)
+	{
+
+	}
+
 	void SetGfxPipeline(XVulkanRHIGraphicsPipelineState* InGfxPipeline);
 	inline void Bind(VkCommandBuffer CmdBuffer)
 	{
@@ -49,7 +57,25 @@ public:
 		Scissor.extent.width = (uint32)(MaxX - MinX);
 		Scissor.extent.height = (uint32)(MaxY - MinY);
 	}
+
+	inline void SetTextureForStage(EShaderType ShaderType, uint32 ParameterIndex, const XVulkanTextureBase* TextureBase, VkImageLayout Layout)
+	{
+		const XVulkanGfxPipelineDescriptorInfo& DescriptorInfo = CurrentState->GetGfxPipelineDescriptorInfo();
+		uint8 DescriptorSet;
+		uint32 BindingIndex;
+		if (!DescriptorInfo.GetDescriptorSetAndBindingIndex(FVulkanShaderHeader::Global, ShaderType, ParameterIndex, DescriptorSet, BindingIndex))
+		{
+			return;
+		}
+
+		CurrentState->SetTexture(DescriptorSet, BindingIndex, TextureBase, Layout);
+	}
 private:
+
+	XVulkanRHIGraphicsPipelineState* CurrentPipeline;
+	XVulkanGraphicsPipelineDescriptorState* CurrentState;
+	std::map<XVulkanRHIGraphicsPipelineState*, XVulkanGraphicsPipelineDescriptorState*>PipelineStates;
+
 	struct XVertexStream
 	{
 		XVertexStream() :
@@ -62,11 +88,13 @@ private:
 		uint32 BufferOffset;
 	};
 
+	XVulkanDevice* Device;
+
 	XVertexStream PendingStreams[17];
 	bool bDirtyVertexStreams;
 
 	VkViewport Viewport;
 	VkRect2D Scissor;
 
-	XVulkanRHIGraphicsPipelineState* CurrentPipeline;
+	
 };

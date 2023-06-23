@@ -42,6 +42,16 @@ public:
 		return FenceManager;
 	}
 
+	inline const XVulkanSamplerState& GetDefaultSampler() const
+	{
+		return *DefaultSampler;
+	}
+
+	inline const XVulkanTextureView& GetDefaultImageView() const
+	{
+		return DefaultTextureView;
+	}
+
 	class XVulkanPipelineStateCacheManager* PipelineStateCache;
 private:
 	friend class VkHack;
@@ -65,4 +75,7 @@ private:
 	XStagingManager StagingManager;
 
 	XVulkanDescriptorPoolsManager* DescriptorPoolsManager = nullptr;
+
+	XVulkanSamplerState* DefaultSampler;
+	XVulkanTextureView DefaultTextureView;
 };

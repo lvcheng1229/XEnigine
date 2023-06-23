@@ -19,6 +19,7 @@ XApplication* XApplication::Application = nullptr;
 const int MAX_FRAMES_IN_FLIGHT = 1;
 #include "Runtime\RenderCore\GlobalShader.h"
 #include <chrono>
+#include <Runtime\RenderCore\ShaderParameter.h>
 
 class XHLSL2SPIRPS :public XGloablShader
 {
@@ -31,8 +32,20 @@ public:
     static ShaderInfos StaticShaderInfos;
     static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
 
-public:
-    XHLSL2SPIRPS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer) {}
+    XHLSL2SPIRPS(const XShaderInitlizer& Initializer)
+        :XGloablShader(Initializer)
+    {
+        TestTexture.Bind(Initializer.ShaderParameterMap, "texSampler");
+    }
+
+    void SetParameter(
+        XRHICommandList& RHICommandList,
+        XRHITexture* InTexture)
+    {
+        SetTextureParameter(RHICommandList, EShaderType::SV_Pixel, TestTexture, InTexture);
+    }
+
+    TextureParameterType    TestTexture;
 };
 
 class XHLSL2SPIRVS :public XGloablShader
@@ -45,8 +58,19 @@ public:
     static ShaderInfos StaticShaderInfos;
     static void ModifyShaderCompileSettings(XShaderCompileSetting& OutSettings) {}
 
-public:
-    XHLSL2SPIRVS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer) {}
+    XHLSL2SPIRVS(const XShaderInitlizer& Initializer) :XGloablShader(Initializer) 
+    {
+        cbView.Bind(Initializer.ShaderParameterMap, "cbView");
+    }
+
+    void SetParameter(
+        XRHICommandList& RHICommandList,
+        XRHIConstantBuffer* IncbView)
+    {
+        SetShaderConstantBufferParameter(RHICommandList, EShaderType::SV_Vertex, cbView, IncbView);
+    }
+
+    CBVParameterType cbView;
 };
 XHLSL2SPIRVS::ShaderInfos XHLSL2SPIRVS::StaticShaderInfos(
     "XHLSL2SPIRVS", GET_SHADER_PATH("VulkanShaderTest/hlsl2spirtest.hlsl"),

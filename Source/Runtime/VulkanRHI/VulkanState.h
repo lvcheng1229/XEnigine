@@ -3,6 +3,13 @@
 #include "Runtime\RHI\RHI.h"
 #include "Runtime\RHI\RHIResource.h"
 
+class XVulkanSamplerState : public XRHISamplerState
+{
+public:
+	VkSampler Sampler;
+	uint32 SamplerId;
+};
+
 class XVulkanBlendState : public XRHIBlendState
 {
 public:
