@@ -1,6 +1,7 @@
 #include "VulkanPendingState.h"
 #include "VulkanRHIPrivate.h"
 #include "VulkanDevice.h"
+#include "VulaknHack.h"
 
 XVulkanDescriptorPool::XVulkanDescriptorPool(XVulkanDevice* InDevice, const XVulkanDescriptorSetsLayout* InLayout, uint32 MaxSetsAllocations)
     : Device(InDevice)
@@ -9,25 +10,25 @@ XVulkanDescriptorPool::XVulkanDescriptorPool(XVulkanDevice* InDevice, const XVul
 {
     MaxDescriptorSets = MaxSetsAllocations;
 
-    VkDescriptorPoolSize Types[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT - VK_DESCRIPTOR_TYPE_SAMPLER + 1];
+    std::vector<VkDescriptorPoolSize>Types;
     for (uint32 TypeIndex = VK_DESCRIPTOR_TYPE_SAMPLER; TypeIndex <= VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT; ++TypeIndex)
     {
         VkDescriptorType DescriptorType = (VkDescriptorType)TypeIndex;
         uint32 NumTypesUsed = Layout->GetTypesUsed(DescriptorType);
         if (NumTypesUsed > 0)
         {
-            VkDescriptorPoolSize* Type = &Types[TypeIndex];
-            memset(Type, 0, sizeof(VkDescriptorPoolSize));
-            Type->type = DescriptorType;
-            Type->descriptorCount = NumTypesUsed * MaxSetsAllocations;
+            VkDescriptorPoolSize Type = {};
+            Type.type = DescriptorType;
+            Type.descriptorCount = NumTypesUsed * MaxSetsAllocations;
+            Types.push_back(Type);
         }
     }
 
 
     VkDescriptorPoolCreateInfo PoolInfo = {};
     PoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    PoolInfo.poolSizeCount = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT - VK_DESCRIPTOR_TYPE_SAMPLER + 1;
-    PoolInfo.pPoolSizes = Types;
+    PoolInfo.poolSizeCount = Types.size();
+    PoolInfo.pPoolSizes = Types.data();
     PoolInfo.maxSets = MaxDescriptorSets;
 
     VULKAN_VARIFY(vkCreateDescriptorPool(Device->GetVkDevice(), &PoolInfo, nullptr, &DescriptorPool));
@@ -41,7 +42,7 @@ bool XVulkanDescriptorPool::AllocateDescriptorSets(const VkDescriptorSetAllocate
     return VK_SUCCESS == vkAllocateDescriptorSets(Device->GetVkDevice(), &DescriptorSetAllocateInfo, OutSets);
 }
 
-XVulkanDescriptorPool* XVulkanTypedDescriptorPoolSet::PushNewPool()
+XVulkanDescriptorPool* XVulkanTypedDescriptorPoolArray::PushNewPool()
 {
     // Max number of descriptor sets layout allocations
     const uint32 MaxSetsAllocationsBase = 32;
@@ -56,7 +57,7 @@ XVulkanDescriptorPool* XVulkanTypedDescriptorPoolSet::PushNewPool()
 
 }
 
-XVulkanTypedDescriptorPoolSet::~XVulkanTypedDescriptorPoolSet()
+XVulkanTypedDescriptorPoolArray::~XVulkanTypedDescriptorPoolArray()
 {
     for (auto iter : PoolArray)
     {
@@ -64,7 +65,7 @@ XVulkanTypedDescriptorPoolSet::~XVulkanTypedDescriptorPoolSet()
     }
 }
 
-bool XVulkanTypedDescriptorPoolSet::AllocateDescriptorSets(const XVulkanDescriptorSetsLayout* Layout, VkDescriptorSet* OutSets)
+bool XVulkanTypedDescriptorPoolArray::AllocateDescriptorSets(const XVulkanDescriptorSetsLayout* Layout, VkDescriptorSet* OutSets)
 {
     const VkDescriptorSetLayout LayoutHandle = Layout->LayoutHandle;
 
@@ -96,14 +97,14 @@ XVulkanDescriptorPoolSetContainer::~XVulkanDescriptorPoolSetContainer()
     }
 }
 
-XVulkanTypedDescriptorPoolSet* XVulkanDescriptorPoolSetContainer::AcquireTypedPoolSet(const XVulkanDescriptorSetsLayout* Layout)
+XVulkanTypedDescriptorPoolArray* XVulkanDescriptorPoolSetContainer::AcquireTypedPoolArray(const XVulkanDescriptorSetsLayout* Layout)
 {
     const uint32 Hash = Layout->GetHash();
 
     auto iter = TypedDescriptorPools.find(Hash);
     if (iter == TypedDescriptorPools.end())
     {
-        XVulkanTypedDescriptorPoolSet* TypedPool = new XVulkanTypedDescriptorPoolSet(Device, Layout);
+        XVulkanTypedDescriptorPoolArray* TypedPool = new XVulkanTypedDescriptorPoolArray(Device, Layout);
         TypedDescriptorPools[Hash] = TypedPool;
         return TypedPool;
     }
@@ -140,23 +141,51 @@ void XVulkanPendingGfxState::PrepareForDraw(XVulkanCmdBuffer* CmdBuffer)
 {
     UpdateDynamicStates(CmdBuffer);
 
+   bool bHasDescriptorSets = CurrentState->UpdateDescriptorSets(nullptr, CmdBuffer);
+
+    if (bHasDescriptorSets)
+    {
+        CurrentState->BindDescriptorSets(CmdBuffer->GetHandle());
+    }
+
     //TODO:BindMultiVertexBuffer
     VkDeviceSize Offset = PendingStreams[0].BufferOffset;
     vkCmdBindVertexBuffers(CmdBuffer->GetHandle(), 0, 1, &PendingStreams[0].Stream, &Offset);
 }
 
+void XVulkanPendingGfxState::SetTextureForStage(EShaderType ShaderType, uint32 ParameterIndex, const XVulkanTextureBase* TextureBase, VkImageLayout Layout)
+{
+    CurrentState->SetTexture(0, ParameterIndex, TextureBase, Layout);
+}
 
 
 bool XVulkanGraphicsPipelineDescriptorState::UpdateDescriptorSets(XVulkanCommandListContext* CmdListContext, XVulkanCmdBuffer* CmdBuffer)
 {
+    const bool bNeedsWrite = bIsResourcesDirty || VkHack::TempMakeDirty();
+    if (bNeedsWrite == false)
+    {
+        return false;
+    }
+
     if (!CmdBuffer->AcquirePoolSetAndDescriptorsIfNeeded(DescriptorSetsLayout, true, &DescriptorSetHandle))
     {
         return false;
     }
+
+    DSWriter.SetDescriptorSet(DescriptorSetHandle);
+
+    vkUpdateDescriptorSets(Device->GetVkDevice(), DSWriteContainer.DescriptorWrites.size(), DSWriteContainer.DescriptorWrites.data(), 0, nullptr);
+    bIsResourcesDirty = false;
+    return true;
 }
 
 void XVulkanGraphicsPipelineDescriptorState::SetTexture(uint8 DescriptorSet, uint32 BindingIndex, const XVulkanTextureBase* TextureBase, VkImageLayout Layout)
 {
     // If the texture doesn't support sampling, then we read it through a UAV
-    MarkDirty(DSWriter[DescriptorSet].WriteImage(BindingIndex, TextureBase->DefaultView, Layout));
+    MarkDirty(DSWriter.WriteImage(BindingIndex, &TextureBase->DefaultView, Layout));
+}
+
+void XVulkanGraphicsPipelineDescriptorState::SetUniformBuffer(uint8 DescriptorSet, uint32 BindingIndex, const XVulkanConstantBuffer* UniformBuffer)
+{
+    MarkDirty(DSWriter.WriteDynamicUniformBuffer(BindingIndex, UniformBuffer->Allocation, UniformBuffer->GetOffset(),UniformBuffer->GetSize()));
 }

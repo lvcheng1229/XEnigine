@@ -21,5 +21,10 @@ public:
 	VkDescriptorSetLayout GetVkDescriptorSetLayout();
 
 	VkImageView GetTexView(XRHITexture2D* Tex);
+
+	static bool TempMakeDirty()
+	{
+		return true;
+	}
 };
 ;

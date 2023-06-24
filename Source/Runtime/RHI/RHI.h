@@ -35,6 +35,22 @@ struct XRHIResourceCreateData
 	FResourceArrayInterface* ResourceArray;
 };
 
+struct XSamplerStateInitializerRHI
+{
+	XSamplerStateInitializerRHI() {}
+	XSamplerStateInitializerRHI(
+		ESamplerFilter InFilter,
+		ESamplerAddressMode InAddress = AM_Wrap)
+		: Filter(InFilter)
+		, Address(InAddress)
+	{
+
+	}
+
+	ESamplerFilter Filter = SF_Point;
+	ESamplerAddressMode Address = AM_Wrap;
+};
+
 struct XRasterizationStateInitializerRHI
 {
 	bool bConservative; //for svogi

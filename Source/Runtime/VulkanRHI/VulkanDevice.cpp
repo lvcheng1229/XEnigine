@@ -24,6 +24,7 @@ XVulkanDevice::~XVulkanDevice()
     delete GfxContext;
     delete GfxQueue;
     delete DescriptorPoolsManager;
+    delete DefaultImage;
     vkDestroyDevice(Device, nullptr);
 }
 
@@ -31,16 +32,14 @@ void XVulkanDevice::InitGPU()
 {
     GfxContext = new XVulkanCommandListContext(RHI, this, GfxQueue);
    
+    
     // Setup default resource
     {
         XSamplerStateInitializerRHI Default(SF_Point);
-        DefaultSampler = ResourceCast(RHICreateSamplerState(Default).GetReference());
-
-        FRHIResourceCreateInfo CreateInfo(TEXT("FVulkanDevice_DefaultImage"));
-        DefaultImage = new XVulkanSurface(*this, 0, VK_IMAGE_VIEW_TYPE_2D, PF_B8G8R8A8, 1, 1, 1, 1, 1, 1, TexCreate_RenderTargetable | TexCreate_ShaderResource, ERHIAccess::SRVMask, CreateInfo);
-        DefaultTextureView.Create(this, DefaultImage->Image, VK_IMAGE_VIEW_TYPE_2D, DefaultImage->GetFullAspectMask(), PF_B8G8R8A8, VK_FORMAT_B8G8R8A8_UNORM, 0, 1, 0, 1);
+        DefaultSampler = RHI->RHICreateSamplerState(Default);
+        DefaultImage = new XVulkanSurface(this, EPixelFormat::FT_R8G8B8A8_UNORM, 1, 1, VK_IMAGE_VIEW_TYPE_2D);
+        DefaultTextureView.Create(this, DefaultImage->Image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, VK_FORMAT_R8G8B8A8_UNORM);
     }
-
 }
 
 void XVulkanDevice::CreateDevice()
@@ -90,6 +89,8 @@ void XVulkanDevice::CreateDevice()
     DeviceMemoryManager.Init(this);
     StagingManager.Init(this);
     MemoryManager.Init();
+
+
 }
 
 

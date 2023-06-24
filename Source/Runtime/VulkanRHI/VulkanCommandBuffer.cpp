@@ -69,23 +69,23 @@ bool XVulkanCmdBuffer::AcquirePoolSetAndDescriptorsIfNeeded(const XVulkanDescrip
 
 	uint32 Hash = Layout->GetHash();
 	auto iter = TypedDescriptorPoolSets.find(Hash);
-	XVulkanTypedDescriptorPoolSet* FoundTypedSet;
+	XVulkanTypedDescriptorPoolArray* FoundTypedArrray;
 	if (iter == TypedDescriptorPoolSets.end())
 	{
-		FoundTypedSet = CurrentDescriptorPoolSetContainer->AcquireTypedPoolSet(Layout);
+		FoundTypedArrray = CurrentDescriptorPoolSetContainer->AcquireTypedPoolArray(Layout);
 		bNeedDescriptors = true;
 	}
 	else
 	{
-		FoundTypedSet = iter->second;
+		FoundTypedArrray = iter->second;
 	}
 
 	if (bNeedDescriptors)
 	{
-		return FoundTypedSet->AllocateDescriptorSets(Layout, OutDescriptors);
+		return FoundTypedArrray->AllocateDescriptorSets(Layout, OutDescriptors);
 	}
 
-	return false;
+	return true;
 }
 
 void XVulkanCmdBuffer::RefreshFenceStatus()

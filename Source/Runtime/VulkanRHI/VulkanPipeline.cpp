@@ -321,20 +321,31 @@ XVulkanLayout* XVulkanPipelineStateCacheManager::FindOrAddLayout(const XVulkanDe
     }
 
     XVulkanLayout* Layout = nullptr;
+    XVulkanGfxLayout* GfxLayout = nullptr;
     if (bGfxLayout)
     {
-        Layout = new XVulkanGfxLayout(Device);
+        GfxLayout = new XVulkanGfxLayout(Device);
+        Layout = GfxLayout;
     }
     else
     {
         XASSERT(false);
     }
-
+    //TODO:
+    static_assert(sizeof(XVulkanDescriptorSetsLayoutInfo) == 112);
+    Layout->DescriptorSetLayout.LayoutTypes = DescriptorSetLayoutInfo.LayoutTypes;
+    Layout->DescriptorSetLayout.RemappingInfo = DescriptorSetLayoutInfo.RemappingInfo;
     Layout->DescriptorSetLayout.SetLayout = DescriptorSetLayoutInfo.SetLayout;
     Layout->DescriptorSetLayout.Hash = DescriptorSetLayoutInfo.Hash;
     Layout->Compile(DSetLayoutMap);
     
     LayoutMap[Hash] = Layout;
+
+    if (GfxLayout)
+    {
+        GfxLayout->GfxPipelineDescriptorInfo.Initialize(GfxLayout->GetDescriptorSetsLayout()->RemappingInfo);
+    }
+
     return Layout;
 }
 

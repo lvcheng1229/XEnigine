@@ -46,6 +46,41 @@ XVulkanSurface::XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat, u
 	, Height(InHeight)
 {
 	ViewFormat = VkFormat(GPixelFormats[(int)PixelFormat].PlatformFormat);
+
+	FullAspectMask = GetAspectMaskFromFormat(InFormat, true, true);
+	ViewFormat = ToVkTextureFormat(InFormat, false);
+	VkImageType ImageType;
+	switch (InViewType)
+	{
+	case VkImageViewType::VK_IMAGE_VIEW_TYPE_2D:
+		ImageType = VkImageType::VK_IMAGE_TYPE_2D;
+		break;
+	default:
+		XASSERT(false);
+	};
+
+	VkImageCreateInfo ImageCreateInfo{};
+	ImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	ImageCreateInfo.imageType = ImageType;
+	ImageCreateInfo.extent.width = Width;
+	ImageCreateInfo.extent.height = Height;
+	ImageCreateInfo.extent.depth = 1;
+	ImageCreateInfo.mipLevels = 1;
+	ImageCreateInfo.arrayLayers = 1;
+	ImageCreateInfo.format = ViewFormat;
+	ImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	ImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	ImageCreateInfo.usage = 0;
+	ImageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	ImageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	ImageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+
+	VkImageLayout InitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	ImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	ImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	VULKAN_VARIFY(vkCreateImage(Device->GetVkDevice(), &ImageCreateInfo, nullptr, &Image));
 }
 
 XVulkanSurface::XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat, uint32 InWidth, uint32 InHeight, VkImageViewType	InViewType, VkImage InImage)

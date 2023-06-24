@@ -42,14 +42,14 @@ public:
 		return FenceManager;
 	}
 
-	inline const XVulkanSamplerState& GetDefaultSampler() const
+	inline const XVulkanSamplerState* GetDefaultSampler() const
 	{
-		return *DefaultSampler;
+		return static_cast<XVulkanSamplerState*>(DefaultSampler.get());
 	}
 
-	inline const XVulkanTextureView& GetDefaultImageView() const
+	inline const XVulkanTextureView* GetDefaultImageView() const
 	{
-		return DefaultTextureView;
+		return &DefaultTextureView;
 	}
 
 	class XVulkanPipelineStateCacheManager* PipelineStateCache;
@@ -76,6 +76,7 @@ private:
 
 	XVulkanDescriptorPoolsManager* DescriptorPoolsManager = nullptr;
 
-	XVulkanSamplerState* DefaultSampler;
+	std::shared_ptr<XRHISamplerState>DefaultSampler;
+	XVulkanSurface* DefaultImage;
 	XVulkanTextureView DefaultTextureView;
 };

@@ -9,22 +9,7 @@
 #include "VulkanMemory.h"
 
 class XVulkanDevice;
-struct XVulkanTextureView
-{
-	XVulkanTextureView()
-		: View(VK_NULL_HANDLE)
-		, Image(VK_NULL_HANDLE)
-		, ViewId(0)
-	{
-	}
 
-	void Create(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkImageAspectFlags Aspect,VkFormat Format);
-	VkImageView View;
-	VkImage Image;
-	uint32 ViewId;
-private:
-	void CreateImpl(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkImageAspectFlags Aspect, VkFormat Format);
-};
 
 class XVulkanVertexLayout :public XRHIVertexLayout
 {
@@ -176,6 +161,29 @@ public:
 private:
 	XVulkanDevice* Device;
 
+};
+
+class XVulkanConstantBuffer : public XRHIConstantBuffer
+{
+public:
+	XVulkanConstantBuffer(XVulkanDevice* Device, uint32 Size);
+
+	void UpdateData(const void* data, uint32 size, uint32 offset_byte)override;
+
+	const uint64 GetSize()const
+	{
+		return Size;
+	}
+
+	const uint64 GetOffset()const
+	{
+		return Allocation.Offset;
+	}
+
+	XVulkanAllocation Allocation;
+
+	XVulkanDevice* Device;
+	uint64 Size;
 };
 
 class XVulkanShaderFactory

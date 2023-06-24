@@ -1,7 +1,6 @@
 #include "VulkanPlatformRHI.h"
 #include "VulkanResource.h"
 #include "VulkanDevice.h"
-#include "VulkanDescriptorSets.h"
 #include "Runtime\Core\Template\XEngineTemplate.h"
 
 template XVulkanVertexShader* XVulkanShaderFactory::CreateShader<XVulkanVertexShader>(XArrayView<uint8> Code, XVulkanDevice* Device);
@@ -91,10 +90,10 @@ std::shared_ptr<XRHIPixelShader> XVulkanPlatformRHI::RHICreatePixelShader(XArray
 uint32 XVulkanDescriptorSetWriter::SetupDescriptorWrites(
 	const std::vector<VkDescriptorType>& Types, VkWriteDescriptorSet* InWriteDescriptors,
 	VkDescriptorImageInfo* InImageInfo, VkDescriptorBufferInfo* InBufferInfo,
-	const XVulkanSamplerState& DefaultSampler, const XVulkanTextureView& DefaultImageView)
+	const XVulkanSamplerState* DefaultSampler, const XVulkanTextureView* DefaultImageView)
 {
 	NumWrites = Types.size();
-
+	WriteDescriptors = InWriteDescriptors;
 	for (int32 Index = 0; Index < Types.size(); ++Index)
 	{
 		InWriteDescriptors->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -113,8 +112,8 @@ uint32 XVulkanDescriptorSetWriter::SetupDescriptorWrites(
 		case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
 		case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
 		case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-			InImageInfo->sampler = DefaultSampler.Sampler;
-			InImageInfo->imageView = DefaultImageView.View;
+			InImageInfo->sampler = DefaultSampler->Sampler;
+			InImageInfo->imageView = DefaultImageView->View;
 			InImageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 			InWriteDescriptors->pImageInfo = InImageInfo++;
 			break;

@@ -8,6 +8,7 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
         for (int32 Index = 0; Index < VertexShader->ResourceCount.NumCBV; Index++)
         {
             RemappingInfo.SetInfo.Types.push_back(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+            RemappingInfo.SetInfo.NumBufferInfos++;
             VkDescriptorSetLayoutBinding uboLayoutBinding{};
             uboLayoutBinding.binding = RemappingInfo.SetInfo.Types.size() - 1;
             uboLayoutBinding.descriptorCount = 1;//?
@@ -25,6 +26,7 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
         for (int32 Index = 0; Index < PixelShader->ResourceCount.NumCBV; Index++)
         {
             RemappingInfo.SetInfo.Types.push_back(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+            RemappingInfo.SetInfo.NumBufferInfos++;
             VkDescriptorSetLayoutBinding uboLayoutBinding{};
             uboLayoutBinding.binding = RemappingInfo.SetInfo.Types.size() - 1;
             uboLayoutBinding.descriptorCount = 1;
@@ -44,6 +46,7 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
         for (int32 Index = 0; Index < PixelShader->ResourceCount.NumSRV; Index++)
         {
             RemappingInfo.SetInfo.Types.push_back(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+            RemappingInfo.SetInfo.NumImageInfos++;
             VkDescriptorSetLayoutBinding textureLayoutBinding{};
             textureLayoutBinding.binding = RemappingInfo.SetInfo.Types.size() - 1;
             textureLayoutBinding.descriptorCount = 1;
@@ -61,6 +64,7 @@ void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* Vertex
         for (int32 Index = 0; Index < PixelShader->ResourceCount.NumSampler; Index++)
         {
             RemappingInfo.SetInfo.Types.push_back(VK_DESCRIPTOR_TYPE_SAMPLER);
+            RemappingInfo.SetInfo.NumImageInfos++;
             VkDescriptorSetLayoutBinding samplerBinding{};
             samplerBinding.binding = RemappingInfo.SetInfo.Types.size() - 1;
             samplerBinding.descriptorCount = 1;
@@ -94,3 +98,17 @@ XVulkanDescriptorPoolSetContainer& XVulkanDescriptorPoolsManager::AcquirePoolSet
     return *PoolSet;
 }
 
+void XVulkanGfxPipelineDescriptorInfo::Initialize(const XDescriptorSetRemappingInfo& InRemappingInfo)
+{
+    DescriptorSetRemappingInfo = InRemappingInfo;
+}
+
+bool XVulkanGfxPipelineDescriptorInfo::GetDescriptorSetAndBindingIndex(const EShaderType Stage, int32 ParameterIndex, uint8& OutDescriptorSet, uint32& OutBindingIndex) const
+{
+    return false;
+}
+
+XDescriptorSetRemappingInfo::~XDescriptorSetRemappingInfo()
+{
+    int32 ForDebug;
+}

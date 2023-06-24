@@ -58,17 +58,11 @@ public:
 		Scissor.extent.height = (uint32)(MaxY - MinY);
 	}
 
-	inline void SetTextureForStage(EShaderType ShaderType, uint32 ParameterIndex, const XVulkanTextureBase* TextureBase, VkImageLayout Layout)
+	void SetTextureForStage(EShaderType ShaderType, uint32 ParameterIndex, const XVulkanTextureBase* TextureBase, VkImageLayout Layout);
+	
+	void SetUniformBuffer(uint8 DescriptorSet, uint32 BindingIndex, const XVulkanConstantBuffer* UniformBuffer)
 	{
-		const XVulkanGfxPipelineDescriptorInfo& DescriptorInfo = CurrentState->GetGfxPipelineDescriptorInfo();
-		uint8 DescriptorSet;
-		uint32 BindingIndex;
-		if (!DescriptorInfo.GetDescriptorSetAndBindingIndex(FVulkanShaderHeader::Global, ShaderType, ParameterIndex, DescriptorSet, BindingIndex))
-		{
-			return;
-		}
-
-		CurrentState->SetTexture(DescriptorSet, BindingIndex, TextureBase, Layout);
+		CurrentState->SetUniformBuffer(DescriptorSet, BindingIndex, UniformBuffer);
 	}
 private:
 

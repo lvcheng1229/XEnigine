@@ -1,7 +1,6 @@
 #pragma once
 #include "VulkanPipeline.h"
 #include "VulkanCommandBuffer.h"
-#include "VulkanDescriptorSets.h"
 #include "VulkanResource.h"
 
 class XVulkanCommonPipelineDescriptorState
@@ -28,6 +27,8 @@ protected:
 	const XVulkanDescriptorSetsLayout* DescriptorSetsLayout = nullptr;
 	
 	VkDescriptorSet DescriptorSetHandle;
+
+	//TODO:Dynamic Uniform Buffer
 	std::vector<uint32> DynamicOffsets;
 
 	XVulkanDevice* Device;
@@ -47,14 +48,19 @@ public:
 
 	void SetTexture(uint8 DescriptorSet, uint32 BindingIndex, const XVulkanTextureBase* TextureBase, VkImageLayout Layout);
 	
+	void SetUniformBuffer(uint8 DescriptorSet, uint32 BindingIndex, const XVulkanConstantBuffer* UniformBuffer);
+	
+	inline void BindDescriptorSets(VkCommandBuffer CmdBuffer)
+	{
+		Bind(CmdBuffer, GfxPipeline->Layout->GetPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+	}
+
 	inline void MarkDirty(bool bDirty)
 	{
 		bIsResourcesDirty |= bDirty;
 		bIsDSetsKeyDirty |= bDirty;
 	}
 private:
-	std::vector<XVulkanDescriptorSetWriter> DSWriter;
-
 	const XVulkanGfxPipelineDescriptorInfo* PipelineDescriptorInfo;
 
 	XVulkanRHIGraphicsPipelineState* GfxPipeline;

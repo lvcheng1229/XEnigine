@@ -91,13 +91,13 @@ private:
 
 	void CreateGfxEntry(const XGraphicsPSOInitializer& PSOInitializer, XVulkanDescriptorSetsLayoutInfo& DescriptorSetLayoutInfo, XGfxPipelineDesc* Desc);
 	void CreateGfxPipelineFromEntry(XVulkanRHIGraphicsPipelineState* PSO, XVulkanShader* Shaders[(uint32)EShaderType::SV_ShaderCount], VkPipeline* Pipeline);
-	
+
 	XVulkanLayout* FindOrAddLayout(const XVulkanDescriptorSetsLayoutInfo& DescriptorSetLayoutInfo, bool bGfxLayout);
 
 	XVulkanDevice* Device;
 	VkPipelineCache PipelineCache;
 	std::map<std::size_t, std::shared_ptr<XVulkanRHIGraphicsPipelineState>>GraphicsPSOMap;
-	
+
 	std::map<uint32, XVulkanLayout*> LayoutMap;
 	XVulkanDescriptorSetLayoutMap DSetLayoutMap;
 };

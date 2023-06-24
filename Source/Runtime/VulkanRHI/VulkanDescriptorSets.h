@@ -4,12 +4,32 @@
 #include "Runtime\HAL\PlatformTypes.h"
 #include "VulkanUtil.h"
 #include "VulkanState.h"
-#include "VulkanResource.h"
+#include "VulkanMemory.h"
+
 #include <map>
 #include <string>
 
 class XVulkanDevice;
 class XVulkanShader;
+
+//TODO:
+struct XVulkanTextureView
+{
+	XVulkanTextureView()
+		: View(VK_NULL_HANDLE)
+		, Image(VK_NULL_HANDLE)
+		, ViewId(0)
+	{
+	}
+
+	void Create(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkImageAspectFlags Aspect, VkFormat Format);
+	VkImageView View;
+	VkImage Image;
+	uint32 ViewId;
+private:
+	void CreateImpl(XVulkanDevice* Device, VkImage InImage, VkImageViewType ViewType, VkImageAspectFlags Aspect, VkFormat Format);
+};
+
 
 // This container holds the actual VkWriteDescriptorSet structures; a Compute pipeline uses the arrays 'as-is', whereas a 
 // Gfx PSO will have one big array and chunk it depending on the stage (eg Vertex, Pixel).
@@ -25,6 +45,7 @@ struct XVulkanDescriptorSetWriteContainer
 // Information for remapping descriptor sets when combining layouts
 struct XDescriptorSetRemappingInfo
 {
+	~XDescriptorSetRemappingInfo();
 	struct XSetInfo
 	{
 		std::vector<VkDescriptorType>	Types;
@@ -39,27 +60,53 @@ struct XDescriptorSetRemappingInfo
 class XVulkanDescriptorSetWriter
 {
 public:
-	bool WriteImage(uint32 DescriptorIndex, const XVulkanTextureView& TextureView, VkImageLayout Layout)
+	bool WriteImage(uint32 DescriptorIndex, const XVulkanTextureView* TextureView, VkImageLayout Layout)
 	{
 		return WriteTextureView<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(DescriptorIndex, TextureView, Layout);
 	}
+
+	bool WriteDynamicUniformBuffer(uint32 DescriptorIndex, const XVulkanAllocation& Allocation, VkDeviceSize Offset, VkDeviceSize Range)
+	{
+		return WriteBuffer<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC>(DescriptorIndex, Allocation, Offset, Range);
+	}
+
+	void SetDescriptorSet(VkDescriptorSet DescriptorSet)
+	{
+		for (uint32 Index = 0; Index < NumWrites; ++Index)
+		{
+			WriteDescriptors[Index].dstSet = DescriptorSet;
+		}
+	}
+
 	uint32 SetupDescriptorWrites(
 		const std::vector<VkDescriptorType>& Types, VkWriteDescriptorSet* InWriteDescriptors,
 		VkDescriptorImageInfo* InImageInfo, VkDescriptorBufferInfo* InBufferInfo,
-		const XVulkanSamplerState& DefaultSampler, const XVulkanTextureView& DefaultImageView);
+		const XVulkanSamplerState* DefaultSampler, const XVulkanTextureView* DefaultImageView);
 protected:
 	template <VkDescriptorType DescriptorType>
-	bool WriteTextureView(uint32 DescriptorIndex, const XVulkanTextureView& TextureView, VkImageLayout Layout)
+	bool WriteTextureView(uint32 DescriptorIndex, const XVulkanTextureView* TextureView, VkImageLayout Layout)
 	{
 
 		VkDescriptorImageInfo* ImageInfo = const_cast<VkDescriptorImageInfo*>(WriteDescriptors[DescriptorIndex].pImageInfo);
 		bool bChanged = false;
-		bChanged = CopyAndReturnNotEqual(ImageInfo->imageView, TextureView.View);
+		bChanged = CopyAndReturnNotEqual(ImageInfo->imageView, TextureView->View);
 		bChanged |= CopyAndReturnNotEqual(ImageInfo->imageLayout, Layout);
 
 		return bChanged;
 	}
 
+	template <VkDescriptorType DescriptorType>
+	bool WriteBuffer(uint32 DescriptorIndex, const XVulkanAllocation& Allocation, VkDeviceSize Offset, VkDeviceSize Range)
+	{
+		VkDescriptorBufferInfo* BufferInfo = const_cast<VkDescriptorBufferInfo*>(WriteDescriptors[DescriptorIndex].pBufferInfo);
+
+		bool bChanged = false;
+			bChanged = CopyAndReturnNotEqual(BufferInfo->buffer, Allocation.VulkanHandle);
+			bChanged |= CopyAndReturnNotEqual(BufferInfo->offset, Offset);
+			bChanged |= CopyAndReturnNotEqual(BufferInfo->range, Range);
+		
+		return bChanged;
+	}
 	
 	uint32 NumWrites;
 
@@ -67,9 +114,13 @@ protected:
 	VkWriteDescriptorSet* WriteDescriptors;
 };
 
+//TODO:Remove This
 class XVulkanGfxPipelineDescriptorInfo
 {
-
+public:
+	void Initialize(const XDescriptorSetRemappingInfo& InRemappingInfo);
+	bool GetDescriptorSetAndBindingIndex(const EShaderType Stage, int32 ParameterIndex, uint8& OutDescriptorSet, uint32& OutBindingIndex) const;
+	XDescriptorSetRemappingInfo DescriptorSetRemappingInfo;
 };
 
 // Information for the layout of descriptor sets; does not hold runtime objects
@@ -113,6 +164,7 @@ public:
 	};
 
 	void FinalizeBindings_Gfx(XVulkanShader* VertexShader, XVulkanShader* PixelShader);
+	//TODO:FindOrAddLayout
 	XDescriptorSetRemappingInfo	RemappingInfo;
 protected:
 	std::map<uint32, uint32> LayoutTypes;
@@ -165,6 +217,11 @@ public:
 	{
 		return &DescriptorSetLayout;
 	}
+
+	const VkPipelineLayout GetPipelineLayout()
+	{
+		return PipelineLayout;
+	}
 protected:
 	XVulkanDescriptorSetsLayout	DescriptorSetLayout;
 	XVulkanDevice* Device;
@@ -179,6 +236,14 @@ class XVulkanGfxLayout : public XVulkanLayout
 {
 public:
 	XVulkanGfxLayout(XVulkanDevice* InDevice) :XVulkanLayout(InDevice) {}
+
+	inline const XVulkanGfxPipelineDescriptorInfo& GetGfxPipelineDescriptorInfo() const
+	{
+		return GfxPipelineDescriptorInfo;
+	}
+protected:
+	XVulkanGfxPipelineDescriptorInfo		GfxPipelineDescriptorInfo;
+	friend class XVulkanPipelineStateCacheManager;
 };
 
 
@@ -214,20 +279,20 @@ private:
 
 
 
-class XVulkanTypedDescriptorPoolSet
+class XVulkanTypedDescriptorPoolArray
 {
 	
 	XVulkanDescriptorPool* PushNewPool();
 public:
 
-	XVulkanTypedDescriptorPoolSet(XVulkanDevice* InDevice, const XVulkanDescriptorSetsLayout* InLayout)
+	XVulkanTypedDescriptorPoolArray(XVulkanDevice* InDevice, const XVulkanDescriptorSetsLayout* InLayout)
 		: Device(InDevice)
 		, Layout(InLayout)
 	{
 		PushNewPool();
 	};
 
-	~XVulkanTypedDescriptorPoolSet();
+	~XVulkanTypedDescriptorPoolArray();
 
 	bool AllocateDescriptorSets(const XVulkanDescriptorSetsLayout* Layout, VkDescriptorSet* OutSets);
 private:
@@ -259,13 +324,13 @@ public:
 		return !bUsed;
 	}
 
-	XVulkanTypedDescriptorPoolSet* AcquireTypedPoolSet(const XVulkanDescriptorSetsLayout* Layout);
+	XVulkanTypedDescriptorPoolArray* AcquireTypedPoolArray(const XVulkanDescriptorSetsLayout* Layout);
 
 private:
 	bool bUsed;
 	XVulkanDevice* Device;
 
-	std::map<uint32, XVulkanTypedDescriptorPoolSet*>TypedDescriptorPools;
+	std::map<uint32, XVulkanTypedDescriptorPoolArray*>TypedDescriptorPools;
 };
 
 class XVulkanDescriptorPoolsManager

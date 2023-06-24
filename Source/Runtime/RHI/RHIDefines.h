@@ -52,7 +52,17 @@ enum class EFaceCullMode
 	FC_None,
 };
 
+enum ESamplerFilter
+{
+	SF_Point,
+	SF_Bilinear,
+};
 
+enum ESamplerAddressMode
+{
+	AM_Wrap,
+	AM_Clamp,
+};
 
 enum class ERenderTargetLoadAction
 {

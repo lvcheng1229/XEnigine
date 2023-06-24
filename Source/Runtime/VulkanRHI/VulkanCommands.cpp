@@ -12,6 +12,12 @@ void XVulkanCommandListContext::RHISetShaderTexture(EShaderType ShaderType, uint
 	PendingGfxState->SetTextureForStage(ShaderType, TextureIndex, Texture, Layout);
 }
 
+void XVulkanCommandListContext::RHISetShaderConstantBuffer(EShaderType ShaderType, uint32 BufferIndex, XRHIConstantBuffer* RHIConstantBuffer)
+{
+	XVulkanConstantBuffer* ConstantBuffer = static_cast<XVulkanConstantBuffer*>(RHIConstantBuffer);
+	PendingGfxState->SetUniformBuffer(0, BufferIndex, ConstantBuffer);
+}
+
 void XVulkanCommandListContext::SetVertexBuffer(XRHIBuffer* RHIVertexBuffer, uint32 VertexBufferSlot, uint32 OffsetFormVBBegin)
 {
 	XVulkanResourceMultiBuffer* VertexBuffer = static_cast<XVulkanResourceMultiBuffer*>(RHIVertexBuffer);
@@ -26,6 +32,8 @@ void XVulkanCommandListContext::RHIDrawIndexedPrimitive(XRHIBuffer* IndexBuffer,
 {
 	XVulkanCmdBuffer* Cmd = CmdBufferManager->GetActiveCmdBuffer();
 	PendingGfxState->PrepareForDraw(Cmd);
+
+	
 	XVulkanResourceMultiBuffer* VkIndexBuffer = static_cast<XVulkanResourceMultiBuffer*>(IndexBuffer);
 	vkCmdBindIndexBuffer(Cmd->GetHandle(), VkIndexBuffer->Buffer.VulkanHandle, VkIndexBuffer->Buffer.Offset,
 		VkIndexBuffer->GetStride() == 4 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);

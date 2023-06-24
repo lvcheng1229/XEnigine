@@ -2,12 +2,13 @@
 #include <vulkan\vulkan_core.h>
 #include "Runtime\RHI\RHI.h"
 #include "Runtime\RHI\RHIResource.h"
-
+class XVulkanDevice;
 class XVulkanSamplerState : public XRHISamplerState
 {
 public:
+	XVulkanSamplerState(XVulkanDevice* InDevice, const XSamplerStateInitializerRHI& InInitializer);
+
 	VkSampler Sampler;
-	uint32 SamplerId;
 };
 
 class XVulkanBlendState : public XRHIBlendState

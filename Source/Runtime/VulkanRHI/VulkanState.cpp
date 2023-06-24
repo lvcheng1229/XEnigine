@@ -1,6 +1,7 @@
 #include "Runtime\HAL\Mch.h"
 #include "VulkanState.h"
 #include "VulkanPlatformRHI.h"
+#include "VulkanDevice.h"
 
 static inline VkBlendOp BlendOpToVulkan(EBlendOperation InOp)
 {
@@ -109,6 +110,43 @@ XVulkanRasterizerState::XVulkanRasterizerState(const XRasterizationStateInitiali
 	
 }
 
+static inline VkFilter FilterModeToVulkan(ESamplerFilter InFilterMode)
+{
+	switch (InFilterMode)
+	{
+	case ESamplerFilter::SF_Point:	return VK_FILTER_NEAREST;
+	case ESamplerFilter::SF_Bilinear:	return VK_FILTER_LINEAR;
+	default:
+		XASSERT(false);
+		break;
+	}
+}
+
+XVulkanSamplerState::XVulkanSamplerState(XVulkanDevice* InDevice, const XSamplerStateInitializerRHI& InInitializer)
+{
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = FilterModeToVulkan(InInitializer.Filter);
+	samplerInfo.minFilter = FilterModeToVulkan(InInitializer.Filter);
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.anisotropyEnable = VK_FALSE;
+	samplerInfo.maxAnisotropy = 1.0;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+	VULKAN_VARIFY(vkCreateSampler(InDevice->GetVkDevice(), &samplerInfo, nullptr, &Sampler));
+}
+
+std::shared_ptr<XRHISamplerState> XVulkanPlatformRHI::RHICreateSamplerState(const XSamplerStateInitializerRHI& Initializer)
+{
+	return std::make_shared<XVulkanSamplerState>(Device, Initializer);
+}
+
 std::shared_ptr<XRHIRasterizationState> XVulkanPlatformRHI::RHICreateRasterizationStateState(const XRasterizationStateInitializerRHI& Initializer)
 {
 	return std::make_shared<XVulkanRasterizerState>(Initializer);
@@ -123,3 +161,5 @@ std::shared_ptr<XRHIBlendState> XVulkanPlatformRHI::RHICreateBlendState(const XB
 {
 	return std::make_shared<XVulkanBlendState>(Initializer);
 }
+
+

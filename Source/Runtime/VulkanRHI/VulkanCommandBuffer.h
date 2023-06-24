@@ -78,7 +78,7 @@ private:
 
 	XVulkanDescriptorPoolSetContainer* CurrentDescriptorPoolSetContainer = nullptr;
 
-	std::map<uint32, class XVulkanTypedDescriptorPoolSet*> TypedDescriptorPoolSets;
+	std::map<uint32, class XVulkanTypedDescriptorPoolArray*> TypedDescriptorPoolSets;
 };
 
 class XVulkanCommandBufferPool

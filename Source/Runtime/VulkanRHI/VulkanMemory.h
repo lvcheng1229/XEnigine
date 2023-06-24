@@ -22,6 +22,7 @@ enum EVulkanAllocationMetaType : uint8
 	EVulkanAllocationMetaBufferStaging,
 	EVulkanAllocationMetaImageRenderTarget,
 	EVulkanAllocationMetaImageOther,
+	EVulkanAllocationMetaUniformBuffer,
 	EVulkanAllocationMetaSize,
 };
 
@@ -148,6 +149,7 @@ public:
 		: MappedPointer(nullptr)
 		, Handle(VK_NULL_HANDLE)
 		, DeviceHandle(VK_NULL_HANDLE)
+		, CanMapped(false)
 	{
 	}
 
@@ -163,6 +165,9 @@ public:
 
 	void* Map(VkDeviceSize Size, VkDeviceSize Offset);
 	void Unmap();
+
+	bool CanMapped;
+
 private:
 	void* MappedPointer;
 	VkDeviceMemory Handle;

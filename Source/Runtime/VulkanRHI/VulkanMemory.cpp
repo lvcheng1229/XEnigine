@@ -79,6 +79,8 @@ XDeviceMemoryAllocation* XDeviceMemoryManager::Alloc(VkDeviceSize AllocationSize
 	uint32 HeapIndex = MemoryProperties.memoryTypes[MemoryTypeIndex].heapIndex;
 	HeapInfos[HeapIndex].Allocations.push_back(NewAllocation);
 
+	NewAllocation->CanMapped = VKHasAllFlags(MemoryProperties.memoryTypes[MemoryTypeIndex].propertyFlags, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
 	return NewAllocation;
 }
 
@@ -126,6 +128,7 @@ void* XVulkanAllocation::GetMappedPointer(XVulkanDevice* Device)
 {
 	XVulkanSubresourceAllocator* Allocator = GetSubresourceAllocator(Device);
 	uint8* pMappedPointer = (uint8*)Allocator->GetMappedPointer();
+	XASSERT(pMappedPointer != nullptr);
 	return Offset + pMappedPointer;
 }
 
@@ -381,8 +384,14 @@ void XMemoryManager::AllocateBufferPooled(XVulkanAllocation& OutAllocation, XVul
 	XDeviceMemoryAllocation* DeviceMemoryAllocation = DeviceMemoryManager->Alloc(BufferSize, MemoryTypeIndex);
 	vkBindBufferMemory(Device->GetVkDevice(), Buffer, DeviceMemoryAllocation->GetHandle(), 0);
 
+	if (DeviceMemoryAllocation->CanMapped)
+	{
+		DeviceMemoryAllocation->Map(BufferSize, 0);
+	}
+
 	XVulkanSubresourceAllocator* SubresourceAllocator = new XVulkanSubresourceAllocator(Device, EVulkanAllocationPooledBuffer,  Buffer, BufferSize, DeviceMemoryAllocation);
 	UsedBufferAllocations.push_back(SubresourceAllocator);
+	RegisterSubresourceAllocator(SubresourceAllocator);
 	bool Result = SubresourceAllocator->TryAllocate(OutAllocation, AllocationOwner, Size, Alignment, MetaType);
 	XASSERT(Result = true);
 }
