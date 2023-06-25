@@ -18,7 +18,7 @@ XVulkanCommandListContext::XVulkanCommandListContext(XVulkanPlatformRHI* InRHI, 
 
 void XVulkanCommandListContext::RHIEndFrame()
 {
-	RHI->GetVulkanViewport()->Prsent();
+	RHI->GetVulkanViewport()->Prsent(this, CmdBufferManager->GetActiveCmdBuffer(), Queue, Queue);
 }
 
 XVulkanCommandListContext::~XVulkanCommandListContext()
@@ -43,4 +43,9 @@ void XVulkanCommandListContext::OpenCmdList()
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	vkBeginCommandBuffer(CmdBufferManager->GetActiveCmdBuffer()->GetHandle(), &beginInfo);
+}
+
+void XVulkanCommandListContext::CloseCmdList()
+{
+	vkEndCommandBuffer(CmdBufferManager->GetActiveCmdBuffer()->GetHandle());
 }

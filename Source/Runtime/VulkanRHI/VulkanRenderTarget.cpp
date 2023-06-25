@@ -135,6 +135,12 @@ XVulkanRenderTargetLayout::XVulkanRenderTargetLayout(XVulkanDevice& InDevice, co
 }
 
 
+void XVulkanCommandListContext::RHIEndRenderPass()
+{
+	XVulkanCmdBuffer* CmdBuffer = CmdBufferManager->GetActiveCmdBuffer();
+	GlobalLayoutManager.EndRenderPass(CmdBuffer);
+}
+
 void XVulkanCommandListContext::RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const char* InName, uint32 Size)
 {
 	XVulkanCmdBuffer* CmdBuffer = CmdBufferManager->GetActiveCmdBuffer();

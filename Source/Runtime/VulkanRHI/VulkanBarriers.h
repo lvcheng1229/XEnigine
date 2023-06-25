@@ -64,6 +64,7 @@ public:
 		XVulkanRenderPass* RenderPass);
 
 	void BeginRenderPass(XVulkanCmdBuffer* CmdBuffer, const XVulkanRenderTargetLayout* RTLayout, XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer);
+	void EndRenderPass(XVulkanCmdBuffer* CmdBuffer);
 
 	XVulkanRenderPass* GetOrCreateRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout);
 

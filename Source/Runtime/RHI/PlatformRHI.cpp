@@ -123,8 +123,8 @@ VkRenderPass VkHack::GetVkRenderPas()
 
 void VkHack::TempPresent()
 {
-	XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
-	VkRHI->GetVulkanViewport()->Prsent();
+	//XVulkanPlatformRHI* VkRHI = (XVulkanPlatformRHI*)GPlatformRHI;
+	//VkRHI->GetVulkanViewport()->Prsent();
 	return;
 }
 

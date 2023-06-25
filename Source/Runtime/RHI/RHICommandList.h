@@ -14,6 +14,7 @@ protected:
 
 public:
 	virtual void Open() = 0;
+	virtual void Close() = 0;
 
 	inline void SetContext(IRHIContext* InContext)
 	{
@@ -87,6 +88,11 @@ public:
 		GetComputeContext()->OpenCmdList();
 	}
 
+	void Close()override
+	{
+		GetComputeContext()->CloseCmdList();
+	}
+
 	inline void RHIEventBegin(uint32 Metadata, const void* pData, uint32 Size)
 	{
 		GetComputeContext()->RHIEventBegin(Metadata, pData, Size);
@@ -134,6 +140,11 @@ public:
 	void Open()override
 	{
 		GetContext()->OpenCmdList();
+	}
+
+	void Close()override
+	{
+		GetContext()->CloseCmdList();
 	}
 
 	inline void RHIBeginFrame()

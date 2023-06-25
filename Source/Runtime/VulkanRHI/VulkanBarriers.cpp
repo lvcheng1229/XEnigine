@@ -60,6 +60,11 @@ void XVulkanLayoutManager::BeginRenderPass(XVulkanCmdBuffer* CmdBuffer, const XV
 	GfxContex->GetPendingGfxState()->SetViewport(0, 0, 0, Extents.width, Extents.height, 1);
 }
 
+void XVulkanLayoutManager::EndRenderPass(XVulkanCmdBuffer* CmdBuffer)
+{
+	CmdBuffer->EndRenderPass();
+}
+
 XVulkanRenderPass* XVulkanLayoutManager::GetOrCreateRenderPass(XVulkanDevice* InDevice, const XVulkanRenderTargetLayout* RTLayout)
 {
 	const uint32 RenderPassHash = RTLayout->GetRenderPassFullHash();

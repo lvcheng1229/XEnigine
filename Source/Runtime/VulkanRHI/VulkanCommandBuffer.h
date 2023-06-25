@@ -14,7 +14,7 @@ public:
 	void BeginRenderPass(const XVulkanRenderTargetLayout* Layout,XVulkanRenderPass* RenderPass, XVulkanFramebuffer* Framebuffer);
 	VkCommandBuffer GetHandle() { return CommandBufferHandle; }
 	VkCommandBuffer* GetHandlePtr() { return &CommandBufferHandle; }
-
+	void AddWaitSemaphore(VkPipelineStageFlags InWaitFlags, XSemaphore* InWaitSemaphore);
 	bool AcquirePoolSetAndDescriptorsIfNeeded(const class XVulkanDescriptorSetsLayout* Layout, bool bNeedDescriptors, VkDescriptorSet* OutDescriptors);
 	void RefreshFenceStatus();
 	void EndRenderPass()
@@ -114,6 +114,8 @@ public:
 		SubmitActiveCmdBuffer(Vec);
 	}
 	void SubmitActiveCmdBuffer(std::vector<XSemaphore*> SignalSemaphores);
+
+	void SubmitActiveCmdBufferFromPresent(XSemaphore* SignalSemaphore = nullptr);
 private:
 	friend class VkHack;
 

@@ -516,6 +516,24 @@ XFence* XFenceManager::AllocateFence(bool bCreateSignaled)
 	return NewFence;
 }
 
+bool XFenceManager::WaitForFence(XFence* Fence, uint64 TimeInNanoseconds)
+{
+	XASSERT(Fence->State == XFence::EState::NotReady);
+	VkResult Result = vkWaitForFences(Device->GetVkDevice(), 1, &Fence->Handle, true, TimeInNanoseconds);
+	switch (Result)
+	{
+	case VK_SUCCESS:
+		Fence->State = XFence::EState::Signaled;
+		return true;
+	case VK_TIMEOUT:
+		break;
+	default:
+		XASSERT(false);
+		break;
+	}
+
+	return false;
+}
 void XFenceManager::ResetFence(XFence* Fence)
 {
 	if (Fence->State != XFence::EState::NotReady)

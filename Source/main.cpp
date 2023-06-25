@@ -195,10 +195,6 @@ public:
     VkHack mVkHack;
     std::shared_ptr<XRHITexture2D> RHITestTexture2D;
     std::shared_ptr<XRHITexture2D> RHITestTexture2DDepth;
-
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
-    VkFence inFlightFence;
 #endif
 
     XRHICommandList RHICmdList;
@@ -269,22 +265,20 @@ public:
        stbi_uc* pixels = stbi_load("G:/XEngineF/XEnigine/ContentSave/TextureNoAsset/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
        VkDeviceSize imageSize = texWidth * texHeight * 4;
    
-       if (!pixels) {
-           throw std::runtime_error("failed to load texture image!");
-       }
-   
        RHITestTexture2D = RHICreateTexture2D2(texWidth, texHeight, 1,
            false, false, EPixelFormat::FT_R8G8B8A8_UNORM_SRGB, ETextureCreateFlags((uint32)TexCreate_ShaderResource | (uint32)TexCreate_SRGB), 1, pixels, imageSize);
-
-       stbi_image_free(pixels);
 
        RHITestTexture2DDepth = RHICreateTexture2D2(mVkHack.GetBkBufferExtent().width, mVkHack.GetBkBufferExtent().height, 1, false, false,
            EPixelFormat::FT_R24G8_TYPELESS, ETextureCreateFlags(TexCreate_DepthStencilTargetable | TexCreate_ShaderResource)
            , 1, nullptr, 0);
+
+       stbi_image_free(pixels);
    }
    
-    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        
+
+    void drawFrame() {
+        RHICmdList.Open();
+
         {
             static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -300,15 +294,8 @@ public:
             VkTestCBResourece.RHICbVkTest->UpdateData(&ubo, sizeof(UniformBufferObject), 0);
         }
 
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("failed to begin recording command buffer!");
-        }
-
         XRHITexture* BackTex = RHIGetCurrentBackTexture();
-        
+
         XRHIRenderPassInfo RPInfos(1, &BackTex, ERenderTargetLoadAction::EClear, RHITestTexture2DDepth.get(), EDepthStencilLoadAction::EClear);
         RHICmdList.RHIBeginRenderPass(RPInfos, "VulkanTestRP", sizeof("VulkanTestRP"));
         RHICmdList.CacheActiveRenderTargets(RPInfos);
@@ -320,15 +307,13 @@ public:
 
         TShaderReference<XHLSL2SPIRVS> VertexShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRVS>();
         TShaderReference<XHLSL2SPIRPS> PixelShader = GetGlobalShaderMapping()->GetShader<XHLSL2SPIRPS>();
-        
+
         GraphicsPSOInit.BoundShaderState.RHIVertexShader = VertexShader.GetVertexShader();
         GraphicsPSOInit.BoundShaderState.RHIPixelShader = PixelShader.GetPixelShader();
         GraphicsPSOInit.BoundShaderState.RHIVertexLayout = GTestVtxLayout.RHIVertexLayout.get();
-        
+
         RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
         SetGraphicsPipelineStateFromPSOInit(RHICmdList, GraphicsPSOInit);
-
-
 
         RHICmdList.SetVertexBuffer(GTestVertexRHI.RHIVertexBuffer.get(), 0, 0);
 
@@ -337,73 +322,14 @@ public:
         PixelShader->SetParameter(RHICmdList, RHITestTexture2D.get());
 
         RHICmdList.RHIDrawIndexedPrimitive(GTestIndexRHI.RHIVertexBuffer.get(), 12, 1, 0, 0, 0);
+        RHICmdList.RHIEndRenderPass();
+        
+        //TODO:FixMe
+        //RHICmdList.Execute();
+        RHICmdList.Close();
 
-        vkCmdEndRenderPass(commandBuffer);
-
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer!");
-        }
-    }
-
-    void createSyncObjects() {
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-        VkFenceCreateInfo fenceInfo{};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        if (vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-            vkCreateSemaphore(mVkHack.GetVkDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
-            vkCreateFence(mVkHack.GetVkDevice(), &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create synchronization objects for a frame!");
-        }
-
-    }
-    void drawFrame2() {
-        vkWaitForFences(mVkHack.GetVkDevice(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-        vkResetFences(mVkHack.GetVkDevice(), 1, &inFlightFence);
-
-        uint32_t imageIndex;
-        vkAcquireNextImageKHR(mVkHack.GetVkDevice(), mVkHack.GetVkSwapChain(), UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-
-        vkResetCommandBuffer(*mVkHack.GetCmdBuffer(), /*VkCommandBufferResetFlagBits*/ 0);
-        recordCommandBuffer(*mVkHack.GetCmdBuffer(), imageIndex);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-        VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = (mVkHack.GetCmdBuffer());
-
-        VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-
-        if (vkQueueSubmit(mVkHack.GetVkQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
-            throw std::runtime_error("failed to submit draw command buffer!");
-        }
-
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
-        VkSwapchainKHR swapChains[] = { mVkHack.GetVkSwapChain() };
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-
-        presentInfo.pImageIndices = &imageIndex;
-
-        vkQueuePresentKHR(mVkHack.GetVkQueue(), &presentInfo);
-        mVkHack.TempPresent();
+        RHICmdList.RHIEndFrame();
+    
     }
 #endif
     void Init()
@@ -444,7 +370,6 @@ public:
         RHICmdList.Execute();
 #else
         createTextureImage();
-        createSyncObjects();
 #endif
     }
 
@@ -465,7 +390,7 @@ int main()
 #if !USE_DX12
         while (!glfwWindowShouldClose((GLFWwindow*)XApplication::Application->GetPlatformHandle())) {
             glfwPollEvents();
-            SandBox.drawFrame2();
+            SandBox.drawFrame();
         }
 #else
         XApplication::Application->ApplicationLoop();

@@ -2,6 +2,7 @@
 #include <vector>
 #include "Runtime\HAL\PlatformTypes.h"
 #include "vulkan\vulkan_core.h"
+#include <Runtime\HAL\Mch.h>
 class XMemoryManager;
 class XVulkanDevice;
 class XVulkanSubresourceAllocator;
@@ -107,6 +108,7 @@ public:
 
 		return CheckFenceState(Fence);
 	}
+	bool WaitForFence(XFence* Fence, uint64 TimeInNanoseconds);
 
 	void ResetFence(XFence* Fence);
 protected:

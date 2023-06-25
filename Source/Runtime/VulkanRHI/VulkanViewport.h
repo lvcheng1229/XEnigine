@@ -3,6 +3,7 @@
 #include "Runtime\Core\PixelFormat.h"
 #include <vector>
 #include "VulkanResource.h"
+#include "VulkanCommandBuffer.h"
 class XVulkanDevice;
 class XVulkanSwapChain;
 
@@ -11,7 +12,7 @@ class XVulkanViewport
 public:
 	XVulkanViewport(EPixelFormat& InOutPixelFormat, XVulkanDevice* VulkanDevice, uint32 InSizeX, uint32 InSizeY, void* InWindowHandle, VkInstance InInstance);
 	~XVulkanViewport();
-	void Prsent();
+	void Prsent(XVulkanCommandListContext* Context, XVulkanCmdBuffer* CmdBuffer, XVulkanQueue* Queue, XVulkanQueue* PresentQueue);
 	inline XVulkanTexture2D* GetCurrentBackTexture() { return BackBufferTextures[CurrentBackBuffer].get(); }
 private:
 
@@ -27,6 +28,11 @@ private:
 	std::vector<XVulkanTextureView> ImageViews;//Unused
 	std::vector<VkImage> swapChainImages;
 
+	std::vector<XSemaphore*> RenderingDoneSemaphores;
+
+	XSemaphore* AcquiredSemaphore;
+
+	uint32 AcquiredImageIndex;
 
 	friend class VkHack;
 };

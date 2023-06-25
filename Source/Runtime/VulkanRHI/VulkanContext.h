@@ -19,7 +19,7 @@ public:
 
 	void Execute()override;
 	void OpenCmdList()override;
-	void CloseCmdList()override { XASSERT(false) };
+	void CloseCmdList()override;
 
 	//SetShaderParameter
 	void RHISetShaderUAV(EShaderType ShaderType, uint32 TextureIndex, XRHIUnorderedAcessView* UAV)override { XASSERT(false) };
@@ -48,7 +48,7 @@ public:
 	void RHIEventEnd()override { XASSERT(false) };
 	void RHIEndFrame()override;
 	void RHIBeginFrame()override { XASSERT(false) };
-	void RHIEndRenderPass()override { XASSERT(false) };
+	void RHIEndRenderPass()override;
 	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const char* InName, uint32 Size)override;
 
 	//Vulkan

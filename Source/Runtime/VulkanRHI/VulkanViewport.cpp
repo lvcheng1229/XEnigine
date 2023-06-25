@@ -19,6 +19,11 @@ XVulkanViewport::XVulkanViewport(EPixelFormat& InOutPixelFormat, XVulkanDevice* 
 {
 	VulkanSwapChain = new XVulkanSwapChain(InOutPixelFormat, VulkanDevice, WindowHandle, Instance, swapChainImages , SwapChainExtent);
 	ImageViews.resize(swapChainImages.size());
+
+	for (int32 Index = 0, NumBuffers = swapChainImages.size(); Index < NumBuffers; ++Index)
+	{
+		RenderingDoneSemaphores.push_back(new XSemaphore(Device));
+	}
 	
 	for (int32 Index = 0; Index < swapChainImages.size(); ++Index)
 	{
@@ -36,13 +41,22 @@ XVulkanViewport::~XVulkanViewport()
 	{
 		vkDestroyImageView(Device->GetVkDevice(), imageView.View, nullptr);
 	}
+	for (auto iter : RenderingDoneSemaphores)
+	{
+		delete iter;
+	}
 	delete VulkanSwapChain;
 }
 
-void XVulkanViewport::Prsent()
+void XVulkanViewport::Prsent(XVulkanCommandListContext* Context, XVulkanCmdBuffer* CmdBuffer, XVulkanQueue* Queue, XVulkanQueue* PresentQueue)
 {
 	CurrentBackBuffer++;
 	CurrentBackBuffer = CurrentBackBuffer % 2;
+
+	AcquiredImageIndex = VulkanSwapChain->AcquireImageIndex(AcquiredSemaphore);
+	CmdBuffer->AddWaitSemaphore(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, AcquiredSemaphore);
+	Context->GetCommandBufferManager()->SubmitActiveCmdBufferFromPresent(RenderingDoneSemaphores[AcquiredImageIndex]);
+	VulkanSwapChain->Present(Queue, PresentQueue, RenderingDoneSemaphores[AcquiredImageIndex]);
 }
 
 XVulkanFramebuffer::XVulkanFramebuffer(XVulkanDevice* Device, const XRHISetRenderTargetsInfo* InRTInfo, const XVulkanRenderTargetLayout* RTLayout, const XVulkanRenderPass* RenderPass)

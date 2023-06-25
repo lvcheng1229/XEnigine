@@ -60,6 +60,12 @@ void XVulkanCmdBuffer::BeginRenderPass(const XVulkanRenderTargetLayout* Layout, 
 	}
 }
 
+void XVulkanCmdBuffer::AddWaitSemaphore(VkPipelineStageFlags InWaitFlags, XSemaphore* InWaitSemaphore)
+{
+	WaitFlags.push_back(InWaitFlags);
+	WaitSemaphores.push_back(InWaitSemaphore);
+}
+
 bool XVulkanCmdBuffer::AcquirePoolSetAndDescriptorsIfNeeded(const XVulkanDescriptorSetsLayout* Layout, bool bNeedDescriptors, VkDescriptorSet* OutDescriptors)
 {
 	if (CurrentDescriptorPoolSetContainer == nullptr)
@@ -256,6 +262,18 @@ void XVulkanCommandBufferManager::SubmitActiveCmdBuffer(std::vector<XSemaphore*>
 	{
 		delete ActiveCmdBufferSemaphore;
 		ActiveCmdBufferSemaphore = nullptr;
+	}
+}
+
+void XVulkanCommandBufferManager::SubmitActiveCmdBufferFromPresent(XSemaphore* SignalSemaphore)
+{
+	if (SignalSemaphore)
+	{
+		Queue->Submit(ActiveCmdBuffer, SignalSemaphore->GetHandle());
+	}
+	else
+	{
+		Queue->Submit(ActiveCmdBuffer, 0, 0);
 	}
 }
 

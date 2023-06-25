@@ -3,6 +3,8 @@
 #include "VulkanDevice.h"
 #include "VulkanContext.h"
 #include "GLFW\glfw3.h"
+#include "VulkanMemory.h"
+#include "VulkanQueue.h"
 #include <algorithm>
 
 void XVulkanDevice::SetPresentQueue(VkSurfaceKHR Surface)
@@ -22,6 +24,7 @@ XVulkanSwapChain::XVulkanSwapChain(EPixelFormat& InOutPixelFormat, XVulkanDevice
     : Device(VulkanDevice)
     , WindowHandle(InWindowHandle)
     , Instance(InInstance)
+    , SemaphoreIndex(-1)
 {
     glfwCreateWindowSurface(Instance, (GLFWwindow*)WindowHandle, nullptr, &Surface);//temp    
     Device->SetPresentQueue(Surface);
@@ -80,10 +83,62 @@ XVulkanSwapChain::XVulkanSwapChain(EPixelFormat& InOutPixelFormat, XVulkanDevice
     vkGetSwapchainImagesKHR(Device->GetVkDevice(), swapChain, &DesiredNumBuffers, OutImages.data());
 
     SwapChainExtent = Capabilities.currentExtent;
+
+    ImageAvailableSemaphore.resize(DesiredNumBuffers);
+    for (uint32 BufferIndex = 0; BufferIndex < DesiredNumBuffers; ++BufferIndex)
+    {
+        ImageAvailableSemaphore[BufferIndex] = new XSemaphore(Device);
+    }
+
+    ImageAcquiredFences.resize(DesiredNumBuffers);
+    XFenceManager& FenceMgr = Device->GetFenceManager();
+    for (uint32 BufferIndex = 0; BufferIndex < DesiredNumBuffers; ++BufferIndex)
+    {
+        ImageAcquiredFences[BufferIndex] = Device->GetFenceManager().AllocateFence(true);
+    }
 }
 
 XVulkanSwapChain::~XVulkanSwapChain()
 {
     vkDestroySwapchainKHR(Device->GetVkDevice(), swapChain, nullptr);
     vkDestroySurfaceKHR(Instance, Surface, nullptr);
+    for (auto& iter : ImageAvailableSemaphore)
+    {
+        delete iter;
+    }
+}
+
+void XVulkanSwapChain::Present(XVulkanQueue* GfxQueue, XVulkanQueue* PresentQueue, XSemaphore* BackBufferRenderingDoneSemaphore)
+{
+    VkPresentInfoKHR Info = {};
+    Info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    VkSemaphore Semaphore = VK_NULL_HANDLE;
+    if (BackBufferRenderingDoneSemaphore)
+    {
+        Info.waitSemaphoreCount = 1;
+        Semaphore = BackBufferRenderingDoneSemaphore->GetHandle();
+        Info.pWaitSemaphores = &Semaphore;
+    }
+    Info.swapchainCount = 1;
+    Info.pSwapchains = &swapChain;
+    Info.pImageIndices = (uint32*)&CurrentImageIndex;
+    vkQueuePresentKHR(PresentQueue->GetVkQueue(), &Info);
+}
+
+uint32_t XVulkanSwapChain::AcquireImageIndex(XSemaphore*& OutSemaphore)
+{
+    SemaphoreIndex = (SemaphoreIndex + 1) % ImageAvailableSemaphore.size();
+
+    XFenceManager& FenceMgr = Device->GetFenceManager();
+    FenceMgr.ResetFence(ImageAcquiredFences[SemaphoreIndex]);
+    const VkFence AcquiredFence = ImageAcquiredFences[SemaphoreIndex]->GetHandle();
+
+    uint32_t imageIndex;
+    VULKAN_VARIFY(vkAcquireNextImageKHR(Device->GetVkDevice(), swapChain, UINT64_MAX, ImageAvailableSemaphore[SemaphoreIndex]->GetHandle(), AcquiredFence, &imageIndex));
+    OutSemaphore = ImageAvailableSemaphore[SemaphoreIndex];
+    CurrentImageIndex = imageIndex;
+
+    bool bResult = FenceMgr.WaitForFence(ImageAcquiredFences[SemaphoreIndex], UINT64_MAX);
+    
+    return imageIndex;
 }
