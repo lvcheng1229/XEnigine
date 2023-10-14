@@ -81,6 +81,8 @@ XVulkanSurface::XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat, u
 	ImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	VULKAN_VARIFY(vkCreateImage(Device->GetVkDevice(), &ImageCreateInfo, nullptr, &Image));
+
+	vkGetImageMemoryRequirements(Device->GetVkDevice(), Image, &MemoryRequirements);
 }
 
 XVulkanSurface::XVulkanSurface(XVulkanDevice* InDevice, EPixelFormat InFormat, uint32 InWidth, uint32 InHeight, VkImageViewType	InViewType, VkImage InImage)

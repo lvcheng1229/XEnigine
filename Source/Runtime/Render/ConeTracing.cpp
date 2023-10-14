@@ -7,6 +7,8 @@
 
 #include "VoxelizationScene.h"
 
+#if USE_SVOGI
+
 class XConeTracingPS :public XGloablShader
 {
 public:
@@ -95,3 +97,5 @@ void XDeferredShadingRenderer::ConeTracingPass(XRHICommandList& RHICmdList, XRHI
 	RHICmdList.RHIDrawIndexedPrimitive(GFullScreenIndexRHI.RHIIndexBuffer.get(), 6, 1, 0, 0, 0);
 	RHICmdList.RHIEndRenderPass();
 }
+
+#endif

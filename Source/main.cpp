@@ -351,6 +351,7 @@ public:
         RHIInit(XApplication::Application->ClientWidth, XApplication::Application->ClientHeight, USE_DX12);
 
         RHICmdList = GRHICmdList;
+        RHICmdList.Open();
 #if USE_DX12
         RHICmdList.Open();
         SceneBuild();
@@ -370,6 +371,7 @@ public:
         RHICmdList.Execute();
 #else
         createTextureImage();
+        RHICmdList.Execute();
 #endif
     }
 

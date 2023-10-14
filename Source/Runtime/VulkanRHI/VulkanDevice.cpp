@@ -37,7 +37,10 @@ void XVulkanDevice::InitGPU()
     {
         XSamplerStateInitializerRHI Default(SF_Point);
         DefaultSampler = RHI->RHICreateSamplerState(Default);
-        DefaultImage = new XVulkanSurface(this, EPixelFormat::FT_R8G8B8A8_UNORM, 1, 1, VK_IMAGE_VIEW_TYPE_2D);
+
+        XVulkanEvictable HackHere;
+
+        DefaultImage = new XVulkanSurface(&HackHere, this, EPixelFormat::FT_R8G8B8A8_UNORM, 1, 1, VK_IMAGE_VIEW_TYPE_2D, ETextureCreateFlags::TexCreate_ShaderResource, 1, nullptr, 0);
         DefaultTextureView.Create(this, DefaultImage->Image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, VK_FORMAT_R8G8B8A8_UNORM);
     }
 }
