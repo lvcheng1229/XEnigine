@@ -3,6 +3,8 @@
 #include "RHIResource.h"
 
 #define USE_DX12 0
+#define RHI_RAYTRACING 1
+
 
 class XRHICommandList;
 class XPlatformRHI

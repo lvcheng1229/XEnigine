@@ -128,3 +128,10 @@ struct XVertexElement
 		InputSlot(InInputSlot),
 		AlignedByteOffset(InAlignedByteOffset) {}
 };
+
+struct XRHIBufferRange
+{
+	XRHIBuffer* Buffer{ nullptr };
+	uint64 Offset{ 0 };
+	uint64 Size{ 0 };
+};

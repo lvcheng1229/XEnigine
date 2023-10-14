@@ -7,6 +7,14 @@
 
 class XVulkanDescriptorPoolsManager;
 
+#if RHI_RAYTRACING
+struct XRayTracingProperties
+{
+	VkPhysicalDeviceAccelerationStructurePropertiesKHR AccelerationStructure;
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR RayTracingPipeline;
+};
+#endif // VULKAN_RHI_RAYTRACING
+
 class XVulkanDevice
 {
 public:
@@ -52,6 +60,13 @@ public:
 		return &DefaultTextureView;
 	}
 
+#if RHI_RAYTRACING
+	inline const XRayTracingProperties& GetRayTracingProperties() const
+	{
+		return RayTracingProperties;
+	}
+#endif
+
 	class XVulkanPipelineStateCacheManager* PipelineStateCache;
 private:
 	friend class VkHack;
@@ -79,4 +94,8 @@ private:
 	std::shared_ptr<XRHISamplerState>DefaultSampler;
 	XVulkanSurface* DefaultImage;
 	XVulkanTextureView DefaultTextureView;
+
+#if RHI_RAYTRACING
+	XRayTracingProperties RayTracingProperties;
+#endif
 };

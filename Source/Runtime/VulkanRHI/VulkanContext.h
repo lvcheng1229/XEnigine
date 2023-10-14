@@ -51,6 +51,11 @@ public:
 	void RHIEndRenderPass()override;
 	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const char* InName, uint32 Size)override;
 
+#if RHI_RAYTRACING
+	virtual void RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange);
+#endif
+
+
 	//Vulkan
 	XVulkanQueue* GetQueue() { return Queue; }
 	XVulkanRenderPass* PrepareRenderPassForPSOCreation(const XGraphicsPSOInitializer& Initializer);

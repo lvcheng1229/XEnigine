@@ -2,6 +2,15 @@
 #include "Runtime/HAL/PlatformTypes.h"
 #include "RHIResource.h"
 #include "RHIDefines.h"
+#include <span>
+
+#if RHI_RAYTRACING
+struct XRayTracingGeometryBuildParams
+{
+
+};
+#endif
+
 class IRHIContext
 {
 public:
@@ -39,4 +48,8 @@ public:
 	virtual void RHISetViewport(float MinX, float MinY, float MinZ, float MaxX, float MaxY, float MaxZ) = 0;
 	virtual void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo,const char* InName, uint32 Size) = 0;
 	virtual void SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRenderTargetView* RTViews,const XRHIDepthStencilView* DSView) = 0;
+
+#if RHI_RAYTRACING
+	virtual void RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange) {};
+#endif
 };

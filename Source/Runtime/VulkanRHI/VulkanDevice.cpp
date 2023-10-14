@@ -1,8 +1,12 @@
 #include "VulkanDevice.h"
+#include "VulkanExtensions.h"
 #include "VulkanPipeline.h"
 
-const std::vector<const ACHAR*> deviceExtensions = {
+std::vector<const ACHAR*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
+#if RHI_RAYTRACING
+    ,VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
+#endif
 };
 
 XVulkanDevice::XVulkanDevice(XVulkanPlatformRHI* InRHI, VkPhysicalDevice InGpu)
@@ -43,6 +47,8 @@ void XVulkanDevice::InitGPU()
         DefaultImage = new XVulkanSurface(&HackHere, this, EPixelFormat::FT_R8G8B8A8_UNORM, 1, 1, VK_IMAGE_VIEW_TYPE_2D, ETextureCreateFlags::TexCreate_ShaderResource, 1, nullptr, 0);
         DefaultTextureView.Create(this, DefaultImage->Image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, VK_FORMAT_R8G8B8A8_UNORM);
     }
+
+    
 }
 
 void XVulkanDevice::CreateDevice()
@@ -68,6 +74,28 @@ void XVulkanDevice::CreateDevice()
     GfxQueueIndex = GfxQueueFamilyIndex;
     float queuePriority = 1.0f;
 
+    auto& DeviceExtensionArray = XVulkanDeviceExtension::GetSupportedDeviceExtensions(this);
+    
+    {
+        VkPhysicalDeviceFeatures2 PhysicalDeviceFeatures2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+        for (auto iter : DeviceExtensionArray)
+        {
+            iter.PrePhysicalDeviceFeatures(PhysicalDeviceFeatures2);
+        }
+        vkGetPhysicalDeviceFeatures2(Gpu, &PhysicalDeviceFeatures2);
+    }
+
+
+    {
+        VkPhysicalDeviceProperties2 PhysicalDeviceProperties2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+        for (auto iter : DeviceExtensionArray)
+        {
+            iter.PrePhysicalDeviceProperties(PhysicalDeviceProperties2);
+        }
+        vkGetPhysicalDeviceProperties2(Gpu, &PhysicalDeviceProperties2);
+    }
+    
+
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = GfxQueueFamilyIndex;
@@ -78,6 +106,14 @@ void XVulkanDevice::CreateDevice()
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+
+    for (auto iter : DeviceExtensionArray)
+    {
+        deviceExtensions.push_back(iter.GetExtensionName());
+        iter.PreCreateDevice(createInfo);
+    }
+
     createInfo.pQueueCreateInfos = &queueCreateInfo;
     createInfo.queueCreateInfoCount = 1;
     createInfo.pEnabledFeatures = &deviceFeatures;
@@ -85,6 +121,8 @@ void XVulkanDevice::CreateDevice()
 
     createInfo.enabledExtensionCount = deviceExtensions.size();
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+   
 
     VULKAN_VARIFY(vkCreateDevice(Gpu, &createInfo, nullptr, &Device));
     GfxQueue = new XVulkanQueue(this, GfxQueueFamilyIndex);

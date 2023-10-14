@@ -153,6 +153,26 @@ public:
         Vertices.PushBack(XTestVertex(XVector3(0.5f, 0.5f, -0.5f), XVector3(0.0f, 0.0f, 1.0f), XVector2(0.0f, 1.0f)));
         Vertices.PushBack(XTestVertex(XVector3(-0.5f, 0.5f, -0.5f), XVector3(1.0f, 1.0f, 1.0f), XVector2(1.0f, 1.0f)));
 
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, 0.5f, 0.0f), XVector3(1.0f, 0.0f, 0.0f), XVector2(1.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, -0.5f, 0.0f), XVector3(0.0f, 1.0f, 0.0f), XVector2(0.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, -0.5f, -0.5f), XVector3(0.0f, 0.0f, 1.0f), XVector2(0.0f, 1.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, 0.5f, -0.5f), XVector3(1.0f, 1.0f, 1.0f), XVector2(1.0f, 1.0f)));
+
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, -0.5f, 0.0f), XVector3(1.0f, 0.0f, 0.0f), XVector2(1.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, 0.5f, 0.0f), XVector3(0.0f, 1.0f, 0.0f), XVector2(0.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, 0.5f, -0.5f), XVector3(0.0f, 0.0f, 1.0f), XVector2(0.0f, 1.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, -0.5f, -0.5f), XVector3(1.0f, 1.0f, 1.0f), XVector2(1.0f, 1.0f)));
+
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, 0.5f, 0.0f), XVector3(1.0f, 0.0f, 0.0f), XVector2(1.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3( 0.5f, 0.5f, 0.0f), XVector3(0.0f, 1.0f, 0.0f), XVector2(0.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3( 0.5f, 0.5f, -0.5f), XVector3(0.0f, 0.0f, 1.0f), XVector2(0.0f, 1.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, 0.5f, -0.5f), XVector3(1.0f, 1.0f, 1.0f), XVector2(1.0f, 1.0f)));
+
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, -0.5f, 0.0f), XVector3(1.0f, 0.0f, 0.0f), XVector2(1.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, -0.5f, 0.0f), XVector3(0.0f, 1.0f, 0.0f), XVector2(0.0f, 0.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(-0.5f, -0.5f, -0.5f), XVector3(0.0f, 0.0f, 1.0f), XVector2(0.0f, 1.0f)));
+        Vertices.PushBack(XTestVertex(XVector3(0.5f, -0.5f, -0.5f), XVector3(1.0f, 1.0f, 1.0f), XVector2(1.0f, 1.0f)));
+
         XRHIResourceCreateData CreateData(&Vertices);
         RHIVertexBuffer = RHIcreateVertexBuffer(sizeof(XTestVertex), 4 * sizeof(XTestVertex), EBufferUsage::BUF_Static, CreateData);
     }
@@ -178,8 +198,37 @@ public:
         Indecies.PushBack(7);
         Indecies.PushBack(4);
 
+        Indecies.PushBack(8);
+        Indecies.PushBack(9);
+        Indecies.PushBack(10);
+        Indecies.PushBack(10);
+        Indecies.PushBack(11);
+        Indecies.PushBack(8);
+
+        Indecies.PushBack(12);
+        Indecies.PushBack(13);
+        Indecies.PushBack(14);
+        Indecies.PushBack(14);
+        Indecies.PushBack(15);
+        Indecies.PushBack(12);
+
+
+        Indecies.PushBack(16);
+        Indecies.PushBack(17);
+        Indecies.PushBack(18);
+        Indecies.PushBack(18);
+        Indecies.PushBack(19);
+        Indecies.PushBack(16);
+
+        Indecies.PushBack(20);
+        Indecies.PushBack(21);
+        Indecies.PushBack(22);
+        Indecies.PushBack(22);
+        Indecies.PushBack(23);
+        Indecies.PushBack(20);
+
         XRHIResourceCreateData CreateData(&Indecies);
-        RHIVertexBuffer = RHIcreateVertexBuffer(sizeof(uint16), 12 * sizeof(uint16), EBufferUsage::BUF_Static, CreateData);
+        RHIVertexBuffer = RHIcreateVertexBuffer(sizeof(uint16), 36 * sizeof(uint16), EBufferUsage::BUF_Static, CreateData);
     }
 };
 TGlobalResource<XTestVertexBuffer> GTestVertexRHI;
@@ -321,7 +370,7 @@ public:
         VertexShader->SetParameter(RHICmdList, VkTestCBResourece.RHICbVkTest.get());
         PixelShader->SetParameter(RHICmdList, RHITestTexture2D.get());
 
-        RHICmdList.RHIDrawIndexedPrimitive(GTestIndexRHI.RHIVertexBuffer.get(), 12, 1, 0, 0, 0);
+        RHICmdList.RHIDrawIndexedPrimitive(GTestIndexRHI.RHIVertexBuffer.get(), 36, 1, 0, 0, 0);
         RHICmdList.RHIEndRenderPass();
         
         //TODO:FixMe

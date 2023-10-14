@@ -1,4 +1,7 @@
 #pragma once
+
+#define RHI_RAYTRACING 1
+
 enum class EShaderType
 {
 	SV_Vertex = 0,

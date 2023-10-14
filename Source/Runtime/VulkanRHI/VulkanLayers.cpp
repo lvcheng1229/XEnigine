@@ -44,6 +44,10 @@ void XVulkanPlatformRHI::GetInstanceLayersAndExtensions(std::vector<const ACHAR*
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     std::vector<const ACHAR*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#if RHI_RAYTRACING
+
+
+#endif
     OutExtension = extensions;
 }
 
