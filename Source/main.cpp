@@ -324,6 +324,28 @@ public:
        stbi_image_free(pixels);
    }
    
+   void PrePareRayTracingScene()
+   {
+       XRayTracingGeometryInitializer GeometryInitializer;
+       GeometryInitializer.IndexBuffer = GTestIndexRHI.RHIVertexBuffer;
+       GeometryInitializer.IndexBufferOffset = 0;
+       GeometryInitializer.bPreferBuild = false;
+
+       XRayTracingGeometrySegment Segment;
+       Segment.VertexBuffer = GTestVertexRHI.RHIVertexBuffer;
+
+       Segment.VertexBufferOffset = 0;
+       Segment.MaxVertices = 4 * 6;
+       Segment.FirstPrimitive = 0;
+       Segment.NumPrimitives = 3 * 2 * 6;
+       Segment.VertexBufferStride = 3 * 4 + 3 * 4 + 2 * 4;
+
+       GeometryInitializer.Segments.push_back(Segment);
+
+       std::shared_ptr<XRHIRayTracingGeometry> Geometry = RHICreateRayTracingGeometry(GeometryInitializer);
+
+       RHICmdList.BuildAccelerationStructure(Geometry);
+   }
 
     void drawFrame() {
         RHICmdList.Open();

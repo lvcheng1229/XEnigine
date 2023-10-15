@@ -225,6 +225,20 @@ public:
 	{
 		GetContext()->Execute();
 	}
+
+#if RHI_RAYTRACING
+	inline void BuildAccelerationStructure(std::shared_ptr<XRHIRayTracingGeometry> Geometry)
+	{
+		XRayTracingGeometryBuildParams Params;
+		Params.Geometry = Geometry;
+		Params.BuildMode = ;
+
+		XRHIBufferRange ScratchBufferRanfge{};
+		//ScratchBufferRanfge.Buffer = RHIcreateStructBuffer(0, Geometry.)
+		//
+		//GetContext()->RHIBuildAccelerationStructures();
+	}
+#endif
 };
 
 extern XRHICommandList GRHICmdList;
@@ -332,6 +346,11 @@ inline std::shared_ptr<XRHIShaderResourceView> RHICreateShaderResourceView(XRHIS
 inline std::shared_ptr<XRHIStructBuffer>RHIcreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	return GPlatformRHI->RHICreateStructBuffer(Stride, Size, Usage, ResourceData);
+}
+
+inline std::shared_ptr<XRHIBuffer>RHICreateBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return GPlatformRHI->RHICreateBuffer(Stride, Size, Usage, ResourceData);
 }
 
 inline std::shared_ptr<XRHIBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)

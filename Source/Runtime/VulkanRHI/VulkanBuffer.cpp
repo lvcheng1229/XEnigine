@@ -22,6 +22,13 @@ VkBufferUsageFlags XVulkanResourceMultiBuffer::UEToVKBufferUsageFlags(EBufferUsa
 		OutVkUsage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 	}
 
+	if (EnumHasAnyFlags(InUEUsage, EBufferUsage::BUF_AccelerationStructure))
+	{
+		OutVkUsage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+		OutVkUsage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+		OutVkUsage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+	}
+
 	return OutVkUsage;
 }
 
@@ -63,7 +70,6 @@ void XVulkanResourceMultiBuffer::InternalUnlock(XVulkanCommandListContext* Conte
 
 void* XVulkanResourceMultiBuffer::Lock(EResourceLockMode LockMode, uint32 LockSize, uint32 Offset)
 {
-
 	XStagingBuffer* StagingBuffer = Device->GetStagingManager().AcquireBuffer(LockSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 	void* Data = StagingBuffer->GetMappedPointer();
 
@@ -77,6 +83,11 @@ void* XVulkanResourceMultiBuffer::Lock(EResourceLockMode LockMode, uint32 LockSi
 }
 
 
+
+std::shared_ptr<XRHIBuffer> XVulkanPlatformRHI::RHICreateBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return std::make_shared<XVulkanResourceMultiBuffer>(Device, Stride, Size, Usage, ResourceData);
+}
 
 std::shared_ptr<XRHIBuffer> XVulkanPlatformRHI::RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {

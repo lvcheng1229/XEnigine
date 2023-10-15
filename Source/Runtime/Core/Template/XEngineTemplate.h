@@ -28,3 +28,16 @@ inline void THashCombine(std::size_t& seed, const T& v)
 	std::hash<T> hasher;
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
+
+template<typename Enum>
+constexpr bool EnumHasAllFlags(Enum Flags, Enum Contains)
+{
+	return (((__underlying_type(Enum))Flags) & (__underlying_type(Enum))Contains) == ((__underlying_type(Enum))Contains);
+}
+
+template<typename Enum>
+constexpr bool EnumHasAnyFlags(Enum Flags, Enum Contains)
+{
+	return (((__underlying_type(Enum))Flags) & (__underlying_type(Enum))Contains) != 0;
+}
+

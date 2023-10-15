@@ -154,7 +154,10 @@ public:
 	
 	static VkBufferUsageFlags UEToVKBufferUsageFlags(EBufferUsage InUEUsage);
 	
-	
+#if RHI_RAYTRACING
+	VkDeviceAddress GetDeviceAddress() const;
+#endif
+
 	XVulkanAllocation Buffer;
 	VkBufferUsageFlags BufferUsageFlags;
 	static void InternalUnlock(class XVulkanCommandListContext* Context, class XPendingBufferLock* PendingLock, XVulkanResourceMultiBuffer* MultiBuffer);

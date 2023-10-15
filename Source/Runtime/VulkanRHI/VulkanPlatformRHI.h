@@ -26,6 +26,7 @@ public:
 	std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements) final override;
 
 	//Create buffer
+	virtual std::shared_ptr<XRHIBuffer>RHICreateBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override;
 	std::shared_ptr<XRHIBuffer>RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override;
 	std::shared_ptr<XRHIBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override { return RHICreateVertexBuffer(Stride, Size, Usage, ResourceData); };
 	std::shared_ptr<XRHIStructBuffer>RHICreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)final override { XASSERT_TEMP(false); return nullptr; };
@@ -84,10 +85,16 @@ public:
 	void* LockIndexBuffer(XRHIBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI)override { XASSERT(false); return nullptr;};
 	void UnLockIndexBuffer(XRHIBuffer* IndexBuffer)override { XASSERT(false); };
 
+#if RHI_RAYTRACING
+	virtual XRayTracingAccelerationStructSize RHICalcRayTracingGeometrySize(const XRayTracingGeometryInitializer& Initializer);
+	virtual std::shared_ptr<XRHIRayTracingGeometry> RHICreateRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer);
+#endif
+
 	//Vulkan
 	static void GetInstanceLayersAndExtensions(std::vector<const ACHAR*>& OutLayer, std::vector<const ACHAR*>& OutExtension);
 	static VKAPI_ATTR VkBool32 VKAPI_CALL VkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData); 
 	XVulkanViewport* GetVulkanViewport() { return VulkanViewport; }
+	inline XVulkanDevice* GetDevice() { return Device; }
 private:
 	friend class VkHack;
 	VkInstance Instance;

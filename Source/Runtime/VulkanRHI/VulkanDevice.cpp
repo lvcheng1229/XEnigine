@@ -1,6 +1,7 @@
 #include "VulkanDevice.h"
 #include "VulkanExtensions.h"
 #include "VulkanPipeline.h"
+#include "VulkanLoader.h"
 
 std::vector<const ACHAR*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -131,7 +132,25 @@ void XVulkanDevice::CreateDevice()
     StagingManager.Init(this);
     MemoryManager.Init();
 
+    VulkanExtension::InitExtensionFunction(Device);
+    GRHIRayTracingScratchBufferAlignment = GetRayTracingProperties().AccelerationStructure.minAccelerationStructureScratchOffsetAlignment;
+    GRHIRayTracingAccelerationStructureAlignment = 256;
+}
 
+namespace VulkanExtension
+{
+    PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR = nullptr;
+    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR = nullptr;
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = nullptr;
+    PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR = nullptr;
+}
+
+void VulkanExtension::InitExtensionFunction(VkDevice Device)
+{
+    vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(Device, "vkGetAccelerationStructureBuildSizesKHR");
+    vkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(Device, "vkGetBufferDeviceAddressKHR");
+    vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(Device, "vkCreateAccelerationStructureKHR");
+    vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(Device, "vkGetAccelerationStructureDeviceAddressKHR");
 }
 
 

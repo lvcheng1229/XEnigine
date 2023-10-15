@@ -104,16 +104,23 @@ enum class EVertexElementType
 
 enum class EBufferUsage
 {
-	BUF_None = 0x0000,
-	BUF_Static = 0x0001,
-	BUF_Dynamic = 0x0002,
-	BUF_Vertex = 0x0002,
-	BUF_Index = 0x0002,
-	BUF_UnorderedAccess = 0x0008,
-	BUF_DrawIndirect = 0x0100,
-	BUF_ShaderResource = 0x0200,
-	BUF_StructuredBuffer = 0x40000,
+	BUF_None					= 0,
+	BUF_Static					= 1 << 1,
+	
+	BUF_UnorderedAccess			= 1 << 2,
+	BUF_DrawIndirect			= 1 << 3,
+	BUF_ShaderResource			= 1 << 4,
+	
+	BUF_Dynamic					= 1 << 5,
+
+	BUF_AccelerationStructure	= 1 << 6,
+	
+	BUF_Vertex					= 1 << 7,
+	BUF_Index					= 1 << 8,
+	BUF_StructuredBuffer		= 1 << 9,
+
 	BUF_AnyDynamic = BUF_Dynamic,
+	
 };
 
 #define MaxSimultaneousRenderTargets 8

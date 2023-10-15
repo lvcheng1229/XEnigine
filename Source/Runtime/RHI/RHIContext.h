@@ -7,7 +7,8 @@
 #if RHI_RAYTRACING
 struct XRayTracingGeometryBuildParams
 {
-
+	std::shared_ptr<XRHIRayTracingGeometry> Geometry;
+	EAccelerationStructureBuildMode BuildMode;
 };
 #endif
 

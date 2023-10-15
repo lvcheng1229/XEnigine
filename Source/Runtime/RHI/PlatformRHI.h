@@ -3,8 +3,6 @@
 #include "RHIResource.h"
 
 #define USE_DX12 0
-#define RHI_RAYTRACING 1
-
 
 class XRHICommandList;
 class XPlatformRHI
@@ -17,6 +15,7 @@ public:
 	virtual std::shared_ptr<XRHIVertexLayout> RHICreateVertexDeclaration(const XRHIVertexLayoutArray& Elements) = 0;
 	
 	//Create Buffer
+	virtual std::shared_ptr<XRHIBuffer>RHICreateBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData) = 0;
 	virtual std::shared_ptr<XRHIBuffer>RHICreateVertexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData) = 0;
 	virtual std::shared_ptr<XRHIBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData) = 0;
 	virtual std::shared_ptr<XRHIStructBuffer>RHICreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData) = 0;
@@ -63,6 +62,11 @@ public:
 	virtual void* LockIndexBuffer(XRHIBuffer* IndexBuffer, uint32 Offset, uint32 SizeRHI) = 0;
 	virtual void UnLockIndexBuffer(XRHIBuffer* IndexBuffer) = 0;
 
+#if RHI_RAYTRACING
+	virtual std::shared_ptr<XRHIRayTracingGeometry> RHICreateRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer) { return nullptr; };
+	virtual XRayTracingAccelerationStructSize RHICalcRayTracingGeometrySize(const XRayTracingGeometryInitializer& Initializer) { return XRayTracingAccelerationStructSize(); }
+#endif
+
 };
 
 
@@ -97,4 +101,14 @@ inline std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGr
 inline std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)
 {
 	return GPlatformRHI->RHICreateComputePipelineState(RHIComputeShader);
+}
+
+inline std::shared_ptr<XRHIRayTracingGeometry> RHICreateRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer)
+{
+	return GPlatformRHI->RHICreateRayTracingGeometry(Initializer);
+}
+
+inline XRayTracingAccelerationStructSize RHICalcRayTracingGeometrySize(const XRayTracingGeometryInitializer& Initializer)
+{
+	return GPlatformRHI->RHICalcRayTracingGeometrySize(Initializer);
 }

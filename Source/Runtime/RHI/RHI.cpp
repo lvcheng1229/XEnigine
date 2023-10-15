@@ -11,3 +11,6 @@ FPixelFormatInfo GPixelFormats[(int)EPixelFormat::FT_MAX] =
 	{L"FT_R16_FLOAT",					0},
 	{L"FT_R32G32B32A32_UINT",			0},
 };
+
+uint32 GRHIRayTracingScratchBufferAlignment = 0;
+uint32 GRHIRayTracingAccelerationStructureAlignment = 0;

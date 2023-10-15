@@ -314,3 +314,80 @@ struct XRHIRenderPassInfo
 		}
 	}
 };
+
+enum class ERayTracingAccelerationStructureFlags : uint32
+{
+	None = 0,
+	AllowUpdate = 1 << 0,
+	AllowCompaction = 1 << 1,
+	PreferTrace = 1 << 2,
+	PreferBuild = 1 << 3,
+};
+
+enum class EAccelerationStructureBuildMode
+{
+	Build,
+	Update
+};
+
+struct XRayTracingGeometrySegment
+{
+public:
+	std::shared_ptr<XRHIBuffer> VertexBuffer = nullptr;
+	EVertexElementType VertexElementType = EVertexElementType::VET_Float3;
+
+	// Offset in bytes from the base address of the vertex buffer.
+	uint32 VertexBufferOffset = 0;
+	uint32 MaxVertices = 0;
+	uint32 FirstPrimitive = 0;
+	uint32 NumPrimitives = 0;
+
+	// Number of bytes between elements of the vertex buffer (sizeof VET_Float3 by default).
+	// Must be equal or greater than the size of the position vector.
+	uint32 VertexBufferStride = 12;
+
+	// Indicates whether any-hit shader could be invoked when hitting this geometry segment.
+	// Setting this to `false` turns off any-hit shaders, making the section "opaque" and improving ray tracing performance.
+	bool bForceOpaque = true;
+	bool bEnabled = true;
+};
+
+struct XRayTracingGeometryInitializer
+{
+public:
+	std::shared_ptr<XRHIBuffer>IndexBuffer;
+	uint32 IndexBufferOffset = 0;
+	std::vector<XRayTracingGeometrySegment>Segments;
+
+	bool bPreferBuild = false;
+	bool bAllowUpdate = false;
+	bool bAllowCompaction = true;
+};
+
+struct XRayTracingAccelerationStructSize
+{
+	uint64 ResultSize = 0;
+	uint64 BuildScratahSize = 0;
+	uint64 UpdateScratchSize = 0;
+};
+
+class XRHIRayTracingAccelerationStruct
+{
+	XRayTracingAccelerationStructSize GetSizeInfo()const
+	{
+		return SizeInfo;
+	}
+protected:
+	XRayTracingAccelerationStructSize SizeInfo = {};
+};
+
+class XRHIRayTracingGeometry : public XRHIRayTracingAccelerationStruct
+{
+public:
+	XRHIRayTracingGeometry(const XRayTracingGeometryInitializer& InInitializer)
+		: Initializer(InInitializer)
+	{}
+
+protected:
+	XRayTracingGeometryInitializer Initializer;
+};

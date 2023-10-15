@@ -1,0 +1,10 @@
+#pragma once
+#include "vulkan\vulkan.h"
+namespace VulkanExtension
+{
+	extern PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR;
+	extern PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR;
+	extern PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR;
+	extern PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR;
+	void InitExtensionFunction(VkDevice Device);
+}

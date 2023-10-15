@@ -14,3 +14,4 @@ public:
 	static const std::string& ProjectResourceSavedDirString();
 	static const std::wstring& ProjectMaterialSavedDir();
 };
+

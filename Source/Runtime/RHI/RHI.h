@@ -6,11 +6,7 @@
 #include "Runtime/Core/PixelFormat.h"
 #include "Runtime/Core/ResourceCreateDataInterface.h"
 
-template<typename Enum>
-constexpr bool EnumHasAnyFlags(Enum Flags, Enum Contains)
-{
-	return (((__underlying_type(Enum))Flags) & (__underlying_type(Enum))Contains) != 0;
-}
+struct XRHIBuffer;
 
 struct FPixelFormatInfo
 {
@@ -135,3 +131,7 @@ struct XRHIBufferRange
 	uint64 Offset{ 0 };
 	uint64 Size{ 0 };
 };
+
+extern uint32 GRHIRayTracingAccelerationStructureAlignment;
+extern uint32 GRHIRayTracingScratchBufferAlignment;
+//extern uint32 GRHIRayTracingShaderTableAlignment;
