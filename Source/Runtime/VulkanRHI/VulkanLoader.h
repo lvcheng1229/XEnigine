@@ -6,5 +6,6 @@ namespace VulkanExtension
 	extern PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR;
 	extern PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR;
 	extern PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR;
+	extern PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR;
 	void InitExtensionFunction(VkDevice Device);
 }

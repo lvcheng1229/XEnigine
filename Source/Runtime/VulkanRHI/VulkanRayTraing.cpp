@@ -2,6 +2,7 @@
 #include "VulkanRayTraing.h"
 #include "VulkanDevice.h"
 #include "VulkanLoader.h"
+#include "VulkanCommandBuffer.h"
 #include "Runtime\RHI\RHICommandList.h"
 
 VkDeviceAddress XVulkanResourceMultiBuffer::GetDeviceAddress() const
@@ -34,6 +35,14 @@ static ERayTracingAccelerationStructureFlags GetRayTracingAccelerationStructureB
 	}
 
 	return BuildFlags;
+}
+
+static void AddAccelerationStructureBuildBarrier(VkCommandBuffer CommandBuffer)
+{
+	VkMemoryBarrier Barrier = { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
+	Barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+	Barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+	vkCmdPipelineBarrier(CommandBuffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &Barrier, 0, nullptr, 0, nullptr);
 }
 
 static void GetBLASBuildData(
@@ -121,7 +130,7 @@ XRayTracingAccelerationStructSize XVulkanPlatformRHI::RHICalcRayTracingGeometryS
 	
 	XRayTracingAccelerationStructSize Result;
 	Result.ResultSize = AlignArbitrary(BuildData.SizesInfo.accelerationStructureSize, GRHIRayTracingAccelerationStructureAlignment);
-	Result.BuildScratahSize = AlignArbitrary(BuildData.SizesInfo.buildScratchSize, GRHIRayTracingScratchBufferAlignment);
+	Result.BuildScratchSize = AlignArbitrary(BuildData.SizesInfo.buildScratchSize, GRHIRayTracingScratchBufferAlignment);
 	Result.UpdateScratchSize = AlignArbitrary(BuildData.SizesInfo.updateScratchSize, GRHIRayTracingScratchBufferAlignment);
 	return Result;
 }
@@ -133,10 +142,54 @@ std::shared_ptr<XRHIRayTracingGeometry> XVulkanPlatformRHI::RHICreateRayTracingG
 
 void XVulkanCommandListContext::RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange)
 {
+	uint32 ScratchBufferSize = ScratchBufferRange.Size ? ScratchBufferRange.Size : ScratchBufferRange.Buffer->GetSize();
+	XVulkanResourceMultiBuffer* ScratchBuffer = static_cast<XVulkanResourceMultiBuffer*>(ScratchBufferRange.Buffer);
+	uint32 ScratchBufferOffset = ScratchBufferRange.Offset;
+	
+	std::vector<XVkRTBLASBuildData> TempBuildData;
+	std::vector<VkAccelerationStructureBuildGeometryInfoKHR> BuildGeometryInfos;
+	std::vector<VkAccelerationStructureBuildRangeInfoKHR*> BuildRangeInfos;
+
 	for (const XRayTracingGeometryBuildParams& P : Params)
 	{
+		XVulkanRayTracingGeometry* const Geometry = static_cast<XVulkanRayTracingGeometry*>(P.Geometry.get());
+		const bool bIsUpdate = P.BuildMode == EAccelerationStructureBuildMode::Update;
 
+		uint64 ScratchBufferRequiredSize = bIsUpdate ? Geometry->GetSizeInfo().UpdateScratchSize : Geometry->GetSizeInfo().BuildScratchSize;
+		TempBuildData.push_back(XVkRTBLASBuildData());
+
+		XVkRTBLASBuildData& BuildData = TempBuildData[TempBuildData.size() - 1];
+
+		GetBLASBuildData(
+			Device->GetVkDevice(), 
+			Geometry->Initializer.Segments, 
+			Geometry->Initializer.IndexBuffer, 
+			Geometry->Initializer.IndexBufferOffset, 
+			Geometry->Initializer.IndexBuffer ? Geometry->Initializer.IndexBuffer->GetStride() : 0, 
+			GetRayTracingAccelerationStructureBuildFlags(Geometry->Initializer), EAccelerationStructureBuildMode::Build, 
+			BuildData);
+
+		VkDeviceAddress ScratchBufferAddress = ScratchBuffer->GetDeviceAddress() + ScratchBufferOffset;
+		ScratchBufferOffset += ScratchBufferRequiredSize;
+
+		//---------------------------------------------------------------
+		BuildData.GeometryInfo.dstAccelerationStructure = Geometry->Handle;
+		BuildData.GeometryInfo.srcAccelerationStructure = bIsUpdate ? Geometry->Handle : VK_NULL_HANDLE;
+		BuildData.GeometryInfo.scratchData.deviceAddress = ScratchBufferAddress;
+		//---------------------------------------------------------------
+
+		VkAccelerationStructureBuildRangeInfoKHR* const pBuildRanges = BuildData.Ranges.data();
+		BuildGeometryInfos.push_back(BuildData.GeometryInfo);
+		BuildRangeInfos.push_back(pBuildRanges);
 	}
+
+	XVulkanCmdBuffer* Cmd = GetCommandBufferManager()->GetActiveCmdBuffer();
+	VkCommandBuffer CmdBuffer = Cmd->GetHandle();
+
+	VulkanExtension::vkCmdBuildAccelerationStructuresKHR(CmdBuffer, Params.size(), BuildGeometryInfos.data(), BuildRangeInfos.data());
+	AddAccelerationStructureBuildBarrier(CmdBuffer);
+
+	XASSERT(false);
 }
 
 XVulkanRayTracingGeometry::XVulkanRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer, XVulkanDevice* InDevice)

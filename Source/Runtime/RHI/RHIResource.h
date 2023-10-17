@@ -367,12 +367,15 @@ public:
 struct XRayTracingAccelerationStructSize
 {
 	uint64 ResultSize = 0;
-	uint64 BuildScratahSize = 0;
+	uint64 BuildScratchSize = 0;
 	uint64 UpdateScratchSize = 0;
 };
 
 class XRHIRayTracingAccelerationStruct
 {
+public:
+	friend class IRHIContext;
+
 	XRayTracingAccelerationStructSize GetSizeInfo()const
 	{
 		return SizeInfo;
@@ -388,6 +391,5 @@ public:
 		: Initializer(InInitializer)
 	{}
 
-protected:
 	XRayTracingGeometryInitializer Initializer;
 };

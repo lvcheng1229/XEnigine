@@ -231,12 +231,18 @@ public:
 	{
 		XRayTracingGeometryBuildParams Params;
 		Params.Geometry = Geometry;
-		Params.BuildMode = ;
+		Params.BuildMode = EAccelerationStructureBuildMode::Build;
+
+		std::vector<const XRayTracingGeometryBuildParams>ParamVec;
+		ParamVec.push_back(Params);
+		const std::span<const XRayTracingGeometryBuildParams> ParamSpan = { ParamVec };
+
+		XRHIResourceCreateData ResourceData;
 
 		XRHIBufferRange ScratchBufferRanfge{};
-		//ScratchBufferRanfge.Buffer = RHIcreateStructBuffer(0, Geometry.)
-		//
-		//GetContext()->RHIBuildAccelerationStructures();
+		ScratchBufferRanfge.Buffer = RHICreateBuffer(0, Geometry->GetSizeInfo().BuildScratchSize, EBufferUsage::BUF_AccelerationStructure, ResourceData).get();
+		
+		GetContext()->RHIBuildAccelerationStructures(ParamSpan, ScratchBufferRanfge);
 	}
 #endif
 };
