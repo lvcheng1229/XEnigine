@@ -65,6 +65,8 @@ public:
 #if RHI_RAYTRACING
 	virtual std::shared_ptr<XRHIRayTracingGeometry> RHICreateRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer) { return nullptr; };
 	virtual XRayTracingAccelerationStructSize RHICalcRayTracingGeometrySize(const XRayTracingGeometryInitializer& Initializer) { return XRayTracingAccelerationStructSize(); }
+	virtual XRayTracingAccelerationStructSize RHICalcRayTracingSceneSize(uint32 MaxInstances, ERayTracingAccelerationStructureFlags Flags){ return XRayTracingAccelerationStructSize(); }
+	virtual std::shared_ptr<XRHIRayTracingScene> RHICreateRayTracingScene(XRayTracingSceneInitializer Initializer) { return nullptr; }
 #endif
 
 };
@@ -108,7 +110,17 @@ inline std::shared_ptr<XRHIRayTracingGeometry> RHICreateRayTracingGeometry(const
 	return GPlatformRHI->RHICreateRayTracingGeometry(Initializer);
 }
 
+inline std::shared_ptr<XRHIRayTracingScene> RHICreateRayTracingScene(const XRayTracingSceneInitializer& Initializer)
+{
+	return GPlatformRHI->RHICreateRayTracingScene(Initializer);
+}
+
 inline XRayTracingAccelerationStructSize RHICalcRayTracingGeometrySize(const XRayTracingGeometryInitializer& Initializer)
 {
 	return GPlatformRHI->RHICalcRayTracingGeometrySize(Initializer);
+}
+
+inline XRayTracingAccelerationStructSize RHICalcRayTracingSceneSize(uint32 MaxInstances, ERayTracingAccelerationStructureFlags Flags)
+{
+	return GPlatformRHI->RHICalcRayTracingSceneSize(MaxInstances, Flags);
 }

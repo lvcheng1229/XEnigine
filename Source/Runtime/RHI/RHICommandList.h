@@ -134,6 +134,11 @@ public:
 	}
 };
 
+inline std::shared_ptr<XRHIBuffer>RHICreateBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return GPlatformRHI->RHICreateBuffer(Stride, Size, Usage, ResourceData);
+
+}
 class XRHICommandList : public XRHIComputeCommandList
 {
 public:
@@ -233,7 +238,7 @@ public:
 		Params.Geometry = Geometry;
 		Params.BuildMode = EAccelerationStructureBuildMode::Build;
 
-		std::vector<const XRayTracingGeometryBuildParams>ParamVec;
+		std::vector< XRayTracingGeometryBuildParams>ParamVec;
 		ParamVec.push_back(Params);
 		const std::span<const XRayTracingGeometryBuildParams> ParamSpan = { ParamVec };
 
@@ -243,6 +248,16 @@ public:
 		ScratchBufferRanfge.Buffer = RHICreateBuffer(0, Geometry->GetSizeInfo().BuildScratchSize, EBufferUsage::BUF_AccelerationStructure, ResourceData).get();
 		
 		GetContext()->RHIBuildAccelerationStructures(ParamSpan, ScratchBufferRanfge);
+	}
+
+	inline void BindAccelerationStructureMemory(XRHIRayTracingScene* Scene, std::shared_ptr<XRHIBuffer> Buffer, uint32 BufferOffset)
+	{
+		GetContext()->BindAccelerationStructureMemory(Scene, Buffer, BufferOffset);
+	}
+
+	inline void BuildAccelerationStructure(const XRayTracingSceneBuildParams& SceneBuildParams)
+	{
+		GetContext()->RHIBuildAccelerationStructure(SceneBuildParams);
 	}
 #endif
 };
@@ -354,10 +369,7 @@ inline std::shared_ptr<XRHIStructBuffer>RHIcreateStructBuffer(uint32 Stride, uin
 	return GPlatformRHI->RHICreateStructBuffer(Stride, Size, Usage, ResourceData);
 }
 
-inline std::shared_ptr<XRHIBuffer>RHICreateBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
-{
-	return GPlatformRHI->RHICreateBuffer(Stride, Size, Usage, ResourceData);
-}
+
 
 inline std::shared_ptr<XRHIBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {

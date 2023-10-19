@@ -135,3 +135,8 @@ struct XRHIBufferRange
 extern uint32 GRHIRayTracingAccelerationStructureAlignment;
 extern uint32 GRHIRayTracingScratchBufferAlignment;
 //extern uint32 GRHIRayTracingShaderTableAlignment;
+
+
+//TayTraingDefine
+
+#define RAY_TRACING_NUM_SHADER_SLOTS 2

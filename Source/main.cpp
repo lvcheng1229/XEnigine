@@ -27,6 +27,8 @@ const int MAX_FRAMES_IN_FLIGHT = 1;
 
 #include "Runtime\VulkanRHI\VulkanResource.h"
 
+#include "Runtime\Render\RayTracingInstanceBufferUtil.h"
+
 struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
@@ -326,25 +328,43 @@ public:
    
    void PrePareRayTracingScene()
    {
+       //raytracing geometry
        XRayTracingGeometryInitializer GeometryInitializer;
-       GeometryInitializer.IndexBuffer = GTestIndexRHI.RHIVertexBuffer;
-       GeometryInitializer.IndexBufferOffset = 0;
-       GeometryInitializer.bPreferBuild = false;
+       {
+           GeometryInitializer.IndexBuffer = GTestIndexRHI.RHIVertexBuffer;
+           GeometryInitializer.IndexBufferOffset = 0;
+           GeometryInitializer.bPreferBuild = false;
 
-       XRayTracingGeometrySegment Segment;
-       Segment.VertexBuffer = GTestVertexRHI.RHIVertexBuffer;
+           XRayTracingGeometrySegment Segment;
+           Segment.VertexBuffer = GTestVertexRHI.RHIVertexBuffer;
 
-       Segment.VertexBufferOffset = 0;
-       Segment.MaxVertices = 4 * 6;
-       Segment.FirstPrimitive = 0;
-       Segment.NumPrimitives = 3 * 2 * 6;
-       Segment.VertexBufferStride = 3 * 4 + 3 * 4 + 2 * 4;
+           Segment.VertexBufferOffset = 0;
+           Segment.MaxVertices = 4 * 6;
+           Segment.FirstPrimitive = 0;
+           Segment.NumPrimitives = 3 * 2 * 6;
+           Segment.VertexBufferStride = 3 * 4 + 3 * 4 + 2 * 4;
 
-       GeometryInitializer.Segments.push_back(Segment);
-
+           GeometryInitializer.Segments.push_back(Segment);
+       }
        std::shared_ptr<XRHIRayTracingGeometry> Geometry = RHICreateRayTracingGeometry(GeometryInitializer);
 
+       //raytracing scene
+       std::vector<XRayTracingGeometryInstance> Instances;
+       {
+           Instances.resize(1);
+           Instances[0].GeometryRHI = Geometry;
+           Instances[0].NumTransforms = 1;
+       }
+       XRayTracingSceneWithGeometryInstance RayTracingScene = CreateRayTracingSceneWithGeometryInstance(Instances, RAY_TRACING_NUM_SHADER_SLOTS, 1);
+
+       XRayTracingAccelerationStructSize SceneSizeInfo = RHICalcRayTracingSceneSize(1, ERayTracingAccelerationStructureFlags::PreferTrace);
+       std::shared_ptr<XRHIBuffer> SceneBuffer = RHICreateBuffer(0, SceneSizeInfo.ResultSize, EBufferUsage::BUF_AccelerationStructure, XRHIResourceCreateData());
+
+       RHICmdList.BindAccelerationStructureMemory(RayTracingScene.Scene.get(), SceneBuffer, 0);
        RHICmdList.BuildAccelerationStructure(Geometry);
+
+       RHICmdList.BuildAccelerationStructure();
+
    }
 
     void drawFrame() {

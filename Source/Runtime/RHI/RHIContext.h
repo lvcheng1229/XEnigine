@@ -10,6 +10,19 @@ struct XRayTracingGeometryBuildParams
 	std::shared_ptr<XRHIRayTracingGeometry> Geometry;
 	EAccelerationStructureBuildMode BuildMode;
 };
+
+struct XRayTracingSceneBuildParams
+{
+	XRHIRayTracingScene* Scene = nullptr;
+
+	XRHIBuffer* ResultBuffer = nullptr;
+
+	XRHIBuffer* ScratchBuffer = nullptr;
+	uint32 ScratchBufferOffset = 0;
+
+	XRHIBuffer* InstanceBuffer = nullptr;
+	uint32 InstanceBufferOffset = 0;
+};
 #endif
 
 class IRHIContext
@@ -52,5 +65,7 @@ public:
 
 #if RHI_RAYTRACING
 	virtual void RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange) {};
+	virtual void RHIBuildAccelerationStructure(const XRayTracingSceneBuildParams& SceneBuildParams) {};
+	virtual void BindAccelerationStructureMemory(XRHIRayTracingScene* Scene, std::shared_ptr<XRHIBuffer> Buffer, uint32 BufferOffset) {};
 #endif
 };

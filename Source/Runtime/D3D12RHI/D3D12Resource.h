@@ -158,7 +158,7 @@ class XD3D12VertexBuffer :public XRHIBuffer
 public:
 	//StrideIn is Unused
 	XD3D12VertexBuffer(uint32 StrideIn, uint32 SizeIn) :
-		XRHIBuffer(StrideIn,SizeIn) {}
+		XRHIBuffer(StrideIn,SizeIn,EBufferUsage::BUF_Vertex) {}
 
 	XD3D12ResourcePtr_CPUGPU ResourcePtr;
 };
@@ -167,7 +167,7 @@ class XD3D12IndexBuffer :public XRHIBuffer
 {
 public:
 	XD3D12IndexBuffer(uint32 StrideIn, uint32 SizeIn) :
-		XRHIBuffer(StrideIn, SizeIn) {}
+		XRHIBuffer(StrideIn, SizeIn, EBufferUsage::BUF_Index) {}
 
 	XD3D12ResourcePtr_CPUGPU ResourcePtr;
 };

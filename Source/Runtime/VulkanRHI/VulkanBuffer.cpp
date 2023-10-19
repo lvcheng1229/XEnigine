@@ -35,7 +35,7 @@ VkBufferUsageFlags XVulkanResourceMultiBuffer::UEToVKBufferUsageFlags(EBufferUsa
 
 
 XVulkanResourceMultiBuffer::XVulkanResourceMultiBuffer(XVulkanDevice* InDevice,uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
-	:XRHIBuffer(Stride, Size)
+	:XRHIBuffer(Stride, Size, Usage)
 	, Device(InDevice)
 {
 	VkMemoryPropertyFlags BufferMemFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -80,6 +80,13 @@ void* XVulkanResourceMultiBuffer::Lock(EResourceLockMode LockMode, uint32 LockSi
 	PendingBufferLock.StagingBuffer = StagingBuffer;
 	GPendingLockIBs[this] = PendingBufferLock;
 	return Data;
+}
+
+void XVulkanResourceMultiBuffer::UnLock(XVulkanCommandListContext* Context)
+{
+	XPendingBufferLock PendingBufferLock = GPendingLockIBs[this];
+	XASSERT(PendingBufferLock.LockMode == EResourceLockMode::RLM_WriteOnly);
+	InternalUnlock(Context, &PendingBufferLock, this);
 }
 
 

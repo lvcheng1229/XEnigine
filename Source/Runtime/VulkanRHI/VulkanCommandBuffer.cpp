@@ -237,6 +237,31 @@ void XVulkanCommandBufferManager::SubmitUploadCmdBuffer(uint32 NumSignalSemaphor
 	UploadCmdBuffer = nullptr;
 }
 
+void XVulkanCommandBufferManager::PrepareForNewActiveCommandBuffer()
+{
+	for (int32 Index = 0; Index < Pool.CmdBuffers.size(); ++Index)
+	{
+		XVulkanCmdBuffer* CmdBuffer = Pool.CmdBuffers[Index];
+		CmdBuffer->RefreshFenceStatus();
+
+		{
+			if (CmdBuffer->State == XVulkanCmdBuffer::EState::ReadyForBegin || CmdBuffer->State == XVulkanCmdBuffer::EState::NeedReset)
+			{
+				ActiveCmdBuffer = CmdBuffer;
+				ActiveCmdBuffer->Begin();
+				return;
+			}
+			else
+			{
+				XASSERT(CmdBuffer->State == XVulkanCmdBuffer::EState::Submitted);
+			}
+		}
+	}
+
+	ActiveCmdBuffer = Pool.CreateCmdBuffer();
+	ActiveCmdBuffer->Begin();
+}
+
 void XVulkanCommandBufferManager::SubmitActiveCmdBuffer(std::vector<XSemaphore*> SignalSemaphores)
 {
 	std::vector<VkSemaphore> SemaphoreHandles;

@@ -45,14 +45,17 @@ public:
 class XRHIBuffer
 {
 public:
-	XRHIBuffer(uint32 StrideIn, uint32 SizeIn) :
+	XRHIBuffer(uint32 StrideIn, uint32 SizeIn, EBufferUsage InUsage) :
 		Size(SizeIn),
-		Stride(StrideIn) {}
+		Stride(StrideIn),
+		Usage(InUsage){}
 	inline uint32 GetStride()const { return Stride; }
 	inline uint32 GetSize()const { return Size; }
+	EBufferUsage GetUsage() const { return Usage; }
 private:
 	uint32 Size;
 	uint32 Stride;
+	EBufferUsage Usage;
 };
 
 class XRHIStructBuffer
@@ -330,6 +333,30 @@ enum class EAccelerationStructureBuildMode
 	Update
 };
 
+
+
+struct XRayTracingAccelerationStructSize
+{
+	uint64 ResultSize = 0;
+	uint64 BuildScratchSize = 0;
+	uint64 UpdateScratchSize = 0;
+};
+
+class XRHIRayTracingAccelerationStruct
+{
+public:
+	friend class IRHIContext;
+
+	XRayTracingAccelerationStructSize GetSizeInfo()const
+	{
+		return SizeInfo;
+	}
+protected:
+	XRayTracingAccelerationStructSize SizeInfo = {};
+};
+
+//Build BLAS ----------------------------------------------------------------------------------------------------------
+
 struct XRayTracingGeometrySegment
 {
 public:
@@ -364,26 +391,6 @@ public:
 	bool bAllowCompaction = true;
 };
 
-struct XRayTracingAccelerationStructSize
-{
-	uint64 ResultSize = 0;
-	uint64 BuildScratchSize = 0;
-	uint64 UpdateScratchSize = 0;
-};
-
-class XRHIRayTracingAccelerationStruct
-{
-public:
-	friend class IRHIContext;
-
-	XRayTracingAccelerationStructSize GetSizeInfo()const
-	{
-		return SizeInfo;
-	}
-protected:
-	XRayTracingAccelerationStructSize SizeInfo = {};
-};
-
 class XRHIRayTracingGeometry : public XRHIRayTracingAccelerationStruct
 {
 public:
@@ -391,5 +398,33 @@ public:
 		: Initializer(InInitializer)
 	{}
 
+	uint32 GetNumSegments()const
+	{
+		return Initializer.Segments.size();
+	}
+
 	XRayTracingGeometryInitializer Initializer;
+};
+
+//Build TLAS ----------------------------------------------------------------------------------------------------------
+
+struct XRayTracingGeometryInstance
+{
+	std::shared_ptr<XRHIRayTracingGeometry>GeometryRHI = nullptr;
+	uint32 NumTransforms = 0;
+};
+
+
+struct XRayTracingSceneInitializer
+{
+	// One entry per instance
+	std::vector<XRHIRayTracingGeometry*>PerInstanceGeometres;
+
+	uint32 NumNativeInstance = 0;
+	uint32 NumTotalSegments = 0;
+};
+
+class XRHIRayTracingScene : public XRHIRayTracingAccelerationStruct
+{
+public:
 };

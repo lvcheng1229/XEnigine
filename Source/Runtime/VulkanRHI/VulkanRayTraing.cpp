@@ -135,9 +135,58 @@ XRayTracingAccelerationStructSize XVulkanPlatformRHI::RHICalcRayTracingGeometryS
 	return Result;
 }
 
+static void GetTLASBuildData(
+	const VkDevice Device,
+	const uint32 NumInstances,
+	const VkDeviceAddress InstanceBufferAddress,
+	XVkRTTLASBuildData& BuildData)
+{
+	VkDeviceOrHostAddressConstKHR InstanceBufferDeviceAddress = {};
+	InstanceBufferDeviceAddress.deviceAddress = InstanceBufferAddress;
+
+	BuildData.Geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+	BuildData.Geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+	BuildData.Geometry.geometry.instances.arrayOfPointers = VK_FALSE;
+	BuildData.Geometry.geometry.instances.data = InstanceBufferDeviceAddress;
+
+	BuildData.GeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+	BuildData.GeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	BuildData.GeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+	BuildData.GeometryInfo.geometryCount = 1;
+	BuildData.GeometryInfo.pGeometries = &BuildData.Geometry;
+
+	VulkanExtension::vkGetAccelerationStructureBuildSizesKHR(
+		Device,
+		VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+		&BuildData.GeometryInfo,
+		&NumInstances,
+		&BuildData.SizesInfo);
+}
+
+
+XRayTracingAccelerationStructSize XVulkanPlatformRHI::RHICalcRayTracingSceneSize(uint32 MaxInstances, ERayTracingAccelerationStructureFlags Flags)
+{
+	XVkRTTLASBuildData BuildData;
+	const VkDeviceAddress InstanceBufferAddress = 0; // No device address available when only querying TLAS size
+
+	GetTLASBuildData(Device->GetVkDevice(), MaxInstances, InstanceBufferAddress, BuildData);
+
+	XRayTracingAccelerationStructSize Result;
+	Result.ResultSize = BuildData.SizesInfo.accelerationStructureSize;
+	Result.BuildScratchSize = BuildData.SizesInfo.buildScratchSize;
+	Result.UpdateScratchSize = BuildData.SizesInfo.updateScratchSize;
+
+	return Result;
+}
+
 std::shared_ptr<XRHIRayTracingGeometry> XVulkanPlatformRHI::RHICreateRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer)
 {
 	return std::make_shared<XVulkanRayTracingGeometry>(Initializer, GetDevice());
+}
+
+std::shared_ptr<XRHIRayTracingScene> XVulkanPlatformRHI::RHICreateRayTracingScene(XRayTracingSceneInitializer Initializer)
+{
+	return std::make_shared<XVulkanRayTracingScene>(Initializer, GetDevice());
 }
 
 void XVulkanCommandListContext::RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange)
@@ -183,13 +232,14 @@ void XVulkanCommandListContext::RHIBuildAccelerationStructures(const std::span<c
 		BuildRangeInfos.push_back(pBuildRanges);
 	}
 
-	XVulkanCmdBuffer* Cmd = GetCommandBufferManager()->GetActiveCmdBuffer();
+	XVulkanCmdBuffer* Cmd = CmdBufferManager->GetActiveCmdBuffer();
 	VkCommandBuffer CmdBuffer = Cmd->GetHandle();
 
 	VulkanExtension::vkCmdBuildAccelerationStructuresKHR(CmdBuffer, Params.size(), BuildGeometryInfos.data(), BuildRangeInfos.data());
 	AddAccelerationStructureBuildBarrier(CmdBuffer);
 
-	XASSERT(false);
+	CmdBufferManager->SubmitActiveCmdBuffer();
+	CmdBufferManager->PrepareForNewActiveCommandBuffer();
 }
 
 XVulkanRayTracingGeometry::XVulkanRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer, XVulkanDevice* InDevice)
@@ -202,8 +252,8 @@ XVulkanRayTracingGeometry::XVulkanRayTracingGeometry(const XRayTracingGeometryIn
 	AccelerationStructureBuffer = RHICreateBuffer(0, SizeInfo.ResultSize, EBufferUsage::BUF_AccelerationStructure, ResourceCreateData);
 	
 	VkAccelerationStructureCreateInfoKHR CreateInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
-	CreateInfo.buffer = AccelerationStructureBuffer.get()->Buffer.VulkanHandle;
-	CreateInfo.offset = AccelerationStructureBuffer.get()->Buffer.Offset;
+	CreateInfo.buffer = static_cast<XVulkanResourceMultiBuffer*>(AccelerationStructureBuffer.get())->Buffer.VulkanHandle;
+	CreateInfo.offset = static_cast<XVulkanResourceMultiBuffer*>(AccelerationStructureBuffer.get())->Buffer.Offset;
 	CreateInfo.size = SizeInfo.ResultSize;
 	CreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
@@ -212,4 +262,141 @@ XVulkanRayTracingGeometry::XVulkanRayTracingGeometry(const XRayTracingGeometryIn
 	VkAccelerationStructureDeviceAddressInfoKHR DeviceAddressInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
 	DeviceAddressInfo.accelerationStructure = Handle;
 	Address = VulkanExtension::vkGetAccelerationStructureDeviceAddressKHR(Device->GetVkDevice(), &DeviceAddressInfo);
+}
+
+void XVulkanRayTracingScene::BindBuffer(std::shared_ptr<XRHIBuffer> InBuffer, uint32 InBufferOffset)
+{
+	AccelerationStructureBuffer = InBuffer;
+	ShaderResourceView = std::make_shared<XVulkanShaderResourceView>(Device, static_cast<XVulkanResourceMultiBuffer*>(AccelerationStructureBuffer.get()), InBufferOffset);
+}
+
+void XVulkanCommandListContext::BindAccelerationStructureMemory(XRHIRayTracingScene* Scene, std::shared_ptr<XRHIBuffer> Buffer, uint32 BufferOffset)
+{
+	static_cast<XVulkanRayTracingScene*>(Scene)->BindBuffer(Buffer, BufferOffset);
+}
+void XVulkanCommandListContext::RHIBuildAccelerationStructure(const XRayTracingSceneBuildParams& SceneBuildParams)
+{
+	XVulkanRayTracingScene* const Scene = static_cast<XVulkanRayTracingScene*>(SceneBuildParams.Scene);
+	XVulkanResourceMultiBuffer* const ScratchBuffer = static_cast<XVulkanResourceMultiBuffer*>(SceneBuildParams.ScratchBuffer);
+	XVulkanResourceMultiBuffer* const InstanceBuffer = static_cast<XVulkanResourceMultiBuffer*>(SceneBuildParams.InstanceBuffer);
+	Scene->BuildAccelerationStructure(*this, ScratchBuffer, SceneBuildParams.ScratchBufferOffset, InstanceBuffer, SceneBuildParams.InstanceBufferOffset);
+}
+// It is designed to be used to access vertex and index buffers during inline ray tracing.
+struct XVulkanRayTracingGeometryParameters
+{
+	union
+	{
+		struct
+		{
+			uint32 IndexStride : 8; // Can be just 1 bit to indicate 16 or 32 bit indices
+			uint32 VertexStride : 8; // Can be just 2 bits to indicate float3, float2 or half2 format
+			uint32 Unused : 16;
+		} Config;
+		uint32 ConfigBits = 0;
+	};
+	uint32 IndexBufferOffsetInBytes = 0;
+	uint64 IndexBuffer = 0;		//ib address
+	uint64 VertexBuffer = 0;	//vb address
+};
+
+XVulkanRayTracingScene::XVulkanRayTracingScene(XRayTracingSceneInitializer InInitializer, XVulkanDevice* InDevice)
+	:Device(InDevice)
+	, Initializer(InInitializer)
+{
+	const ERayTracingAccelerationStructureFlags BuildFlags = ERayTracingAccelerationStructureFlags::PreferTrace; 
+	SizeInfo = RHICalcRayTracingSceneSize(Initializer.NumNativeInstance, BuildFlags);
+	const uint32 ParameterBufferSize = std::max<uint32>(1, Initializer.NumTotalSegments) * sizeof(XVulkanRayTracingGeometryParameters);
+	XRHIResourceCreateData ResourceCreateData;
+	PerInstanceGeometryParameterBuffer = std::make_shared<XVulkanResourceMultiBuffer>(Device,
+		sizeof(XVulkanRayTracingGeometryParameters), ParameterBufferSize, EBufferUsage(uint32(EBufferUsage::BUF_StructuredBuffer) | uint32(EBufferUsage::BUF_ShaderResource)),
+		ResourceCreateData);
+
+	PerInstanceGeometryParameterSRV = std::make_shared <XVulkanShaderResourceView>(Device, PerInstanceGeometryParameterBuffer.get());
+}
+
+
+void XVulkanRayTracingScene::BuildAccelerationStructure(XVulkanCommandListContext& CmdContext, XVulkanResourceMultiBuffer* InScratchBuffer, uint32 InScratchOffset, XVulkanResourceMultiBuffer* InInstanceBuffer, uint32 InInstanceOffset)
+{
+	BuildPerInstanceGeometryParameterBuffer(CmdContext);
+
+	std::shared_ptr<XRHIBuffer>ScratchBuffer;
+
+	if (InScratchBuffer == nullptr)
+	{
+		ScratchBuffer = (RHICreateBuffer(0, SizeInfo.BuildScratchSize, EBufferUsage(uint32(EBufferUsage::BUF_StructuredBuffer) | uint32(EBufferUsage::BUF_AccelerationStructure)), XRHIResourceCreateData()));
+		InScratchBuffer = static_cast<XVulkanResourceMultiBuffer*>(ScratchBuffer.get());
+		InScratchOffset = 0;
+	}
+
+	XVkRTTLASBuildData BuildData;
+
+	{
+		VkDeviceAddress InstanceBufferAddress = InInstanceBuffer->GetDeviceAddress() + InInstanceOffset;
+		GetTLASBuildData(Device->GetVkDevice(), Initializer.NumNativeInstance, InstanceBufferAddress, BuildData);
+		BuildData.GeometryInfo.dstAccelerationStructure = ShaderResourceView->AccelerationStructureHandle;
+		BuildData.GeometryInfo.scratchData.deviceAddress = InScratchBuffer->GetDeviceAddress() + InScratchOffset;
+	}
+
+	VkAccelerationStructureBuildGeometryInfoKHR GeometryInfo = BuildData.GeometryInfo;
+
+	VkAccelerationStructureBuildRangeInfoKHR RangeInfo;
+	RangeInfo.primitiveCount = Initializer.NumNativeInstance;
+	RangeInfo.primitiveOffset = 0;
+	RangeInfo.transformOffset = 0;
+	RangeInfo.firstVertex = 0;
+
+	VkAccelerationStructureBuildRangeInfoKHR* pRangeInfo = &RangeInfo;
+
+	XVulkanCommandBufferManager& CmdBufferManager = *CmdContext.GetCommandBufferManager();
+	XVulkanCmdBuffer* const CmdBuffer = CmdBufferManager.GetActiveCmdBuffer();
+	AddAccelerationStructureBuildBarrier(CmdBuffer->GetHandle());
+
+	VulkanExtension::vkCmdBuildAccelerationStructuresKHR(CmdBuffer->GetHandle(), 1, &GeometryInfo, &pRangeInfo);
+
+	AddAccelerationStructureBuildBarrier(CmdBuffer->GetHandle());
+
+	CmdBufferManager.SubmitActiveCmdBuffer();
+	CmdBufferManager.PrepareForNewActiveCommandBuffer();
+}
+
+void XVulkanRayTracingScene::BuildPerInstanceGeometryParameterBuffer(XVulkanCommandListContext& CmdContext)
+{
+	const uint32 ParameterBufferSize = std::max<uint32>(1, Initializer.NumTotalSegments) * sizeof(XVulkanRayTracingGeometryParameters);
+	void* MappedBuffer = PerInstanceGeometryParameterBuffer->Lock(EResourceLockMode::RLM_WriteOnly, ParameterBufferSize, 0);
+	XVulkanRayTracingGeometryParameters* MappedParameters = reinterpret_cast<XVulkanRayTracingGeometryParameters*>(MappedBuffer);
+	uint32 ParameterIndex = 0;
+	for (XRHIRayTracingGeometry* GeometryRHI : Initializer.PerInstanceGeometres)
+	{
+		const XVulkanRayTracingGeometry* Geometry = static_cast<XVulkanRayTracingGeometry*>(GeometryRHI);
+		const XRayTracingGeometryInitializer& GeometryInitializer = Geometry->Initializer;
+		const XVulkanResourceMultiBuffer* IndexBuffer = static_cast<XVulkanResourceMultiBuffer*>(GeometryInitializer.IndexBuffer.get());
+		
+		const uint32 IndexStride = IndexBuffer ? IndexBuffer->GetStride() : 0;
+		const uint32 IndexOffsetInBytes = GeometryInitializer.IndexBufferOffset;
+		const VkDeviceAddress IndexBufferAddress = IndexBuffer ? IndexBuffer->GetDeviceAddress() : VkDeviceAddress(0);//IB
+
+		for (const XRayTracingGeometrySegment& Segment : GeometryInitializer.Segments)
+		{
+			const XVulkanResourceMultiBuffer* VertexBuffer = static_cast<XVulkanResourceMultiBuffer*>(Segment.VertexBuffer.get());
+			const VkDeviceAddress VertexBufferAddress = VertexBuffer->GetDeviceAddress();//VB
+
+			XVulkanRayTracingGeometryParameters SegmentParameters;
+			SegmentParameters.Config.IndexStride = IndexStride;
+			SegmentParameters.Config.VertexStride = Segment.VertexBufferStride;
+
+			if (IndexStride)
+			{
+				SegmentParameters.IndexBufferOffsetInBytes = IndexOffsetInBytes + IndexStride * Segment.FirstPrimitive * 3;
+				SegmentParameters.IndexBuffer = static_cast<uint64>(IndexBufferAddress);
+			}
+			else
+			{
+				SegmentParameters.IndexBuffer = 0;
+			}
+			SegmentParameters.VertexBuffer = static_cast<uint64>(VertexBufferAddress);
+			MappedParameters[ParameterIndex] = SegmentParameters;
+			ParameterIndex++;
+		}
+	}
+	PerInstanceGeometryParameterBuffer->UnLock(&CmdContext);
 }

@@ -151,6 +151,7 @@ public:
 	XVulkanResourceMultiBuffer(XVulkanDevice* Device,uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData);
 	
 	void* Lock(EResourceLockMode LockMode, uint32 LockSize, uint32 Offset);
+	void UnLock(class XVulkanCommandListContext* Context);
 	
 	static VkBufferUsageFlags UEToVKBufferUsageFlags(EBufferUsage InUEUsage);
 	
@@ -203,4 +204,20 @@ public:
 private:
 	std::map<uint64,XVulkanShader*>MapToVkShader[(uint32)EShaderType::SV_ShaderCount];
 	
+};
+
+class XVulkanShaderResourceView : public XRHIShaderResourceView
+{
+public:
+	XVulkanShaderResourceView(XVulkanDevice* Device, XVulkanResourceMultiBuffer* InSourceBuffer, uint32 InOffset = 0);
+
+	XVulkanResourceMultiBuffer* SourceStructuredBuffer = nullptr;
+	uint32 Size = 0;
+	uint32 Offset = 0;
+
+	std::shared_ptr<XRHIBuffer> SourceRHIBuffer;
+
+#if RHI_RAYTRACING
+	VkAccelerationStructureKHR AccelerationStructureHandle = VK_NULL_HANDLE;
+#endif // VULKAN_RHI_RAYTRACING
 };

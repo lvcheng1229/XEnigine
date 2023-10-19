@@ -1,5 +1,6 @@
 #include "VulkanResource.h"
 #include "VulkanDevice.h"
+#include "VulkanLoader.h"
 
 void XVulkanTextureView::CreateImpl(XVulkanDevice* Device,VkImage InImage , VkImageViewType ViewType , VkImageAspectFlags Aspect, VkFormat Format)
 {
@@ -51,4 +52,32 @@ VkShaderModule XVulkanShader::CreateHandle(const XGfxPipelineDesc& Desc, uint32 
 	VkShaderModule ShaderModule = CreateShaderModule(Device, SpirvContainer);
 	ShaderModules[LayoutHash] = ShaderModule;
 	return ShaderModule;
+}
+
+XVulkanShaderResourceView::XVulkanShaderResourceView(XVulkanDevice* InDevice, XVulkanResourceMultiBuffer* InSourceBuffer, uint32 InOffset)
+{
+
+#if RHI_RAYTRACING
+	if (EnumHasAnyFlags(InSourceBuffer->GetUsage(), EBufferUsage::BUF_AccelerationStructure))
+	{
+		XASSERT(false);
+
+		SourceRHIBuffer = std::shared_ptr<XRHIBuffer>(InSourceBuffer);
+
+		VkAccelerationStructureCreateInfoKHR CreateInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
+		CreateInfo.buffer = InSourceBuffer->Buffer.VulkanHandle;
+		CreateInfo.offset = InOffset;
+		CreateInfo.size = InSourceBuffer->GetSize() - InOffset;
+		CreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+
+		VkDevice NativeDevice = InDevice->GetVkDevice();
+		VULKAN_VARIFY(VulkanExtension::vkCreateAccelerationStructureKHR(NativeDevice, &CreateInfo, nullptr, &AccelerationStructureHandle));
+	}
+	else
+#endif
+	{
+		SourceStructuredBuffer = InSourceBuffer;
+		Size = InSourceBuffer->GetSize() - InOffset;
+		Offset = InOffset;
+	}
 }

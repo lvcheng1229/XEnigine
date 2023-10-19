@@ -108,12 +108,16 @@ public:
 	XVulkanCmdBuffer* GetActiveCmdBuffer() { return ActiveCmdBuffer; }
 	XVulkanCmdBuffer* GetUploadCmdBuffer();
 	void SubmitUploadCmdBuffer(uint32 NumSignalSemaphores = 0, VkSemaphore* SignalSemaphores = nullptr);
+	
+	//must perform PrepareForNewActiveCommandBuffer after SubmitActiveCmdBuffer
+	void SubmitActiveCmdBuffer(std::vector<XSemaphore*> SignalSemaphores);
 	void SubmitActiveCmdBuffer()
 	{
 		std::vector<XSemaphore*> Vec;
 		SubmitActiveCmdBuffer(Vec);
 	}
-	void SubmitActiveCmdBuffer(std::vector<XSemaphore*> SignalSemaphores);
+	
+	void PrepareForNewActiveCommandBuffer();
 
 	void SubmitActiveCmdBufferFromPresent(XSemaphore* SignalSemaphore = nullptr);
 private:
