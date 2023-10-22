@@ -7,6 +7,11 @@ enum class EShaderType
 	SV_Vertex = 0,
 	SV_Pixel,
 	SV_Compute,
+
+	SV_RayGen,
+	SV_RayMiss,
+	SV_HitGroup,
+
 	SV_ShaderCount
 };
 

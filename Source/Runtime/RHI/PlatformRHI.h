@@ -45,6 +45,7 @@ public:
 	//CreatePSO
 	virtual std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const  XGraphicsPSOInitializer& PSOInit) = 0;
 	virtual std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader) = 0;
+	virtual std::shared_ptr<XRHIRayTracingPSO> RHICreateRayTracingPipelineState(const XRayTracingPipelineStateInitializer& OriginalInitializer) { return nullptr; };
 
 	virtual std::shared_ptr<XRHITexture2D> RHICreateTexture2D(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data, uint32 Size = 0) = 0;
 	virtual std::shared_ptr<XRHITexture2D> RHICreateTexture2D2(uint32 width, uint32 height, uint32 SizeZ, bool bTextureArray, bool bCubeTexture, EPixelFormat Format, ETextureCreateFlags flag, uint32 NumMipsIn, uint8* tex_data, uint32 Size = 0) = 0;
@@ -67,6 +68,7 @@ public:
 	virtual XRayTracingAccelerationStructSize RHICalcRayTracingGeometrySize(const XRayTracingGeometryInitializer& Initializer) { return XRayTracingAccelerationStructSize(); }
 	virtual XRayTracingAccelerationStructSize RHICalcRayTracingSceneSize(uint32 MaxInstances, ERayTracingAccelerationStructureFlags Flags){ return XRayTracingAccelerationStructSize(); }
 	virtual std::shared_ptr<XRHIRayTracingScene> RHICreateRayTracingScene(XRayTracingSceneInitializer Initializer) { return nullptr; }
+	virtual std::shared_ptr<XRHIRayTracingShader> RHICreateRayTracingShader(XArrayView<uint8> Code, EShaderType ShaderType) { return nullptr; }
 #endif
 
 };
@@ -98,6 +100,11 @@ inline std::shared_ptr<XRHIBlendState> RHICreateBlendState(const XBlendStateInit
 inline std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)
 {
 	return GPlatformRHI->RHICreateGraphicsPipelineState(PSOInit);
+}
+
+inline std::shared_ptr<XRHIRayTracingPSO> RHICreateRayTracingPipelineState(const XRayTracingPipelineStateInitializer& OriginalInitializer)
+{
+	return GPlatformRHI->RHICreateRayTracingPipelineState(OriginalInitializer);
 }
 
 inline std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)

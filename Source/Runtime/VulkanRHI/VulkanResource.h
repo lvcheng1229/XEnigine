@@ -124,7 +124,7 @@ protected:
 class XVulkanVertexShader : public XRHIVertexShader , public XVulkanShader
 {
 public:
-	XVulkanVertexShader(XVulkanDevice* InDevice)
+	XVulkanVertexShader(XVulkanDevice* InDevice, EShaderType ShaderTypeIn)
 		:XVulkanShader(InDevice, EShaderType::SV_Vertex) {}
 	enum
 	{
@@ -135,7 +135,7 @@ public:
 class XVulkanPixelShader : public XRHIPixelShader, public XVulkanShader
 {
 public:
-	XVulkanPixelShader(XVulkanDevice* InDevice)
+	XVulkanPixelShader(XVulkanDevice* InDevice, EShaderType ShaderTypeIn)
 		:XVulkanShader(InDevice, EShaderType::SV_Pixel) {}
 
 	enum
@@ -143,6 +143,22 @@ public:
 		ShaderTypeStatic = EShaderType::SV_Pixel
 	};
 };
+
+class XVulkanRayTracingShader : public XRHIRayTracingShader, public XVulkanShader
+{
+public:
+	XVulkanRayTracingShader(XVulkanDevice* InDevice, EShaderType ShaderTypeIn)
+		: XRHIRayTracingShader(ShaderTypeIn),
+		XVulkanShader(InDevice, ShaderTypeIn) {}
+
+	enum
+	{
+		ShaderTypeStatic = EShaderType::SV_ShaderCount
+	};
+	
+};
+
+
 
 //TODO XVulkanResourceMultiBuffer
 class XVulkanResourceMultiBuffer : public XRHIBuffer ,public XVulkanEvictable
@@ -196,10 +212,10 @@ public:
 	~XVulkanShaderFactory();
 
 	template <typename ShaderType>
-	ShaderType* CreateShader(XArrayView<uint8> Code, XVulkanDevice* Device);
+	ShaderType* CreateShader(XArrayView<uint8> Code, XVulkanDevice* Device, EShaderType InShaderType);
 
 	template <typename ShaderType>
-	ShaderType* LookupShader(uint64 ShaderKey) const;
+	ShaderType* LookupShader(uint64 ShaderKey, EShaderType InShaderType) const;
 
 private:
 	std::map<uint64,XVulkanShader*>MapToVkShader[(uint32)EShaderType::SV_ShaderCount];

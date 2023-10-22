@@ -189,6 +189,24 @@ std::shared_ptr<XRHIRayTracingScene> XVulkanPlatformRHI::RHICreateRayTracingScen
 	return std::make_shared<XVulkanRayTracingScene>(Initializer, GetDevice());
 }
 
+XVulkanRayTracingPipelineState::XVulkanRayTracingPipelineState(XVulkanDevice* const InDevice, const XRayTracingPipelineStateInitializer& Initializer)
+{
+	const std::vector<XRHIRayTracingShader*>& InitializerRayGenShaders = Initializer.RayGenTable;
+	const std::vector<XRHIRayTracingShader*>& InitializerRayMissShaders = Initializer.MissTable;
+	const std::vector<XRHIRayTracingShader*>& InitializerHitGroupShaders = Initializer.HitGroupTable;
+
+	for (XRHIRayTracingShader* const RayGenShaderRHI : InitializerRayGenShaders)
+	{
+
+	}
+}
+
+std::shared_ptr<XRHIRayTracingPSO> XVulkanPlatformRHI::RHICreateRayTracingPipelineState(const XRayTracingPipelineStateInitializer& OriginalInitializer)
+{
+	XASSERT(false);
+	return std::shared_ptr<XRHIRayTracingPSO>();
+}
+
 void XVulkanCommandListContext::RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange)
 {
 	uint32 ScratchBufferSize = ScratchBufferRange.Size ? ScratchBufferRange.Size : ScratchBufferRange.Buffer->GetSize();
@@ -400,3 +418,4 @@ void XVulkanRayTracingScene::BuildPerInstanceGeometryParameterBuffer(XVulkanComm
 	}
 	PerInstanceGeometryParameterBuffer->UnLock(&CmdContext);
 }
+

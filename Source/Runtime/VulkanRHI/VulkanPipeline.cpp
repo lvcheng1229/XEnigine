@@ -354,6 +354,8 @@ std::shared_ptr<XRHIGraphicsPSO> XVulkanPlatformRHI::RHICreateGraphicsPipelineSt
     return Device->PipelineStateCache->RHICreateGraphicsPipelineState(PSOInit);
 }
 
+
+
 XVulkanRHIGraphicsPipelineState::XVulkanRHIGraphicsPipelineState(XVulkanDevice* Device, const XGraphicsPSOInitializer& PSOInitializer, XGfxPipelineDesc& InDesc, std::size_t Key)
     :Desc(InDesc)
 {

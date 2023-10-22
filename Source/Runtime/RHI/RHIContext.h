@@ -15,7 +15,7 @@ struct XRayTracingSceneBuildParams
 {
 	XRHIRayTracingScene* Scene = nullptr;
 
-	XRHIBuffer* ResultBuffer = nullptr;
+	//XRHIBuffer* ResultBuffer = nullptr;
 
 	XRHIBuffer* ScratchBuffer = nullptr;
 	uint32 ScratchBufferOffset = 0;

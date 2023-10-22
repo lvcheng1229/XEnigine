@@ -57,6 +57,7 @@ public:
 	//CreatePSO
 	std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)final override;
 	std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)final override { XASSERT(false); return nullptr; };
+	std::shared_ptr<XRHIRayTracingPSO> RHICreateRayTracingPipelineState(const XRayTracingPipelineStateInitializer& OriginalInitializer);
 
 	//RHICreateUniformBuffer
 	std::shared_ptr<XRHIConstantBuffer> RHICreateConstantBuffer(uint32 size)override;
@@ -90,6 +91,7 @@ public:
 	virtual XRayTracingAccelerationStructSize RHICalcRayTracingSceneSize(uint32 MaxInstances, ERayTracingAccelerationStructureFlags Flags);
 	virtual std::shared_ptr<XRHIRayTracingGeometry> RHICreateRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer);
 	virtual std::shared_ptr<XRHIRayTracingScene> RHICreateRayTracingScene(XRayTracingSceneInitializer Initializer) ;
+	virtual std::shared_ptr<XRHIRayTracingShader> RHICreateRayTracingShader(XArrayView<uint8> Code, EShaderType ShaderType);
 #endif
 
 	//Vulkan

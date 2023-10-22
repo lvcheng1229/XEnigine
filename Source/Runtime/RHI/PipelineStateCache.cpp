@@ -18,6 +18,7 @@ void SetGraphicsPipelineStateFromPSOInit(XRHICommandList& RHICmdList, const XGra
 
 static std::unordered_map<std::size_t, std::shared_ptr<XRHIComputePSO>>GComputePSOMap;
 static std::unordered_map<std::size_t, std::shared_ptr<XRHIGraphicsPSO>>GGraphicsPSOMap;
+static std::unordered_map<std::size_t, std::shared_ptr<XRHIRayTracingPSO>>GRayTracingPSOMap;
 static std::unordered_map<std::size_t, std::shared_ptr<XRHIVertexLayout>>GVertexLayout;
 
 namespace PipelineStateCache
@@ -59,6 +60,19 @@ namespace PipelineStateCache
 			GGraphicsPSOMap[HashIndex] = GraphicPSO;
 		}
 		return GGraphicsPSOMap[HashIndex];
+	}
+	std::shared_ptr<XRHIRayTracingPSO> GetAndOrCreateRayTracingPipelineState(XRHICommandList& RHICmdList, const XRayTracingPipelineStateInitializer& OriginalInitializer)
+	{
+		const XRayTracingPipelineStateInitializer* Initializer = &OriginalInitializer;
+		std::size_t HashIndex = OriginalInitializer.GetHashIndex();
+
+		auto iter = GRayTracingPSOMap.find(HashIndex);
+		if (iter == GRayTracingPSOMap.end())
+		{
+			std::shared_ptr <XRHIRayTracingPSO> GraphicPSO = RHICreateRayTracingPipelineState(OriginalInitializer);
+			GRayTracingPSOMap[HashIndex] = GraphicPSO;
+		}
+		return GRayTracingPSOMap[HashIndex];
 	}
 }
 

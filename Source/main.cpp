@@ -29,6 +29,8 @@ const int MAX_FRAMES_IN_FLIGHT = 1;
 
 #include "Runtime\Render\RayTracingInstanceBufferUtil.h"
 
+#include "Runtime\Render\RayTracingBasicShaders.h"
+
 struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
@@ -328,7 +330,7 @@ public:
    
    void PrePareRayTracingScene()
    {
-       //raytracing geometry
+       //BLAS-----------------------------------------------------------------------------------------------
        XRayTracingGeometryInitializer GeometryInitializer;
        {
            GeometryInitializer.IndexBuffer = GTestIndexRHI.RHIVertexBuffer;
@@ -347,26 +349,35 @@ public:
            GeometryInitializer.Segments.push_back(Segment);
        }
        std::shared_ptr<XRHIRayTracingGeometry> Geometry = RHICreateRayTracingGeometry(GeometryInitializer);
+       RHICmdList.BuildAccelerationStructure(Geometry);
 
-       //raytracing scene
+       //TLAS-----------------------------------------------------------------------------------------------
        std::vector<XRayTracingGeometryInstance> Instances;
        {
            Instances.resize(1);
            Instances[0].GeometryRHI = Geometry;
            Instances[0].NumTransforms = 1;
        }
-       XRayTracingSceneWithGeometryInstance RayTracingScene = CreateRayTracingSceneWithGeometryInstance(Instances, RAY_TRACING_NUM_SHADER_SLOTS, 1);
 
+       XRayTracingSceneWithGeometryInstance RayTracingScene = CreateRayTracingSceneWithGeometryInstance(Instances, RAY_TRACING_NUM_SHADER_SLOTS, 1);
        XRayTracingAccelerationStructSize SceneSizeInfo = RHICalcRayTracingSceneSize(1, ERayTracingAccelerationStructureFlags::PreferTrace);
        std::shared_ptr<XRHIBuffer> SceneBuffer = RHICreateBuffer(0, SceneSizeInfo.ResultSize, EBufferUsage::BUF_AccelerationStructure, XRHIResourceCreateData());
 
        RHICmdList.BindAccelerationStructureMemory(RayTracingScene.Scene.get(), SceneBuffer, 0);
-       RHICmdList.BuildAccelerationStructure(Geometry);
 
-       RHICmdList.BuildAccelerationStructure();
+       std::shared_ptr<XRHIBuffer> ScratchBuffer = RHICreateBuffer(0, SceneSizeInfo.BuildScratchSize, EBufferUsage::BUF_UnorderedAccess, XRHIResourceCreateData());
+
+       XRayTracingSceneBuildParams Params;
+       Params.Scene = RayTracingScene.Scene.get();
+       //Params.InstanceBuffer = 
+       //Params.ScratchBuffer
+       //TODO fixme
+       
+       RHICmdList.BuildAccelerationStructure(Params);
 
    }
 
+   
     void drawFrame() {
         RHICmdList.Open();
 
@@ -462,6 +473,7 @@ public:
         RHICmdList.Execute();
 #else
         createTextureImage();
+        DispatchRayTest(RHICmdList);
         RHICmdList.Execute();
 #endif
     }

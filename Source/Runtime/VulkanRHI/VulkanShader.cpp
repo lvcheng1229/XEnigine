@@ -3,11 +3,15 @@
 #include "VulkanDevice.h"
 #include "Runtime\Core\Template\XEngineTemplate.h"
 
-template XVulkanVertexShader* XVulkanShaderFactory::CreateShader<XVulkanVertexShader>(XArrayView<uint8> Code, XVulkanDevice* Device);
-template XVulkanPixelShader* XVulkanShaderFactory::CreateShader<XVulkanPixelShader>(XArrayView<uint8> Code, XVulkanDevice* Device);
+template XVulkanVertexShader* XVulkanShaderFactory::CreateShader<XVulkanVertexShader>(XArrayView<uint8> Code, XVulkanDevice* Device, EShaderType InShaderType);
+template XVulkanPixelShader* XVulkanShaderFactory::CreateShader<XVulkanPixelShader>(XArrayView<uint8> Code, XVulkanDevice* Device, EShaderType InShaderType);
 
-template XVulkanVertexShader* XVulkanShaderFactory::LookupShader<XVulkanVertexShader>(uint64 ShaderKey) const;
-template XVulkanPixelShader* XVulkanShaderFactory::LookupShader<XVulkanPixelShader>(uint64 ShaderKey) const;
+template XVulkanRayTracingShader* XVulkanShaderFactory::CreateShader<XVulkanRayTracingShader>(XArrayView<uint8> Code, XVulkanDevice* Device, EShaderType InShaderType);
+
+template XVulkanVertexShader* XVulkanShaderFactory::LookupShader<XVulkanVertexShader>(uint64 ShaderKey, EShaderType InShaderType) const;
+template XVulkanPixelShader* XVulkanShaderFactory::LookupShader<XVulkanPixelShader>(uint64 ShaderKey, EShaderType InShaderType) const;
+
+template XVulkanRayTracingShader* XVulkanShaderFactory::LookupShader<XVulkanRayTracingShader>(uint64 ShaderKey, EShaderType InShaderType) const;
 
 
 void XVulkanLayout::Compile(XVulkanDescriptorSetLayoutMap& InDSetLayoutMap)
@@ -36,16 +40,16 @@ XVulkanShaderFactory::~XVulkanShaderFactory()
 }
 
 template<typename ShaderType>
-inline ShaderType* XVulkanShaderFactory::CreateShader(XArrayView<uint8> Code, XVulkanDevice* Device)
+inline ShaderType* XVulkanShaderFactory::CreateShader(XArrayView<uint8> Code, XVulkanDevice* Device, EShaderType InShaderType)
 {
 	std::size_t ShaderHash = std::hash<std::string>{}(std::string((char*)Code.data(), Code.size()));
-	ShaderType* ShaderPtr = LookupShader<ShaderType>(ShaderHash);
+	ShaderType* ShaderPtr = LookupShader<ShaderType>(ShaderHash, InShaderType);
 	if (ShaderPtr)
 	{
 		return ShaderPtr;
 	}
 	
-	ShaderPtr = new ShaderType(Device);
+	ShaderPtr = new ShaderType(Device, InShaderType);
 
 	XShaderCodeReader ShaderCodeReader(Code);
 	const XShaderResourceCount* ResourceCount = (const XShaderResourceCount*)(ShaderCodeReader.FindOptionalData(
@@ -64,8 +68,24 @@ inline ShaderType* XVulkanShaderFactory::CreateShader(XArrayView<uint8> Code, XV
 }
 
 template<typename ShaderType>
-ShaderType* XVulkanShaderFactory::LookupShader(uint64 ShaderKey) const
+ShaderType* XVulkanShaderFactory::LookupShader(uint64 ShaderKey, EShaderType InShaderType) const
 {
+	switch (InShaderType)
+	{
+	case EShaderType::SV_RayGen:
+	case EShaderType::SV_RayMiss:
+	case EShaderType::SV_HitGroup:
+		if (ShaderKey)
+		{
+			auto iter = MapToVkShader[uint32(InShaderType)].find(ShaderKey);
+			if (iter != MapToVkShader[uint32(InShaderType)].end())
+			{
+				return static_cast<ShaderType*>(iter->second);
+			}
+		}
+		return nullptr;
+	}
+
 	if (ShaderKey)
 	{
 		auto iter = MapToVkShader[ShaderType::ShaderTypeStatic].find(ShaderKey);
@@ -79,12 +99,25 @@ ShaderType* XVulkanShaderFactory::LookupShader(uint64 ShaderKey) const
 
 std::shared_ptr<XRHIVertexShader> XVulkanPlatformRHI::RHICreateVertexShader(XArrayView<uint8> Code)
 {
-	return std::shared_ptr<XVulkanVertexShader>(Device->GetVkShaderFactory()->CreateShader<XVulkanVertexShader>(Code, Device));
+	return std::shared_ptr<XVulkanVertexShader>(Device->GetVkShaderFactory()->CreateShader<XVulkanVertexShader>(Code, Device, EShaderType::SV_Vertex));
 }
 
 std::shared_ptr<XRHIPixelShader> XVulkanPlatformRHI::RHICreatePixelShader(XArrayView<uint8> Code)
 {
-	return std::shared_ptr<XVulkanPixelShader>(Device->GetVkShaderFactory()->CreateShader<XVulkanPixelShader>(Code, Device));
+	return std::shared_ptr<XVulkanPixelShader>(Device->GetVkShaderFactory()->CreateShader<XVulkanPixelShader>(Code, Device, EShaderType::SV_Pixel));
+}
+
+std::shared_ptr<XRHIRayTracingShader> XVulkanPlatformRHI::RHICreateRayTracingShader(XArrayView<uint8> Code, EShaderType ShaderType)
+{
+	switch (ShaderType)
+	{
+	case EShaderType::SV_RayGen:
+	case EShaderType::SV_RayMiss:
+	case EShaderType::SV_HitGroup:
+		return std::shared_ptr<XVulkanRayTracingShader>(Device->GetVkShaderFactory()->CreateShader<XVulkanRayTracingShader>(Code, Device, ShaderType));
+	default:XASSERT(false);
+	}
+	return std::shared_ptr<XRHIRayTracingShader>(nullptr);
 }
 
 uint32 XVulkanDescriptorSetWriter::SetupDescriptorWrites(

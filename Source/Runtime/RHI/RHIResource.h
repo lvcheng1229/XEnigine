@@ -97,6 +97,31 @@ public:
 	XRHIComputeShader() :XRHIShader(EShaderType::SV_Compute) {}
 };
 
+class XRHIRayTracingShader :public XRHIShader
+{
+public:
+	XRHIRayTracingShader(EShaderType ShaderTypeIn) :XRHIShader(ShaderTypeIn) {}
+};
+
+
+//class XRHIRayGenShader : public XRHIRayTracingShader
+//{
+//public:
+//	XRHIRayGenShader() :XRHIRayTracingShader(EShaderType::SV_RayGen) {}
+//};
+//
+//class XRHIRayMissShader : public XRHIRayTracingShader
+//{
+//public:
+//	XRHIRayMissShader() :XRHIRayTracingShader(EShaderType::SV_RayMiss) {}
+//};
+//
+//class XRHIHitGroupShader : public XRHIRayTracingShader
+//{
+//public:
+//	XRHIHitGroupShader() :XRHIRayTracingShader(EShaderType::SV_HitGroup) {}
+//};
+
 class XRHITexture
 {
 public:
@@ -230,6 +255,8 @@ public:
 
 class XRHIGraphicsPSO {};
 class XRHIComputePSO{};
+class XRHIRayTracingPSO {};
+
 class XRHISetRenderTargetsInfo
 {
 public:
@@ -427,4 +454,61 @@ struct XRayTracingSceneInitializer
 class XRHIRayTracingScene : public XRHIRayTracingAccelerationStruct
 {
 public:
+};
+
+class XRayTracingPipelineSignature
+{
+public:
+	inline std::size_t GetHashIndex()const
+	{
+		std::size_t seed = 42;
+		THashCombine(seed, RayGenHash);
+		THashCombine(seed, MissHash);
+		THashCombine(seed, HitGroupHash);
+		return seed;
+	}
+protected:
+	uint64 RayGenHash = 0;
+	uint64 MissHash = 0;
+	uint64 HitGroupHash = 0;
+};
+
+class XRayTracingPipelineStateInitializer : public XRayTracingPipelineSignature
+{
+public:
+
+	void SetRayGenShaderTable(const std::vector<XRHIRayTracingShader*>& InRayGenShaders, uint64 Hash = 0)
+	{
+		RayGenTable = InRayGenShaders;
+		RayGenHash = Hash ? Hash : ComputeShaderTableHash(InRayGenShaders);
+	}
+
+	void SetMissShaderTable(const std::vector<XRHIRayTracingShader*>& InMissShaders, uint64 Hash = 0)
+	{
+		MissTable = InMissShaders;
+		MissHash = Hash ? Hash : ComputeShaderTableHash(InMissShaders);
+	}
+
+	void SetHitGroupShaderTable(const std::vector<XRHIRayTracingShader*>& InHitGroupShaders, uint64 Hash = 0)
+	{
+		HitGroupTable = InHitGroupShaders;
+		HitGroupHash = Hash ? Hash : ComputeShaderTableHash(InHitGroupShaders);
+	}
+
+	std::vector<XRHIRayTracingShader*> RayGenTable;
+	std::vector<XRHIRayTracingShader*> MissTable;
+	std::vector<XRHIRayTracingShader*> HitGroupTable;
+protected:
+
+	uint64 ComputeShaderTableHash(const std::vector<XRHIRayTracingShader*>& InRayGenShaders ,uint64 InitialHash = 5699878132332235837ull)
+	{
+		uint64 CombineHash = InitialHash;
+		for (XRHIRayTracingShader* RTShader : InRayGenShaders)
+		{
+			THashCombine(CombineHash, RTShader->GetHash());
+		}
+		return CombineHash;
+	}
+
+
 };

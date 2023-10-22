@@ -247,6 +247,11 @@ public:
 		return static_cast<XRHIComputeShader*>(GetOrCreateRHIShaderFromMapping());
 	}
 
+	inline XRHIRayTracingShader* GetRayTracingShader() const
+	{
+		return static_cast<XRHIRayTracingShader*>(GetOrCreateRHIShaderFromMapping());
+	}
+
 private:
 	XXShaderClass* ShaderPtr;
 	const XShaderMappingBase* ShaderMapFileUnitPtr;

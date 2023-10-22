@@ -10,4 +10,5 @@ namespace PipelineStateCache
 
 	std::shared_ptr <XRHIComputePSO> GetAndOrCreateComputePipelineState(XRHICommandList& RHICmdList,const XRHIComputeShader* ComputeShader);
 	std::shared_ptr <XRHIGraphicsPSO> GetAndOrCreateGraphicsPipelineState(XRHICommandList& RHICmdList, const XGraphicsPSOInitializer& OriginalInitializer);
+	std::shared_ptr <XRHIRayTracingPSO> GetAndOrCreateRayTracingPipelineState(XRHICommandList& RHICmdList, const XRayTracingPipelineStateInitializer& OriginalInitializer);
 }

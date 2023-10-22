@@ -61,3 +61,14 @@ private:
 	const XRayTracingSceneInitializer Initializer;
 	XVulkanDevice* const Device = nullptr;
 };
+
+class XVulkanRayTracingPipelineState : public XRHIRayTracingPSO
+{
+public:
+	XVulkanRayTracingPipelineState(XVulkanDevice* const InDevice, const XRayTracingPipelineStateInitializer& Initializer);
+
+	struct ShaderData
+	{
+		std::vector<std::shared_ptr<XVulkanRayTracingShader>>Shaders;
+	};
+};

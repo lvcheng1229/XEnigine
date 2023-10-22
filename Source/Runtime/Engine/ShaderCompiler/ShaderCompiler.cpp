@@ -368,6 +368,9 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 	case EShaderType::SV_Vertex:Target = "vs_6_1"; break;
 	case EShaderType::SV_Pixel:Target = "ps_6_1"; break;
 	case EShaderType::SV_Compute:Target = "cs_6_1"; break;
+	case EShaderType::SV_RayGen:Target = "lib_6_3";;
+	case EShaderType::SV_RayMiss:Target = "lib_6_3";;
+	case EShaderType::SV_HitGroup:Target = "lib_6_3"; break;
 	default:XASSERT(false); break;
 	}
 
@@ -392,7 +395,13 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 #if !USE_DX12
 	Args.push_back(TEXT("-spirv"));
 	Args.push_back(TEXT("-fspv-reflect"));
-	Args.push_back(TEXT("-fspv-target-env=vulkan1.0"));
+	Args.push_back(TEXT("-fspv-target-env=vulkan1.3"));
+	//Args.push_back(TEXT("-fspv-extension=SPV_EXT_descriptor_indexing"));
+	Args.push_back(TEXT("-fspv-extension=SPV_KHR_ray_query"));
+	Args.push_back(TEXT("-fspv-extension=SPV_KHR_ray_tracing"));
+
+	Args.push_back(TEXT("-fspv-extension=SPV_GOOGLE_hlsl_functionality1"));
+	Args.push_back(TEXT("-fspv-extension=SPV_GOOGLE_user_type"));
 	//Args.push_back(TEXT("-fspv-target-env=vulkan1.1"));
 #else
 	Args.push_back(TEXT("-Qstrip_reflect"));
