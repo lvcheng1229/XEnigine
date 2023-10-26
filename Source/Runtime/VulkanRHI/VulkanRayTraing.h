@@ -35,6 +35,12 @@ public:
 	VkAccelerationStructureKHR Handle = nullptr;
 	VkDeviceAddress Address = 0;
 
+	void SetupHitGroupSystemParameters();
+	void ReleaseBindlessHandles();
+
+	std::vector<XRHIDescriptorHandle>HitGroupSystemVertexViews;
+	XRHIDescriptorHandle HitGroupSystemIndexView;
+
 private:
 	XVulkanDevice* const Device = nullptr;
 };
@@ -69,6 +75,17 @@ public:
 
 	struct ShaderData
 	{
-		std::vector<std::shared_ptr<XVulkanRayTracingShader>>Shaders;
+		std::vector<std::shared_ptr<XRHIRayTracingShader>>Shaders;
+		std::vector<uint8>ShaderHandles;
 	};
+
+	ShaderData RayGen;
+	ShaderData Miss;
+	ShaderData HitGroup;
+	ShaderData Callable;
+
+	VkPipeline Pipeline;
+
+
+	bool bAllowHitGroupIndexing = true;
 };

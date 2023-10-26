@@ -248,22 +248,6 @@ protected:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class XVulkanDescriptorPool
 {
 public:
@@ -345,5 +329,38 @@ public:
 	XVulkanDescriptorPoolSetContainer& AcquirePoolSetContainer();
 private:
 	std::vector<XVulkanDescriptorPoolSetContainer*>PoolSets;
+	XVulkanDevice* Device;
+};
+
+class XVulkanBindlessDescriptorManager
+{
+public:
+
+	struct BindlessSetState
+	{
+		VkDescriptorType DescriptorType = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+
+		uint32 MaxDescriptorCount = 0;
+		uint32 CurDescriptorCount = 1;//0 is null buffer
+
+		uint32 FreeListHead = -1;
+		uint32 DescriptorSize = 0;
+
+		uint8* MappedPointer = nullptr;
+
+		std::vector<uint8>DebugDescriptors;
+	};
+
+	void UpdateBuffer(XRHIDescriptorHandle DescriptorHandle, VkBuffer Buffer, VkDeviceSize BufferOffset, VkDeviceSize BufferSize);
+	void UpdateBuffer(XRHIDescriptorHandle DescriptorHandle, VkDeviceAddress BufferAddress, VkDeviceSize BufferSize);
+	void UpdateDescriptor(XRHIDescriptorHandle DescriptorHandle, VkDescriptorDataEXT DescriptorData);
+
+	void Unregister(XRHIDescriptorHandle DescriptorHandle);
+
+	BindlessSetState BindlessSetStates[VulkanBindless::NumBindLessSet];
+
+	uint32 GetFreeResourceStateIndex(BindlessSetState& State);
+	XRHIDescriptorHandle ReserveDescriptor(VkDescriptorType DescriptorType);
+
 	XVulkanDevice* Device;
 };

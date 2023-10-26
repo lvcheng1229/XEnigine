@@ -104,6 +104,8 @@ public:
 		return EntryName;
 	}
 
+	VkShaderModule GetOrCreateHandle();
+
 	VkShaderModule GetOrCreateHandle(const XGfxPipelineDesc& Desc, uint32 LayoutHash)
 	{
 		auto iter = ShaderModules.find(LayoutHash);;

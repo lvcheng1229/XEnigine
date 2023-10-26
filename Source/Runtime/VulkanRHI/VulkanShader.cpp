@@ -97,6 +97,7 @@ ShaderType* XVulkanShaderFactory::LookupShader(uint64 ShaderKey, EShaderType InS
 	return nullptr;
 }
 
+
 std::shared_ptr<XRHIVertexShader> XVulkanPlatformRHI::RHICreateVertexShader(XArrayView<uint8> Code)
 {
 	return std::shared_ptr<XVulkanVertexShader>(Device->GetVkShaderFactory()->CreateShader<XVulkanVertexShader>(Code, Device, EShaderType::SV_Vertex));

@@ -129,3 +129,19 @@ enum class EBufferUsage
 };
 
 #define MaxSimultaneousRenderTargets 8
+
+struct XRHIDescriptorHandle
+{
+	XRHIDescriptorHandle() {}
+	XRHIDescriptorHandle(uint8 InType, uint32 InIndex)
+		:Type(InType),
+		Index(InIndex)
+	{
+
+	}
+
+	bool IsValid() { return Index != 0xffffffff && Type != 0xff; };
+
+	uint32 Index = 0xffffffff;
+	uint8 Type = 0xff;
+};

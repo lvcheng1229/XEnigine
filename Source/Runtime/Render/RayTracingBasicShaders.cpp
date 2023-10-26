@@ -51,16 +51,16 @@ XBasicRayTracingPipeline GetBasicRayTracingPipeline(XRHICommandList& RHICmdList)
     TShaderReference<XBuildInCHS> CloseHitShader = ShaderMap->GetShader<XBuildInCHS>();
     TShaderReference<XBuildInMSS> MissShader = ShaderMap->GetShader<XBuildInMSS>();
 
-    std::vector<XRHIRayTracingShader*>  RayGenShaderTable;
-    RayGenShaderTable.push_back(OcclusionRGS.GetRayTracingShader());
+    std::vector<std::shared_ptr<XRHIRayTracingShader>>  RayGenShaderTable;
+    RayGenShaderTable.push_back(std::shared_ptr<XRHIRayTracingShader>(OcclusionRGS.GetRayTracingShader()));
     PipelineInitializer.SetRayGenShaderTable(RayGenShaderTable);
 
-    std::vector<XRHIRayTracingShader*>  ClostHitShaderTable;
-    ClostHitShaderTable.push_back(CloseHitShader.GetRayTracingShader());
+    std::vector<std::shared_ptr<XRHIRayTracingShader>>  ClostHitShaderTable;
+    ClostHitShaderTable.push_back(std::shared_ptr<XRHIRayTracingShader>(CloseHitShader.GetRayTracingShader()));
     PipelineInitializer.SetHitGroupShaderTable(ClostHitShaderTable);
 
-    std::vector<XRHIRayTracingShader*>  RayMissShaderTable;
-    RayMissShaderTable.push_back(MissShader.GetRayTracingShader());
+    std::vector<std::shared_ptr<XRHIRayTracingShader>>  RayMissShaderTable;
+    RayMissShaderTable.push_back(std::shared_ptr<XRHIRayTracingShader>(MissShader.GetRayTracingShader()));
     PipelineInitializer.SetMissShaderTable(RayMissShaderTable);
 
     XBasicRayTracingPipeline Res;

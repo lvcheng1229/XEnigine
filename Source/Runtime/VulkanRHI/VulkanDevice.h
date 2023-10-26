@@ -60,6 +60,12 @@ public:
 		return &DefaultTextureView;
 	}
 
+	inline XVulkanBindlessDescriptorManager* GetBindlessDescriptorMannager()
+	{
+		XASSERT(BindlessDescriptorManager != nullptr);
+		return BindlessDescriptorManager;
+	}
+
 #if RHI_RAYTRACING
 	inline const XRayTracingProperties& GetRayTracingProperties() const
 	{
@@ -82,6 +88,8 @@ private:
 
 	XVulkanCommandListContext* GfxContext;
 	XVulkanShaderFactory ShaderFactory;
+
+	XVulkanBindlessDescriptorManager* BindlessDescriptorManager;
 
 	XFenceManager FenceManager;
 	XMemoryManager MemoryManager;

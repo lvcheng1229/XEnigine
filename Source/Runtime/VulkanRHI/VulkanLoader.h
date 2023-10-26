@@ -7,5 +7,11 @@ namespace VulkanExtension
 	extern PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR;
 	extern PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR;
 	extern PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR;
+	extern PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR;
+	extern PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR;
+	
+	//typedef void (VKAPI_PTR *PFN_vkGetDescriptorEXT)(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize, void* pDescriptor);
+	extern PFN_vkGetDescriptorEXT vkGetDescriptorEXT;
+
 	void InitExtensionFunction(VkDevice Device);
 }

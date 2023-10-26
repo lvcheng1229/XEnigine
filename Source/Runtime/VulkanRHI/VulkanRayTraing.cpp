@@ -191,14 +191,127 @@ std::shared_ptr<XRHIRayTracingScene> XVulkanPlatformRHI::RHICreateRayTracingScen
 
 XVulkanRayTracingPipelineState::XVulkanRayTracingPipelineState(XVulkanDevice* const InDevice, const XRayTracingPipelineStateInitializer& Initializer)
 {
-	const std::vector<XRHIRayTracingShader*>& InitializerRayGenShaders = Initializer.RayGenTable;
-	const std::vector<XRHIRayTracingShader*>& InitializerRayMissShaders = Initializer.MissTable;
-	const std::vector<XRHIRayTracingShader*>& InitializerHitGroupShaders = Initializer.HitGroupTable;
+	const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InitializerRayGenShaders = Initializer.RayGenTable;
+	const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InitializerRayMissShaders = Initializer.MissTable;
+	const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InitializerHitGroupShaders = Initializer.HitGroupTable;
 
-	for (XRHIRayTracingShader* const RayGenShaderRHI : InitializerRayGenShaders)
+	std::vector<VkPipelineShaderStageCreateInfo>ShaderStages;
+	std::vector<VkRayTracingShaderGroupCreateInfoKHR>ShaderGroups;
+
+	std::vector<std::string>EntryPointName;
+
+	for (auto const RayGenShaderRHI : InitializerRayGenShaders)
 	{
+		XASSERT(RayGenShaderRHI->GetShaderType() == EShaderType::SV_RayGen);
 
+		XVulkanRayTracingShader* const RayGenShader = static_cast<XVulkanRayTracingShader*>(RayGenShaderRHI.get());
+		EntryPointName.push_back(RayGenShader->GetEntryPoint());
+
+		VkPipelineShaderStageCreateInfo ShaderStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+		ShaderStage.module = RayGenShader->GetOrCreateHandle();
+		ShaderStage.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+		ShaderStage.pName = EntryPointName.back().data();
+		ShaderStages.push_back(ShaderStage);
+
+		VkRayTracingShaderGroupCreateInfoKHR ShaderGroup = {VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR};
+		ShaderGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+		ShaderGroup.generalShader = ShaderStages.size() - 1;//store general shader index
+		ShaderGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroups.push_back(ShaderGroup);
+
+		RayGen.Shaders.push_back(RayGenShaderRHI);
 	}
+
+	for (auto const MissShaderRHI : InitializerRayMissShaders)
+	{
+		XASSERT(MissShaderRHI->GetShaderType() == EShaderType::SV_RayMiss);
+
+		XVulkanRayTracingShader* const RayMissShader = static_cast<XVulkanRayTracingShader*>(MissShaderRHI.get());
+		EntryPointName.push_back(RayMissShader->GetEntryPoint());
+
+		VkPipelineShaderStageCreateInfo ShaderStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+		ShaderStage.module = RayMissShader->GetOrCreateHandle();
+		ShaderStage.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
+		ShaderStage.pName = EntryPointName.back().data();
+		ShaderStages.push_back(ShaderStage);
+
+		VkRayTracingShaderGroupCreateInfoKHR ShaderGroup = { VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR };
+		ShaderGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+		ShaderGroup.generalShader = ShaderStages.size() - 1;//store general shader index
+		ShaderGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroups.push_back(ShaderGroup);
+
+		Miss.Shaders.push_back(MissShaderRHI);
+	}
+
+	for (auto const HitGroupShaderRHI : InitializerHitGroupShaders)
+	{
+		XASSERT(HitGroupShaderRHI->GetShaderType() == EShaderType::SV_HitGroup);
+
+		XVulkanRayTracingShader* const HitGroupShader = static_cast<XVulkanRayTracingShader*>(HitGroupShaderRHI.get());
+		EntryPointName.push_back(HitGroupShader->GetEntryPoint());
+
+		VkPipelineShaderStageCreateInfo ShaderStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+		ShaderStage.module = HitGroupShader->GetOrCreateHandle();
+		ShaderStage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		ShaderStage.pName = EntryPointName.back().data();
+		ShaderStages.push_back(ShaderStage);
+
+		VkRayTracingShaderGroupCreateInfoKHR ShaderGroup = { VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR };
+		ShaderGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+		ShaderGroup.generalShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroup.closestHitShader = ShaderStages.size() - 1;//store general shader index
+		ShaderGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
+		ShaderGroups.push_back(ShaderGroup);
+
+		RayGen.Shaders.push_back(HitGroupShaderRHI);
+	}
+
+	VkRayTracingPipelineCreateInfoKHR RayTracingPipelineCreateInfo = { VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR };
+	RayTracingPipelineCreateInfo.stageCount = ShaderStages.size();
+	RayTracingPipelineCreateInfo.pStages = ShaderStages.data();
+	RayTracingPipelineCreateInfo.groupCount = ShaderGroups.size();
+	RayTracingPipelineCreateInfo.pGroups = ShaderGroups.data();
+	RayTracingPipelineCreateInfo.maxPipelineRayRecursionDepth = 1;//todo:fixme
+	
+	RayTracingPipelineCreateInfo.layout = ;
+	RayTracingPipelineCreateInfo.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+	
+	VULKAN_VARIFY(VulkanExtension::vkCreateRayTracingPipelinesKHR(InDevice->GetVkDevice(), {}, {}, 1, &RayTracingPipelineCreateInfo, nullptr, &Pipeline));
+
+	{
+		const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& RayTracingPipelineProps = InDevice->GetRayTracingProperties().RayTracingPipeline;
+		const uint32 HandleSize = RayTracingPipelineProps.shaderGroupHandleSize;
+
+		uint32 HandleOffset = 0;
+
+		auto FetchShaderhandle = [&HandleOffset, HandleSize, InDevice](VkPipeline RTPipeline, uint32 HandleCount)
+		{
+			std::vector<uint8> OutHandleStorage;
+			uint32 OutHandleStorageSize = HandleCount * HandleSize;
+			OutHandleStorage.resize(OutHandleStorageSize);
+
+			if (HandleCount)
+			{
+				VulkanExtension::vkGetRayTracingShaderGroupHandlesKHR(InDevice->GetVkDevice(), RTPipeline, HandleOffset, HandleCount, OutHandleStorageSize, OutHandleStorage.data());
+			}
+
+			HandleOffset += HandleCount;
+
+			return OutHandleStorage;
+		};
+
+		RayGen.ShaderHandles = FetchShaderhandle(Pipeline, InitializerRayGenShaders.size());
+		Miss.ShaderHandles = FetchShaderhandle(Pipeline, InitializerRayMissShaders.size());
+		HitGroup.ShaderHandles = FetchShaderhandle(Pipeline, InitializerHitGroupShaders.size());
+	}
+
+	bAllowHitGroupIndexing = Initializer.HitGroupTable.size() ? true : false;
 }
 
 std::shared_ptr<XRHIRayTracingPSO> XVulkanPlatformRHI::RHICreateRayTracingPipelineState(const XRayTracingPipelineStateInitializer& OriginalInitializer)
@@ -248,6 +361,8 @@ void XVulkanCommandListContext::RHIBuildAccelerationStructures(const std::span<c
 		VkAccelerationStructureBuildRangeInfoKHR* const pBuildRanges = BuildData.Ranges.data();
 		BuildGeometryInfos.push_back(BuildData.GeometryInfo);
 		BuildRangeInfos.push_back(pBuildRanges);
+
+		Geometry->
 	}
 
 	XVulkanCmdBuffer* Cmd = CmdBufferManager->GetActiveCmdBuffer();
@@ -280,6 +395,43 @@ XVulkanRayTracingGeometry::XVulkanRayTracingGeometry(const XRayTracingGeometryIn
 	VkAccelerationStructureDeviceAddressInfoKHR DeviceAddressInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
 	DeviceAddressInfo.accelerationStructure = Handle;
 	Address = VulkanExtension::vkGetAccelerationStructureDeviceAddressKHR(Device->GetVkDevice(), &DeviceAddressInfo);
+}
+
+void XVulkanRayTracingGeometry::SetupHitGroupSystemParameters()
+{
+	auto* BindlessDescriptorManager = Device->GetBindlessDescriptorMannager();
+	auto GetBindLessHandle = [BindlessDescriptorManager](XVulkanResourceMultiBuffer* Buffer, uint32 ExtraOffset)
+	{
+		if (Buffer)
+		{
+			XRHIDescriptorHandle BindlessHandle = BindlessDescriptorManager->ReserveDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+			return BindlessHandle;
+		}
+		return XRHIDescriptorHandle();
+	};
+
+	ReleaseBindlessHandles();
+
+}
+
+void XVulkanRayTracingGeometry::ReleaseBindlessHandles()
+{
+	XVulkanBindlessDescriptorManager* BindlessDescriptorManager = Device->GetBindlessDescriptorMannager();
+
+	for (XRHIDescriptorHandle BindlessHandle : HitGroupSystemVertexViews)
+	{
+		BindlessDescriptorManager->Unregister(BindlessHandle);
+	}
+
+	HitGroupSystemVertexViews.clear();
+	HitGroupSystemVertexViews.resize(Initializer.Segments.size());
+
+	if (HitGroupSystemIndexView.IsValid())
+	{
+		BindlessDescriptorManager->Unregister(HitGroupSystemIndexView);
+		HitGroupSystemIndexView = XRHIDescriptorHandle();
+	}
+
 }
 
 void XVulkanRayTracingScene::BindBuffer(std::shared_ptr<XRHIBuffer> InBuffer, uint32 InBufferOffset)

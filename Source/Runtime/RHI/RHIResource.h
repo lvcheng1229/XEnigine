@@ -477,33 +477,33 @@ class XRayTracingPipelineStateInitializer : public XRayTracingPipelineSignature
 {
 public:
 
-	void SetRayGenShaderTable(const std::vector<XRHIRayTracingShader*>& InRayGenShaders, uint64 Hash = 0)
+	void SetRayGenShaderTable(const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InRayGenShaders, uint64 Hash = 0)
 	{
 		RayGenTable = InRayGenShaders;
 		RayGenHash = Hash ? Hash : ComputeShaderTableHash(InRayGenShaders);
 	}
 
-	void SetMissShaderTable(const std::vector<XRHIRayTracingShader*>& InMissShaders, uint64 Hash = 0)
+	void SetMissShaderTable(const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InMissShaders, uint64 Hash = 0)
 	{
 		MissTable = InMissShaders;
 		MissHash = Hash ? Hash : ComputeShaderTableHash(InMissShaders);
 	}
 
-	void SetHitGroupShaderTable(const std::vector<XRHIRayTracingShader*>& InHitGroupShaders, uint64 Hash = 0)
+	void SetHitGroupShaderTable(const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InHitGroupShaders, uint64 Hash = 0)
 	{
 		HitGroupTable = InHitGroupShaders;
 		HitGroupHash = Hash ? Hash : ComputeShaderTableHash(InHitGroupShaders);
 	}
 
-	std::vector<XRHIRayTracingShader*> RayGenTable;
-	std::vector<XRHIRayTracingShader*> MissTable;
-	std::vector<XRHIRayTracingShader*> HitGroupTable;
+	std::vector<std::shared_ptr<XRHIRayTracingShader>> RayGenTable;
+	std::vector<std::shared_ptr<XRHIRayTracingShader>> MissTable;
+	std::vector<std::shared_ptr<XRHIRayTracingShader>> HitGroupTable;
 protected:
 
-	uint64 ComputeShaderTableHash(const std::vector<XRHIRayTracingShader*>& InRayGenShaders ,uint64 InitialHash = 5699878132332235837ull)
+	uint64 ComputeShaderTableHash(const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InRayGenShaders ,uint64 InitialHash = 5699878132332235837ull)
 	{
 		uint64 CombineHash = InitialHash;
-		for (XRHIRayTracingShader* RTShader : InRayGenShaders)
+		for (auto RTShader : InRayGenShaders)
 		{
 			THashCombine(CombineHash, RTShader->GetHash());
 		}
