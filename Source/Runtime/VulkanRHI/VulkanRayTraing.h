@@ -65,7 +65,7 @@ public:
 	const VkStridedDeviceAddressRegionKHR* GetRegion(EShaderType ShaderType);
 
 	void Init(const XVulkanRayTracingScene* Scene, const XVulkanRayTracingPipelineState* Pipeline);
-	void SetSlot(EShaderType ShaderType, uint32 DstSlot, uint32 SrcHandleIndex, std::vector<uint8>& SrcHandleData);
+	void SetSlot(EShaderType ShaderType, uint32 DstSlot, uint32 SrcHandleIndex, const std::vector<uint8>& SrcHandleData);
 
 private:
 	struct XVulkanShaderTableAllocation
@@ -104,6 +104,10 @@ public:
 		std::vector<std::shared_ptr<XRHIRayTracingShader>>Shaders;
 		std::vector<uint8>ShaderHandles;
 	};
+
+	ShaderData GetShaderData(EShaderType ShaderType);
+	int32 GetShaderIndex(XVulkanRayTracingShader* Shader);
+	const std::vector<uint8>& GetShaderHandles(EShaderType ShaderType);
 
 	ShaderData RayGen;
 	ShaderData Miss;

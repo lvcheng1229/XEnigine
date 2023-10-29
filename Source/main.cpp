@@ -328,53 +328,110 @@ public:
        stbi_image_free(pixels);
    }
    
+
+
    void PrePareRayTracingScene()
    {
-       //BLAS-----------------------------------------------------------------------------------------------
+       std::shared_ptr<XRHIBuffer> RayTracingVB;
+       std::shared_ptr<XRHIBuffer> RayTracingIB;
+       std::shared_ptr<XRHIStructBuffer> RayTracingRB;
+       std::shared_ptr<XRHIShaderResourceView> RBView;
+
+       std::shared_ptr<XRHIRayTracingGeometry> Geometry;
+
+       //1. create raytracing vb
+       {
+           TResourceVector<XVector3>Vertices;
+           Vertices.PushBack(XVector3(1, -1, 0));
+           Vertices.PushBack(XVector3(1, 1, 0));
+           Vertices.PushBack(XVector3(-1, 1, 0));
+           XRHIResourceCreateData CreateData(&Vertices);
+           RayTracingVB = RHIcreateVertexBuffer(sizeof(XVector3), 3 * sizeof(XVector3), EBufferUsage::BUF_Static, CreateData);
+       }
+
+       //2. create raytracing ib
+       {
+           TResourceVector<uint16>IndexData;
+           IndexData.PushBack(0);
+           IndexData.PushBack(1);
+           IndexData.PushBack(2);
+           XRHIResourceCreateData CreateData(&IndexData);
+           RayTracingIB = RHICreateIndexBuffer(sizeof(uint16), 3 * sizeof(uint16), EBufferUsage::BUF_Static, CreateData);
+       }
+      
+       // (-1,-1,0) --------- (1,-1,0)
+       //       \               |
+       //        \              |
+       //         \             |
+       //          \            |
+       //           \           |
+       //              .........         
+       //                    (1,1,0)
+
+       //3. create ray buffer
+       {
+           TResourceVector<XBasicRayTracingRay>RayData;
+           RayData.PushBack(XBasicRayTracingRay({ 0.75f, 0.0f,-1.0f }, 0xFFFFFFFF, { 0.0f,0.0f, 1.0f }, 10000.0f)); // expected to hit
+           RayData.PushBack(XBasicRayTracingRay({ 0.75f, 0.0f,-1.0f }, 0xFFFFFFFF, { 0.0f,0.0f, 1.0f },     0.5f)); // expected to miss (short ray)
+           RayData.PushBack(XBasicRayTracingRay({ 0.75f, 0.0f, 1.0f }, 0xFFFFFFFF, { 0.0f,0.0f,-1.0f }, 10000.0f)); // expected to hit  (should hit back face)
+           RayData.PushBack(XBasicRayTracingRay({-0.75f, 0.0f,-1.0f }, 0xFFFFFFFF, { 0.0f,0.0f, 1.0f }, 10000.0f)); // expected to miss (doesn't intersect)
+           XRHIResourceCreateData CreateData(&RayData);
+           RayTracingRB = RHIcreateStructBuffer(sizeof(XBasicRayTracingRay), sizeof(XBasicRayTracingRay) * 4, EBufferUsage::BUF_Static | EBufferUsage::BUF_ShaderResource ,CreateData);
+           RBView = RHICreateShaderResourceView(RayTracingRB.get());
+       }
+       
+       //4. create bottom level acceleration structure
        XRayTracingGeometryInitializer GeometryInitializer;
        {
-           GeometryInitializer.IndexBuffer = GTestIndexRHI.RHIVertexBuffer;
+           GeometryInitializer.IndexBuffer = RayTracingIB;
            GeometryInitializer.IndexBufferOffset = 0;
            GeometryInitializer.bPreferBuild = false;
 
            XRayTracingGeometrySegment Segment;
-           Segment.VertexBuffer = GTestVertexRHI.RHIVertexBuffer;
-
+           Segment.VertexBuffer = RayTracingVB;
            Segment.VertexBufferOffset = 0;
-           Segment.MaxVertices = 4 * 6;
+           Segment.MaxVertices = 3;
            Segment.FirstPrimitive = 0;
-           Segment.NumPrimitives = 3 * 2 * 6;
-           Segment.VertexBufferStride = 3 * 4 + 3 * 4 + 2 * 4;
-
+           Segment.NumPrimitives = 1;
+           Segment.VertexBufferStride = sizeof(XVector3);
            GeometryInitializer.Segments.push_back(Segment);
-       }
-       std::shared_ptr<XRHIRayTracingGeometry> Geometry = RHICreateRayTracingGeometry(GeometryInitializer);
-       RHICmdList.BuildAccelerationStructure(Geometry);
 
-       //TLAS-----------------------------------------------------------------------------------------------
-       std::vector<XRayTracingGeometryInstance> Instances;
+           Geometry = RHICreateRayTracingGeometry(GeometryInitializer);
+           RHICmdList.BuildAccelerationStructure(Geometry);
+       }
+    
+       //5. create top level acceleration structure
        {
+           std::vector<XRayTracingGeometryInstance> Instances;
            Instances.resize(1);
            Instances[0].GeometryRHI = Geometry;
            Instances[0].NumTransforms = 1;
+
+           XRayTracingSceneWithGeometryInstance RayTracingScene = CreateRayTracingSceneWithGeometryInstance(Instances, RAY_TRACING_NUM_SHADER_SLOTS, 1);
+
+           XRayTracingAccelerationStructSize SceneSizeInfo = RHICalcRayTracingSceneSize(1, ERayTracingAccelerationStructureFlags::PreferTrace);
+           
+           std::shared_ptr<XRHIBuffer> SceneBuffer = RHICreateBuffer(0, SceneSizeInfo.ResultSize, EBufferUsage::BUF_AccelerationStructure, XRHIResourceCreateData());
+           RHICmdList.BindAccelerationStructureMemory(RayTracingScene.Scene.get(), SceneBuffer, 0);
+          
+           std::shared_ptr<XRHIBuffer> ScratchBuffer = RHICreateBuffer(0, SceneSizeInfo.BuildScratchSize, EBufferUsage::BUF_UnorderedAccess, XRHIResourceCreateData());
+
+           XRayTracingSceneBuildParams Params;
+           Params.Scene = RayTracingScene.Scene.get();
+           //Params.InstanceBuffer = 
+           Params.ScratchBuffer = ScratchBuffer.get();
+           Params.ScratchBufferOffset = 0;
+           //TODO fixme
+
+           RHICmdList.BuildAccelerationStructure(Params);
        }
-
-       XRayTracingSceneWithGeometryInstance RayTracingScene = CreateRayTracingSceneWithGeometryInstance(Instances, RAY_TRACING_NUM_SHADER_SLOTS, 1);
-       XRayTracingAccelerationStructSize SceneSizeInfo = RHICalcRayTracingSceneSize(1, ERayTracingAccelerationStructureFlags::PreferTrace);
-       std::shared_ptr<XRHIBuffer> SceneBuffer = RHICreateBuffer(0, SceneSizeInfo.ResultSize, EBufferUsage::BUF_AccelerationStructure, XRHIResourceCreateData());
-
-       RHICmdList.BindAccelerationStructureMemory(RayTracingScene.Scene.get(), SceneBuffer, 0);
-
-       std::shared_ptr<XRHIBuffer> ScratchBuffer = RHICreateBuffer(0, SceneSizeInfo.BuildScratchSize, EBufferUsage::BUF_UnorderedAccess, XRHIResourceCreateData());
-
-       XRayTracingSceneBuildParams Params;
-       Params.Scene = RayTracingScene.Scene.get();
-       //Params.InstanceBuffer = 
-       //Params.ScratchBuffer
-       //TODO fixme
        
-       RHICmdList.BuildAccelerationStructure(Params);
+      
+       
 
+
+
+       DispatchBasicOcclusionRays(RHICmdList);
    }
 
    
@@ -473,7 +530,7 @@ public:
         RHICmdList.Execute();
 #else
         createTextureImage();
-        DispatchRayTest(RHICmdList);
+        
         RHICmdList.Execute();
 #endif
     }

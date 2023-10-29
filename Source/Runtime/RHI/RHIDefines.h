@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Runtime\HAL\PlatformTypes.h"
+#include "Runtime\Core\Template\XEngineTemplate.h"
 
 #define RHI_RAYTRACING 1
 
@@ -109,7 +110,7 @@ enum class EVertexElementType
 	VET_NumBits = 5,
 };
 
-enum class EBufferUsage
+enum class EBufferUsage : uint16
 {
 	BUF_None					= 0,
 	BUF_Static					= 1 << 1,
@@ -129,6 +130,8 @@ enum class EBufferUsage
 	BUF_AnyDynamic = BUF_Dynamic,
 	
 };
+
+ENUM_CLASS_FLAGS(EBufferUsage);
 
 #define MaxSimultaneousRenderTargets 8
 

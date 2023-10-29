@@ -20,7 +20,7 @@ public:
 	virtual void PrePhysicalDeviceProperties(VkPhysicalDeviceProperties2KHR& PhysicalDeviceProperties2)final override 
 	{
 #if RHI_RAYTRACING
-		const XRayTracingProperties& RayTracingProperties = Device->GetRayTracingProperties();
+		const XVulkanDeviceExtensionProperties& RayTracingProperties = Device->GetDeviceExtensionProperties();
 		VkPhysicalDeviceAccelerationStructurePropertiesKHR& AccelerationStructure = const_cast<VkPhysicalDeviceAccelerationStructurePropertiesKHR&>(RayTracingProperties.AccelerationStructure);
 		AccelerationStructure = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
 		AddToPNext(PhysicalDeviceProperties2, AccelerationStructure);
@@ -54,7 +54,7 @@ public:
 	virtual void PrePhysicalDeviceProperties(VkPhysicalDeviceProperties2KHR& PhysicalDeviceProperties2)final override
 	{
 #if RHI_RAYTRACING
-		const XRayTracingProperties& RayTracingProperties = Device->GetRayTracingProperties();
+		const XVulkanDeviceExtensionProperties& RayTracingProperties = Device->GetDeviceExtensionProperties();
 		VkPhysicalDeviceRayTracingPipelinePropertiesKHR& RayTracingPipeline = const_cast<VkPhysicalDeviceRayTracingPipelinePropertiesKHR&>(RayTracingProperties.RayTracingPipeline);
 		RayTracingPipeline = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
 		AddToPNext(PhysicalDeviceProperties2, RayTracingPipeline);
@@ -74,6 +74,40 @@ public:
 
 private:
 	VkPhysicalDeviceRayTracingPipelineFeaturesKHR RayTracingPipelineFeature;
+};
+
+class XVulkanEXTDescriptorBufferExtension : public XVulkanDeviceExtension
+{
+public:
+	XVulkanEXTDescriptorBufferExtension(XVulkanDevice* InDevice)
+		:XVulkanDeviceExtension(InDevice, VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)
+	{
+
+	}
+
+	virtual void PrePhysicalDeviceProperties(VkPhysicalDeviceProperties2KHR& PhysicalDeviceProperties2)final override
+	{
+#if RHI_RAYTRACING
+		const XVulkanDeviceExtensionProperties& DeviceExtensionProperties = Device->GetDeviceExtensionProperties();
+		VkPhysicalDeviceDescriptorBufferPropertiesEXT& DescriptorBufferProperties = const_cast<VkPhysicalDeviceDescriptorBufferPropertiesEXT&>(DeviceExtensionProperties.DescriptorBufferProps);
+		DescriptorBufferProperties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
+		AddToPNext(PhysicalDeviceProperties2, DescriptorBufferProperties);
+#endif
+	}
+
+	virtual void PrePhysicalDeviceFeatures(VkPhysicalDeviceFeatures2KHR& PhysicalDeviceFeatures2)final override
+	{
+		DescriptorBufferFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT };
+		AddToPNext(PhysicalDeviceFeatures2, DescriptorBufferFeatures);
+	}
+
+	virtual void PreCreateDevice(VkDeviceCreateInfo& DeviceCreateInfo) final override
+	{
+		AddToPNext(DeviceCreateInfo, DescriptorBufferFeatures);
+	}
+
+private:
+	VkPhysicalDeviceDescriptorBufferFeaturesEXT DescriptorBufferFeatures;
 };
 
 static std::vector<XVulkanDeviceExtension> vkDeviceExtensions;

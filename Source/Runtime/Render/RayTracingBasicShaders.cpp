@@ -69,7 +69,7 @@ XBasicRayTracingPipeline GetBasicRayTracingPipeline(XRHICommandList& RHICmdList)
     return Res;
 }
 
-void DispatchBasicOcclusionRays(XRHICommandList& RHICmdList, XRHIShaderResourceView* SceneView, XRHIShaderResourceView* RayBufferView, XRHIUnorderedAcessView* ResultView, uint32 NumRays)
+void DispatchBasicOcclusionRays(XRHICommandList& RHICmdList, XRHIRayTracingScene* Scene, XRHIShaderResourceView* SceneView, XRHIShaderResourceView* RayBufferView, XRHIUnorderedAcessView* ResultView, uint32 NumRays)
 {
     auto RayTracingPipeline = GetBasicRayTracingPipeline(RHICmdList);
 
@@ -83,6 +83,6 @@ void DispatchBasicOcclusionRays(XRHICommandList& RHICmdList, XRHIShaderResourceV
     UAVs.push_back(ResultView);
 
     SetShaderParameters(GlobalResources, RayTracingPipeline.OcclusionRGS->ShaderParameterMap, SRVs, UAVs);
-
+    RHICmdList.RayTraceDispatch(RayTracingPipeline.PipelineState.get(), RayTracingPipeline.OcclusionRGS.GetRayTracingShader(), Scene, GlobalResources, NumRays, 1);
 }
 #endif

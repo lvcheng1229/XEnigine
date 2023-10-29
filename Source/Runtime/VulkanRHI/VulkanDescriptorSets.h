@@ -336,6 +336,7 @@ private:
 class XVulkanBindlessDescriptorManager
 {
 public:
+	XVulkanBindlessDescriptorManager(XVulkanDevice* InDevice);
 
 	struct BindlessSetState
 	{
@@ -350,6 +351,10 @@ public:
 		uint8* MappedPointer = nullptr;
 
 		std::vector<uint8>DebugDescriptors;
+
+		VkDeviceMemory MemoryHandle;
+		VkBuffer BufferHandle;
+		VkDescriptorSetLayout DescriptorSetLayout;
 	};
 
 	void UpdateBuffer(XRHIDescriptorHandle DescriptorHandle, VkBuffer Buffer, VkDeviceSize BufferOffset, VkDeviceSize BufferSize);
@@ -357,11 +362,19 @@ public:
 	void UpdateDescriptor(XRHIDescriptorHandle DescriptorHandle, VkDescriptorDataEXT DescriptorData);
 
 	void Unregister(XRHIDescriptorHandle DescriptorHandle);
+	void Init();
 
+	VkDescriptorBufferBindingInfoEXT BufferBindingInfo[VulkanBindless::NumBindLessSet];
 	BindlessSetState BindlessSetStates[VulkanBindless::NumBindLessSet];
+
+	uint32 BufferIndices[VulkanBindless::NumBindLessSet];
 
 	uint32 GetFreeResourceStateIndex(BindlessSetState& State);
 	XRHIDescriptorHandle ReserveDescriptor(VkDescriptorType DescriptorType);
+
+	VkDescriptorSetLayout EmptyDescriptorSetLayout;
+
+	VkPipelineLayout BindlessPipelineLayout;
 
 	XVulkanDevice* Device;
 };

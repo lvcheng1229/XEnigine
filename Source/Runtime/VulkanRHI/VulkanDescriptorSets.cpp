@@ -16,6 +16,33 @@ static inline uint8 GetIndexForDescritorType(VkDescriptorType DescriptorType)
     return VulkanBindless::None;
 }
 
+static inline uint32 GetDescriptorTypeSize(XVulkanDevice* Device, VkDescriptorType DescriptorType)
+{
+    const VkPhysicalDeviceDescriptorBufferPropertiesEXT& DescriptorBufferProperties = Device->GetDeviceExtensionProperties().DescriptorBufferProps;
+
+    switch (DescriptorType)
+    {
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        return DescriptorBufferProperties.robustStorageBufferDescriptorSize;
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+        return DescriptorBufferProperties.accelerationStructureDescriptorSize;
+    default:
+        XASSERT(false);
+    }
+    return 0;
+}
+
+static inline VkDescriptorType GetDescriptorTypeFromSetIndex(uint8 SetIndex)
+{
+    switch (SetIndex)
+    {
+    case VulkanBindless::BindlesssStorageBufferSet:          return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    case VulkanBindless::BindlessAccelerationStructureSet:  return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    default: XASSERT(false);
+    }
+    return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+}
+
 void XVulkanDescriptorSetsLayoutInfo::FinalizeBindings_Gfx(XVulkanShader* VertexShader, XVulkanShader* PixelShader)
 {
     if (VertexShader->ResourceCount.NumCBV)
@@ -128,6 +155,16 @@ XDescriptorSetRemappingInfo::~XDescriptorSetRemappingInfo()
     int32 ForDebug;
 }
 
+XVulkanBindlessDescriptorManager::XVulkanBindlessDescriptorManager(XVulkanDevice* InDevice)
+    :Device(InDevice)
+{
+    memset(BufferBindingInfo, 0, sizeof(VkDescriptorBufferBindingInfoEXT) * VulkanBindless::NumBindLessSet);
+    for (uint32 Index = 0; Index < VulkanBindless::NumBindLessSet; Index++)
+    {
+        BufferIndices[Index] = Index;
+    }
+}
+
 void XVulkanBindlessDescriptorManager::UpdateBuffer(XRHIDescriptorHandle DescriptorHandle, VkBuffer Buffer, VkDeviceSize BufferOffset, VkDeviceSize BufferSize)
 {
     VkBufferDeviceAddressInfo BufferInfo = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
@@ -174,6 +211,141 @@ void XVulkanBindlessDescriptorManager::Unregister(XRHIDescriptorHandle Descripto
         memset(NewSlot, 0, State.DescriptorSize);
         *NewSlot = PreviousHead;
     }
+}
+
+void XVulkanBindlessDescriptorManager::Init()
+{
+    const VkDevice DeviceHandle = Device->GetVkDevice();
+    const VkPhysicalDeviceDescriptorBufferPropertiesEXT& DescriptorBufferProperties = Device->GetDeviceExtensionProperties().DescriptorBufferProps;
+
+    {
+        VkDescriptorSetLayoutCreateInfo EmptyDescriptorSetLayoutCreateInfo;
+        EmptyDescriptorSetLayoutCreateInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+        VULKAN_VARIFY(vkCreateDescriptorSetLayout(DeviceHandle, &EmptyDescriptorSetLayoutCreateInfo, nullptr, &EmptyDescriptorSetLayout));
+    }
+
+    {
+        auto InitBindlessState = [&](VkDescriptorType DescriptorType, BindlessSetState& OutState)
+        {
+            OutState.DescriptorType = DescriptorType;
+            OutState.DescriptorSize = GetDescriptorTypeSize(Device,DescriptorType);
+            OutState.MaxDescriptorCount = 256;
+        };
+
+        auto CreateDescriptorSetlayout = [&](const BindlessSetState& State)
+        {
+            XASSERT(State.DescriptorType != VK_DESCRIPTOR_TYPE_MAX_ENUM);
+
+            VkDescriptorSetLayoutBinding DescriptorSetLayoutBinding;
+            DescriptorSetLayoutBinding.binding = 0;
+            DescriptorSetLayoutBinding.descriptorType = State.DescriptorType;
+            DescriptorSetLayoutBinding.descriptorCount = State.MaxDescriptorCount;
+            DescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+            DescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+
+            const VkDescriptorBindingFlags DescriptorBindingFlags = 0;
+
+            VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
+            DescriptorSetLayoutBindingFlagsCreateInfo.bindingCount = 1;
+            DescriptorSetLayoutBindingFlagsCreateInfo.pBindingFlags = &DescriptorBindingFlags;
+
+            VkDescriptorSetLayoutCreateInfo DescriptorSetLayoutCreateInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+            DescriptorSetLayoutCreateInfo.pBindings = &DescriptorSetLayoutBinding;
+            DescriptorSetLayoutCreateInfo.bindingCount = 1;
+            DescriptorSetLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+            DescriptorSetLayoutCreateInfo.pNext = &DescriptorSetLayoutBindingFlagsCreateInfo;
+
+            VkDescriptorSetLayout DescriptorSetLayout = VK_NULL_HANDLE;
+            VULKAN_VARIFY(vkCreateDescriptorSetLayout(DeviceHandle, &DescriptorSetLayoutCreateInfo, nullptr, &DescriptorSetLayout));
+            return DescriptorSetLayout;
+        };
+
+        auto CreateDescriptorBuffer = [&](BindlessSetState& InOutState, VkDescriptorBufferBindingInfoEXT& OutBufferBindingInfo)
+        {
+            const VkBufferUsageFlags BufferUsageFlags =
+                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+            const uint32 DescriptorBufferSize = InOutState.DescriptorSize * InOutState.MaxDescriptorCount;
+            InOutState.DebugDescriptors.resize(DescriptorBufferSize);
+
+            VkDeviceSize LayoutSizeInBytes = 0;
+            VulkanExtension::vkGetDescriptorSetLayoutSizeEXT(DeviceHandle, InOutState.DescriptorSetLayout, &LayoutSizeInBytes);
+            XASSERT(LayoutSizeInBytes == InOutState.DescriptorSize * InOutState.MaxDescriptorCount);
+            static_assert(VulkanBindless::NumBindLessSet == 3);//sampler type
+
+            // Create descriptor buffer
+            {
+                VkBufferCreateInfo BufferCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+                BufferCreateInfo.size = DescriptorBufferSize;
+                BufferCreateInfo.usage = BufferUsageFlags;
+                VULKAN_VARIFY(vkCreateBuffer(DeviceHandle, &BufferCreateInfo, nullptr, &InOutState.BufferHandle));
+            }
+
+            // Allocate buffer memory, bind and map
+            {
+                VkMemoryRequirements BufferMemoryReqs;
+                memset(&BufferMemoryReqs, 0, sizeof(VkMemoryRequirements));
+                vkGetBufferMemoryRequirements(DeviceHandle, InOutState.BufferHandle, &BufferMemoryReqs);
+               
+
+                uint32 MemoryTypeIndex = 0;
+                VULKAN_VARIFY(Device->GetDeviceMemoryManager().GetMemoryTypeFromProperties(BufferMemoryReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &MemoryTypeIndex));
+
+                VkMemoryAllocateFlagsInfo FlagsInfo = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO };
+                FlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+                VkMemoryAllocateInfo AllocateInfo = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
+                AllocateInfo.allocationSize = BufferMemoryReqs.size;
+                AllocateInfo.memoryTypeIndex = MemoryTypeIndex;
+                AllocateInfo.pNext = &FlagsInfo;
+
+                VULKAN_VARIFY(vkAllocateMemory(DeviceHandle, &AllocateInfo, nullptr, &InOutState.MemoryHandle));
+                VULKAN_VARIFY(vkBindBufferMemory(DeviceHandle, InOutState.BufferHandle, InOutState.MemoryHandle, 0));
+                VULKAN_VARIFY(vkMapMemory(DeviceHandle, InOutState.MemoryHandle, 0, VK_WHOLE_SIZE, 0, (void**)&InOutState.MappedPointer));
+                memset(InOutState.MappedPointer, 0, AllocateInfo.allocationSize);
+            }
+
+            // Setup the binding info
+            {
+                VkBufferDeviceAddressInfo AddressInfo = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+                AddressInfo.buffer = InOutState.BufferHandle;
+
+                OutBufferBindingInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT };
+                OutBufferBindingInfo.address = VulkanExtension::vkGetBufferDeviceAddressKHR(DeviceHandle, &AddressInfo);
+                OutBufferBindingInfo.usage = BufferUsageFlags;
+            }
+            return DescriptorBufferSize;
+        };
+
+        uint32 TotalResourceDescriptorBufferSize = 0;
+        for (uint32 SetIndex = 0; SetIndex < VulkanBindless::NumBindLessSet; SetIndex++)
+        {
+            BindlessSetState& State = BindlessSetStates[SetIndex];
+            InitBindlessState(GetDescriptorTypeFromSetIndex(SetIndex), State);
+            static_assert(VulkanBindless::NumBindLessSet == 3);
+            State.DescriptorSetLayout = CreateDescriptorSetlayout(State);
+            TotalResourceDescriptorBufferSize += CreateDescriptorBuffer(State, BufferBindingInfo[SetIndex]);
+        }
+    }
+
+    // Now create the single pipeline layout used by everything
+    {
+        VkDescriptorSetLayout DescriptorSetLayouts[VulkanBindless::NumBindLessSet];
+        for (int32 LayoutIndex = 0; LayoutIndex < VulkanBindless::NumBindLessSet; ++LayoutIndex)
+        {
+            const BindlessSetState& State = BindlessSetStates[LayoutIndex];
+            DescriptorSetLayouts[LayoutIndex] = State.DescriptorSetLayout;
+        }
+
+        VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+        PipelineLayoutCreateInfo.setLayoutCount = VulkanBindless::NumBindLessSet;
+        PipelineLayoutCreateInfo.pSetLayouts = DescriptorSetLayouts;
+        VULKAN_VARIFY(vkCreatePipelineLayout(DeviceHandle, &PipelineLayoutCreateInfo, nullptr, &BindlessPipelineLayout));
+    }
+
 }
 
 uint32 XVulkanBindlessDescriptorManager::GetFreeResourceStateIndex(BindlessSetState& State)

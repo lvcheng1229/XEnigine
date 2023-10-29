@@ -24,5 +24,7 @@ namespace VulkanExtension
 	//	uint32_t                                    depth);
 	extern PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
 
+	extern PFN_vkGetDescriptorSetLayoutSizeEXT vkGetDescriptorSetLayoutSizeEXT;
+
 	void InitExtensionFunction(VkDevice Device);
 }

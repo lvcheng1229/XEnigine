@@ -7,6 +7,14 @@
 #include "Runtime\RHI\PipelineStateCache.h"
 #include "Runtime\RenderCore\ShaderParameter.h"
 
+struct XBasicRayTracingRay
+{
+    float Origin[3];
+    uint32 Mask;
+    float Direction[3];
+    float TFar;
+};
+
 class XBuildInRGS :public XGloablShader
 {
 public:
@@ -86,6 +94,6 @@ public:
     }
 };
 
-void DispatchRayTest(XRHICommandList& RHICmdList);
+void DispatchBasicOcclusionRays(XRHICommandList& RHICmdList, XRHIRayTracingScene* Scene, XRHIShaderResourceView* SceneView, XRHIShaderResourceView* RayBufferView, XRHIUnorderedAcessView* ResultView, uint32 NumRays);
 
 #endif

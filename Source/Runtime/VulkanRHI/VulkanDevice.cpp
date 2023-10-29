@@ -49,7 +49,8 @@ void XVulkanDevice::InitGPU()
         DefaultTextureView.Create(this, DefaultImage->Image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, VK_FORMAT_R8G8B8A8_UNORM);
     }
 
-    
+    BindlessDescriptorManager = new XVulkanBindlessDescriptorManager(this);
+    BindlessDescriptorManager->Init();
 }
 
 void XVulkanDevice::CreateDevice()
@@ -133,7 +134,7 @@ void XVulkanDevice::CreateDevice()
     MemoryManager.Init();
 
     VulkanExtension::InitExtensionFunction(Device);
-    GRHIRayTracingScratchBufferAlignment = GetRayTracingProperties().AccelerationStructure.minAccelerationStructureScratchOffsetAlignment;
+    GRHIRayTracingScratchBufferAlignment = GetDeviceExtensionProperties().AccelerationStructure.minAccelerationStructureScratchOffsetAlignment;
     GRHIRayTracingAccelerationStructureAlignment = 256;
 }
 
@@ -148,6 +149,7 @@ namespace VulkanExtension
     PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR = nullptr;
     PFN_vkGetDescriptorEXT vkGetDescriptorEXT = nullptr;
     PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR = nullptr;
+    PFN_vkGetDescriptorSetLayoutSizeEXT vkGetDescriptorSetLayoutSizeEXT = nullptr;
 }
 
 void VulkanExtension::InitExtensionFunction(VkDevice Device)
@@ -161,6 +163,7 @@ void VulkanExtension::InitExtensionFunction(VkDevice Device)
     vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(Device, "vkGetRayTracingShaderGroupHandlesKHR");
     vkGetDescriptorEXT = (PFN_vkGetDescriptorEXT)vkGetDeviceProcAddr(Device, "vkGetDescriptorEXT");
     vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(Device, "vkCmdTraceRaysKHR");
+    vkGetDescriptorSetLayoutSizeEXT = (PFN_vkGetDescriptorSetLayoutSizeEXT)vkGetDeviceProcAddr(Device, "vkGetDescriptorSetLayoutSizeEXT");
 }
 
 
