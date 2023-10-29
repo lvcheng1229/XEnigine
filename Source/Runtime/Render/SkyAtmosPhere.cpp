@@ -74,7 +74,7 @@ public:
 	}
 
 	CBVParameterType cbSkyAtmosphere;
-	TextureParameterType TransmittanceLutUAV;
+	UAVParameterType TransmittanceLutUAV;
 };
 
 XRenderTransmittanceLutCS::ShaderInfos XRenderTransmittanceLutCS::StaticShaderInfos(

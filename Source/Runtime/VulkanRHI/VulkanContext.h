@@ -54,6 +54,7 @@ public:
 	virtual void RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange);
 	virtual void BindAccelerationStructureMemory(XRHIRayTracingScene* Scene, std::shared_ptr<XRHIBuffer> Buffer, uint32 BufferOffset);
 	virtual void RHIBuildAccelerationStructure(const XRayTracingSceneBuildParams& SceneBuildParams);
+	virtual void RayTraceDispatch(XRHIRayTracingPSO* Pipeline, XRHIRayTracingShader* RayGenShader, XRHIRayTracingScene* Scene, const XRayTracingShaderBinds& GlobalResourceBindings, uint32 Width, uint32 Height);
 #endif
 
 	//Vulkan

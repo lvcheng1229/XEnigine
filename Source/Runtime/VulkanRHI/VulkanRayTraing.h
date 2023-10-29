@@ -2,6 +2,9 @@
 #include "VulkanRHIPrivate.h"
 #include "VulkanResource.h"
 
+class XVulkanRayTracingScene;
+class XVulkanRayTracingPipelineState;
+
 struct XVkRTBLASBuildData
 {
 	std::vector<VkAccelerationStructureBuildRangeInfoKHR>Ranges;
@@ -25,6 +28,14 @@ struct XVkRTTLASBuildData
 	VkAccelerationStructureBuildSizesInfoKHR SizesInfo;
 };
 
+struct XVulkanHitGroupSystemParameters
+{
+	uint32 BindlessHitGroupSystemIndexBufferIndex;
+	uint32 BindlessHitGroupSystemVertexBufferIndex;
+
+	//uint32 BindlessUniformBuffers[16];
+};
+
 class XVulkanRayTracingGeometry : public XRHIRayTracingGeometry
 {
 public:
@@ -38,6 +49,7 @@ public:
 	void SetupHitGroupSystemParameters();
 	void ReleaseBindlessHandles();
 
+	std::vector< XVulkanHitGroupSystemParameters>HitGroupSystemParameters;
 	std::vector<XRHIDescriptorHandle>HitGroupSystemVertexViews;
 	XRHIDescriptorHandle HitGroupSystemIndexView;
 
@@ -45,27 +57,41 @@ private:
 	XVulkanDevice* const Device = nullptr;
 };
 
-class XVulkanRayTracingScene : public XRHIRayTracingScene
+class XVulkanRayTracingShaderTable
 {
 public:
-	XVulkanRayTracingScene(XRayTracingSceneInitializer Initializer, XVulkanDevice* InDevice);
+	XVulkanRayTracingShaderTable(XVulkanDevice* InDevice);
 
-	//assign in bind buffer
-	std::shared_ptr<XVulkanShaderResourceView> ShaderResourceView;
+	const VkStridedDeviceAddressRegionKHR* GetRegion(EShaderType ShaderType);
 
-	void BindBuffer(std::shared_ptr<XRHIBuffer> InBuffer, uint32 InBufferOffset);
-	
-	void BuildAccelerationStructure(XVulkanCommandListContext& CmdContext, XVulkanResourceMultiBuffer* ScratchBuffer, uint32 ScratchOffset, XVulkanResourceMultiBuffer* InstanceBuffer, uint32 InstanceOffset);
-	void BuildPerInstanceGeometryParameterBuffer(XVulkanCommandListContext& CmdContext);
+	void Init(const XVulkanRayTracingScene* Scene, const XVulkanRayTracingPipelineState* Pipeline);
+	void SetSlot(EShaderType ShaderType, uint32 DstSlot, uint32 SrcHandleIndex, std::vector<uint8>& SrcHandleData);
 
-	//layer
-	std::shared_ptr<XVulkanShaderResourceView>PerInstanceGeometryParameterSRV;
-	std::shared_ptr<XVulkanResourceMultiBuffer> PerInstanceGeometryParameterBuffer;
-	std::shared_ptr<XRHIBuffer>AccelerationStructureBuffer;
-	
 private:
-	const XRayTracingSceneInitializer Initializer;
-	XVulkanDevice* const Device = nullptr;
+	struct XVulkanShaderTableAllocation
+	{
+		XVulkanShaderTableAllocation()
+		{
+			memset(&Region, 0, sizeof(VkStridedDeviceAddressRegionKHR));
+		}
+		XVulkanAllocation Allocation;
+		uint32 HandleCount = 0;
+		bool UseLocalRecord = false;
+		uint8* MappedBufferMemory = nullptr;
+		VkStridedDeviceAddressRegionKHR Region;
+		VkBuffer Buffer;
+	};
+
+	XVulkanShaderTableAllocation& GetAlloc(EShaderType ShaderType);
+
+	XVulkanShaderTableAllocation RayGen;
+	XVulkanShaderTableAllocation Miss;
+	XVulkanShaderTableAllocation HitGroup;
+
+	const uint32 HandleSize;
+	const uint32 HandleSizeAligned;
+
+	XVulkanDevice* Device;
 };
 
 class XVulkanRayTracingPipelineState : public XRHIRayTracingPSO
@@ -89,3 +115,35 @@ public:
 
 	bool bAllowHitGroupIndexing = true;
 };
+
+class XVulkanRayTracingScene : public XRHIRayTracingScene
+{
+public:
+	XVulkanRayTracingScene(XRayTracingSceneInitializer Initializer, XVulkanDevice* InDevice);
+	~XVulkanRayTracingScene();
+
+	//assign in bind buffer
+	std::shared_ptr<XVulkanShaderResourceView> ShaderResourceView;
+
+	void BindBuffer(std::shared_ptr<XRHIBuffer> InBuffer, uint32 InBufferOffset);
+	
+	void BuildAccelerationStructure(XVulkanCommandListContext& CmdContext, XVulkanResourceMultiBuffer* ScratchBuffer, uint32 ScratchOffset, XVulkanResourceMultiBuffer* InstanceBuffer, uint32 InstanceOffset);
+	void BuildPerInstanceGeometryParameterBuffer(XVulkanCommandListContext& CmdContext);
+
+	XVulkanRayTracingShaderTable* FindOrCreateShaderTable(const XVulkanRayTracingPipelineState* PipelineState);
+
+	//layer
+	std::shared_ptr<XVulkanShaderResourceView>PerInstanceGeometryParameterSRV;
+	std::shared_ptr<XVulkanResourceMultiBuffer> PerInstanceGeometryParameterBuffer;
+	std::shared_ptr<XRHIBuffer>AccelerationStructureBuffer;
+	
+	std::map<const XVulkanRayTracingPipelineState*, XVulkanRayTracingShaderTable*>ShaderTables;
+
+	const XRayTracingSceneInitializer Initializer;
+private:
+	XVulkanDevice* const Device = nullptr;
+};
+
+
+
+

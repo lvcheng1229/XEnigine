@@ -146,6 +146,8 @@ namespace VulkanExtension
     PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR = nullptr;
     PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = nullptr;
     PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR = nullptr;
+    PFN_vkGetDescriptorEXT vkGetDescriptorEXT = nullptr;
+    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR = nullptr;
 }
 
 void VulkanExtension::InitExtensionFunction(VkDevice Device)
@@ -158,6 +160,7 @@ void VulkanExtension::InitExtensionFunction(VkDevice Device)
     vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(Device, "vkCreateRayTracingPipelinesKHR");
     vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(Device, "vkGetRayTracingShaderGroupHandlesKHR");
     vkGetDescriptorEXT = (PFN_vkGetDescriptorEXT)vkGetDeviceProcAddr(Device, "vkGetDescriptorEXT");
+    vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(Device, "vkCmdTraceRaysKHR");
 }
 
 

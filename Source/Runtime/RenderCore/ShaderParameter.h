@@ -1,6 +1,7 @@
 #pragma once
 #include "ShaderCore.h"
 #include "Runtime/HAL/Mch.h"
+#include "Runtime\RHI\RHICommandList.h"
 
 class XShaderVariableParameter
 {
@@ -26,11 +27,18 @@ private:
 	uint16 NumBytes;
 };
 
+enum class EParameterType
+{
+	PT_Texture,
+	PT_SRV,
+	PT_UAV,
+	PT_CBV
+};
 
 class XSRVCBVUAVParameter
 {
 public:
-	XSRVCBVUAVParameter() :ResourceIndex(0), ResourceNum(0) {}
+	XSRVCBVUAVParameter(EParameterType InType) :ResourceIndex(0), ResourceNum(0) , Type(InType){}
 	inline void Bind(const XShaderParameterMap& ParameterMap, const char* ParameterName)
 	{
 		auto iter = ParameterMap.MapNameToParameter.find(ParameterName);
@@ -44,16 +52,58 @@ public:
 	}
 	uint16 GetResourceIndex()const { return ResourceIndex; }
 	uint16 GetResourceNum()const { return ResourceNum; };
+	EParameterType Type;
 private:
 	uint16 ResourceIndex;
 	uint16 ResourceNum;
 };
 
+//using TextureParameterType = XSRVCBVUAVParameter;
+//using SRVParameterType = XSRVCBVUAVParameter;
+//using UAVParameterType = XSRVCBVUAVParameter;
+//using CBVParameterType = XSRVCBVUAVParameter;
 
-using TextureParameterType = XSRVCBVUAVParameter;
-using SRVParameterType = XSRVCBVUAVParameter;
-using UAVParameterType = XSRVCBVUAVParameter;
-using CBVParameterType = XSRVCBVUAVParameter;
+class TextureParameterType : public XSRVCBVUAVParameter
+{
+public:
+	TextureParameterType()
+		:XSRVCBVUAVParameter(EParameterType::PT_Texture)
+	{
+
+	}
+
+};
+class SRVParameterType : public XSRVCBVUAVParameter
+{
+public:
+	SRVParameterType()
+		:XSRVCBVUAVParameter(EParameterType::PT_SRV)
+	{
+
+	}
+
+};
+class UAVParameterType : public XSRVCBVUAVParameter
+{
+public:
+	UAVParameterType()
+		:XSRVCBVUAVParameter(EParameterType::PT_UAV)
+	{
+
+	}
+
+};
+class CBVParameterType : public XSRVCBVUAVParameter
+{
+public:
+	CBVParameterType()
+		:XSRVCBVUAVParameter(EParameterType::PT_CBV)
+	{
+
+	}
+
+};
+
 
 template<typename TRHICmdList>
 inline void SetShaderConstantBufferParameter(
@@ -158,3 +208,21 @@ inline void SetShaderUAVParameter(
 		XLOG("ERROR:UAVParameter.GetResourceNum() > 0 == false");
 	}
 }
+
+
+#if RHI_RAYTRACING
+struct XRayTracingShaderBindsWriter : XRayTracingShaderBinds
+{
+	void SetSRV(uint32 BindIndex,XRHIShaderResourceView* Value)
+	{
+		SRVs[BindIndex] = Value;
+	}
+
+	void SetUAV(uint32 BindIndex, XRHIUnorderedAcessView* Value)
+	{
+		UAVs[BindIndex] = Value;
+	}
+};
+
+void SetShaderParameters(XRayTracingShaderBindsWriter& RTBindingsWriter, const XShaderParameterMap& ShaderParameterMap, std::vector<XRHIShaderResourceView*>& SRVs, std::vector<XRHIUnorderedAcessView*>& UAVs);
+#endif

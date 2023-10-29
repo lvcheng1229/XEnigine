@@ -69,8 +69,20 @@ XBasicRayTracingPipeline GetBasicRayTracingPipeline(XRHICommandList& RHICmdList)
     return Res;
 }
 
-void DispatchRayTest(XRHICommandList& RHICmdList)
+void DispatchBasicOcclusionRays(XRHICommandList& RHICmdList, XRHIShaderResourceView* SceneView, XRHIShaderResourceView* RayBufferView, XRHIUnorderedAcessView* ResultView, uint32 NumRays)
 {
-    GetBasicRayTracingPipeline(RHICmdList);
+    auto RayTracingPipeline = GetBasicRayTracingPipeline(RHICmdList);
+
+    XRayTracingShaderBindsWriter GlobalResources;
+
+    std::vector<XRHIShaderResourceView*> SRVs;
+    SRVs.push_back(SceneView);
+    SRVs.push_back(RayBufferView);
+
+    std::vector<XRHIUnorderedAcessView*> UAVs;
+    UAVs.push_back(ResultView);
+
+    SetShaderParameters(GlobalResources, RayTracingPipeline.OcclusionRGS->ShaderParameterMap, SRVs, UAVs);
+
 }
 #endif

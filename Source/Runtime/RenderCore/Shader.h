@@ -264,10 +264,13 @@ public:
 	XXShader(const XShaderInitlizer& Initializer)
 		:ShadersInfoPtr(Initializer.ShadersInfoPtr),
 		CodeHash(Initializer.CodeHash),
-		RHIShaderIndex(Initializer.RHIShaderIndex) {}
+		RHIShaderIndex(Initializer.RHIShaderIndex),
+		ShaderParameterMap(Initializer.ShaderParameterMap)
+	{}
 
 	inline std::size_t GetCodeHash()const { return CodeHash; };
 	inline std::size_t GetRHIShaderIndex()const { return RHIShaderIndex; };
+	const XShaderParameterMap& ShaderParameterMap;
 private:
 	XShaderInfo* ShadersInfoPtr;
 	std::size_t CodeHash;

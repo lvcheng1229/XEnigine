@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Runtime\HAL\PlatformTypes.h"
+
 #define RHI_RAYTRACING 1
 
 enum class EShaderType

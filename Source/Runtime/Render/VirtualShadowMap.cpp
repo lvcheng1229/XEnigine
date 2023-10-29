@@ -114,7 +114,7 @@ public:
 		SetShaderUAVParameter(RHICommandList, EShaderType::SV_Compute, VirtualSMFlags, VirtualSMFlagsIn);
 	}
 
-	UAVParameterType TextureSampledInput;
+	TextureParameterType TextureSampledInput;
 	CBVParameterType cbView;
 	CBVParameterType cbShadowViewInfo;
 	UAVParameterType VirtualSMFlags;
@@ -389,8 +389,8 @@ public:
 		SetShaderSRVParameter(RHICommandList, EShaderType::SV_Pixel, PagetableInfos, InSRV);
 	}
 
-	UAVParameterType PagetableInfos;
-	SRVParameterType PhysicalShadowDepthTexture;
+	SRVParameterType PagetableInfos;
+	UAVParameterType PhysicalShadowDepthTexture;
 };
 
 XShadowPerTileProjectionPS::ShaderInfos XShadowPerTileProjectionPS::StaticShaderInfos(

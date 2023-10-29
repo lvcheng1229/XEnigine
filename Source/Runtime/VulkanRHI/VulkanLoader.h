@@ -13,5 +13,16 @@ namespace VulkanExtension
 	//typedef void (VKAPI_PTR *PFN_vkGetDescriptorEXT)(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize, void* pDescriptor);
 	extern PFN_vkGetDescriptorEXT vkGetDescriptorEXT;
 
+	//void vkCmdTraceRaysKHR(
+	//	VkCommandBuffer                             commandBuffer,
+	//	const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+	//	const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+	//	const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+	//	const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
+	//	uint32_t                                    width,
+	//	uint32_t                                    height,
+	//	uint32_t                                    depth);
+	extern PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
+
 	void InitExtensionFunction(VkDevice Device);
 }

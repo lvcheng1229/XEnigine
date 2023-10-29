@@ -259,10 +259,17 @@ public:
 	{
 		GetContext()->RHIBuildAccelerationStructure(SceneBuildParams);
 	}
+
+	inline void RayTraceDispatch(XRHIRayTracingPSO* Pipeline, XRHIRayTracingShader* RayGenShader, XRHIRayTracingScene* Scene, const XRayTracingShaderBinds& GlobalResourceBindings, uint32 Width, uint32 Height)
+	{
+		GetContext()->RayTraceDispatch(Pipeline, RayGenShader, Scene, GlobalResourceBindings, Width, Height);
+	}
 #endif
 };
 
 extern XRHICommandList GRHICmdList;
+
+
 
 inline XRHITexture* RHIGetCurrentBackTexture()
 {

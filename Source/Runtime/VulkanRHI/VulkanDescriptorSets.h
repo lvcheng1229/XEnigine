@@ -5,6 +5,7 @@
 #include "VulkanUtil.h"
 #include "VulkanState.h"
 #include "VulkanMemory.h"
+#include "VulkanCommon.h"
 
 #include <map>
 #include <string>

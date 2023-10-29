@@ -362,7 +362,7 @@ void XVulkanCommandListContext::RHIBuildAccelerationStructures(const std::span<c
 		BuildGeometryInfos.push_back(BuildData.GeometryInfo);
 		BuildRangeInfos.push_back(pBuildRanges);
 
-		Geometry->
+		Geometry->SetupHitGroupSystemParameters();
 	}
 
 	XVulkanCmdBuffer* Cmd = CmdBufferManager->GetActiveCmdBuffer();
@@ -411,6 +411,25 @@ void XVulkanRayTracingGeometry::SetupHitGroupSystemParameters()
 	};
 
 	ReleaseBindlessHandles();
+
+	HitGroupSystemParameters.resize(Initializer.Segments.size());
+	XVulkanResourceMultiBuffer* IndexBuffer = static_cast<XVulkanResourceMultiBuffer*>(Initializer.IndexBuffer.get());
+	HitGroupSystemIndexView = GetBindLessHandle(IndexBuffer, 0);
+
+	for (const XRayTracingGeometrySegment& Segment : Initializer.Segments)
+	{
+		XVulkanResourceMultiBuffer* VertexBuffer = static_cast<XVulkanResourceMultiBuffer*>(Segment.VertexBuffer.get());
+		const XRHIDescriptorHandle VBHandle = GetBindLessHandle(VertexBuffer, Segment.VertexBufferOffset);
+		HitGroupSystemVertexViews.push_back(VBHandle);
+
+
+		XVulkanHitGroupSystemParameters SystemParameters = {};
+		SystemParameters.BindlessHitGroupSystemVertexBufferIndex = VBHandle.Index;
+		if (IndexBuffer != nullptr)
+		{
+			SystemParameters.BindlessHitGroupSystemIndexBufferIndex = HitGroupSystemIndexView.Index;
+		}
+	}
 
 }
 
@@ -484,6 +503,14 @@ XVulkanRayTracingScene::XVulkanRayTracingScene(XRayTracingSceneInitializer InIni
 	PerInstanceGeometryParameterSRV = std::make_shared <XVulkanShaderResourceView>(Device, PerInstanceGeometryParameterBuffer.get());
 }
 
+XVulkanRayTracingScene::~XVulkanRayTracingScene()
+{
+	for (auto iter : ShaderTables)
+	{
+		delete iter.second;
+	}
+}
+
 
 void XVulkanRayTracingScene::BuildAccelerationStructure(XVulkanCommandListContext& CmdContext, XVulkanResourceMultiBuffer* InScratchBuffer, uint32 InScratchOffset, XVulkanResourceMultiBuffer* InInstanceBuffer, uint32 InInstanceOffset)
 {
@@ -529,6 +556,20 @@ void XVulkanRayTracingScene::BuildAccelerationStructure(XVulkanCommandListContex
 	CmdBufferManager.PrepareForNewActiveCommandBuffer();
 }
 
+XVulkanRayTracingShaderTable* XVulkanRayTracingScene::FindOrCreateShaderTable(const XVulkanRayTracingPipelineState* PipelineState)
+{
+	auto iter = ShaderTables.find(PipelineState);
+	if (iter != ShaderTables.end())
+	{
+		return iter->second;
+	}
+
+	XVulkanRayTracingShaderTable* NewST = new XVulkanRayTracingShaderTable(Device);
+	NewST->Init(this, PipelineState);
+	ShaderTables[PipelineState] = NewST;
+	return NewST;
+}
+
 void XVulkanRayTracingScene::BuildPerInstanceGeometryParameterBuffer(XVulkanCommandListContext& CmdContext)
 {
 	const uint32 ParameterBufferSize = std::max<uint32>(1, Initializer.NumTotalSegments) * sizeof(XVulkanRayTracingGeometryParameters);
@@ -571,3 +612,90 @@ void XVulkanRayTracingScene::BuildPerInstanceGeometryParameterBuffer(XVulkanComm
 	PerInstanceGeometryParameterBuffer->UnLock(&CmdContext);
 }
 
+void XVulkanCommandListContext::RayTraceDispatch(XRHIRayTracingPSO* InPipeline, XRHIRayTracingShader* InRayGenShader, XRHIRayTracingScene* InScene, const XRayTracingShaderBinds& GlobalResourceBindings, uint32 Width, uint32 Height)
+{
+	const XVulkanRayTracingPipelineState* Pipeline = static_cast<const XVulkanRayTracingPipelineState*>(InPipeline);
+	XVulkanRayTracingScene* Scene = static_cast<XVulkanRayTracingScene*>(InScene);
+	XVulkanRayTracingShader* RayGenShader = static_cast<XVulkanRayTracingShader*>(InRayGenShader);
+	XVulkanRayTracingShaderTable* ShaderTable = Scene->FindOrCreateShaderTable(Pipeline);
+
+	XVulkanCmdBuffer* const CmdBuffer = GetCommandBufferManager()->GetActiveCmdBuffer();
+	vkCmdBindPipeline(CmdBuffer->GetHandle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, Pipeline->Pipeline);
+
+	ShaderTable->SetSlot(EShaderType::SV_RayGen, 0, Pipeline->);
+	
+	VulkanExtension::vkCmdTraceRaysKHR(CmdBuffer->GetHandle(),
+		ShaderTable->GetRegion(EShaderType::SV_RayGen),
+		ShaderTable->GetRegion(EShaderType::SV_RayMiss),
+		ShaderTable->GetRegion(EShaderType::SV_HitGroup),
+		nullptr,
+		Width, Height,1);
+}
+
+XVulkanRayTracingShaderTable::XVulkanRayTracingShaderTable(XVulkanDevice* InDevice)
+	:Device(InDevice)
+	, HandleSize(InDevice->GetRayTracingProperties().RayTracingPipeline.shaderGroupHandleSize)
+	, HandleSizeAligned(InDevice->GetRayTracingProperties().RayTracingPipeline.shaderGroupHandleAlignment)
+{
+}
+
+const VkStridedDeviceAddressRegionKHR* XVulkanRayTracingShaderTable::GetRegion(EShaderType ShaderType)
+{
+	return &GetAlloc(ShaderType).Region;
+}
+
+void XVulkanRayTracingShaderTable::Init(const XVulkanRayTracingScene* Scene, const XVulkanRayTracingPipelineState* Pipeline)
+{
+	auto InitAlloc = [Device = Device, HandleSize = HandleSize, HandleSizeAligned = HandleSizeAligned](XVulkanShaderTableAllocation& Alloc, uint32 InHandleCount, bool InUseLocalRecord)
+	{
+		Alloc.HandleCount = InHandleCount;
+		Alloc.UseLocalRecord = InUseLocalRecord;
+
+		if (Alloc.HandleCount > 0)
+		{
+			VkDevice DeviceHandle = Device->GetVkDevice();
+			const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& RayTracingPipelineProps = Device->GetRayTracingProperties().RayTracingPipeline;
+
+			// With the exception of RayGen, the stride will be the size of the handle aligned to the shaderGroupHandleAlignment
+			Alloc.Region.stride = InUseLocalRecord ? std::min<VkDeviceSize>(RayTracingPipelineProps.maxShaderGroupStride, 4096): HandleSizeAligned;
+			Alloc.Region.size = Alloc.HandleCount * Alloc.Region.stride;
+
+			{
+				VkBufferCreateInfo BufferCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+				BufferCreateInfo.size = Alloc.Region.size;
+				BufferCreateInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+				VULKAN_VARIFY(vkCreateBuffer(DeviceHandle, &BufferCreateInfo, nullptr, &Alloc.Buffer));
+			}
+
+			Device->GetMemoryManager().AllocateBufferMemory(Alloc.Allocation, Alloc.Buffer, );
+
+			VkBufferDeviceAddressInfoKHR DeviceAddressInfo = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+			DeviceAddressInfo.buffer = Alloc.Buffer;
+			Alloc.Region.deviceAddress = VulkanExtension::vkGetBufferDeviceAddressKHR(DeviceHandle, &DeviceAddressInfo);
+			Alloc.MappedBufferMemory = (uint8*)Alloc.Allocation.GetMappedPointer(Device);
+		}
+	};
+
+	const auto& SceneInitializer = Scene->Initializer;
+	InitAlloc(RayGen, 1, false);
+	InitAlloc(Miss, SceneInitializer.NumMissShaderSlots, true);
+	InitAlloc(HitGroup, Pipeline->bAllowHitGroupIndexing ? SceneInitializer.NumTotalSegments * RAY_TRACING_NUM_SHADER_SLOTS : 1, true);
+}
+
+XVulkanRayTracingShaderTable::XVulkanShaderTableAllocation& XVulkanRayTracingShaderTable::GetAlloc(EShaderType ShaderType)
+{
+	switch (ShaderType)
+	{
+	case EShaderType::SV_RayGen:
+		return RayGen;
+	case EShaderType::SV_RayMiss:
+		return Miss;
+	case EShaderType::SV_HitGroup:
+		return HitGroup;
+	default:
+		XASSERT(false);
+	}
+
+	XVulkanRayTracingShaderTable::XVulkanShaderTableAllocation EmptyAlloc;
+	return EmptyAlloc;
+}
