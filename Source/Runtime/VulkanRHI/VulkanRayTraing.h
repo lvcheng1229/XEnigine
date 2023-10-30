@@ -99,6 +99,8 @@ class XVulkanRayTracingPipelineState : public XRHIRayTracingPSO
 public:
 	XVulkanRayTracingPipelineState(XVulkanDevice* const InDevice, const XRayTracingPipelineStateInitializer& Initializer);
 
+
+
 	struct ShaderData
 	{
 		std::vector<std::shared_ptr<XRHIRayTracingShader>>Shaders;
@@ -135,6 +137,11 @@ public:
 	void BuildPerInstanceGeometryParameterBuffer(XVulkanCommandListContext& CmdContext);
 
 	XVulkanRayTracingShaderTable* FindOrCreateShaderTable(const XVulkanRayTracingPipelineState* PipelineState);
+
+	virtual const XRayTracingSceneInitializer GetRayTracingSceneInitializer()const
+	{
+		return Initializer;
+	}
 
 	//layer
 	std::shared_ptr<XVulkanShaderResourceView>PerInstanceGeometryParameterSRV;

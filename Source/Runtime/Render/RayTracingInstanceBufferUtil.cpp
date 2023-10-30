@@ -15,6 +15,7 @@ XRayTracingSceneWithGeometryInstance CreateRayTracingSceneWithGeometryInstance(s
 		Initializer.NumTotalSegments += InstanceDesc.GeometryRHI->GetNumSegments();
 		Initializer.NumNativeInstance += InstanceDesc.NumTransforms;
 		Initializer.NumMissShaderSlots = NumMissShaderSlots;
+		Initializer.SegmentPrefixSum.push_back(Initializer.NumTotalSegments);
 	}
 
 	Output.Scene = RHICreateRayTracingScene(Initializer);

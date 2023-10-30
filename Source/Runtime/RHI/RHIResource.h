@@ -360,7 +360,19 @@ enum class EAccelerationStructureBuildMode
 	Update
 };
 
+//
+// Ray tracing resources
+//
 
+enum class ERayTracingInstanceFlags : uint8
+{
+	None = 0,
+	TriangleCullDisable = 1 << 1, // No back face culling. Triangle is visible from both sides.
+	TriangleCullReverse = 1 << 2, // Makes triangle front-facing if its vertices are counterclockwise from ray origin.
+	ForceOpaque = 1 << 3, // Disable any-hit shader invocation for this instance.
+	ForceNonOpaque = 1 << 4, // Force any-hit shader invocation even if geometries inside the instance were marked opaque.
+};
+ENUM_CLASS_FLAGS(ERayTracingInstanceFlags);
 
 struct XRayTracingAccelerationStructSize
 {
@@ -413,10 +425,13 @@ public:
 	uint32 IndexBufferOffset = 0;
 	std::vector<XRayTracingGeometrySegment>Segments;
 
+	
 	bool bPreferBuild = false;
 	bool bAllowUpdate = false;
 	bool bAllowCompaction = true;
 };
+
+using XRayTracingAccelerationStructureAddress = uint64;
 
 class XRHIRayTracingGeometry : public XRHIRayTracingAccelerationStruct
 {
@@ -430,6 +445,8 @@ public:
 		return Initializer.Segments.size();
 	}
 
+	virtual XRayTracingAccelerationStructureAddress GetAccelerationStructureAddress() const = 0;
+
 	XRayTracingGeometryInitializer Initializer;
 };
 
@@ -439,6 +456,11 @@ struct XRayTracingGeometryInstance
 {
 	std::shared_ptr<XRHIRayTracingGeometry>GeometryRHI = nullptr;
 	uint32 NumTransforms = 0;
+	float Trasnforms[3][4];
+
+	// Mask that will be tested against one provided to TraceRay() in shader code.
+	// If binary AND of instance mask with ray mask is zero, then the instance is considered not intersected / invisible.
+	uint8 RayMask = 0xFF;
 };
 
 
@@ -449,6 +471,9 @@ struct XRayTracingSceneInitializer
 
 	uint32 NumNativeInstance = 0;
 	uint32 NumTotalSegments = 0;
+
+	// Exclusive prefix sum of instance geometry segments is used to calculate SBT record address from instance and segment indices.
+	std::vector<uint32> SegmentPrefixSum;
 
 	// This value controls how many elements will be allocated in the shader binding table per geometry segment.
 // Changing this value allows different hit shaders to be used for different effects.
@@ -466,6 +491,8 @@ struct XRayTracingSceneInitializer
 class XRHIRayTracingScene : public XRHIRayTracingAccelerationStruct
 {
 public:
+
+	virtual const XRayTracingSceneInitializer GetRayTracingSceneInitializer()const = 0;
 };
 
 class XRayTracingPipelineSignature

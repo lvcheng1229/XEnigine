@@ -332,12 +332,25 @@ public:
 
    void PrePareRayTracingScene()
    {
+       //1. create raytracing vb
        std::shared_ptr<XRHIBuffer> RayTracingVB;
+       //2. create raytracing ib
        std::shared_ptr<XRHIBuffer> RayTracingIB;
-       std::shared_ptr<XRHIStructBuffer> RayTracingRB;
+       //3. create ray buffer
+       std::shared_ptr<XRHIBuffer> RayTracingRB;
        std::shared_ptr<XRHIShaderResourceView> RBView;
-
+       //4. create bottom level acceleration structure
        std::shared_ptr<XRHIRayTracingGeometry> Geometry;
+       //5. create top level acceleration structure
+       std::shared_ptr<XRHIBuffer> ScratchBuffer;
+       std::shared_ptr<XRHIBuffer> SceneBuffer;
+       std::shared_ptr<XRHIShaderResourceView> SceneBufferView;
+       std::shared_ptr<XRHIBuffer> InstanceBuffer;
+
+       std::shared_ptr<XRHIStructBuffer>OcclusionBuffer;
+       std::shared_ptr<XRHIUnorderedAcessView>OcclusionUAV;
+
+       constexpr int32 NumRays = 4;
 
        //1. create raytracing vb
        {
@@ -346,7 +359,7 @@ public:
            Vertices.PushBack(XVector3(1, 1, 0));
            Vertices.PushBack(XVector3(-1, 1, 0));
            XRHIResourceCreateData CreateData(&Vertices);
-           RayTracingVB = RHIcreateVertexBuffer(sizeof(XVector3), 3 * sizeof(XVector3), EBufferUsage::BUF_Static, CreateData);
+           RayTracingVB = RHIcreateVertexBuffer2(sizeof(XVector3), 3 * sizeof(XVector3), EBufferUsage::BUF_Static, CreateData);
        }
 
        //2. create raytracing ib
@@ -356,7 +369,7 @@ public:
            IndexData.PushBack(1);
            IndexData.PushBack(2);
            XRHIResourceCreateData CreateData(&IndexData);
-           RayTracingIB = RHICreateIndexBuffer(sizeof(uint16), 3 * sizeof(uint16), EBufferUsage::BUF_Static, CreateData);
+           RayTracingIB = RHICreateIndexBuffer2(sizeof(uint16), 3 * sizeof(uint16), EBufferUsage::BUF_Static, CreateData);
        }
       
        // (-1,-1,0) --------- (1,-1,0)
@@ -376,8 +389,8 @@ public:
            RayData.PushBack(XBasicRayTracingRay({ 0.75f, 0.0f, 1.0f }, 0xFFFFFFFF, { 0.0f,0.0f,-1.0f }, 10000.0f)); // expected to hit  (should hit back face)
            RayData.PushBack(XBasicRayTracingRay({-0.75f, 0.0f,-1.0f }, 0xFFFFFFFF, { 0.0f,0.0f, 1.0f }, 10000.0f)); // expected to miss (doesn't intersect)
            XRHIResourceCreateData CreateData(&RayData);
-           RayTracingRB = RHIcreateStructBuffer(sizeof(XBasicRayTracingRay), sizeof(XBasicRayTracingRay) * 4, EBufferUsage::BUF_Static | EBufferUsage::BUF_ShaderResource ,CreateData);
-           RBView = RHICreateShaderResourceView(RayTracingRB.get());
+           RayTracingRB = RHIcreateStructBuffer2(sizeof(XBasicRayTracingRay), sizeof(XBasicRayTracingRay) * 4, EBufferUsage::BUF_Static | EBufferUsage::BUF_ShaderResource, CreateData);
+           RBView = RHICreateShaderResourceView2(RayTracingRB.get());
        }
        
        //4. create bottom level acceleration structure
@@ -402,32 +415,78 @@ public:
     
        //5. create top level acceleration structure
        {
+           //5.1 create instance data
            std::vector<XRayTracingGeometryInstance> Instances;
-           Instances.resize(1);
-           Instances[0].GeometryRHI = Geometry;
-           Instances[0].NumTransforms = 1;
+           {
+               Instances.resize(1);
+               memset(Instances[0].Trasnforms, 0, sizeof(float) * 3 * 4);
 
+               Instances[0].GeometryRHI = Geometry;
+               Instances[0].NumTransforms = 1;
+               Instances[0].Trasnforms[0][0] = 1;
+               Instances[0].Trasnforms[1][1] = 1;
+               Instances[0].Trasnforms[2][2] = 1;
+           }
+
+           //5.2 create ray tracing scene
            XRayTracingSceneWithGeometryInstance RayTracingScene = CreateRayTracingSceneWithGeometryInstance(Instances, RAY_TRACING_NUM_SHADER_SLOTS, 1);
-
-           XRayTracingAccelerationStructSize SceneSizeInfo = RHICalcRayTracingSceneSize(1, ERayTracingAccelerationStructureFlags::PreferTrace);
            
-           std::shared_ptr<XRHIBuffer> SceneBuffer = RHICreateBuffer(0, SceneSizeInfo.ResultSize, EBufferUsage::BUF_AccelerationStructure, XRHIResourceCreateData());
-           RHICmdList.BindAccelerationStructureMemory(RayTracingScene.Scene.get(), SceneBuffer, 0);
-          
-           std::shared_ptr<XRHIBuffer> ScratchBuffer = RHICreateBuffer(0, SceneSizeInfo.BuildScratchSize, EBufferUsage::BUF_UnorderedAccess, XRHIResourceCreateData());
+           //5.3 create instance buffer
+           { 
+               // must match D3D12_RAYTRACING_INSTANCE_DESC / VkAccelerationStructureInstanceKHR
+               struct FRayTracingInstanceDescriptor
+               {
+                   float Transform[3][4];
+                   uint32 InstanceIdAndMask; // 24 + 8 
+                   uint32 InstanceContributionToHitGroupIndexAndFlags; // 24 + 8
+                   uint64 AccelerationStructure;
+               };
 
+               TResourceVector<FRayTracingInstanceDescriptor> InstanceBufferData;
+               FRayTracingInstanceDescriptor InstanceDescriptor;
+               memcpy(InstanceDescriptor.Transform, Instances[0].Trasnforms, sizeof(float) * 3 * 4);
+
+               // Each geometry copy can receive a user-provided integer, which can be used to retrieve extra shader parameters or customize appearance.
+               InstanceDescriptor.InstanceIdAndMask = (Instances[0].RayMask << 24) | (0 & (0x00FFFFFF));//little endian (nv *) / big endian ? 
+               uint32 HitGroupIndex = RAY_TRACING_NUM_SHADER_SLOTS;
+               //VkGeometryInstanceFlagBitsKHR;
+               //InstanceDescriptor.InstanceContributionToHitGroupIndexAndFlags = ((uint32)ERayTracingInstanceFlags::None << 24) | (RayTracingScene.Scene->SceneInitializer.SegmentPrefixSum[0] & (0x00FFFFFF));VkGeometryInstanceFlagBitsKHR
+               //Counterclockwise is the default for UE. Reversing culling is achieved by *not* setting this flag.
+               InstanceDescriptor.InstanceContributionToHitGroupIndexAndFlags = ((uint32)ERayTracingInstanceFlags::TriangleCullReverse << 24) | (RayTracingScene.Scene->GetRayTracingSceneInitializer().SegmentPrefixSum[0] & (0x00FFFFFF));
+               InstanceDescriptor.AccelerationStructure = Geometry->GetAccelerationStructureAddress();
+               InstanceBufferData.PushBack(std::move(InstanceDescriptor));
+
+               XRHIResourceCreateData ResourceCreateData(&InstanceBufferData);
+               InstanceBuffer = RHIcreateStructBuffer2(sizeof(FRayTracingInstanceDescriptor), 1, EBufferUsage::BUF_ShaderResource, ResourceCreateData);
+           }
+
+
+           //5.4 create ray tracing scene buffer
+           XRayTracingAccelerationStructSize SceneSizeInfo = RHICalcRayTracingSceneSize(1, ERayTracingAccelerationStructureFlags::PreferTrace);
+           SceneBuffer = RHICreateBuffer(0, SceneSizeInfo.ResultSize, EBufferUsage::BUF_AccelerationStructure, XRHIResourceCreateData());
+           ScratchBuffer = RHICreateBuffer(0, SceneSizeInfo.BuildScratchSize, EBufferUsage::BUF_UnorderedAccess, XRHIResourceCreateData());
+
+           //5.5 bind ray tracing scene with scene packed buffer and create ray tracing view
+           RHICmdList.BindAccelerationStructureMemory(RayTracingScene.Scene.get(), SceneBuffer, 0);
+
+           //5.6 build acceleration structure
            XRayTracingSceneBuildParams Params;
            Params.Scene = RayTracingScene.Scene.get();
-           //Params.InstanceBuffer = 
            Params.ScratchBuffer = ScratchBuffer.get();
            Params.ScratchBufferOffset = 0;
-           //TODO fixme
+           Params.InstanceBuffer = InstanceBuffer.get();
+           Params.InstanceBufferOffset = 0;
 
            RHICmdList.BuildAccelerationStructure(Params);
        }
        
-      
-       
+       //6. create result buffer
+       {
+           RHICmdList.Transition();
+           SceneBufferView = RHICreateShaderResourceView();
+           OcclusionBuffer = RHIcreateStructBuffer(sizeof(uint32), sizeof(uint32) * NumRays, EBufferUsage::BUF_Static | EBufferUsage::BUF_UnorderedAccess, XRHIResourceCreateData());
+           OcclusionUAV = RHICreateUnorderedAccessView(OcclusionBuffer.get(), false, false, 0);
+       }
 
 
 
