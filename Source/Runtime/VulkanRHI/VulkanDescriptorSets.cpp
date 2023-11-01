@@ -36,6 +36,7 @@ static inline VkDescriptorType GetDescriptorTypeFromSetIndex(uint8 SetIndex)
 {
     switch (SetIndex)
     {
+    case VulkanBindless::None:          return VK_DESCRIPTOR_TYPE_MAX_ENUM;
     case VulkanBindless::BindlesssStorageBufferSet:          return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     case VulkanBindless::BindlessAccelerationStructureSet:  return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     default: XASSERT(false);
@@ -159,7 +160,7 @@ XVulkanBindlessDescriptorManager::XVulkanBindlessDescriptorManager(XVulkanDevice
     :Device(InDevice)
 {
     memset(BufferBindingInfo, 0, sizeof(VkDescriptorBufferBindingInfoEXT) * VulkanBindless::NumBindLessSet);
-    for (uint32 Index = 0; Index < VulkanBindless::NumBindLessSet; Index++)
+    for (uint32 Index = VulkanBindless::None + 1; Index < VulkanBindless::NumBindLessSet; Index++)
     {
         BufferIndices[Index] = Index;
     }
@@ -321,7 +322,7 @@ void XVulkanBindlessDescriptorManager::Init()
         };
 
         uint32 TotalResourceDescriptorBufferSize = 0;
-        for (uint32 SetIndex = 0; SetIndex < VulkanBindless::NumBindLessSet; SetIndex++)
+        for (uint32 SetIndex = VulkanBindless::None + 1; SetIndex < VulkanBindless::NumBindLessSet; SetIndex++)
         {
             BindlessSetState& State = BindlessSetStates[SetIndex];
             InitBindlessState(GetDescriptorTypeFromSetIndex(SetIndex), State);
@@ -334,7 +335,7 @@ void XVulkanBindlessDescriptorManager::Init()
     // Now create the single pipeline layout used by everything
     {
         VkDescriptorSetLayout DescriptorSetLayouts[VulkanBindless::NumBindLessSet];
-        for (int32 LayoutIndex = 0; LayoutIndex < VulkanBindless::NumBindLessSet; ++LayoutIndex)
+        for (int32 LayoutIndex = VulkanBindless::None + 1; LayoutIndex < VulkanBindless::NumBindLessSet; ++LayoutIndex)
         {
             const BindlessSetState& State = BindlessSetStates[LayoutIndex];
             DescriptorSetLayouts[LayoutIndex] = State.DescriptorSetLayout;

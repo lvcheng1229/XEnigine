@@ -346,7 +346,8 @@ public:
        std::shared_ptr<XRHIBuffer> SceneBuffer;
        std::shared_ptr<XRHIShaderResourceView> SceneBufferView;
        std::shared_ptr<XRHIBuffer> InstanceBuffer;
-
+       XRayTracingSceneWithGeometryInstance RayTracingScene;
+       //6. create result buffer
        std::shared_ptr<XRHIStructBuffer>OcclusionBuffer;
        std::shared_ptr<XRHIUnorderedAcessView>OcclusionUAV;
 
@@ -429,7 +430,7 @@ public:
            }
 
            //5.2 create ray tracing scene
-           XRayTracingSceneWithGeometryInstance RayTracingScene = CreateRayTracingSceneWithGeometryInstance(Instances, RAY_TRACING_NUM_SHADER_SLOTS, 1);
+           RayTracingScene = CreateRayTracingSceneWithGeometryInstance(Instances, RAY_TRACING_NUM_SHADER_SLOTS, 1);
            
            //5.3 create instance buffer
            { 
@@ -460,7 +461,6 @@ public:
                InstanceBuffer = RHIcreateStructBuffer2(sizeof(FRayTracingInstanceDescriptor), 1, EBufferUsage::BUF_ShaderResource, ResourceCreateData);
            }
 
-
            //5.4 create ray tracing scene buffer
            XRayTracingAccelerationStructSize SceneSizeInfo = RHICalcRayTracingSceneSize(1, ERayTracingAccelerationStructureFlags::PreferTrace);
            SceneBuffer = RHICreateBuffer(0, SceneSizeInfo.ResultSize, EBufferUsage::BUF_AccelerationStructure, XRHIResourceCreateData());
@@ -482,15 +482,13 @@ public:
        
        //6. create result buffer
        {
-           RHICmdList.Transition();
-           SceneBufferView = RHICreateShaderResourceView();
+           RHICmdList.Transition(XRHITransitionInfo(RayTracingScene.Scene.get(), XRHITransitionInfo::EType::BVH, ERHIAccess::BVHWrite, ERHIAccess::BVHRead));
+           //SceneBufferView = RHICreateShaderResourceView();
            OcclusionBuffer = RHIcreateStructBuffer(sizeof(uint32), sizeof(uint32) * NumRays, EBufferUsage::BUF_Static | EBufferUsage::BUF_UnorderedAccess, XRHIResourceCreateData());
            OcclusionUAV = RHICreateUnorderedAccessView(OcclusionBuffer.get(), false, false, 0);
        }
 
-
-
-       DispatchBasicOcclusionRays(RHICmdList);
+       DispatchBasicOcclusionRays(RHICmdList, RayTracingScene.Scene.get(), SceneBufferView.get(), RBView.get(), OcclusionUAV.get(), 4);
    }
 
    

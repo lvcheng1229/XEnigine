@@ -357,6 +357,8 @@ public:
 		VkDescriptorSetLayout DescriptorSetLayout;
 	};
 
+	using XUniformBufferDescriptorArrays = std::array<VkDescriptorAddressInfoEXT, uint32(EShaderType::SV_ShaderCount)>;
+
 	void UpdateBuffer(XRHIDescriptorHandle DescriptorHandle, VkBuffer Buffer, VkDeviceSize BufferOffset, VkDeviceSize BufferSize);
 	void UpdateBuffer(XRHIDescriptorHandle DescriptorHandle, VkDeviceAddress BufferAddress, VkDeviceSize BufferSize);
 	void UpdateDescriptor(XRHIDescriptorHandle DescriptorHandle, VkDescriptorDataEXT DescriptorData);

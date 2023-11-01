@@ -650,6 +650,12 @@ void XVulkanRayTracingScene::BuildPerInstanceGeometryParameterBuffer(XVulkanComm
 	PerInstanceGeometryParameterBuffer->UnLock(&CmdContext);
 }
 
+XVulkanBindlessDescriptorManager::XUniformBufferDescriptorArrays GetStageUBs(XVulkanDevice* Device, const XRayTracingShaderBinds& InGlobalResoruceBindings)
+{
+	XASSERT(false);
+	return std::array<VkDescriptorAddressInfoEXT, uint32(EShaderType::SV_ShaderCount)>();
+}
+
 void XVulkanCommandListContext::RayTraceDispatch(XRHIRayTracingPSO* InPipeline, XRHIRayTracingShader* InRayGenShader, XRHIRayTracingScene* InScene, const XRayTracingShaderBinds& GlobalResourceBindings, uint32 Width, uint32 Height)
 {
 	XVulkanRayTracingPipelineState* Pipeline = static_cast< XVulkanRayTracingPipelineState*>(InPipeline);
@@ -659,6 +665,8 @@ void XVulkanCommandListContext::RayTraceDispatch(XRHIRayTracingPSO* InPipeline, 
 
 	XVulkanCmdBuffer* const CmdBuffer = GetCommandBufferManager()->GetActiveCmdBuffer();
 	vkCmdBindPipeline(CmdBuffer->GetHandle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, Pipeline->Pipeline);
+
+	//XVulkanBindlessDescriptorManager::XUniformBufferDescriptorArrays StageUBs = ;
 
 	ShaderTable->SetSlot(EShaderType::SV_RayGen, 0, Pipeline->GetShaderIndex(RayGenShader), Pipeline->GetShaderHandles(EShaderType::SV_RayGen));
 	

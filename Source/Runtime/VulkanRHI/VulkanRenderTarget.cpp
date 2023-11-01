@@ -166,6 +166,20 @@ void XVulkanCommandListContext::RHIBeginRenderPass(const XRHIRenderPassInfo& InI
 
 }
 
+void XVulkanCommandListContext::Transition(XRHITransitionInfo TransitionInfo)
+{
+	XASSERT(TransitionInfo.Type == XRHITransitionInfo::EType::BVH);
+	XASSERT(TransitionInfo.AccessBefore == ERHIAccess::BVHWrite);
+	XASSERT(TransitionInfo.AccessAfter == ERHIAccess::BVHRead);
+
+	VkMemoryBarrier Barrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER };
+	Barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+	Barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+	VkPipelineStageFlags StageFlag = VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	XVulkanCmdBuffer* CmdBuffer = CmdBufferManager->GetActiveCmdBuffer();
+	vkCmdPipelineBarrier(CmdBuffer->GetHandle(), StageFlag, StageFlag, 0, 1, &Barrier, 0, nullptr, 0, nullptr);
+}
+
 XVulkanRenderPass* XVulkanCommandListContext::PrepareRenderPassForPSOCreation(const XGraphicsPSOInitializer& Initializer)
 {
 	XVulkanRenderTargetLayout RTLayout(Initializer);

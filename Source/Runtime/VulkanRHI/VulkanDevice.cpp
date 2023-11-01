@@ -49,8 +49,8 @@ void XVulkanDevice::InitGPU()
         DefaultTextureView.Create(this, DefaultImage->Image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, VK_FORMAT_R8G8B8A8_UNORM);
     }
 
-    BindlessDescriptorManager = new XVulkanBindlessDescriptorManager(this);
-    BindlessDescriptorManager->Init();
+    //BindlessDescriptorManager = new XVulkanBindlessDescriptorManager(this);
+    //BindlessDescriptorManager->Init();
 }
 
 void XVulkanDevice::CreateDevice()

@@ -49,6 +49,12 @@ public:
 	void SetupHitGroupSystemParameters();
 	void ReleaseBindlessHandles();
 
+	virtual XRayTracingAccelerationStructureAddress GetAccelerationStructureAddress() const
+	{
+		XASSERT(false);
+		return Address;
+	}
+
 	std::vector< XVulkanHitGroupSystemParameters>HitGroupSystemParameters;
 	std::vector<XRHIDescriptorHandle>HitGroupSystemVertexViews;
 	XRHIDescriptorHandle HitGroupSystemIndexView;
