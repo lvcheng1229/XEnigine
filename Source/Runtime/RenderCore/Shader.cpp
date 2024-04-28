@@ -15,11 +15,12 @@ std::shared_ptr<XRHIShader> XShaderMappingToRHIShaders_InlineCode::CreateRHIShad
 	case EShaderType::SV_Vertex:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreateVertexShader(CodeView)); break;
 	case EShaderType::SV_Pixel:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreatePixelShader(CodeView)); break;
 	case EShaderType::SV_Compute:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreateComputeShader(CodeView)); break;
-
+#if RHI_RAYTRACING
 	case EShaderType::SV_RayGen: 
 	case EShaderType::SV_RayMiss:
 	case EShaderType::SV_HitGroup:RHIShaderRef = std::static_pointer_cast<XRHIShader>(RHICreateRayTracingShader(CodeView, ShaderType));
 		break;
+#endif
 	default:XASSERT(false); break;
 	}
 	RHIShaderRef->SetHash(CodeHash);

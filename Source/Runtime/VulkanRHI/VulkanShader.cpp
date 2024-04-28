@@ -70,6 +70,7 @@ inline ShaderType* XVulkanShaderFactory::CreateShader(XArrayView<uint8> Code, XV
 template<typename ShaderType>
 ShaderType* XVulkanShaderFactory::LookupShader(uint64 ShaderKey, EShaderType InShaderType) const
 {
+#if RHI_RAYTRACING
 	switch (InShaderType)
 	{
 	case EShaderType::SV_RayGen:
@@ -85,6 +86,7 @@ ShaderType* XVulkanShaderFactory::LookupShader(uint64 ShaderKey, EShaderType InS
 		}
 		return nullptr;
 	}
+#endif
 
 	if (ShaderKey)
 	{
@@ -106,7 +108,7 @@ std::shared_ptr<XRHIPixelShader> XVulkanPlatformRHI::RHICreatePixelShader(XArray
 {
 	return std::shared_ptr<XVulkanPixelShader>(Device->GetVkShaderFactory()->CreateShader<XVulkanPixelShader>(Code, Device, EShaderType::SV_Pixel));
 }
-
+#if RHI_RAYTRACING
 std::shared_ptr<XRHIRayTracingShader> XVulkanPlatformRHI::RHICreateRayTracingShader(XArrayView<uint8> Code, EShaderType ShaderType)
 {
 	switch (ShaderType)
@@ -119,6 +121,7 @@ std::shared_ptr<XRHIRayTracingShader> XVulkanPlatformRHI::RHICreateRayTracingSha
 	}
 	return std::shared_ptr<XRHIRayTracingShader>(nullptr);
 }
+#endif
 
 uint32 XVulkanDescriptorSetWriter::SetupDescriptorWrites(
 	const std::vector<VkDescriptorType>& Types, VkWriteDescriptorSet* InWriteDescriptors,

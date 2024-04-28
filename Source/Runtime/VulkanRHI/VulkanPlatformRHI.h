@@ -57,8 +57,9 @@ public:
 	//CreatePSO
 	std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGraphicsPSOInitializer& PSOInit)final override;
 	std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)final override { XASSERT(false); return nullptr; };
+#if RHI_RAYTRACING
 	std::shared_ptr<XRHIRayTracingPSO> RHICreateRayTracingPipelineState(const XRayTracingPipelineStateInitializer& OriginalInitializer);
-
+#endif
 	//RHICreateUniformBuffer
 	std::shared_ptr<XRHIConstantBuffer> RHICreateConstantBuffer(uint32 size)override;
 

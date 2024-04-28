@@ -41,13 +41,13 @@ float ComputeShadowFactor(float2 UVShadowSpace ,uint ObjectShadowDepth , uint Bi
     uint PhysicalIndexY = PageTableIndex / uint(PhysicalTileWidthNum);
 
     float2 SubTileUV = (UVShadowSpace * PageNum) - uint2(UVShadowSpace * PageNum);
-    float2 ShadowDepthPos = float2(PhysicalIndexX,PhysicalIndexY) + SubTileUV; //float [0,8]
-    ShadowDepthPos/=PhysicalTileWidthNum; //[0,1]
-    ShadowDepthPos*=PhysicalSize;//[0,1024]
+    float2 ShadowDepthPos = float2(PhysicalIndexX,PhysicalIndexY) + SubTileUV; 
+    ShadowDepthPos/=PhysicalTileWidthNum;
+    ShadowDepthPos*=PhysicalSize;
 
     uint ShadowDepth = PhysicalShadowDepthTexture[uint2(ShadowDepthPos)].x;
 
-    if((ObjectShadowDepth + Bias )< ShadowDepth) //ObjectShadowDepth <= ShadowDepth ,if in shadow
+    if((ObjectShadowDepth + Bias )< ShadowDepth) 
     {
         return 1.0f;
     }

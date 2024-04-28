@@ -5,6 +5,7 @@
 #include "VulkanCommandBuffer.h"
 #include "Runtime\RHI\RHICommandList.h"
 
+#if RHI_RAYTRACING
 VkDeviceAddress XVulkanResourceMultiBuffer::GetDeviceAddress() const
 {
 	VkBufferDeviceAddressInfoKHR DeviceAddressInfo = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
@@ -418,4 +419,5 @@ void XVulkanRayTracingScene::BuildPerInstanceGeometryParameterBuffer(XVulkanComm
 	}
 	PerInstanceGeometryParameterBuffer->UnLock(&CmdContext);
 }
+#endif
 

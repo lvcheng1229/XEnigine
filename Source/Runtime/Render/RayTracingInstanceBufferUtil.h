@@ -1,6 +1,6 @@
 #pragma once
 #include "Runtime\RHI\RHIResource.h"
-
+#if RHI_RAYTRACING
 struct XRayTracingSceneWithGeometryInstance
 {
 	std::shared_ptr<XRHIRayTracingScene> Scene;
@@ -13,3 +13,4 @@ XRayTracingSceneWithGeometryInstance CreateRayTracingSceneWithGeometryInstance(
 	uint32 NumMissShaderSlots,
 	uint32 NumCallableShaderSlots = 0
 );
+#endif

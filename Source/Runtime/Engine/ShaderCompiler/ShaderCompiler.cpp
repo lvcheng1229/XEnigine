@@ -368,9 +368,11 @@ static void CompileDX12ShaderDXC(XShaderCompileInput& Input, XShaderCompileOutpu
 	case EShaderType::SV_Vertex:Target = "vs_6_1"; break;
 	case EShaderType::SV_Pixel:Target = "ps_6_1"; break;
 	case EShaderType::SV_Compute:Target = "cs_6_1"; break;
+#if RHI_RAYTRACING
 	case EShaderType::SV_RayGen:Target = "lib_6_3";;
 	case EShaderType::SV_RayMiss:Target = "lib_6_3";;
 	case EShaderType::SV_HitGroup:Target = "lib_6_3"; break;
+#endif
 	default:XASSERT(false); break;
 	}
 

@@ -1,17 +1,17 @@
 #pragma once
 
-#define RHI_RAYTRACING 1
+#define RHI_RAYTRACING 0
 
 enum class EShaderType
 {
 	SV_Vertex = 0,
 	SV_Pixel,
 	SV_Compute,
-
+#if RHI_RAYTRACING
 	SV_RayGen,
 	SV_RayMiss,
 	SV_HitGroup,
-
+#endif
 	SV_ShaderCount
 };
 

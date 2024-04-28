@@ -133,8 +133,10 @@ void XVulkanDevice::CreateDevice()
     MemoryManager.Init();
 
     VulkanExtension::InitExtensionFunction(Device);
+#if RHI_RAYTRACING
     GRHIRayTracingScratchBufferAlignment = GetRayTracingProperties().AccelerationStructure.minAccelerationStructureScratchOffsetAlignment;
     GRHIRayTracingAccelerationStructureAlignment = 256;
+#endif
 }
 
 namespace VulkanExtension

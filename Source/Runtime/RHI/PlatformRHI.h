@@ -2,7 +2,7 @@
 #include <memory>
 #include "RHIResource.h"
 
-#define USE_DX12 0
+#define USE_DX12 1
 
 class XRHICommandList;
 class XPlatformRHI
@@ -102,16 +102,19 @@ inline std::shared_ptr<XRHIGraphicsPSO> RHICreateGraphicsPipelineState(const XGr
 	return GPlatformRHI->RHICreateGraphicsPipelineState(PSOInit);
 }
 
+#if RHI_RAYTRACING
 inline std::shared_ptr<XRHIRayTracingPSO> RHICreateRayTracingPipelineState(const XRayTracingPipelineStateInitializer& OriginalInitializer)
 {
 	return GPlatformRHI->RHICreateRayTracingPipelineState(OriginalInitializer);
 }
+#endif
 
 inline std::shared_ptr<XRHIComputePSO> RHICreateComputePipelineState(const XRHIComputeShader* RHIComputeShader)
 {
 	return GPlatformRHI->RHICreateComputePipelineState(RHIComputeShader);
 }
 
+#if RHI_RAYTRACING
 inline std::shared_ptr<XRHIRayTracingGeometry> RHICreateRayTracingGeometry(const XRayTracingGeometryInitializer& Initializer)
 {
 	return GPlatformRHI->RHICreateRayTracingGeometry(Initializer);
@@ -131,3 +134,4 @@ inline XRayTracingAccelerationStructSize RHICalcRayTracingSceneSize(uint32 MaxIn
 {
 	return GPlatformRHI->RHICalcRayTracingSceneSize(MaxInstances, Flags);
 }
+#endif

@@ -391,8 +391,10 @@ inline std::shared_ptr<XRHIComputeShader> RHICreateComputeShader(XArrayView<uint
 	return GPlatformRHI->RHICreateComputeShader(Code);
 }
 
+#if RHI_RAYTRACING
 inline std::shared_ptr<XRHIRayTracingShader> RHICreateRayTracingShader(XArrayView<uint8> Code, EShaderType ShaderType)
 {
 	return GPlatformRHI->RHICreateRayTracingShader(Code, ShaderType);
 }
+#endif
 

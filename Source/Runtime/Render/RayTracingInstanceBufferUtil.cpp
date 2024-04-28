@@ -1,6 +1,6 @@
 #include "RayTracingInstanceBufferUtil.h"
 #include "Runtime\RHI\RHICommandList.h"
-
+#if RHI_RAYTRACING
 XRayTracingSceneWithGeometryInstance CreateRayTracingSceneWithGeometryInstance(std::vector<XRayTracingGeometryInstance>& Instances, uint32 NumShaderSlotsPerGeometrySegment, uint32 NumMissShaderSlots, uint32 NumCallableShaderSlots)
 {
 	const uint32 NumSceneInstances = Instances.size();
@@ -19,3 +19,4 @@ XRayTracingSceneWithGeometryInstance CreateRayTracingSceneWithGeometryInstance(s
 	Output.Scene = RHICreateRayTracingScene(Initializer);
 	return Output;
 }
+#endif

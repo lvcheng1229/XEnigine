@@ -61,6 +61,8 @@ namespace PipelineStateCache
 		}
 		return GGraphicsPSOMap[HashIndex];
 	}
+
+#if RHI_RAYTRACING
 	std::shared_ptr<XRHIRayTracingPSO> GetAndOrCreateRayTracingPipelineState(XRHICommandList& RHICmdList, const XRayTracingPipelineStateInitializer& OriginalInitializer)
 	{
 		const XRayTracingPipelineStateInitializer* Initializer = &OriginalInitializer;
@@ -74,5 +76,6 @@ namespace PipelineStateCache
 		}
 		return GRayTracingPSOMap[HashIndex];
 	}
+#endif
 }
 

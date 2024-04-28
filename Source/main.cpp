@@ -455,7 +455,6 @@ public:
         RHICmdList = GRHICmdList;
         RHICmdList.Open();
 #if USE_DX12
-        RHICmdList.Open();
         SceneBuild();
 #endif
         MainInit::InitAfterRHI();
