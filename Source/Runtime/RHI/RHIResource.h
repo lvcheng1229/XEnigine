@@ -360,7 +360,19 @@ enum class EAccelerationStructureBuildMode
 	Update
 };
 
+//
+// Ray tracing resources
+//
 
+enum class ERayTracingInstanceFlags : uint8
+{
+	None = 0,
+	TriangleCullDisable = 1 << 1, // No back face culling. Triangle is visible from both sides.
+	TriangleCullReverse = 1 << 2, // Makes triangle front-facing if its vertices are counterclockwise from ray origin.
+	ForceOpaque = 1 << 3, // Disable any-hit shader invocation for this instance.
+	ForceNonOpaque = 1 << 4, // Force any-hit shader invocation even if geometries inside the instance were marked opaque.
+};
+ENUM_CLASS_FLAGS(ERayTracingInstanceFlags);
 
 struct XRayTracingAccelerationStructSize
 {
@@ -413,10 +425,13 @@ public:
 	uint32 IndexBufferOffset = 0;
 	std::vector<XRayTracingGeometrySegment>Segments;
 
+	
 	bool bPreferBuild = false;
 	bool bAllowUpdate = false;
 	bool bAllowCompaction = true;
 };
+
+using XRayTracingAccelerationStructureAddress = uint64;
 
 class XRHIRayTracingGeometry : public XRHIRayTracingAccelerationStruct
 {
@@ -430,6 +445,8 @@ public:
 		return Initializer.Segments.size();
 	}
 
+	virtual XRayTracingAccelerationStructureAddress GetAccelerationStructureAddress() const = 0;
+
 	XRayTracingGeometryInitializer Initializer;
 };
 
@@ -439,6 +456,11 @@ struct XRayTracingGeometryInstance
 {
 	std::shared_ptr<XRHIRayTracingGeometry>GeometryRHI = nullptr;
 	uint32 NumTransforms = 0;
+	float Trasnforms[3][4];
+
+	// Mask that will be tested against one provided to TraceRay() in shader code.
+	// If binary AND of instance mask with ray mask is zero, then the instance is considered not intersected / invisible.
+	uint8 RayMask = 0xFF;
 };
 
 
@@ -449,11 +471,28 @@ struct XRayTracingSceneInitializer
 
 	uint32 NumNativeInstance = 0;
 	uint32 NumTotalSegments = 0;
+
+	// Exclusive prefix sum of instance geometry segments is used to calculate SBT record address from instance and segment indices.
+	std::vector<uint32> SegmentPrefixSum;
+
+	// This value controls how many elements will be allocated in the shader binding table per geometry segment.
+// Changing this value allows different hit shaders to be used for different effects.
+// For example, setting this to 2 allows one hit shader for regular material evaluation and a different one for shadows.
+// Desired hit shader can be selected by providing appropriate RayContributionToHitGroupIndex to TraceRay() function.
+// Use ShaderSlot argument in SetRayTracingHitGroup() to assign shaders and resources for specific part of the shder binding table record.
+	uint32 ShaderSlotsPerGeometrySegment = 1;
+
+	// At least one miss shader must be present in a ray tracing scene.
+// Default miss shader is always in slot 0. Default shader must not use local resources.
+// Custom miss shaders can be bound to other slots using SetRayTracingMissShader().
+	uint32 NumMissShaderSlots = 1;
 };
 
 class XRHIRayTracingScene : public XRHIRayTracingAccelerationStruct
 {
 public:
+
+	virtual const XRayTracingSceneInitializer GetRayTracingSceneInitializer()const = 0;
 };
 
 class XRayTracingPipelineSignature
@@ -477,33 +516,33 @@ class XRayTracingPipelineStateInitializer : public XRayTracingPipelineSignature
 {
 public:
 
-	void SetRayGenShaderTable(const std::vector<XRHIRayTracingShader*>& InRayGenShaders, uint64 Hash = 0)
+	void SetRayGenShaderTable(const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InRayGenShaders, uint64 Hash = 0)
 	{
 		RayGenTable = InRayGenShaders;
 		RayGenHash = Hash ? Hash : ComputeShaderTableHash(InRayGenShaders);
 	}
 
-	void SetMissShaderTable(const std::vector<XRHIRayTracingShader*>& InMissShaders, uint64 Hash = 0)
+	void SetMissShaderTable(const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InMissShaders, uint64 Hash = 0)
 	{
 		MissTable = InMissShaders;
 		MissHash = Hash ? Hash : ComputeShaderTableHash(InMissShaders);
 	}
 
-	void SetHitGroupShaderTable(const std::vector<XRHIRayTracingShader*>& InHitGroupShaders, uint64 Hash = 0)
+	void SetHitGroupShaderTable(const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InHitGroupShaders, uint64 Hash = 0)
 	{
 		HitGroupTable = InHitGroupShaders;
 		HitGroupHash = Hash ? Hash : ComputeShaderTableHash(InHitGroupShaders);
 	}
 
-	std::vector<XRHIRayTracingShader*> RayGenTable;
-	std::vector<XRHIRayTracingShader*> MissTable;
-	std::vector<XRHIRayTracingShader*> HitGroupTable;
+	std::vector<std::shared_ptr<XRHIRayTracingShader>> RayGenTable;
+	std::vector<std::shared_ptr<XRHIRayTracingShader>> MissTable;
+	std::vector<std::shared_ptr<XRHIRayTracingShader>> HitGroupTable;
 protected:
 
-	uint64 ComputeShaderTableHash(const std::vector<XRHIRayTracingShader*>& InRayGenShaders ,uint64 InitialHash = 5699878132332235837ull)
+	uint64 ComputeShaderTableHash(const std::vector<std::shared_ptr<XRHIRayTracingShader>>& InRayGenShaders ,uint64 InitialHash = 5699878132332235837ull)
 	{
 		uint64 CombineHash = InitialHash;
-		for (XRHIRayTracingShader* RTShader : InRayGenShaders)
+		for (auto RTShader : InRayGenShaders)
 		{
 			THashCombine(CombineHash, RTShader->GetHash());
 		}

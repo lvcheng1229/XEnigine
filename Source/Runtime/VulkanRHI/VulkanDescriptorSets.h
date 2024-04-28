@@ -5,6 +5,7 @@
 #include "VulkanUtil.h"
 #include "VulkanState.h"
 #include "VulkanMemory.h"
+#include "VulkanCommon.h"
 
 #include <map>
 #include <string>
@@ -248,22 +249,6 @@ protected:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class XVulkanDescriptorPool
 {
 public:
@@ -345,5 +330,53 @@ public:
 	XVulkanDescriptorPoolSetContainer& AcquirePoolSetContainer();
 private:
 	std::vector<XVulkanDescriptorPoolSetContainer*>PoolSets;
+	XVulkanDevice* Device;
+};
+
+class XVulkanBindlessDescriptorManager
+{
+public:
+	XVulkanBindlessDescriptorManager(XVulkanDevice* InDevice);
+
+	struct BindlessSetState
+	{
+		VkDescriptorType DescriptorType = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+
+		uint32 MaxDescriptorCount = 0;
+		uint32 CurDescriptorCount = 1;//0 is null buffer
+
+		uint32 FreeListHead = -1;
+		uint32 DescriptorSize = 0;
+
+		uint8* MappedPointer = nullptr;
+
+		std::vector<uint8>DebugDescriptors;
+
+		VkDeviceMemory MemoryHandle;
+		VkBuffer BufferHandle;
+		VkDescriptorSetLayout DescriptorSetLayout;
+	};
+
+	using XUniformBufferDescriptorArrays = std::array<VkDescriptorAddressInfoEXT, uint32(EShaderType::SV_ShaderCount)>;
+
+	void UpdateBuffer(XRHIDescriptorHandle DescriptorHandle, VkBuffer Buffer, VkDeviceSize BufferOffset, VkDeviceSize BufferSize);
+	void UpdateBuffer(XRHIDescriptorHandle DescriptorHandle, VkDeviceAddress BufferAddress, VkDeviceSize BufferSize);
+	void UpdateDescriptor(XRHIDescriptorHandle DescriptorHandle, VkDescriptorDataEXT DescriptorData);
+
+	void Unregister(XRHIDescriptorHandle DescriptorHandle);
+	void Init();
+
+	VkDescriptorBufferBindingInfoEXT BufferBindingInfo[VulkanBindless::NumBindLessSet];
+	BindlessSetState BindlessSetStates[VulkanBindless::NumBindLessSet];
+
+	uint32 BufferIndices[VulkanBindless::NumBindLessSet];
+
+	uint32 GetFreeResourceStateIndex(BindlessSetState& State);
+	XRHIDescriptorHandle ReserveDescriptor(VkDescriptorType DescriptorType);
+
+	VkDescriptorSetLayout EmptyDescriptorSetLayout;
+
+	VkPipelineLayout BindlessPipelineLayout;
+
 	XVulkanDevice* Device;
 };

@@ -22,16 +22,36 @@ VkBufferUsageFlags XVulkanResourceMultiBuffer::UEToVKBufferUsageFlags(EBufferUsa
 		OutVkUsage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 	}
 
+	if (((uint32)InUEUsage & (uint32)EBufferUsage::BUF_StructuredBuffer) != 0)
+	{
+		OutVkUsage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	}
+
+	if (((uint32)InUEUsage & (uint32)EBufferUsage::BUF_UnorderedAccess) != 0)
+	{
+		OutVkUsage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+	}
+
+	if (((uint32)InUEUsage & (uint32)EBufferUsage::BUF_DrawIndirect) != 0)
+	{
+		OutVkUsage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+	}
+
+	if (((uint32)InUEUsage & (uint32)EBufferUsage::BUF_ShaderResource) != 0)
+	{
+		OutVkUsage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+	}
+
 	if (EnumHasAnyFlags(InUEUsage, EBufferUsage::BUF_AccelerationStructure))
 	{
 		OutVkUsage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-		OutVkUsage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 		OutVkUsage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 	}
 
+	OutVkUsage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
 	return OutVkUsage;
 }
-
 
 
 XVulkanResourceMultiBuffer::XVulkanResourceMultiBuffer(XVulkanDevice* InDevice,uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)

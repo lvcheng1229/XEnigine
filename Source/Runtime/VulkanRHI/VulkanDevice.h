@@ -8,10 +8,11 @@
 class XVulkanDescriptorPoolsManager;
 
 #if RHI_RAYTRACING
-struct XRayTracingProperties
+struct XVulkanDeviceExtensionProperties
 {
 	VkPhysicalDeviceAccelerationStructurePropertiesKHR AccelerationStructure;
 	VkPhysicalDeviceRayTracingPipelinePropertiesKHR RayTracingPipeline;
+	VkPhysicalDeviceDescriptorBufferPropertiesEXT DescriptorBufferProps;
 };
 #endif // VULKAN_RHI_RAYTRACING
 
@@ -60,10 +61,16 @@ public:
 		return &DefaultTextureView;
 	}
 
-#if RHI_RAYTRACING
-	inline const XRayTracingProperties& GetRayTracingProperties() const
+	inline XVulkanBindlessDescriptorManager* GetBindlessDescriptorMannager()
 	{
-		return RayTracingProperties;
+		XASSERT(BindlessDescriptorManager != nullptr);
+		return BindlessDescriptorManager;
+	}
+
+#if RHI_RAYTRACING
+	inline const XVulkanDeviceExtensionProperties& GetDeviceExtensionProperties() const
+	{
+		return DeviceExtensionProperties;
 	}
 #endif
 
@@ -83,6 +90,8 @@ private:
 	XVulkanCommandListContext* GfxContext;
 	XVulkanShaderFactory ShaderFactory;
 
+	XVulkanBindlessDescriptorManager* BindlessDescriptorManager;
+
 	XFenceManager FenceManager;
 	XMemoryManager MemoryManager;
 	XDeviceMemoryManager DeviceMemoryManager;
@@ -96,6 +105,6 @@ private:
 	XVulkanTextureView DefaultTextureView;
 
 #if RHI_RAYTRACING
-	XRayTracingProperties RayTracingProperties;
+	XVulkanDeviceExtensionProperties DeviceExtensionProperties;
 #endif
 };

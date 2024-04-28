@@ -3,6 +3,8 @@
 #include "Runtime\HAL\PlatformTypes.h"
 #include "vulkan\vulkan_core.h"
 #include <Runtime\HAL\Mch.h>
+#include "Runtime\Core\Template\XEngineTemplate.h"
+
 class XMemoryManager;
 class XVulkanDevice;
 class XVulkanSubresourceAllocator;
@@ -24,6 +26,7 @@ enum EVulkanAllocationMetaType : uint8
 	EVulkanAllocationMetaImageRenderTarget,
 	EVulkanAllocationMetaImageOther,
 	EVulkanAllocationMetaUniformBuffer,
+	EVulkanAllocationMetaBufferOther,
 	EVulkanAllocationMetaSize,
 };
 
@@ -230,6 +233,7 @@ public:
 	//void* Lock(EResourceLockMode LockMode, uint32 Size, uint32 Offset);
 	//void Unlock();
 
+
 	//Buffer Infomation
 	VkBuffer VulkanHandle;
 	uint32 Offset;
@@ -319,6 +323,22 @@ private:
 	std::vector<XVulkanSubresourceAllocator*> ActivePages[MAX_BUCKETS];
 };
 
+enum class EVulkanAllocationFlags : uint16
+{
+	None = 0x0000,
+
+	HostVisible = 0x0001,    // Will be written from CPU, will likely contain the HOST_VISIBLE + HOST_COHERENT flags
+
+	Dedicated = 0x0008,	  // Will not share a memory block with other resources
+
+	AutoBind = 0x0080,	  // Will automatically bind the allocation to the supplied VkBuffer/VkImage, avoids an extra lock to bind separately
+};
+
+ENUM_CLASS_FLAGS(EVulkanAllocationFlags);
+
+//inline           EVulkanAllocationFlags& operator|=(EVulkanAllocationFlags& Lhs, EVulkanAllocationFlags Rhs) { return Lhs = (EVulkanAllocationFlags)((__underlying_type(EVulkanAllocationFlags))Lhs | (__underlying_type(EVulkanAllocationFlags))Rhs); } 
+//inline constexpr EVulkanAllocationFlags  operator| (EVulkanAllocationFlags  Lhs, EVulkanAllocationFlags Rhs) { return (EVulkanAllocationFlags)((__underlying_type(EVulkanAllocationFlags))Lhs | (__underlying_type(EVulkanAllocationFlags))Rhs); }
+
 class XMemoryManager
 {
 public:
@@ -328,10 +348,12 @@ public:
 
 	void Init();
 
+	bool AllocateBufferMemory(XVulkanAllocation& OutAllocation, VkBuffer InBuffer, EVulkanAllocationFlags Flags, uint32 InForceMinAlignment = -1);
+
 	bool AllocateBufferMemory(
 		XVulkanAllocation& OutAllocation, 
 		XVulkanEvictable* AllocationOwner, 
-		const VkMemoryRequirements& MemoryReqs, 
+		const VkMemoryRequirements2& MemoryReqs, 
 		VkMemoryPropertyFlags MemoryPropertyFlags, 
 		EVulkanAllocationMetaType MetaType);
 

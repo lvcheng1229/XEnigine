@@ -5,6 +5,15 @@
 #include "Runtime\RenderCore\GlobalShader.h"
 #include "Runtime\RHI\RHIStaticStates.h"
 #include "Runtime\RHI\PipelineStateCache.h"
+#include "Runtime\RenderCore\ShaderParameter.h"
+
+struct XBasicRayTracingRay
+{
+    float Origin[3];
+    uint32 Mask;
+    float Direction[3];
+    float TFar;
+};
 
 class XBuildInRGS :public XGloablShader
 {
@@ -20,7 +29,9 @@ public:
     XBuildInRGS(const XShaderInitlizer& Initializer)
         :XGloablShader(Initializer)
     {
-
+        TLAS.Bind(Initializer.ShaderParameterMap, "TLAS");
+        Rays.Bind(Initializer.ShaderParameterMap, "Rays");
+        OcclusionOutput.Bind(Initializer.ShaderParameterMap, "OcclusionOutput");
     }
 
     void SetParameter(
@@ -28,6 +39,11 @@ public:
         XRHITexture* InTexture)
     {
     }
+
+
+    SRVParameterType TLAS;
+    SRVParameterType Rays;
+    UAVParameterType OcclusionOutput;
 };
 
 class XBuildInCHS :public XGloablShader
@@ -78,6 +94,6 @@ public:
     }
 };
 
-void DispatchRayTest(XRHICommandList& RHICmdList);
+void DispatchBasicOcclusionRays(XRHICommandList& RHICmdList, XRHIRayTracingScene* Scene, XRHIShaderResourceView* SceneView, XRHIShaderResourceView* RayBufferView, XRHIUnorderedAcessView* ResultView, uint32 NumRays);
 
 #endif

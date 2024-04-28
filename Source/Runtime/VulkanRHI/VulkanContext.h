@@ -50,10 +50,13 @@ public:
 	void RHIBeginFrame()override { XASSERT(false) };
 	void RHIEndRenderPass()override;
 	void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo, const char* InName, uint32 Size)override;
+	void Transition(XRHITransitionInfo TransitionInfo);
+
 #if RHI_RAYTRACING
-	virtual void RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange);
-	virtual void BindAccelerationStructureMemory(XRHIRayTracingScene* Scene, std::shared_ptr<XRHIBuffer> Buffer, uint32 BufferOffset);
-	virtual void RHIBuildAccelerationStructure(const XRayTracingSceneBuildParams& SceneBuildParams);
+	void RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange);
+	void BindAccelerationStructureMemory(XRHIRayTracingScene* Scene, std::shared_ptr<XRHIBuffer> Buffer, uint32 BufferOffset);
+	void RHIBuildAccelerationStructure(const XRayTracingSceneBuildParams& SceneBuildParams);
+	void RayTraceDispatch(XRHIRayTracingPSO* Pipeline, XRHIRayTracingShader* RayGenShader, XRHIRayTracingScene* Scene, const XRayTracingShaderBinds& GlobalResourceBindings, uint32 Width, uint32 Height);
 #endif
 
 	//Vulkan

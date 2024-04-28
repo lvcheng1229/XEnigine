@@ -1,6 +1,7 @@
 #pragma once
 #include "PlatformRHI.h"
 #include "RHIContext.h"
+#include "RHITransitionInfo.h"
 #include <array>
 class XRHICommandListBase
 {
@@ -259,10 +260,22 @@ public:
 	{
 		GetContext()->RHIBuildAccelerationStructure(SceneBuildParams);
 	}
+
+	inline void Transition(XRHITransitionInfo TransitionInfo)
+	{
+		GetContext()->Transition(TransitionInfo);
+	}
+
+	inline void RayTraceDispatch(XRHIRayTracingPSO* Pipeline, XRHIRayTracingShader* RayGenShader, XRHIRayTracingScene* Scene, const XRayTracingShaderBinds& GlobalResourceBindings, uint32 Width, uint32 Height)
+	{
+		GetContext()->RayTraceDispatch(Pipeline, RayGenShader, Scene, GlobalResourceBindings, Width, Height);
+	}
 #endif
 };
 
 extern XRHICommandList GRHICmdList;
+
+
 
 inline XRHITexture* RHIGetCurrentBackTexture()
 {
@@ -344,6 +357,11 @@ inline std::shared_ptr<XRHIBuffer>RHIcreateVertexBuffer(uint32 Stride, uint32 Si
 	return GPlatformRHI->RHICreateVertexBuffer(Stride, Size, Usage, ResourceData);
 }
 
+inline std::shared_ptr<XRHIBuffer>RHIcreateVertexBuffer2(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return GPlatformRHI->RHICreateBuffer(Stride, Size, Usage | EBufferUsage::BUF_Vertex, ResourceData);
+}
+
 inline void RHIResetStructBufferCounter(XRHIStructBuffer* RHIStructBuffer,uint32 CounterOffset)
 {
 	GPlatformRHI->RHIResetStructBufferCounter(RHIStructBuffer, CounterOffset);
@@ -364,16 +382,29 @@ inline std::shared_ptr<XRHIShaderResourceView> RHICreateShaderResourceView(XRHIS
 	return GPlatformRHI->RHICreateShaderResourceView(StructuredBuffer);
 }
 
+inline std::shared_ptr<XRHIShaderResourceView> RHICreateShaderResourceView2(XRHIBuffer* Buffer)
+{
+	return GPlatformRHI->RHICreateShaderResourceView(Buffer);
+}
+
 inline std::shared_ptr<XRHIStructBuffer>RHIcreateStructBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	return GPlatformRHI->RHICreateStructBuffer(Stride, Size, Usage, ResourceData);
 }
 
-
+inline std::shared_ptr<XRHIBuffer>RHIcreateStructBuffer2(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return GPlatformRHI->RHICreateBuffer(Stride, Size, Usage | EBufferUsage::BUF_StructuredBuffer, ResourceData);
+}
 
 inline std::shared_ptr<XRHIBuffer>RHICreateIndexBuffer(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
 {
 	return GPlatformRHI->RHICreateIndexBuffer(Stride, Size, Usage, ResourceData);
+}
+
+inline std::shared_ptr<XRHIBuffer>RHICreateIndexBuffer2(uint32 Stride, uint32 Size, EBufferUsage Usage, XRHIResourceCreateData ResourceData)
+{
+	return GPlatformRHI->RHICreateBuffer(Stride, Size, Usage | EBufferUsage::BUF_Index, ResourceData);
 }
 
 inline std::shared_ptr<XRHIVertexShader> RHICreateVertexShader(XArrayView<uint8> Code)

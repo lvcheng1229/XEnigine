@@ -1,17 +1,20 @@
 #pragma once
 
-#define RHI_RAYTRACING 0
+#include "Runtime\HAL\PlatformTypes.h"
+#include "Runtime\Core\Template\XEngineTemplate.h"
+
+#define RHI_RAYTRACING 1
 
 enum class EShaderType
 {
 	SV_Vertex = 0,
 	SV_Pixel,
 	SV_Compute,
-#if RHI_RAYTRACING
+
 	SV_RayGen,
 	SV_RayMiss,
 	SV_HitGroup,
-#endif
+
 	SV_ShaderCount
 };
 
@@ -107,7 +110,7 @@ enum class EVertexElementType
 	VET_NumBits = 5,
 };
 
-enum class EBufferUsage
+enum class EBufferUsage : uint16
 {
 	BUF_None					= 0,
 	BUF_Static					= 1 << 1,
@@ -128,4 +131,22 @@ enum class EBufferUsage
 	
 };
 
+ENUM_CLASS_FLAGS(EBufferUsage);
+
 #define MaxSimultaneousRenderTargets 8
+
+struct XRHIDescriptorHandle
+{
+	XRHIDescriptorHandle() {}
+	XRHIDescriptorHandle(uint8 InType, uint32 InIndex)
+		:Type(InType),
+		Index(InIndex)
+	{
+
+	}
+
+	bool IsValid() { return Index != 0xffffffff && Type != 0xff; };
+
+	uint32 Index = 0xffffffff;
+	uint8 Type = 0xff;
+};

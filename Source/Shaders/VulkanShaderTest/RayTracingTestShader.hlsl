@@ -52,8 +52,6 @@ struct FRayTracingIntersectionAttributes
 RaytracingAccelerationStructure               TLAS;
 StructuredBuffer<FBasicRayData>               Rays;
 RWStructuredBuffer<uint>                      OcclusionOutput;
-RWStructuredBuffer<FIntersectionPayload>      IntersectionOutput;
-
 
 [shader("raygeneration")] 
 void RayGenMain()

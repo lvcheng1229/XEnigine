@@ -2,6 +2,7 @@
 #include "Runtime/HAL/PlatformTypes.h"
 #include "RHIResource.h"
 #include "RHIDefines.h"
+#include "RHITransitionInfo.h"
 #include <span>
 
 #if RHI_RAYTRACING
@@ -22,6 +23,15 @@ struct XRayTracingSceneBuildParams
 
 	XRHIBuffer* InstanceBuffer = nullptr;
 	uint32 InstanceBufferOffset = 0;
+};
+
+struct XRayTracingShaderBinds
+{
+	XRHITexture* Textures[64] = {};
+	XRHIShaderResourceView* SRVs[64] = {};
+	XRHIConstantBuffer* ConstatntBuffers[16] = {};
+	XRHISamplerState* Samplers[16] = {};
+	XRHIUnorderedAcessView* UAVs[16] = {};
 };
 #endif
 
@@ -63,9 +73,13 @@ public:
 	virtual void RHIBeginRenderPass(const XRHIRenderPassInfo& InInfo,const char* InName, uint32 Size) = 0;
 	virtual void SetRenderTargetsAndViewPort(uint32 NumRTs, const XRHIRenderTargetView* RTViews,const XRHIDepthStencilView* DSView) = 0;
 
+	//Trasition Temporary
+	virtual void Transition(XRHITransitionInfo TransitionInfo) { __debugbreak(); };
+
 #if RHI_RAYTRACING
 	virtual void RHIBuildAccelerationStructures(const std::span<const XRayTracingGeometryBuildParams> Params, const XRHIBufferRange& ScratchBufferRange) {};
 	virtual void RHIBuildAccelerationStructure(const XRayTracingSceneBuildParams& SceneBuildParams) {};
 	virtual void BindAccelerationStructureMemory(XRHIRayTracingScene* Scene, std::shared_ptr<XRHIBuffer> Buffer, uint32 BufferOffset) {};
+	virtual void RayTraceDispatch(XRHIRayTracingPSO* Pipeline, XRHIRayTracingShader* RayGenShader, XRHIRayTracingScene* Scene, const XRayTracingShaderBinds& GlobalResourceBindings, uint32 Width, uint32 Height) {};
 #endif
 };

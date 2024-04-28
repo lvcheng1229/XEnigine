@@ -349,6 +349,32 @@ void XMemoryManager::Init()
 	}
 }
 
+bool XMemoryManager::AllocateBufferMemory(XVulkanAllocation& OutAllocation, VkBuffer InBuffer, EVulkanAllocationFlags Flags, uint32 InForceMinAlignment)
+{
+	VkBufferMemoryRequirementsInfo2 BufferMemoryRequirementsInfo = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2 };
+	VkMemoryDedicatedRequirements DedicatedRequirements = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS };
+	VkMemoryRequirements2 MemoryRequirements = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
+	
+	BufferMemoryRequirementsInfo.buffer = InBuffer;
+	MemoryRequirements.pNext = &DedicatedRequirements;
+
+	vkGetBufferMemoryRequirements2(Device->GetVkDevice(), &BufferMemoryRequirementsInfo, &MemoryRequirements);
+	MemoryRequirements.memoryRequirements.alignment = std::max<VkDeviceSize>(MemoryRequirements.memoryRequirements.alignment, (VkDeviceSize)InForceMinAlignment);
+
+	AllocateBufferMemory(OutAllocation, nullptr, MemoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, EVulkanAllocationMetaType::EVulkanAllocationMetaImageOther);
+
+	if (EnumHasAllFlags(Flags, EVulkanAllocationFlags::AutoBind))
+	{
+		VkBindBufferMemoryInfo BindBufferMemoryInfo = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO };
+		BindBufferMemoryInfo.buffer = InBuffer;
+		BindBufferMemoryInfo.memory = OutAllocation.GetDeviceMemoryHandle(Device);
+		BindBufferMemoryInfo.memoryOffset = OutAllocation.Offset;
+
+		VULKAN_VARIFY(vkBindBufferMemory2(Device->GetVkDevice(), 1, &BindBufferMemoryInfo));
+	}
+	return true;
+}
+
 void XMemoryManager::AllocateBufferPooled(XVulkanAllocation& OutAllocation, XVulkanEvictable* AllocationOwner, uint32 Size, VkBufferUsageFlags BufferUsage, VkMemoryPropertyFlags MemoryPropertyFlags, EVulkanAllocationMetaType MetaType)
 {
 	for (int32 Index = 0; Index < UsedBufferAllocations.size(); ++Index)
@@ -404,12 +430,12 @@ bool XMemoryManager::AllocateImageMemory(XVulkanAllocation& Allocation, XVulkanE
 	return ResourceTypeHeaps[TypeIndex]->AllocateResource(Allocation, AllocationOwner, EType::Image, MemoryReqs.size, MemoryReqs.alignment, MetaType, bMapped);
 }
 
-bool XMemoryManager::AllocateBufferMemory(XVulkanAllocation& OutAllocation, XVulkanEvictable* AllocationOwner, const VkMemoryRequirements& MemoryReqs, VkMemoryPropertyFlags MemoryPropertyFlags, EVulkanAllocationMetaType MetaType)
+bool XMemoryManager::AllocateBufferMemory(XVulkanAllocation& OutAllocation, XVulkanEvictable* AllocationOwner, const VkMemoryRequirements2& MemoryReqs, VkMemoryPropertyFlags MemoryPropertyFlags, EVulkanAllocationMetaType MetaType)
 {
 	uint32 TypeIndex = 0;
-	VkResult Result = DeviceMemoryManager->GetMemoryTypeFromProperties(MemoryReqs.memoryTypeBits, MemoryPropertyFlags, &TypeIndex);
+	VkResult Result = DeviceMemoryManager->GetMemoryTypeFromProperties(MemoryReqs.memoryRequirements.memoryTypeBits, MemoryPropertyFlags, &TypeIndex);
 	bool bMapped = VKHasAllFlags(MemoryPropertyFlags, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	return ResourceTypeHeaps[TypeIndex]->AllocateResource(OutAllocation, AllocationOwner, EType::Buffer, MemoryReqs.size, MemoryReqs.alignment, MetaType, bMapped);
+	return ResourceTypeHeaps[TypeIndex]->AllocateResource(OutAllocation, AllocationOwner, EType::Buffer, MemoryReqs.memoryRequirements.size, MemoryReqs.memoryRequirements.alignment, MetaType, bMapped);
 }
 
 XStagingBuffer::XStagingBuffer(XVulkanDevice* InDevice)
@@ -454,8 +480,11 @@ XStagingBuffer* XStagingManager::AcquireBuffer(uint32 Size, VkBufferUsageFlags I
 	StagingBufferCreateInfo.usage = InUsageFlags;
 	VULKAN_VARIFY(vkCreateBuffer(Device->GetVkDevice(), &StagingBufferCreateInfo, nullptr, &StagingBuffer->Buffer));
 
-	VkMemoryRequirements MemReqs;
-	vkGetBufferMemoryRequirements(Device->GetVkDevice(), StagingBuffer->Buffer, &MemReqs);
+	VkBufferMemoryRequirementsInfo2 BufferMemoryRequirementsInfo = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2 };
+	BufferMemoryRequirementsInfo.buffer = StagingBuffer->Buffer;
+
+	VkMemoryRequirements2 MemReqs;
+	vkGetBufferMemoryRequirements2(Device->GetVkDevice(), &BufferMemoryRequirementsInfo, &MemReqs);
 
 	VkMemoryPropertyFlags readTypeFlags = InMemoryReadFlags;
 	Device->GetMemoryManager().AllocateBufferMemory(StagingBuffer->Allocation, StagingBuffer, MemReqs, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | readTypeFlags, EVulkanAllocationMetaBufferStaging);

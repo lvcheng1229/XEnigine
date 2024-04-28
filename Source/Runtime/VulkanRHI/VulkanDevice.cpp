@@ -49,7 +49,8 @@ void XVulkanDevice::InitGPU()
         DefaultTextureView.Create(this, DefaultImage->Image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, VK_FORMAT_R8G8B8A8_UNORM);
     }
 
-    
+    //BindlessDescriptorManager = new XVulkanBindlessDescriptorManager(this);
+    //BindlessDescriptorManager->Init();
 }
 
 void XVulkanDevice::CreateDevice()
@@ -133,10 +134,8 @@ void XVulkanDevice::CreateDevice()
     MemoryManager.Init();
 
     VulkanExtension::InitExtensionFunction(Device);
-#if RHI_RAYTRACING
-    GRHIRayTracingScratchBufferAlignment = GetRayTracingProperties().AccelerationStructure.minAccelerationStructureScratchOffsetAlignment;
+    GRHIRayTracingScratchBufferAlignment = GetDeviceExtensionProperties().AccelerationStructure.minAccelerationStructureScratchOffsetAlignment;
     GRHIRayTracingAccelerationStructureAlignment = 256;
-#endif
 }
 
 namespace VulkanExtension
@@ -146,6 +145,11 @@ namespace VulkanExtension
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = nullptr;
     PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR = nullptr;
     PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR = nullptr;
+    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR = nullptr;
+    PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR = nullptr;
+    PFN_vkGetDescriptorEXT vkGetDescriptorEXT = nullptr;
+    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR = nullptr;
+    PFN_vkGetDescriptorSetLayoutSizeEXT vkGetDescriptorSetLayoutSizeEXT = nullptr;
 }
 
 void VulkanExtension::InitExtensionFunction(VkDevice Device)
@@ -155,6 +159,11 @@ void VulkanExtension::InitExtensionFunction(VkDevice Device)
     vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(Device, "vkCreateAccelerationStructureKHR");
     vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(Device, "vkGetAccelerationStructureDeviceAddressKHR");
     vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetDeviceProcAddr(Device, "vkCmdBuildAccelerationStructuresKHR");
+    vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(Device, "vkCreateRayTracingPipelinesKHR");
+    vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(Device, "vkGetRayTracingShaderGroupHandlesKHR");
+    vkGetDescriptorEXT = (PFN_vkGetDescriptorEXT)vkGetDeviceProcAddr(Device, "vkGetDescriptorEXT");
+    vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(Device, "vkCmdTraceRaysKHR");
+    vkGetDescriptorSetLayoutSizeEXT = (PFN_vkGetDescriptorSetLayoutSizeEXT)vkGetDeviceProcAddr(Device, "vkGetDescriptorSetLayoutSizeEXT");
 }
 
 

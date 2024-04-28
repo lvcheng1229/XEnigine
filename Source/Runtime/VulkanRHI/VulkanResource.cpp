@@ -47,6 +47,12 @@ XVulkanShader::XVulkanShader(XVulkanDevice* InDevice, EShaderType InShaderType)
 {
 }
 
+VkShaderModule XVulkanShader::GetOrCreateHandle()
+{
+	return CreateShaderModule(Device, SpirvContainer);
+}
+
+
 VkShaderModule XVulkanShader::CreateHandle(const XGfxPipelineDesc& Desc, uint32 LayoutHash)
 {
 	VkShaderModule ShaderModule = CreateShaderModule(Device, SpirvContainer);

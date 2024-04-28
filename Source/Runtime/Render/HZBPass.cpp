@@ -53,7 +53,7 @@ public:
 
 	XShaderVariableParameter DispatchThreadIdToBufferUV;
 
-	UAVParameterType TextureSampledInput;
+	TextureParameterType TextureSampledInput;
 	UAVParameterType FurthestHZBOutput_0;
 	UAVParameterType FurthestHZBOutput_1;
 	UAVParameterType FurthestHZBOutput_2;
